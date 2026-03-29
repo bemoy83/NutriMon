@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter, createHashRouter, Navigate } from 'react-router-dom'
 
 // Pages (lazy-loaded equivalent via direct imports for now)
 import LoginPage from '@/pages/auth/LoginPage'
@@ -12,8 +12,9 @@ import WeightPage from '@/pages/app/WeightPage'
 import ProfilePage from '@/pages/app/ProfilePage'
 import AppShell from '@/components/AppShell'
 import { AppIndexRedirect, RequireAuth, RequireOnboarding } from '@/app/router/guards'
+import { getRouterBasename, getRouterMode } from '@/lib/appUrl'
 
-export const router = createBrowserRouter([
+const routes = [
   // Public auth routes
   { path: '/login', element: <LoginPage /> },
   { path: '/signup', element: <SignupPage /> },
@@ -53,4 +54,10 @@ export const router = createBrowserRouter([
   // Catch-all redirect
   { path: '/', element: <Navigate to="/app" replace /> },
   { path: '*', element: <Navigate to="/app" replace /> },
-])
+]
+
+const routerOptions = { basename: getRouterBasename() }
+
+export const router = getRouterMode() === 'hash'
+  ? createHashRouter(routes, routerOptions)
+  : createBrowserRouter(routes, routerOptions)

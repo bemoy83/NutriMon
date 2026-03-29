@@ -29,6 +29,17 @@ cp .env.local.example .env.local
 ```bash
 VITE_SUPABASE_URL=https://your-project-id.supabase.co
 VITE_SUPABASE_ANON_KEY=your-publishable-or-anon-key
+VITE_APP_BASE_PATH=/
+VITE_ROUTER_MODE=browser
+```
+
+GitHub Pages project-site example:
+
+```bash
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-publishable-or-anon-key
+VITE_APP_BASE_PATH=/NutriMon/
+VITE_ROUTER_MODE=hash
 ```
 
 4. Apply database migrations to your Supabase project in order:
@@ -118,6 +129,21 @@ For a public release:
 - expect users without an immediate session to land on `/signup/pending`
 
 If you expect meaningful signup volume, configure custom SMTP rather than relying on the default hosted email limits.
+
+If you deploy on a GitHub Pages project-site subpath:
+
+- `Site URL` should be the public project URL, for example:
+  - `https://yourname.github.io/NutriMon/`
+- add redirect URLs for:
+  - `https://yourname.github.io/NutriMon/`
+  - `https://yourname.github.io/NutriMon/#/login`
+
+The app supports hash routing for this hosting mode via:
+
+```bash
+VITE_APP_BASE_PATH=/NutriMon/
+VITE_ROUTER_MODE=hash
+```
 
 ## Scheduler Setup
 

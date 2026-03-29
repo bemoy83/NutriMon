@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useState } from 'react'
+import { getExternalAppUrl } from '@/lib/appUrl'
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -24,7 +25,7 @@ export default function ResetPasswordPage() {
   async function onSubmit(data: FormData) {
     setServerError(null)
     const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${window.location.origin}/login`,
+      redirectTo: getExternalAppUrl('/login'),
     })
     if (error) {
       setServerError(error.message)
