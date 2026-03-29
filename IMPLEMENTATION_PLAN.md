@@ -192,6 +192,7 @@ Implement these routes:
 
 - `/login`
 - `/signup`
+- `/signup/pending`
 - `/reset-password`
 - `/onboarding`
 - `/app`
@@ -1024,6 +1025,7 @@ Trigger:
 
 Behavior:
 
+- requires `x-cron-secret` to match `CRON_SHARED_SECRET`
 - scans profiles
 - identifies users whose local time is between `00:05` and `01:00`
 - computes the backfill window from the later of:
@@ -1549,6 +1551,29 @@ Reason:
 - the function already performs its own JWT-based user verification internally
 
 Do not remove this setting unless the function auth model is intentionally revised and re-tested.
+
+### 17.4 Scheduled Finalization Auth
+
+`auto-finalize-day` is not a public endpoint.
+
+Required production setup:
+
+- deploy with `verify_jwt = false`
+- require `x-cron-secret`
+- set hosted secret `CRON_SHARED_SECRET`
+- configure the hourly scheduler to include:
+
+```text
+x-cron-secret: <CRON_SHARED_SECRET>
+```
+
+### 17.5 Public Auth Release Setting
+
+For general public release:
+
+- enable confirm-email in Supabase Auth
+- keep the signup pending-confirmation route available
+- verify the release environment can send confirmation emails reliably
 
 ---
 

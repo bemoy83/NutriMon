@@ -28,7 +28,7 @@ cp .env.local.example .env.local
 
 ```bash
 VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_SUPABASE_ANON_KEY=your-publishable-or-anon-key
 ```
 
 4. Apply database migrations to your Supabase project in order:
@@ -85,15 +85,17 @@ and upserts the catalog in batches of `500`.
 The repo includes two Edge Functions:
 
 - [finalize-day](/Users/bemoy/Developer/NutriMon/supabase/functions/finalize-day/index.ts): finalizes a single user day and calculates derived records
-- [auto-finalize-day](/Users/bemoy/Developer/NutriMon/supabase/functions/auto-finalize-day/index.ts): scheduled backfill/finalization for eligible users
+- [auto-finalize-day](/Users/bemoy/Developer/NutriMon/supabase/functions/auto-finalize-day/index.ts): scheduled backfill/finalization for eligible users via internal secret-header auth
 
-Required function env vars:
+Hosted Edge Functions already receive `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` from Supabase. Do not try to set reserved `SUPABASE_*` secrets manually for hosted deployment.
+
+Additional required hosted function secret:
 
 ```bash
-SUPABASE_URL=https://your-project-id.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+CRON_SHARED_SECRET=choose-a-long-random-secret
 ```
+
+For local server-side tools and local function serving, use [.env.server.example](/Users/bemoy/Developer/NutriMon/.env.server.example) as the template for non-frontend secrets.
 
 Serve functions locally with the Supabase CLI if you have it installed:
 
@@ -101,6 +103,39 @@ Serve functions locally with the Supabase CLI if you have it installed:
 supabase functions serve finalize-day
 supabase functions serve auto-finalize-day
 ```
+
+Function auth settings are defined in [supabase/config.toml](/Users/bemoy/Developer/NutriMon/supabase/config.toml):
+
+- `finalize-day` uses in-function JWT auth with `verify_jwt = false`
+- `auto-finalize-day` uses `verify_jwt = false` plus required `x-cron-secret` header validation
+
+## Public Auth Setup
+
+For a public release:
+
+- enable confirm-email in Supabase Auth
+- keep public signup open
+- expect users without an immediate session to land on `/signup/pending`
+
+If you expect meaningful signup volume, configure custom SMTP rather than relying on the default hosted email limits.
+
+## Scheduler Setup
+
+To make `auto-finalize-day` operational in production:
+
+1. Deploy the functions.
+2. Set `CRON_SHARED_SECRET` for the project.
+3. Create an hourly schedule that calls `auto-finalize-day`.
+4. Include the header:
+
+```text
+x-cron-secret: <CRON_SHARED_SECRET>
+```
+
+5. Manually invoke once and verify the JSON payload includes:
+   - `processed`
+   - `processedIds`
+   - `errors`
 
 ## Development
 
@@ -123,13 +158,16 @@ npm run build
 ## MVP Flows To Verify Manually
 
 1. Sign up, complete onboarding, and confirm a profile row is populated.
-2. Open today’s Daily Log and verify an empty day shows quick-add content immediately.
-3. Create a product, edit it, hard-delete it, and confirm historical meals still render from snapshots.
-4. Search for a built-in catalog food, log it directly, and confirm no new row is created in `products`.
-5. Add a meal, edit a meal, delete a meal, and verify each action offers undo.
-6. Use `Repeat last meal` on the current day.
-7. Finalize the current day after logging at least one meal.
-8. Invoke `auto-finalize-day` and verify it finalizes eligible backfill dates oldest-first.
+2. Confirm-email flow sends unverified users to `/signup/pending` and verified users can sign in.
+3. Open today’s Daily Log and verify an empty day shows quick-add content immediately.
+4. Create a product, edit it, hard-delete it, and confirm historical meals still render from snapshots.
+5. Search for a built-in catalog food, log it directly, and confirm no new row is created in `products`.
+6. Add a meal, edit a meal, delete a meal, and verify each action offers undo.
+7. Use `Repeat last meal` on the current day.
+8. Finalize the current day after logging at least one meal.
+9. Invoke `auto-finalize-day` with `x-cron-secret` and verify it finalizes eligible backfill dates oldest-first.
+
+The release acceptance checklist lives at [docs/release-readiness-checklist.md](/Users/bemoy/Developer/NutriMon/docs/release-readiness-checklist.md).
 
 ## Source Documents
 

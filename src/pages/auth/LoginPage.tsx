@@ -41,6 +41,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-white">NutriMon</h1>
           <p className="text-slate-400 text-sm mt-1">Sign in to your account</p>
+          <p className="text-slate-500 text-xs mt-2">Confirm your email first if you just created an account.</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

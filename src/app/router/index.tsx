@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 // Pages (lazy-loaded equivalent via direct imports for now)
 import LoginPage from '@/pages/auth/LoginPage'
 import SignupPage from '@/pages/auth/SignupPage'
+import SignupPendingPage from '@/pages/auth/SignupPendingPage'
 import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
 import OnboardingPage from '@/pages/app/OnboardingPage'
 import DailyLogPage from '@/pages/app/DailyLogPage'
@@ -16,6 +17,7 @@ export const router = createBrowserRouter([
   // Public auth routes
   { path: '/login', element: <LoginPage /> },
   { path: '/signup', element: <SignupPage /> },
+  { path: '/signup/pending', element: <SignupPendingPage /> },
   { path: '/reset-password', element: <ResetPasswordPage /> },
 
   // Onboarding (authenticated but not yet onboarded)

@@ -30,7 +30,7 @@ export default function SignupPage() {
 
   async function onSubmit(data: FormData) {
     setServerError(null)
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
     })
@@ -38,7 +38,13 @@ export default function SignupPage() {
       setServerError(error.message)
       return
     }
-    navigate('/onboarding')
+
+    if (signUpData.session) {
+      navigate('/onboarding')
+      return
+    }
+
+    navigate('/signup/pending', { state: { email: data.email } })
   }
 
   return (
@@ -47,6 +53,7 @@ export default function SignupPage() {
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-white">NutriMon</h1>
           <p className="text-slate-400 text-sm mt-1">Create your account</p>
+          <p className="text-slate-500 text-xs mt-2">Email confirmation is required before public access.</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

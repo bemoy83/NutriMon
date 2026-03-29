@@ -1,2 +1,5 @@
 [functions.finalize-day]
 verify_jwt = false
+
+[functions.auto-finalize-day]
+verify_jwt = false
