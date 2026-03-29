@@ -1,0 +1,93 @@
+import { describe, expect, it } from 'vitest'
+import { buildMealSnapshotItems, buildMealUpdateItems } from '../mealPayloads'
+import type { Meal } from '@/types/domain'
+
+const meal: Meal = {
+  id: 'meal-1',
+  userId: 'user-1',
+  dailyLogId: 'log-1',
+  loggedAt: '2026-01-05T08:30:00.000Z',
+  totalCalories: 520,
+  itemCount: 2,
+  createdAt: '2026-01-05T08:30:00.000Z',
+  updatedAt: '2026-01-05T08:30:00.000Z',
+  items: [
+    {
+      id: 'item-active',
+      mealId: 'meal-1',
+      productId: 'product-1',
+      quantity: 1.5,
+      productNameSnapshot: 'Greek Yogurt',
+      caloriesPerServingSnapshot: 120,
+      proteinGSnapshot: 10,
+      carbsGSnapshot: 8,
+      fatGSnapshot: 3,
+      servingAmountSnapshot: 150,
+      servingUnitSnapshot: 'g',
+      lineTotalCalories: 180,
+      createdAt: '2026-01-05T08:30:00.000Z',
+    },
+    {
+      id: 'item-deleted',
+      mealId: 'meal-1',
+      productId: null,
+      quantity: 2,
+      productNameSnapshot: 'Deleted Granola',
+      caloriesPerServingSnapshot: 170,
+      proteinGSnapshot: 5,
+      carbsGSnapshot: 20,
+      fatGSnapshot: 7,
+      servingAmountSnapshot: 50,
+      servingUnitSnapshot: 'g',
+      lineTotalCalories: 340,
+      createdAt: '2026-01-05T08:30:00.000Z',
+    },
+  ],
+}
+
+describe('meal payload builders', () => {
+  it('builds update items for both active products and deleted snapshots', () => {
+    expect(buildMealUpdateItems(meal)).toEqual([
+      {
+        product_id: 'product-1',
+        quantity: 1.5,
+      },
+      {
+        meal_item_id: 'item-deleted',
+        quantity: 2,
+        product_name_snapshot: 'Deleted Granola',
+        calories_per_serving_snapshot: 170,
+        protein_g_snapshot: 5,
+        carbs_g_snapshot: 20,
+        fat_g_snapshot: 7,
+        serving_amount_snapshot: 50,
+        serving_unit_snapshot: 'g',
+      },
+    ])
+  })
+
+  it('builds snapshot-only restore items for delete undo', () => {
+    expect(buildMealSnapshotItems(meal)).toEqual([
+      {
+        quantity: 1.5,
+        product_name_snapshot: 'Greek Yogurt',
+        calories_per_serving_snapshot: 120,
+        protein_g_snapshot: 10,
+        carbs_g_snapshot: 8,
+        fat_g_snapshot: 3,
+        serving_amount_snapshot: 150,
+        serving_unit_snapshot: 'g',
+      },
+      {
+        quantity: 2,
+        product_name_snapshot: 'Deleted Granola',
+        calories_per_serving_snapshot: 170,
+        protein_g_snapshot: 5,
+        carbs_g_snapshot: 20,
+        fat_g_snapshot: 7,
+        serving_amount_snapshot: 50,
+        serving_unit_snapshot: 'g',
+      },
+    ])
+  })
+})
