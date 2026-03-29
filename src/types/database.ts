@@ -13,6 +13,18 @@ export interface Database {
         Update: Partial<Omit<ProductRow, 'id' | 'user_id' | 'created_at'>>
         Relationships: []
       }
+      food_catalog_items: {
+        Row: FoodCatalogItemRow
+        Insert: Omit<FoodCatalogItemRow, 'created_at' | 'updated_at'>
+        Update: Partial<Omit<FoodCatalogItemRow, 'id' | 'source' | 'source_item_id' | 'created_at'>>
+        Relationships: []
+      }
+      catalog_item_usage: {
+        Row: CatalogItemUsageRow
+        Insert: Omit<CatalogItemUsageRow, 'created_at' | 'updated_at'>
+        Update: Partial<Omit<CatalogItemUsageRow, 'user_id' | 'catalog_item_id' | 'created_at'>>
+        Relationships: []
+      }
       daily_logs: {
         Row: DailyLogRow
         Insert: Omit<DailyLogRow, 'id' | 'created_at' | 'updated_at'>
@@ -93,6 +105,18 @@ export interface Database {
         Args: { p_log_date: string; p_logged_at: string; p_items: RestoreMealSnapshotItemInput[] }
         Returns: MealMutationResult
       }
+      get_recent_food_sources: {
+        Args: { p_limit?: number }
+        Returns: FoodSourceRow[]
+      }
+      get_frequent_food_sources: {
+        Args: { p_limit?: number }
+        Returns: FoodSourceRow[]
+      }
+      search_food_sources: {
+        Args: { p_query: string; p_limit?: number }
+        Returns: FoodSourceRow[]
+      }
     }
     Views: Record<string, never>
     Enums: Record<string, never>
@@ -131,6 +155,31 @@ export interface ProductRow {
   updated_at: string
 }
 
+export interface FoodCatalogItemRow {
+  id: string
+  source: string
+  source_item_id: string
+  name: string
+  calories: number
+  protein_g: number | null
+  carbs_g: number | null
+  fat_g: number | null
+  default_serving_amount: number
+  default_serving_unit: string
+  edible_portion_percent: number | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CatalogItemUsageRow {
+  user_id: string
+  catalog_item_id: string
+  use_count: number
+  last_used_at: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface DailyLogRow {
   id: string
   user_id: string
@@ -158,6 +207,7 @@ export interface MealItemRow {
   id: string
   meal_id: string
   product_id: string | null
+  catalog_item_id: string | null
   quantity: number
   product_name_snapshot: string
   calories_per_serving_snapshot: number
@@ -246,12 +296,14 @@ export interface DailyFeedbackRow {
 }
 
 export interface MealItemInput {
-  product_id: string
+  product_id?: string
+  catalog_item_id?: string
   quantity: number
 }
 
 export interface MealItemUpdateInput {
   product_id?: string
+  catalog_item_id?: string
   meal_item_id?: string
   quantity: number
   product_name_snapshot?: string
@@ -285,12 +337,27 @@ export interface MealMutationResult {
   meal_items: {
     id: string
     product_id: string | null
+    catalog_item_id: string | null
     quantity: number
     product_name_snapshot: string
     calories_per_serving_snapshot: number
     line_total_calories: number
   }[]
   daily_log: DailyLogRow
+}
+
+export interface FoodSourceRow {
+  source_type: 'user_product' | 'catalog_item'
+  source_id: string
+  name: string
+  calories: number
+  protein_g: number | null
+  carbs_g: number | null
+  fat_g: number | null
+  default_serving_amount: number | null
+  default_serving_unit: string | null
+  use_count: number
+  last_used_at: string | null
 }
 
 export interface DeleteMealResult {

@@ -16,6 +16,7 @@ const meal: Meal = {
       id: 'item-active',
       mealId: 'meal-1',
       productId: 'product-1',
+      catalogItemId: null,
       quantity: 1.5,
       productNameSnapshot: 'Greek Yogurt',
       caloriesPerServingSnapshot: 120,
@@ -28,9 +29,26 @@ const meal: Meal = {
       createdAt: '2026-01-05T08:30:00.000Z',
     },
     {
+      id: 'item-catalog',
+      mealId: 'meal-1',
+      productId: null,
+      catalogItemId: 'matvaretabellen_2026:01.344',
+      quantity: 1,
+      productNameSnapshot: 'Appenzeller, ost',
+      caloriesPerServingSnapshot: 383,
+      proteinGSnapshot: 24.3,
+      carbsGSnapshot: 0,
+      fatGSnapshot: 31.7,
+      servingAmountSnapshot: 100,
+      servingUnitSnapshot: 'g',
+      lineTotalCalories: 383,
+      createdAt: '2026-01-05T08:30:00.000Z',
+    },
+    {
       id: 'item-deleted',
       mealId: 'meal-1',
       productId: null,
+      catalogItemId: null,
       quantity: 2,
       productNameSnapshot: 'Deleted Granola',
       caloriesPerServingSnapshot: 170,
@@ -46,11 +64,15 @@ const meal: Meal = {
 }
 
 describe('meal payload builders', () => {
-  it('builds update items for both active products and deleted snapshots', () => {
+  it('builds update items for active products, catalog items, and deleted snapshots', () => {
     expect(buildMealUpdateItems(meal)).toEqual([
       {
         product_id: 'product-1',
         quantity: 1.5,
+      },
+      {
+        catalog_item_id: 'matvaretabellen_2026:01.344',
+        quantity: 1,
       },
       {
         meal_item_id: 'item-deleted',
@@ -76,6 +98,16 @@ describe('meal payload builders', () => {
         carbs_g_snapshot: 8,
         fat_g_snapshot: 3,
         serving_amount_snapshot: 150,
+        serving_unit_snapshot: 'g',
+      },
+      {
+        quantity: 1,
+        product_name_snapshot: 'Appenzeller, ost',
+        calories_per_serving_snapshot: 383,
+        protein_g_snapshot: 24.3,
+        carbs_g_snapshot: 0,
+        fat_g_snapshot: 31.7,
+        serving_amount_snapshot: 100,
         serving_unit_snapshot: 'g',
       },
       {

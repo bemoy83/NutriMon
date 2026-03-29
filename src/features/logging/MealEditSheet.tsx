@@ -1,16 +1,14 @@
 import { useState } from 'react'
 import { useInvalidateDailyLog } from './useDailyLog'
 import { useInvalidateProducts } from './useProducts'
-import type { Meal } from '@/types/domain'
-import { useRecentProducts, useFrequentProducts, useProductSearch } from './useProducts'
-import type { Product } from '@/types/domain'
+import type { FoodSource, Meal } from '@/types/domain'
 import { updateMealWithItems } from './api'
+import { useFoodSourceSearch, useFrequentFoodSources, useRecentFoodSources } from './useFoodSources'
 
 interface EditItem {
-  // For active products
   productId?: string
-  product?: Product
-  // For snapshot-only (deleted product) items
+  catalogItemId?: string
+  foodSource?: FoodSource
   mealItemId?: string
   snapshotName?: string
   snapshotCalories?: number
@@ -37,17 +35,32 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
   const [searchQuery, setSearchQuery] = useState('')
   const [tab, setTab] = useState<'items' | 'add'>('items')
 
-  const recentQuery = useRecentProducts()
-  const frequentQuery = useFrequentProducts()
-  const searchQuery_ = useProductSearch(searchQuery)
+  const recentQuery = useRecentFoodSources()
+  const frequentQuery = useFrequentFoodSources()
+  const searchQuery_ = useFoodSourceSearch(searchQuery)
   const [searchTab, setSearchTab] = useState<'recent' | 'frequent' | 'search'>('recent')
 
-  // Initialize items from meal
+  function getFoodSourceKey(foodSource: FoodSource): string {
+    return `${foodSource.sourceType}:${foodSource.sourceId}`
+  }
+
   const [items, setItems] = useState<EditItem[]>(() =>
     (meal.items ?? []).map((i): EditItem => {
-      if (i.productId) {
-        return { productId: i.productId, quantity: i.quantity }
+      if (i.productId || i.catalogItemId) {
+        return {
+          productId: i.productId ?? undefined,
+          catalogItemId: i.catalogItemId ?? undefined,
+          snapshotName: i.productNameSnapshot,
+          snapshotCalories: i.caloriesPerServingSnapshot,
+          snapshotProteinG: i.proteinGSnapshot,
+          snapshotCarbsG: i.carbsGSnapshot,
+          snapshotFatG: i.fatGSnapshot,
+          snapshotServingAmount: i.servingAmountSnapshot,
+          snapshotServingUnit: i.servingUnitSnapshot,
+          quantity: i.quantity,
+        }
       }
+
       return {
         mealItemId: i.id,
         snapshotName: i.productNameSnapshot,
@@ -63,14 +76,24 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
   )
 
   function getLabel(item: EditItem): string {
-    if (item.product) return item.product.name
+    if (item.foodSource) return item.foodSource.name
+    if (item.snapshotName && (item.productId || item.catalogItemId)) return item.snapshotName
     if (item.snapshotName) return `${item.snapshotName} (deleted)`
     return 'Unknown'
   }
 
   function getCalories(item: EditItem): number {
-    if (item.product) return item.product.calories
+    if (item.foodSource) return item.foodSource.calories
     return item.snapshotCalories ?? 0
+  }
+
+  function getSourceBadge(item: EditItem): string | null {
+    if (item.foodSource) {
+      return item.foodSource.sourceType === 'user_product' ? 'My product' : 'Built-in'
+    }
+    if (item.productId) return 'My product'
+    if (item.catalogItemId) return 'Built-in'
+    return null
   }
 
   function updateQty(idx: number, qty: number) {
@@ -81,11 +104,30 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
     }
   }
 
-  function addProduct(product: Product) {
+  function addFoodSource(foodSource: FoodSource) {
     setItems((prev) => {
-      const existing = prev.find((i) => i.productId === product.id)
+      const existing = prev.find((i) =>
+        foodSource.sourceType === 'user_product'
+          ? i.productId === foodSource.sourceId
+          : i.catalogItemId === foodSource.sourceId,
+      )
       if (existing) return prev
-      return [...prev, { productId: product.id, product, quantity: 1 }]
+      return [
+        ...prev,
+        {
+          productId: foodSource.sourceType === 'user_product' ? foodSource.sourceId : undefined,
+          catalogItemId: foodSource.sourceType === 'catalog_item' ? foodSource.sourceId : undefined,
+          foodSource,
+          snapshotName: foodSource.name,
+          snapshotCalories: foodSource.calories,
+          snapshotProteinG: foodSource.proteinG,
+          snapshotCarbsG: foodSource.carbsG,
+          snapshotFatG: foodSource.fatG,
+          snapshotServingAmount: foodSource.defaultServingAmount,
+          snapshotServingUnit: foodSource.defaultServingUnit,
+          quantity: 1,
+        },
+      ]
     })
     setTab('items')
   }
@@ -102,6 +144,10 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
         items.map((item) => {
           if (item.productId) {
             return { product_id: item.productId, quantity: item.quantity }
+          }
+
+          if (item.catalogItemId) {
+            return { catalog_item_id: item.catalogItemId, quantity: item.quantity }
           }
 
           return {
@@ -131,6 +177,13 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
       setSaving(false)
     }
   }
+
+  const activeFoodSources: FoodSource[] =
+    searchTab === 'recent'
+      ? recentQuery.data ?? []
+      : searchTab === 'frequent'
+        ? frequentQuery.data ?? []
+        : searchQuery_.data ?? []
 
   return (
     <>
@@ -175,7 +228,18 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
               {items.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm truncate">{getLabel(item)}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-white text-sm truncate">{getLabel(item)}</p>
+                      {getSourceBadge(item) && (
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                          getSourceBadge(item) === 'My product'
+                            ? 'bg-slate-700 text-slate-200'
+                            : 'bg-emerald-950 text-emerald-300'
+                        }`}>
+                          {getSourceBadge(item)}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-slate-400 text-xs">
                       {Math.round(item.quantity * getCalories(item))} kcal
                     </p>
@@ -220,24 +284,29 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
                     autoFocus
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search products…"
+                    placeholder="Search foods…"
                     className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
               )}
-              {(searchTab === 'recent'
-                ? recentQuery.data
-                : searchTab === 'frequent'
-                  ? frequentQuery.data
-                  : searchQuery_.data) ?.map((product) => (
+              {activeFoodSources.map((foodSource: FoodSource) => (
                 <button
-                  key={product.id}
-                  onClick={() => addProduct(product)}
+                  key={getFoodSourceKey(foodSource)}
+                  onClick={() => addFoodSource(foodSource)}
                   className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-800 transition-colors text-left"
                 >
                   <div>
-                    <p className="text-white text-sm">{product.name}</p>
-                    <p className="text-slate-400 text-xs">{product.calories} kcal</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-white text-sm">{foodSource.name}</p>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                        foodSource.sourceType === 'user_product'
+                          ? 'bg-slate-700 text-slate-200'
+                          : 'bg-emerald-950 text-emerald-300'
+                      }`}>
+                        {foodSource.sourceType === 'user_product' ? 'My product' : 'Built-in'}
+                      </span>
+                    </div>
+                    <p className="text-slate-400 text-xs">{foodSource.calories} kcal</p>
                   </div>
                   <span className="text-indigo-400 text-lg">+</span>
                 </button>

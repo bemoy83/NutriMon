@@ -1,8 +1,8 @@
 # NutriMon - Coding Agent Handoff Spec
 
-> **Goal:** This document is the implementation source of truth for the MVP build.
+> **Goal:** This document is the implementation source of truth for the implemented MVP baseline.
 > **Product intent reference:** `PRODUCT_PRD.md`
-> **Status:** Frozen handoff document. Use this for implementation.
+> **Status:** Current implementation baseline. Use this for implementation and deployment.
 
 ---
 
@@ -47,7 +47,8 @@ The MVP must include:
 
 - email/password auth
 - onboarding with TDEE-based calorie target suggestion
-- product creation and reuse
+- user product creation and reuse
+- shared built-in food catalog search and logging
 - meal logging
 - daily logs
 - weight logging for reference only
@@ -107,6 +108,10 @@ The previous plan left several choices open. They are now fixed for implementati
 - The quick-add interface is a bottom sheet on mobile and a modal on desktop.
 - Product deletion in the UI is implemented as hard delete.
 - Meal history must remain intact after a product is edited or deleted.
+- Logging/search surfaces merge two food sources:
+  - user-created products
+  - built-in shared catalog items
+- Profile product management remains scoped to user-created products only.
 
 ### 4.5 Progression Decisions
 
@@ -222,42 +227,68 @@ Fields:
 - use count
 - last used at
 
-### 8.2 Meal
+### 8.2 Built-in Catalog Item
+
+A read-only shared food item defined per default serving.
+
+Fields:
+
+- source
+- source item id
+- name
+- calories per default serving
+- protein grams per default serving, optional
+- carbs grams per default serving, optional
+- fat grams per default serving, optional
+- default serving amount
+- default serving unit
+- edible portion percent, optional
+
+### 8.3 Food Source
+
+The logging UI works with a unified food-source model.
+
+A food source is either:
+
+- a user product
+- a built-in catalog item
+
+### 8.4 Meal
 
 A meal is a timestamped log entry belonging to one daily log.
 Meal names are not required in MVP.
 
-### 8.3 Meal Item
+### 8.5 Meal Item
 
-A meal item references a product but also stores a nutritional snapshot.
+A meal item may reference a product or a catalog item, but it always stores a nutritional snapshot.
 This preserves historical meal accuracy if a product later changes or is deleted.
 
-### 8.4 Daily Log
+### 8.6 Daily Log
 
 One daily log exists per user per date.
 It stores aggregate totals for that day and whether the day is finalized.
 
-### 8.5 Daily Evaluation
+### 8.7 Daily Evaluation
 
 One row per user per finalized date.
 This stores the scoring results used for habit metrics and attributes.
 
-### 8.6 Habit Metrics
+### 8.8 Habit Metrics
 
 One snapshot row per user per finalized date.
 The latest row is the current state shown in the UI.
 
-### 8.7 Behavior Attributes
+### 8.9 Behavior Attributes
 
 One snapshot row per user per finalized date.
 Calculated from recent evaluation history.
 
-### 8.8 Creature Stats
+### 8.10 Creature Stats
 
 One snapshot row per user per finalized date.
 Calculated after habit metrics and behavior attributes.
 
-### 8.9 Daily Feedback
+### 8.11 Daily Feedback
 
 One row per user per finalized date.
 Stores a short supportive message and a small recommendation.
@@ -330,6 +361,57 @@ Notes:
 - Product deletion is a true delete from `products`.
 - Historical meals remain intact because meal items store snapshots and `product_id` is nullable with `on delete set null`.
 
+### 9.2a `food_catalog_items`
+
+Columns:
+
+- `id text primary key`
+- `source text not null`
+- `source_item_id text not null`
+- `name text not null`
+- `calories integer not null check (calories >= 0 and calories <= 5000)`
+- `protein_g numeric(6,2) null check (protein_g is null or protein_g >= 0)`
+- `carbs_g numeric(6,2) null check (carbs_g is null or carbs_g >= 0)`
+- `fat_g numeric(6,2) null check (fat_g is null or fat_g >= 0)`
+- `default_serving_amount numeric(8,2) not null default 100 check (default_serving_amount > 0)`
+- `default_serving_unit text not null default 'g'`
+- `edible_portion_percent numeric(5,2) null`
+- `updated_at timestamptz not null default now()`
+- `created_at timestamptz not null default now()`
+
+Constraints:
+
+- `unique (source, source_item_id)`
+
+Indexes:
+
+- `lower(name)`
+
+Notes:
+
+- This is a shared read-only catalog, not a user-owned table.
+- Current source is Matvaretabellen 2026 imported from the normalized artifact in `data/food_catalog_items.matvaretabellen_2026.json`.
+
+### 9.2b `catalog_item_usage`
+
+Columns:
+
+- `user_id uuid not null references auth.users(id) on delete cascade`
+- `catalog_item_id text not null references food_catalog_items(id) on delete cascade`
+- `use_count integer not null default 0 check (use_count >= 0)`
+- `last_used_at timestamptz null`
+- `updated_at timestamptz not null default now()`
+- `created_at timestamptz not null default now()`
+
+Constraints:
+
+- `primary key (user_id, catalog_item_id)`
+
+Indexes:
+
+- `(user_id, last_used_at desc nulls last)`
+- `(user_id, use_count desc, last_used_at desc nulls last)`
+
 ### 9.3 `daily_logs`
 
 Columns:
@@ -376,6 +458,7 @@ Columns:
 - `id uuid primary key default gen_random_uuid()`
 - `meal_id uuid not null references meals(id) on delete cascade`
 - `product_id uuid null references products(id) on delete set null`
+- `catalog_item_id text null references food_catalog_items(id) on delete set null`
 - `quantity numeric(8,2) not null check (quantity > 0)`
 - `product_name_snapshot text not null`
 - `calories_per_serving_snapshot integer not null`
@@ -395,6 +478,8 @@ Notes:
 
 - `line_total_calories = round(quantity * calories_per_serving_snapshot)`
 - Quantity is a serving multiplier.
+- Exactly one of `product_id` or `catalog_item_id` is populated for active referenced items.
+- Snapshot-only restored/deleted items may have both reference columns null.
 
 ### 9.6 `weight_entries`
 
@@ -546,6 +631,8 @@ Special handling:
 
 - `meal_items` does not have `user_id`
 - enforce access through parent `meals` ownership
+- `food_catalog_items` is shared and read-only to authenticated users
+- `catalog_item_usage` is user-owned and should allow only per-user `select`, `insert`, and `update`
 
 Required helper behavior:
 
@@ -563,6 +650,7 @@ Allow direct Supabase access for:
 - auth
 - `profiles` read/update
 - `products` create/update/delete/list
+- `food_catalog_items` read only through RPC-backed logging/search surfaces
 - `weight_entries` create/update/list
 - querying `daily_logs`, `meals`, `meal_items`, `daily_evaluations`, `habit_metrics`, `behavior_attributes`, `creature_stats`, `daily_feedback`
 
@@ -611,17 +699,29 @@ Input:
 ]
 ```
 
+Allowed item variants:
+
+```json
+[
+  { "product_id": "uuid", "quantity": 1.0 },
+  { "catalog_item_id": "matvaretabellen_2026:01.344", "quantity": 1.0 }
+]
+```
+
 Behavior:
 
-- verifies ownership of all referenced products
+- verifies ownership of referenced products
+- verifies existence of referenced catalog items
 - ensures daily log exists
 - rejects the mutation if the target daily log is finalized
 - inserts meal
-- inserts meal items using product snapshot values
+- inserts meal items using product or catalog snapshot values
 - recalculates `meals.total_calories`
 - recalculates `daily_logs.total_calories` and `meal_count`
 - increments product `use_count`
 - updates product `last_used_at`
+- increments `catalog_item_usage.use_count`
+- updates `catalog_item_usage.last_used_at`
 - returns:
   - meal id
   - daily log totals
@@ -641,6 +741,7 @@ Return shape:
     {
       "id": "uuid",
       "product_id": "uuid",
+      "catalog_item_id": null,
       "quantity": 1.0,
       "product_name_snapshot": "Chicken Wrap",
       "calories_per_serving_snapshot": 450,
@@ -671,6 +772,7 @@ Input:
 ```json
 [
   { "product_id": "uuid", "quantity": 1.0 },
+  { "catalog_item_id": "matvaretabellen_2026:01.344", "quantity": 1.0 },
   { "meal_item_id": "uuid", "quantity": 0.5 }
 ]
 ```
@@ -678,8 +780,9 @@ Input:
 Item rules:
 
 - use `{ "product_id": ..., "quantity": ... }` for active products
+- use `{ "catalog_item_id": ..., "quantity": ... }` for active built-in catalog items
 - use `{ "meal_item_id": ..., "quantity": ... }` only when preserving an existing deleted-product snapshot already attached to the target meal
-- exactly one of `product_id` or `meal_item_id` must be provided for each item
+- exactly one of `product_id`, `catalog_item_id`, or `meal_item_id` must be provided for each item
 
 Behavior:
 
@@ -697,6 +800,7 @@ Implementation note:
 - Do not increment or decrement `use_count` during meal edits.
 - Only increment `use_count` when creating a new meal or repeating a meal.
 - Deleted-product items remain editable by quantity through their existing meal-item snapshot reference, but cannot be newly searched or added once the underlying product record is gone.
+- Built-in catalog usage counts increment only on explicit create-meal selection, not on repeat-last-meal or snapshot restore.
 
 Return shape:
 
@@ -713,6 +817,7 @@ Return shape:
     {
       "id": "uuid",
       "product_id": null,
+      "catalog_item_id": null,
       "quantity": 0.5,
       "product_name_snapshot": "Deleted Product Snapshot",
       "calories_per_serving_snapshot": 300,
@@ -771,10 +876,11 @@ Behavior:
 - finds the user's most recent meal from any prior date
 - duplicates the meal into the target date
 - rejects the mutation if the target daily log is finalized
-- keeps the same items with fresh product snapshots from the original meal item snapshots, not current product values
+- keeps the same items with fresh snapshots from the original meal item snapshots, not current product or catalog values
 - if `p_log_date` is the user's local current date, sets `logged_at` to the current timestamp in the user's timezone
 - if `p_log_date` is a prior editable date, sets `logged_at` to that date combined with the current local time-of-day in the user's timezone
 - recalculates daily log totals
+- does not increment `catalog_item_usage`
 - returns new meal id and daily log totals
 
 Return shape:
@@ -932,6 +1038,38 @@ Reasoning:
 
 - Supabase cron is not per-user timezone aware
 - hourly scan with local timezone filtering is sufficient for MVP
+
+### 11.4 Read RPCs For Logging/Search
+
+Implement these RPCs for unified food-source surfaces:
+
+- `get_recent_food_sources`
+- `get_frequent_food_sources`
+- `search_food_sources`
+
+Unified return shape:
+
+```json
+{
+  "source_type": "user_product | catalog_item",
+  "source_id": "string",
+  "name": "string",
+  "calories": 123,
+  "protein_g": 10.5,
+  "carbs_g": 12.0,
+  "fat_g": 5.0,
+  "default_serving_amount": 100,
+  "default_serving_unit": "g",
+  "use_count": 3,
+  "last_used_at": "timestamptz"
+}
+```
+
+Sorting rules:
+
+- recent: `last_used_at desc`, then user products before catalog items, then `name asc`
+- frequent: `use_count desc`, then `last_used_at desc nulls last`, then user products before catalog items, then `name asc`
+- search: user products before catalog items, then `use_count desc`, then `last_used_at desc nulls last`, then `name asc`
 
 ---
 
@@ -1182,12 +1320,15 @@ Meal list behavior:
 Quick-add behavior:
 
 - section order:
-  1. recent products
-  2. frequent products
+  1. recent food sources
+  2. frequent food sources
   3. search results
   4. create new product shortcut
 - default quantity is `1`
 - quantity can be adjusted before confirm
+- show a source badge on food rows:
+  - `My product`
+  - `Built-in`
 
 Undo behavior:
 
@@ -1240,23 +1381,24 @@ Must show:
 
 ## 14. Query and Sorting Requirements
 
-### 14.1 Recent Products
+### 14.1 Recent Food Sources
 
 Definition:
 
-- latest 20 products ordered by `last_used_at desc nulls last`, then `created_at desc`
+- latest 20 merged food sources ordered by `last_used_at desc`, then user products before catalog items, then `name asc`
 
-### 14.2 Frequent Products
-
-Definition:
-
-- top 10 products ordered by `use_count desc`, then `last_used_at desc nulls last`
-
-### 14.3 Product Search
+### 14.2 Frequent Food Sources
 
 Definition:
 
-- case-insensitive prefix and substring match on `name`
+- top 10 merged food sources ordered by `use_count desc`, then `last_used_at desc nulls last`, then user products before catalog items
+
+### 14.3 Food Source Search
+
+Definition:
+
+- case-insensitive substring match on `name` across user products and built-in catalog items
+- user products rank above built-in catalog items
 - limit 20 results
 
 ### 14.4 Default Daily Log Fetch
@@ -1282,9 +1424,11 @@ Historical display rules:
 ### 15.1 Logging
 
 - user can create a product and log it to today's daily log
+- user can search for a built-in catalog item and log it without creating a `products` row
 - user can log a meal in under 10 seconds using a recent product
 - daily calories update immediately after meal mutation
 - deleted products no longer appear in pickers but historical meals still render correctly
+- built-in catalog items appear in recent/frequent after explicit logging
 
 ### 15.2 Evaluation
 
@@ -1326,6 +1470,9 @@ Required for:
 - behavior attribute calculation
 - creature stat calculation
 - unit conversion kg/lb
+- meal payload building for user products, built-in catalog items, and snapshot-only items
+- food catalog normalization from source spreadsheet rows
+- merged food-source ranking and mapping behavior where practical
 
 ### 16.2 Integration Tests
 
@@ -1335,6 +1482,9 @@ Required for:
 - `update_meal_with_items`
 - `delete_meal`
 - `repeat_last_meal`
+- `get_recent_food_sources`
+- `get_frequent_food_sources`
+- `search_food_sources`
 - `finalize-day` idempotency
 - finalized daily log becomes read-only
 
@@ -1344,13 +1494,65 @@ Required for:
 - onboarding saves profile and redirects correctly
 - creating a meal updates totals immediately
 - recent and frequent lists behave as defined
+- built-in catalog foods can be searched and logged without creating `products` rows
+- catalog-item logging updates `catalog_item_usage`
 - finalize-day produces visible feedback and creature updates
 - navigating to prior finalized days is read-only
 - weight chart renders for at least 3 sample entries
 
 ---
 
-## 17. Seed Evaluation Scenarios
+## 17. Deployment Notes
+
+These notes reflect the currently working Supabase deployment.
+
+### 17.1 Migrations
+
+The deployed MVP baseline includes these migrations in order:
+
+- `001_schema.sql`
+- `002_rls.sql`
+- `003_triggers.sql`
+- `004_rpcs.sql`
+- `005_restore_meal_from_snapshot.sql`
+- `006_shared_food_catalog.sql`
+
+### 17.2 Shared Catalog Import
+
+The built-in catalog is sourced from `alle-matvarer.xlsx` and normalized into:
+
+- `data/food_catalog_items.matvaretabellen_2026.json`
+
+Operational commands:
+
+```bash
+npm run build:food-catalog -- /path/to/alle-matvarer.xlsx
+SUPABASE_SERVICE_ROLE_KEY=... npm run import:food-catalog
+```
+
+Import target:
+
+- `food_catalog_items`
+
+### 17.3 Edge Function Auth Setting
+
+`finalize-day` is deployed with platform JWT verification disabled in `supabase/config.toml`:
+
+```toml
+[functions.finalize-day]
+verify_jwt = false
+```
+
+Reason:
+
+- Supabase platform-level JWT verification returned a bare `401` before the function's own auth logic ran
+- the function already performs its own JWT-based user verification internally
+
+Do not remove this setting unless the function auth model is intentionally revised and re-tested.
+
+---
+
+## 18. Seed Evaluation Scenarios
 
 Use these examples in tests:
 
@@ -1409,7 +1611,7 @@ Use these examples in tests:
 
 ---
 
-## 18. Delivery Order
+## 19. Delivery Order
 
 Build in this order:
 

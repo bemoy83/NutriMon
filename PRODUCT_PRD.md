@@ -77,7 +77,7 @@ NutriMon is designed so that logging behavior becomes the foundation for feedbac
 # 4. Phase-Based Delivery
 
 ## Phase 1 - Core System (MVP)
-- Food input system: products, meals, reuse
+- Food input system: user products, built-in catalog foods, meals, reuse
 - Daily tracking
 - Evaluation engine
 - Habit metrics
@@ -101,6 +101,7 @@ NutriMon is designed so that logging behavior becomes the foundation for feedbac
 
 The MVP must include:
 - Product system with fast manual entry and reuse
+- Shared built-in food catalog for direct logging
 - Meal builder
 - Daily logs
 - Optional manual weight entry with graph view
@@ -124,11 +125,17 @@ The MVP must not include:
 ## Product
 A reusable food item defined by calories per serving, with optional macro detail.
 
+## Built-in Catalog Item
+A read-only shared food entry provided by NutriMon for direct logging.
+Built-in catalog items behave like loggable foods in search and quick add, but they are not user-managed products.
+
 ## Meal
-A meal is a timestamped logged event made of one or more products.
+A meal is a timestamped logged event made of one or more food items.
+A meal may contain a mix of user products and built-in catalog items.
 
 ## Requirements
 - Fast reuse through recent and frequent foods
+- Unified search across user products and built-in catalog foods
 - Quick-add interaction
 - Less than 10-second repeat logging for common meals
 - Support edit and delete of logged meals
@@ -136,6 +143,7 @@ A meal is a timestamped logged event made of one or more products.
 
 The food system should optimize for speed over exhaustiveness.
 The user should not need to name meals or perform heavy data entry to succeed.
+Profile-level product management remains scoped to user-created products only.
 
 ---
 

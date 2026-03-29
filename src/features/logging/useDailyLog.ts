@@ -72,6 +72,7 @@ export function useDailyLog(date: string) {
                 id: i.id,
                 mealId: i.meal_id,
                 productId: i.product_id,
+                catalogItemId: i.catalog_item_id,
                 quantity: i.quantity,
                 productNameSnapshot: i.product_name_snapshot,
                 caloriesPerServingSnapshot: i.calories_per_serving_snapshot,

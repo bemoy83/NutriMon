@@ -10,6 +10,13 @@ export function buildMealUpdateItems(meal: Meal): MealItemUpdateInput[] {
       }
     }
 
+    if (item.catalogItemId) {
+      return {
+        catalog_item_id: item.catalogItemId,
+        quantity: item.quantity,
+      }
+    }
+
     return {
       meal_item_id: item.id,
       quantity: item.quantity,

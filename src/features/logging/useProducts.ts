@@ -89,5 +89,6 @@ export function useInvalidateProducts() {
   return () => {
     qc.invalidateQueries({ queryKey: ['products'] })
     qc.invalidateQueries({ queryKey: ['profile-products'] })
+    qc.invalidateQueries({ queryKey: ['food-sources'] })
   }
 }

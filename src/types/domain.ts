@@ -35,6 +35,20 @@ export interface Product {
   updatedAt: string
 }
 
+export interface FoodSource {
+  sourceType: 'user_product' | 'catalog_item'
+  sourceId: string
+  name: string
+  calories: number
+  proteinG: number | null
+  carbsG: number | null
+  fatG: number | null
+  defaultServingAmount: number | null
+  defaultServingUnit: string | null
+  useCount: number
+  lastUsedAt: string | null
+}
+
 export interface DailyLog {
   id: string
   userId: string
@@ -63,6 +77,7 @@ export interface MealItem {
   id: string
   mealId: string
   productId: string | null
+  catalogItemId: string | null
   quantity: number
   productNameSnapshot: string
   caloriesPerServingSnapshot: number
