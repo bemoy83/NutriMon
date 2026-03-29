@@ -1,3 +1,12 @@
+# Superseded
+
+Do not use this document for current product or implementation decisions.
+
+Current active product spec: `PRODUCT_PRD.md`
+Current implementation handoff spec: `IMPLEMENTATION_PLAN.md`
+
+---
+
 # NutriMon – Master PRD (v1.9)
 
 ---
