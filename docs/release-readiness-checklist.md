@@ -10,41 +10,41 @@ Use this checklist for each release candidate.
 
 ## Deployment
 
-- [ ] Migrations applied through `006_shared_food_catalog.sql`
-- [ ] Shared catalog imported into `food_catalog_items`
-- [ ] `finalize-day` deployed
-- [ ] `auto-finalize-day` deployed
-- [ ] `CRON_SHARED_SECRET` set for hosted functions
-- [ ] Hourly schedule created for `auto-finalize-day`
-- [ ] `supabase/config.toml` deployed with:
+- [x] Migrations applied through `006_shared_food_catalog.sql`
+- [x] Shared catalog imported into `food_catalog_items`
+- [x] `finalize-day` deployed
+- [x] `auto-finalize-day` deployed
+- [x] `CRON_SHARED_SECRET` set for hosted functions
+- [x] Hourly schedule created for `auto-finalize-day`
+- [x] `supabase/config.toml` deployed with:
   - [ ] `finalize-day verify_jwt = false`
   - [ ] `auto-finalize-day verify_jwt = false`
 
 ## Public Auth
 
-- [ ] Confirm-email enabled in Supabase
-- [ ] Sign up sends user to the pending-confirmation state when no session is returned
-- [ ] Confirmation email arrives
-- [ ] Verification link completes successfully
-- [ ] Verified user can sign in
+- [x] Confirm-email enabled in Supabase
+- [x] Sign up sends user to the pending-confirmation state when no session is returned
+- [x] Confirmation email arrives
+- [x] Verification link completes successfully
+- [x] Verified user can sign in
 
 ## Product Flows
 
-- [ ] Onboarding completes and populates `profiles`
-- [ ] User can create/edit/delete a custom product
-- [ ] User can search and log a built-in catalog food
-- [ ] Logging a built-in item does not create a `products` row
-- [ ] Logging a built-in item updates `catalog_item_usage`
-- [ ] Add/edit/delete meal undo works
-- [ ] Repeat last meal works
-- [ ] Finalize day works
-- [ ] Finalized day becomes read-only
+- [x] Onboarding completes and populates `profiles`
+- [x] User can create/edit/delete a custom product
+- [x] User can search and log a built-in catalog food
+- [x] Logging a built-in item does not create a `products` row
+- [x] Logging a built-in item updates `catalog_item_usage`
+- [x] Add/edit/delete meal undo works
+- [x] Repeat last meal works
+- [x] Finalize day works
+- [x] Finalized day becomes read-only
 
 ## Runtime Verification
 
-- [ ] `npm run lint` passes
-- [ ] `npm run test` passes
-- [ ] `npm run build` passes
+- [x] `npm run lint` passes
+- [x] `npm run test` passes
+- [x] `npm run build` passes
 - [ ] Manual invoke of `auto-finalize-day` succeeds with `x-cron-secret`
 - [ ] Supabase logs show no unexpected function auth failures
 
