@@ -8,12 +8,12 @@ import { useFoodSourceSearch, useFrequentFoodSources, useRecentFoodSources } fro
 import { useInvalidateProductQueries } from './queryInvalidation'
 import BottomSheet from '@/components/ui/BottomSheet'
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
-import QuantityStepper from '@/components/ui/QuantityStepper'
+import GramInput from '@/components/ui/GramInput'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
 
 interface PendingItem {
   foodSource: FoodSource
-  quantity: number
+  grams: number
 }
 
 interface Props {
@@ -60,16 +60,16 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
     setPendingItems((prev) => {
       const existing = prev.find((i) => getFoodSourceKey(i.foodSource) === getFoodSourceKey(foodSource))
       if (existing) return prev
-      return [...prev, { foodSource, quantity: 1 }]
+      return [...prev, { foodSource, grams: foodSource.defaultServingAmount ?? 100 }]
     })
   }
 
-  function updateQuantity(foodSourceKey: string, quantity: number) {
-    if (quantity <= 0) {
+  function updateGrams(foodSourceKey: string, grams: number) {
+    if (grams <= 0) {
       setPendingItems((prev) => prev.filter((i) => getFoodSourceKey(i.foodSource) !== foodSourceKey))
     } else {
       setPendingItems((prev) =>
-        prev.map((i) => (getFoodSourceKey(i.foodSource) === foodSourceKey ? { ...i, quantity } : i)),
+        prev.map((i) => (getFoodSourceKey(i.foodSource) === foodSourceKey ? { ...i, grams } : i)),
       )
     }
   }
@@ -87,7 +87,7 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
           ...(item.foodSource.sourceType === 'user_product'
             ? { product_id: item.foodSource.sourceId }
             : { catalog_item_id: item.foodSource.sourceId }),
-          quantity: item.quantity,
+          quantity: item.grams / (item.foodSource.defaultServingAmount ?? 100),
         })),
       )
       invalidateDailyLog(logDate)
@@ -157,21 +157,19 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
               {pendingItems.length} item{pendingItems.length !== 1 ? 's' : ''} selected
             </span>
             <span className="text-sm font-semibold text-[var(--app-text-primary)]">
-              {pendingItems.reduce((sum, i) => sum + Math.round(i.quantity * i.foodSource.calories), 0)} kcal
+              {pendingItems.reduce((sum, i) => sum + Math.round((i.grams / (i.foodSource.defaultServingAmount ?? 100)) * i.foodSource.calories), 0)} kcal
             </span>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-2">
             {pendingItems.map((item) => (
               <div key={getFoodSourceKey(item.foodSource)} className="flex items-center justify-between">
                 <span className="text-xs truncate flex-1 text-[var(--app-text-secondary)]">
                   {item.foodSource.name}
                 </span>
                 <div className="ml-2">
-                  <QuantityStepper
-                    quantity={item.quantity}
-                    compact
-                    onDecrease={() => updateQuantity(getFoodSourceKey(item.foodSource), item.quantity - 0.5)}
-                    onIncrease={() => updateQuantity(getFoodSourceKey(item.foodSource), item.quantity + 0.5)}
+                  <GramInput
+                    grams={item.grams}
+                    onChange={(g) => updateGrams(getFoodSourceKey(item.foodSource), g)}
                   />
                 </div>
               </div>
@@ -216,9 +214,9 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
             <ProductRow
               key={getFoodSourceKey(foodSource)}
               foodSource={foodSource}
-              quantity={pending?.quantity ?? null}
+              grams={pending?.grams ?? null}
               onAdd={() => addPendingItem(foodSource)}
-              onUpdateQuantity={(q) => updateQuantity(getFoodSourceKey(foodSource), q)}
+              onUpdateGrams={(g) => updateGrams(getFoodSourceKey(foodSource), g)}
             />
           )
         })}
@@ -240,14 +238,14 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
 
 function ProductRow({
   foodSource,
-  quantity,
+  grams,
   onAdd,
-  onUpdateQuantity,
+  onUpdateGrams,
 }: {
   foodSource: FoodSource
-  quantity: number | null
+  grams: number | null
   onAdd: () => void
-  onUpdateQuantity: (q: number) => void
+  onUpdateGrams: (g: number) => void
 }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--app-surface-elevated)] transition-colors">
@@ -260,16 +258,12 @@ function ProductRow({
           {foodSource.calories} kcal
           {foodSource.defaultServingAmount && foodSource.defaultServingUnit
             ? ` / ${foodSource.defaultServingAmount}${foodSource.defaultServingUnit}`
-            : ' / serving'}
+            : ' / 100g'}
         </p>
       </div>
 
-      {quantity !== null ? (
-        <QuantityStepper
-          quantity={quantity}
-          onDecrease={() => onUpdateQuantity(quantity - 0.5)}
-          onIncrease={() => onUpdateQuantity(quantity + 0.5)}
-        />
+      {grams !== null ? (
+        <GramInput grams={grams} onChange={onUpdateGrams} />
       ) : (
         <button
           onClick={onAdd}

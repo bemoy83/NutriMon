@@ -7,7 +7,7 @@ import { useInvalidateProductQueries } from './queryInvalidation'
 import BottomSheet from '@/components/ui/BottomSheet'
 import EmptyState from '@/components/ui/EmptyState'
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
-import QuantityStepper from '@/components/ui/QuantityStepper'
+import GramInput from '@/components/ui/GramInput'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
 
 interface EditItem {
@@ -101,11 +101,14 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
     return null
   }
 
-  function updateQty(idx: number, qty: number) {
-    if (qty <= 0) {
+  function updateGrams(idx: number, grams: number) {
+    const item = items[idx]
+    const servingAmount = item.snapshotServingAmount ?? 100
+    const quantity = grams / servingAmount
+    if (quantity <= 0) {
       setItems((prev) => prev.filter((_, i) => i !== idx))
     } else {
-      setItems((prev) => prev.map((item, i) => (i === idx ? { ...item, quantity: qty } : item)))
+      setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, quantity } : it)))
     }
   }
 
@@ -196,7 +199,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
       title="Edit meal"
       footer={
         <>
-          {saveError ? <p className="px-0 pb-2 text-xs text-red-400">{saveError}</p> : null}
+          {saveError ? <p className="px-0 pb-2 text-xs text-[var(--app-danger)]">{saveError}</p> : null}
           <div className="flex gap-3">
             <button type="button" onClick={onClose} className="app-button-secondary flex-1 py-2.5">
               Cancel
@@ -228,28 +231,28 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
               {items.length === 0 && (
                 <EmptyState title="No items. Switch to Add to add products." className="py-4" />
               )}
-              {items.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-white text-sm truncate">{getLabel(item)}</p>
-                      {getSourceBadge(item) && (
-                        <FoodSourceBadge
-                          sourceType={getSourceBadge(item) === 'My product' ? 'user_product' : 'catalog_item'}
-                        />
-                      )}
+              {items.map((item, idx) => {
+                const servingAmount = item.snapshotServingAmount ?? 100
+                const grams = Math.round(item.quantity * servingAmount)
+                return (
+                  <div key={idx} className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-[var(--app-text-primary)] text-sm truncate">{getLabel(item)}</p>
+                        {getSourceBadge(item) && (
+                          <FoodSourceBadge
+                            sourceType={getSourceBadge(item) === 'My product' ? 'user_product' : 'catalog_item'}
+                          />
+                        )}
+                      </div>
+                      <p className="text-[var(--app-text-muted)] text-xs">
+                        {Math.round(item.quantity * getCalories(item))} kcal
+                      </p>
                     </div>
-                    <p className="text-slate-400 text-xs">
-                      {Math.round(item.quantity * getCalories(item))} kcal
-                    </p>
+                    <GramInput grams={grams} onChange={(g) => updateGrams(idx, g)} />
                   </div>
-                  <QuantityStepper
-                    quantity={item.quantity}
-                    onDecrease={() => updateQty(idx, item.quantity - 0.5)}
-                    onIncrease={() => updateQty(idx, item.quantity + 0.5)}
-                  />
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <div>
@@ -278,16 +281,16 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
                 <button
                   key={getFoodSourceKey(foodSource)}
                   onClick={() => addFoodSource(foodSource)}
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-800 transition-colors text-left"
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--app-surface-elevated)] transition-colors text-left"
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-white text-sm">{foodSource.name}</p>
+                      <p className="text-[var(--app-text-primary)] text-sm">{foodSource.name}</p>
                       <FoodSourceBadge sourceType={foodSource.sourceType} />
                     </div>
-                    <p className="text-slate-400 text-xs">{foodSource.calories} kcal</p>
+                    <p className="text-[var(--app-text-muted)] text-xs">{foodSource.calories} kcal</p>
                   </div>
-                  <span className="text-indigo-400 text-lg">+</span>
+                  <span className="text-[var(--app-brand)] text-lg">+</span>
                 </button>
               ))}
             </div>
