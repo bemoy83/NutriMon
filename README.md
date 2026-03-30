@@ -18,6 +18,8 @@ NutriMon is a behavior-first nutrition tracker. The MVP focuses on fast meal log
 npm install
 ```
 
+This repo currently uses `.npmrc` with `legacy-peer-deps=true` because `vite-plugin-pwa` lags on its declared Vite 8 peer range while the project still builds and tests cleanly with the installed versions.
+
 2. Create a local env file from the example:
 
 ```bash
