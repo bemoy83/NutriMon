@@ -15,6 +15,15 @@ interface Props {
   onDeleteSuccess: (meal: Meal) => void
 }
 
+function getMealMacros(meal: Meal) {
+  const items = meal.items ?? []
+  return {
+    protein: items.reduce((s, i) => s + (i.proteinGSnapshot ?? 0) * i.quantity, 0),
+    carbs: items.reduce((s, i) => s + (i.carbsGSnapshot ?? 0) * i.quantity, 0),
+    fat: items.reduce((s, i) => s + (i.fatGSnapshot ?? 0) * i.quantity, 0),
+  }
+}
+
 export default function MealList({ meals, isFinalized, timezone, logDate, onEditMeal, onDeleteSuccess }: Props) {
   const [expandedMealId, setExpandedMealId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -81,6 +90,9 @@ function MealCard({
   onEdit: () => void
   onDelete: () => void
 }) {
+  const macros = getMealMacros(meal)
+  const hasMacros = macros.protein > 0 || macros.carbs > 0 || macros.fat > 0
+
   return (
     <div className="app-card overflow-hidden">
       <button
@@ -93,6 +105,15 @@ function MealCard({
           </p>
           <p className="text-[var(--app-text-muted)] text-xs mt-0.5">
             {meal.itemCount} item{meal.itemCount !== 1 ? 's' : ''}
+            {hasMacros && (
+              <span className="ml-1.5">
+                <span style={{ color: 'var(--app-danger)' }}>P{Math.round(macros.protein)}</span>
+                <span style={{ color: 'var(--app-text-subtle)' }}> · </span>
+                <span style={{ color: 'var(--app-brand)' }}>C{Math.round(macros.carbs)}</span>
+                <span style={{ color: 'var(--app-text-subtle)' }}> · </span>
+                <span style={{ color: 'var(--app-warning)' }}>F{Math.round(macros.fat)}</span>
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -110,6 +131,23 @@ function MealCard({
 
       {expanded && (
         <div className="border-t border-[var(--app-border)]">
+          {/* Macro summary strip */}
+          {hasMacros && (
+            <div
+              className="flex items-center justify-around px-4 py-2.5 border-b"
+              style={{
+                borderColor: 'var(--app-border-muted)',
+                background: 'var(--app-surface-elevated)',
+              }}
+            >
+              <MacroStat label="Protein" value={macros.protein} color="var(--app-danger)" />
+              <div className="w-px h-6 bg-[var(--app-border)]" />
+              <MacroStat label="Carbs" value={macros.carbs} color="var(--app-brand)" />
+              <div className="w-px h-6 bg-[var(--app-border)]" />
+              <MacroStat label="Fat" value={macros.fat} color="var(--app-warning)" />
+            </div>
+          )}
+
           {/* Items */}
           <div className="px-4 py-2 space-y-1.5">
             {(meal.items ?? []).map((item) => (
@@ -137,6 +175,19 @@ function MealCard({
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+function MacroStat({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className="flex flex-col items-center gap-0.5">
+      <span className="text-sm font-semibold" style={{ color }}>
+        {Math.round(value)}g
+      </span>
+      <span className="text-[10px]" style={{ color: 'var(--app-text-muted)' }}>
+        {label}
+      </span>
     </div>
   )
 }

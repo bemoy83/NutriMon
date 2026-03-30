@@ -41,13 +41,24 @@ export default function DailyLogPage() {
 
   const totalCalories = data?.dailyLog?.totalCalories ?? 0
   const remaining = calorieTarget - totalCalories
-  const progressPct = calorieTarget > 0 ? Math.min((totalCalories / calorieTarget) * 100, 100) : 0
+  const progressPct = calorieTarget > 0 ? (totalCalories / calorieTarget) * 100 : 0
   const isFinalized = data?.dailyLog?.isFinalized ?? false
   const mealCount = data?.dailyLog?.mealCount ?? 0
   const currentStreak =
     data?.habitMetrics?.currentStreak ??
     data?.fallbackHabitMetrics?.currentStreak ??
     0
+
+  // Macro totals from meal item snapshots
+  const allItems = (data?.meals ?? []).flatMap((m) => m.items ?? [])
+  const totalProteinG = allItems.reduce((s, i) => s + (i.proteinGSnapshot ?? 0) * i.quantity, 0)
+  const totalCarbsG = allItems.reduce((s, i) => s + (i.carbsGSnapshot ?? 0) * i.quantity, 0)
+  const totalFatG = allItems.reduce((s, i) => s + (i.fatGSnapshot ?? 0) * i.quantity, 0)
+
+  // Macro targets derived from calorie target (AMDR midpoints)
+  const proteinTargetG = Math.round(calorieTarget * 0.25 / 4)
+  const carbsTargetG = Math.round(calorieTarget * 0.45 / 4)
+  const fatTargetG = Math.round(calorieTarget * 0.30 / 9)
 
   const todayDate = getTodayInTimezone(timezone)
   const isCurrentDay = isToday(logDate, timezone)
@@ -88,6 +99,12 @@ export default function DailyLogPage() {
         remaining={remaining}
         progressPct={progressPct}
         currentStreak={currentStreak}
+        totalProteinG={totalProteinG}
+        totalCarbsG={totalCarbsG}
+        totalFatG={totalFatG}
+        proteinTargetG={proteinTargetG}
+        carbsTargetG={carbsTargetG}
+        fatTargetG={fatTargetG}
         onNavigate={(nextDate) => navigate(`/app/log/${nextDate}`)}
       />
 

@@ -1,5 +1,14 @@
 import { addDays, formatDisplayDate } from '@/lib/date'
 
+// SVG arc ring constants
+const RING_R = 48
+const RING_CX = 60
+const RING_CY = 60
+const CIRCUMFERENCE = 2 * Math.PI * RING_R       // ~301.59
+const ARC_LENGTH = CIRCUMFERENCE * 0.75           // 270° arc ~226.19
+const GAP_LENGTH = CIRCUMFERENCE - ARC_LENGTH     // 90° gap ~75.40
+// rotate(135 cx cy) positions the gap at the bottom-center
+
 interface DailyLogHeaderProps {
   logDate: string
   todayDate: string
@@ -9,6 +18,12 @@ interface DailyLogHeaderProps {
   remaining: number
   progressPct: number
   currentStreak: number
+  totalProteinG: number
+  totalCarbsG: number
+  totalFatG: number
+  proteinTargetG: number
+  carbsTargetG: number
+  fatTargetG: number
   onNavigate: (date: string) => void
 }
 
@@ -21,32 +36,44 @@ export default function DailyLogHeader({
   remaining,
   progressPct,
   currentStreak,
+  totalProteinG,
+  totalCarbsG,
+  totalFatG,
+  proteinTargetG,
+  carbsTargetG,
+  fatTargetG,
   onNavigate,
 }: DailyLogHeaderProps) {
+  const fillLength = ARC_LENGTH * Math.min(progressPct / 100, 1)
+  const ringColor =
+    progressPct >= 100
+      ? 'var(--app-danger)'
+      : progressPct >= 85
+        ? 'var(--app-warning)'
+        : 'var(--app-brand)'
+
   return (
     <div
-      className="sticky top-0 z-10 border-b px-4 pb-3 pt-4 backdrop-blur"
+      className="sticky top-0 z-10 border-b backdrop-blur px-4 pt-3 pb-4"
       style={{
         borderColor: 'var(--app-border)',
         background: 'var(--app-nav-bg)',
       }}
     >
-      <div className="mb-3 flex items-center justify-between">
+      {/* Date navigation */}
+      <div className="flex items-center justify-between mb-3">
         <button
           type="button"
           onClick={() => onNavigate(addDays(logDate, -1))}
           className="rounded-lg p-2 transition-colors"
           style={{ color: 'var(--app-text-muted)' }}
           onMouseOver={e => {
-            ;(e.currentTarget as HTMLButtonElement).style.background =
-              'var(--app-surface-elevated)'
-            ;(e.currentTarget as HTMLButtonElement).style.color =
-              'var(--app-text-primary)'
+            ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--app-surface-elevated)'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--app-text-primary)'
           }}
           onMouseOut={e => {
             ;(e.currentTarget as HTMLButtonElement).style.background = ''
-            ;(e.currentTarget as HTMLButtonElement).style.color =
-              'var(--app-text-muted)'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--app-text-muted)'
           }}
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -55,16 +82,11 @@ export default function DailyLogHeader({
         </button>
 
         <div className="text-center">
-          <h1
-            className="font-semibold"
-            style={{ color: 'var(--app-text-primary)' }}
-          >
+          <h1 className="font-semibold" style={{ color: 'var(--app-text-primary)' }}>
             {formatDisplayDate(logDate)}
           </h1>
           {isFinalized ? (
-            <span style={{ color: 'var(--app-success)', fontSize: '0.75rem' }}>
-              Finalized
-            </span>
+            <span className="text-xs" style={{ color: 'var(--app-success)' }}>Finalized</span>
           ) : null}
         </div>
 
@@ -83,8 +105,7 @@ export default function DailyLogHeader({
           }}
           onMouseOut={e => {
             ;(e.currentTarget as HTMLButtonElement).style.background = ''
-            ;(e.currentTarget as HTMLButtonElement).style.color =
-              'var(--app-text-muted)'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--app-text-muted)'
           }}
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -93,71 +114,123 @@ export default function DailyLogHeader({
         </button>
       </div>
 
-      <div className="mb-2 flex items-center justify-between">
-        <div>
-          <p className="text-2xl font-bold" style={{ color: 'var(--app-text-primary)' }}>
-            {totalCalories}
-          </p>
-          <p className="text-xs" style={{ color: 'var(--app-text-muted)' }}>
-            consumed
-          </p>
+      {/* Ring + Macros row */}
+      <div className="flex items-center gap-4">
+        {/* Calorie ring */}
+        <div className="relative flex-none w-[110px] h-[110px]">
+          <svg viewBox="0 0 120 120" className="w-full h-full">
+            <g transform={`rotate(135 ${RING_CX} ${RING_CY})`}>
+              {/* Track */}
+              <circle
+                cx={RING_CX}
+                cy={RING_CY}
+                r={RING_R}
+                fill="none"
+                stroke="var(--app-border)"
+                strokeWidth={10}
+                strokeLinecap="round"
+                strokeDasharray={`${ARC_LENGTH} ${GAP_LENGTH}`}
+              />
+              {/* Progress */}
+              <circle
+                cx={RING_CX}
+                cy={RING_CY}
+                r={RING_R}
+                fill="none"
+                stroke={ringColor}
+                strokeWidth={10}
+                strokeLinecap="round"
+                strokeDasharray={`${fillLength} ${CIRCUMFERENCE}`}
+                style={{ transition: 'stroke-dasharray 0.5s ease, stroke 0.3s ease' }}
+              />
+            </g>
+          </svg>
+
+          {/* Center text */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center -mt-2">
+            <span
+              className="text-xl font-bold leading-none"
+              style={{ color: progressPct >= 100 ? 'var(--app-danger)' : 'var(--app-text-primary)' }}
+            >
+              {Math.abs(remaining)}
+            </span>
+            <span className="text-[10px] mt-0.5" style={{ color: 'var(--app-text-muted)' }}>
+              {remaining < 0 ? 'over' : 'remaining'}
+            </span>
+            {currentStreak > 0 && (
+              <span className="text-[10px] mt-1 font-medium" style={{ color: 'var(--app-warning)' }}>
+                🔥 {currentStreak}
+              </span>
+            )}
+          </div>
         </div>
 
-        {currentStreak > 0 ? (
-          <div
-            className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
-            style={{
-              background: 'var(--app-surface-elevated)',
-              border: '1px solid var(--app-border)',
-            }}
-          >
-            <span
-              className="text-sm font-semibold"
-              style={{ color: 'var(--app-warning)' }}
-            >
-              {currentStreak}
-            </span>
-            <span className="text-xs" style={{ color: 'var(--app-text-secondary)' }}>
-              day streak
-            </span>
-          </div>
-        ) : null}
-
-        <div className="text-right">
-          <p
-            className="text-2xl font-bold"
-            style={{
-              color: remaining < 0 ? 'var(--app-danger)' : 'var(--app-success)',
-            }}
-          >
-            {Math.abs(remaining)}
-          </p>
-          <p className="text-xs" style={{ color: 'var(--app-text-muted)' }}>
-            {remaining < 0 ? 'over' : 'remaining'}
-          </p>
+        {/* Macro breakdown */}
+        <div className="flex-1 space-y-2.5">
+          <MacroBar
+            label="Protein"
+            consumed={totalProteinG}
+            target={proteinTargetG}
+            color="var(--app-danger)"
+          />
+          <MacroBar
+            label="Carbs"
+            consumed={totalCarbsG}
+            target={carbsTargetG}
+            color="var(--app-brand)"
+          />
+          <MacroBar
+            label="Fat"
+            consumed={totalFatG}
+            target={fatTargetG}
+            color="var(--app-warning)"
+          />
         </div>
       </div>
 
-      <div
-        className="h-2 overflow-hidden rounded-full"
-        style={{ background: 'var(--app-border)' }}
-      >
+      {/* Consumed total — subtle footer line */}
+      <p className="mt-2 text-right text-[10px]" style={{ color: 'var(--app-text-subtle)' }}>
+        {totalCalories.toLocaleString()} / {calorieTarget.toLocaleString()} kcal consumed
+      </p>
+    </div>
+  )
+}
+
+function MacroBar({
+  label,
+  consumed,
+  target,
+  color,
+}: {
+  label: string
+  consumed: number
+  target: number
+  color: string
+}) {
+  const pct = target > 0 ? Math.min((consumed / target) * 100, 100) : 0
+  const consumedRounded = Math.round(consumed)
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-1">
+        <span className="text-[11px]" style={{ color: 'var(--app-text-muted)' }}>
+          {label}
+        </span>
+        <span className="text-[11px]" style={{ color: 'var(--app-text-secondary)' }}>
+          <span style={{ color: 'var(--app-text-primary)', fontWeight: 500 }}>{consumedRounded}</span>
+          <span style={{ color: 'var(--app-text-subtle)' }}>/{target}g</span>
+        </span>
+      </div>
+      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--app-border)' }}>
         <div
-          className="h-full rounded-full transition-all duration-300"
+          className="h-full rounded-full"
           style={{
-            width: `${progressPct}%`,
-            background:
-              progressPct >= 100
-                ? 'var(--app-danger)'
-                : progressPct >= 85
-                  ? 'var(--app-warning)'
-                  : 'var(--app-brand)',
+            width: `${pct}%`,
+            background: color,
+            transition: 'width 0.5s ease',
           }}
         />
       </div>
-      <p className="mt-1 text-right text-xs" style={{ color: 'var(--app-text-subtle)' }}>
-        Target: {calorieTarget.toLocaleString()} kcal
-      </p>
     </div>
   )
 }

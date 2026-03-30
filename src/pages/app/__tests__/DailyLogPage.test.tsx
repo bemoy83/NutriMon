@@ -12,6 +12,8 @@ const repeatLastMealMock = vi.fn()
 const deleteMealMock = vi.fn()
 const restoreMealFromSnapshotMock = vi.fn()
 const updateMealWithItemsMock = vi.fn()
+const getTodayInTimezoneMock = vi.fn()
+const isTodayMock = vi.fn()
 
 vi.mock('@/features/logging/useDailyLog', () => ({
   useDailyLog: (...args: unknown[]) => useDailyLogMock(...args),
@@ -37,8 +39,8 @@ vi.mock('@/lib/supabase', () => ({
 vi.mock('@/lib/date', () => ({
   formatDisplayDate: (value: string) => value,
   addDays: () => '2026-01-05',
-  getTodayInTimezone: () => '2026-01-05',
-  isToday: () => true,
+  getTodayInTimezone: (...args: unknown[]) => getTodayInTimezoneMock(...args),
+  isToday: (...args: unknown[]) => isTodayMock(...args),
 }))
 
 vi.mock('@/features/logging/api', () => ({
@@ -151,6 +153,8 @@ describe('DailyLogPage', () => {
     vi.clearAllMocks()
     useAuthMock.mockReturnValue({ user: { id: 'user-1', email: 'user@example.com' } })
     useInvalidateDailyLogMock.mockReturnValue(vi.fn())
+    getTodayInTimezoneMock.mockReturnValue('2026-01-05')
+    isTodayMock.mockReturnValue(true)
     deleteMealMock.mockResolvedValue({})
     repeatLastMealMock.mockResolvedValue({
       meal: {
@@ -177,7 +181,7 @@ describe('DailyLogPage', () => {
     updateMealWithItemsMock.mockResolvedValue({})
     useQueryMock.mockImplementation(({ queryKey }: { queryKey: unknown[] }) => {
       if (queryKey[0] === 'profile') {
-        return { data: { timezone: 'UTC', calorie_target: 2000 }, isLoading: false }
+        return { data: { timezone: 'UTC', calorieTarget: 2000 }, isLoading: false }
       }
       if (queryKey[0] === 'repeat-last-meal-available') {
         return { data: false, isLoading: false }
@@ -245,13 +249,14 @@ describe('DailyLogPage', () => {
     })
     useQueryMock.mockImplementation(({ queryKey }: { queryKey: unknown[] }) => {
       if (queryKey[0] === 'profile') {
-        return { data: { timezone: 'UTC', calorie_target: 2000 }, isLoading: false }
+        return { data: { timezone: 'UTC', calorieTarget: 2000 }, isLoading: false }
       }
       if (queryKey[0] === 'repeat-last-meal-available') {
         return { data: true, isLoading: false }
       }
       return { data: null, isLoading: false }
     })
+    isTodayMock.mockReturnValue(false)
 
     renderPage()
     fireEvent.click(screen.getByText('Repeat last meal'))
