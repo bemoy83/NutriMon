@@ -1,15 +1,217 @@
 @import "tailwindcss";
 
-*, *::before, *::after {
+:root {
+  /* Backgrounds */
+  --app-bg: #F8FAFC;
+  --app-surface: #FFFFFF;
+  --app-surface-muted: rgb(241 245 249 / 0.7);
+  --app-surface-elevated: #F1F5F9;
+
+  /* Text */
+  --app-text-primary: #0F172A;
+  --app-text-secondary: #475569;
+  --app-text-muted: #94A3B8;
+  --app-text-subtle: #CBD5E1;
+
+  /* Borders */
+  --app-border: #E2E8F0;
+  --app-border-muted: #F1F5F9;
+
+  /* Brand / accent (teal) */
+  --app-focus: #06B6D4;
+  --app-brand: #06B6D4;
+  --app-brand-hover: #0891B2;
+  --app-brand-soft: #CFFAFE;
+
+  /* Semantic */
+  --app-success: #059669;
+  --app-success-hover: #10B981;
+  --app-warning: #F59E0B;
+  --app-danger: #EF4444;
+  --app-danger-soft: rgb(254 226 226 / 0.9);
+  --app-danger-border: #FECACA;
+
+  /* Nav */
+  --app-info-soft: rgb(255 255 255 / 0.95);
+  --app-nav-bg: rgb(255 255 255 / 0.95);
+
+  /* Charts */
+  --app-chart-grid: #E2E8F0;
+  --app-chart-line: #06B6D4;
+
+  /* Colored surfaces */
+  --app-surface-teal: #CFFAFE;
+  --app-surface-teal-text: #164E63;
+  --app-surface-purple: #F3E8FF;
+  --app-surface-purple-text: #581C87;
+  --app-surface-green: #DCFCE7;
+  --app-surface-green-text: #14532D;
+
+  /* Spacing */
+  --app-radius-sm: 0.5rem;
+  --app-radius-md: 0.75rem;
+  --app-radius-lg: 1rem;
+  --app-radius-xl: 1.5rem;
+  --app-shadow-sm: 0 2px 12px rgb(15 23 42 / 0.06);
+  --app-shadow-lg: 0 8px 32px rgb(15 23 42 / 0.12);
+  --app-space-1: 0.25rem;
+  --app-space-2: 0.5rem;
+  --app-space-3: 0.75rem;
+  --app-space-4: 1rem;
+  --app-space-5: 1.25rem;
+  --app-space-6: 1.5rem;
+  --app-transition-fast: 150ms;
+  --app-transition-base: 250ms;
+}
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   margin: 0;
 }
 
 body {
+  background: var(--app-bg);
+  color: var(--app-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.app-page {
+  min-height: 100%;
+  background: var(--app-bg);
+  color: var(--app-text-primary);
+}
+
+.app-card {
+  border: 1px solid var(--app-border-muted);
+  border-radius: var(--app-radius-lg);
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-sm);
+}
+
+.app-card-teal {
+  border-radius: var(--app-radius-lg);
+  background: var(--app-surface-teal);
+  color: var(--app-surface-teal-text);
+}
+
+.app-card-purple {
+  border-radius: var(--app-radius-lg);
+  background: var(--app-surface-purple);
+  color: var(--app-surface-purple-text);
+}
+
+.app-card-green {
+  border-radius: var(--app-radius-lg);
+  background: var(--app-surface-green);
+  color: var(--app-surface-green-text);
+}
+
+.app-input {
+  width: 100%;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-sm);
+  background: var(--app-surface);
+  color: var(--app-text-primary);
+  transition:
+    border-color var(--app-transition-fast) ease,
+    box-shadow var(--app-transition-fast) ease,
+    background-color var(--app-transition-fast) ease;
+}
+
+.app-input::placeholder {
+  color: var(--app-text-subtle);
+}
+
+.app-input:focus {
+  outline: none;
+  border-color: var(--app-focus);
+  box-shadow: 0 0 0 2px rgb(99 102 241 / 0.3);
+}
+
+.app-button-primary,
+.app-button-secondary,
+.app-button-danger {
+  border-radius: var(--app-radius-sm);
+  font-weight: 500;
+  transition:
+    background-color var(--app-transition-fast) ease,
+    border-color var(--app-transition-fast) ease,
+    color var(--app-transition-fast) ease,
+    opacity var(--app-transition-fast) ease;
+}
+
+.app-button-primary {
+  background: var(--app-brand);
+  color: var(--app-text-primary);
+}
+
+.app-button-primary:hover {
+  background: var(--app-brand-hover);
+}
+
+.app-button-secondary {
+  border: 1px solid var(--app-border);
+  background: var(--app-surface-elevated);
+  color: var(--app-text-secondary);
+}
+
+.app-button-secondary:hover {
+  background: var(--app-surface);
+  color: var(--app-text-primary);
+}
+
+.app-button-danger {
+  border: 1px solid var(--app-danger-border);
+  background: transparent;
+  color: var(--app-danger);
+}
+
+.app-button-danger:hover {
+  background: var(--app-danger-soft);
+}
+
+.app-button-primary:disabled,
+.app-button-secondary:disabled,
+.app-button-danger:disabled {
+  opacity: 0.5;
+}
+
+.app-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.app-empty-state {
+  color: var(--app-text-muted);
+  text-align: center;
+}
+
+.app-link {
+  color: var(--app-brand);
+  transition: color var(--app-transition-fast) ease;
+}
+
+.app-link:hover {
+  color: var(--app-brand-hover);
 }

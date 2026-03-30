@@ -2,8 +2,9 @@ import { useState } from 'react'
 import type { Meal, MealItem } from '@/types/domain'
 import { formatTime } from '@/lib/date'
 import { useInvalidateDailyLog } from './useDailyLog'
-import { useInvalidateProducts } from './useProducts'
+import { useInvalidateProductQueries } from './queryInvalidation'
 import { deleteMeal } from './api'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Props {
   meals: Meal[]
@@ -18,7 +19,7 @@ export default function MealList({ meals, isFinalized, timezone, logDate, onEdit
   const [expandedMealId, setExpandedMealId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const invalidateDailyLog = useInvalidateDailyLog()
-  const invalidateProducts = useInvalidateProducts()
+  const invalidateProducts = useInvalidateProductQueries()
 
   async function handleDelete(meal: Meal) {
     setDeletingId(meal.id)
@@ -34,10 +35,7 @@ export default function MealList({ meals, isFinalized, timezone, logDate, onEdit
 
   if (meals.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-slate-500 text-sm">No meals logged yet.</p>
-        <p className="text-slate-600 text-xs mt-1">Tap + to add your first meal.</p>
-      </div>
+      <EmptyState title="No meals logged yet." description="Tap + to add your first meal." className="py-12" />
     )
   }
 
@@ -60,7 +58,6 @@ export default function MealList({ meals, isFinalized, timezone, logDate, onEdit
           />
         ))}
       </div>
-
     </>
   )
 }
@@ -85,23 +82,23 @@ function MealCard({
   onDelete: () => void
 }) {
   return (
-    <div className="bg-slate-800 rounded-xl overflow-hidden">
+    <div className="app-card overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-750 transition-colors text-left"
+        className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors hover:bg-[var(--app-surface-elevated)]"
       >
         <div>
-          <p className="text-white text-sm font-medium">
+          <p className="text-[var(--app-text-primary)] text-sm font-medium">
             {formatTime(meal.loggedAt, timezone)}
           </p>
-          <p className="text-slate-400 text-xs mt-0.5">
+          <p className="text-[var(--app-text-muted)] text-xs mt-0.5">
             {meal.itemCount} item{meal.itemCount !== 1 ? 's' : ''}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-white font-semibold">{meal.totalCalories} kcal</span>
+          <span className="text-[var(--app-text-primary)] font-semibold">{meal.totalCalories} kcal</span>
           <svg
-            className={`w-4 h-4 text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 text-[var(--app-text-muted)] transition-transform ${expanded ? 'rotate-180' : ''}`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -112,7 +109,7 @@ function MealCard({
       </button>
 
       {expanded && (
-        <div className="border-t border-slate-700">
+        <div className="border-t border-[var(--app-border)]">
           {/* Items */}
           <div className="px-4 py-2 space-y-1.5">
             {(meal.items ?? []).map((item) => (
@@ -122,17 +119,17 @@ function MealCard({
 
           {/* Actions */}
           {!isFinalized && (
-            <div className="flex border-t border-slate-700">
+            <div className="flex border-t border-[var(--app-border)]">
               <button
                 onClick={onEdit}
-                className="flex-1 py-2.5 text-sm text-indigo-400 hover:bg-slate-750 transition-colors"
+                className="flex-1 py-2.5 text-sm text-[var(--app-brand)] transition-colors hover:bg-[var(--app-surface-elevated)]"
               >
                 Edit
               </button>
               <button
                 onClick={onDelete}
                 disabled={deleting}
-                className="flex-1 py-2.5 text-sm text-red-400 hover:bg-slate-750 transition-colors disabled:opacity-40"
+                className="flex-1 py-2.5 text-sm text-[var(--app-danger)] transition-colors hover:bg-[var(--app-surface-elevated)] disabled:opacity-40"
               >
                 {deleting ? 'Deleting…' : 'Delete'}
               </button>
@@ -153,10 +150,10 @@ function MealItemRow({ item }: { item: MealItem }) {
   return (
     <div className="flex items-center justify-between">
       <div>
-        <span className="text-slate-200 text-sm">{item.productNameSnapshot}</span>
-        <span className="text-slate-500 text-xs ml-2">{servingLabel}</span>
+        <span className="text-[var(--app-text-primary)] text-sm">{item.productNameSnapshot}</span>
+        <span className="text-[var(--app-text-muted)] text-xs ml-2">{servingLabel}</span>
       </div>
-      <span className="text-slate-300 text-sm">{item.lineTotalCalories} kcal</span>
+      <span className="text-[var(--app-text-secondary)] text-sm">{item.lineTotalCalories} kcal</span>
     </div>
   )
 }

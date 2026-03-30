@@ -1,17 +1,16 @@
-import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/app/providers/auth'
-import type { CreatureStats, HabitMetrics } from '@/types/domain'
 import { QUALIFYING_STREAK_DAYS_FOR_ADULT } from '@/lib/constants'
+import { useLatestCreatureStats } from '@/features/creature/useLatestCreatureStats'
+import LoadingState from '@/components/ui/LoadingState'
+import EmptyState from '@/components/ui/EmptyState'
 
 function StatBar({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div>
       <div className="flex justify-between mb-1">
-        <span className="text-sm text-slate-300">{label}</span>
-        <span className="text-sm font-semibold text-white">{value}</span>
+        <span className="text-sm text-[var(--app-text-secondary)]">{label}</span>
+        <span className="text-sm font-semibold text-[var(--app-text-primary)]">{value}</span>
       </div>
-      <div className="h-2.5 bg-slate-700 rounded-full overflow-hidden">
+      <div className="h-2.5 rounded-full overflow-hidden bg-[var(--app-border)]">
         <div
           className={`h-full rounded-full transition-all duration-500 ${color}`}
           style={{ width: `${Math.min(value, 100)}%` }}
@@ -19,60 +18,6 @@ function StatBar({ label, value, color }: { label: string; value: number; color:
       </div>
     </div>
   )
-}
-
-function useLatestCreatureStats() {
-  const { user } = useAuth()
-  return useQuery({
-    queryKey: ['creature-stats', 'latest', user?.id],
-    enabled: !!user,
-    queryFn: async (): Promise<{ stats: CreatureStats | null; metrics: HabitMetrics | null }> => {
-      const [statsRes, metricsRes] = await Promise.all([
-        supabase
-          .from('creature_stats')
-          .select('*')
-          .eq('user_id', user!.id)
-          .order('log_date', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from('habit_metrics')
-          .select('*')
-          .eq('user_id', user!.id)
-          .order('log_date', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-      ])
-
-      return {
-        stats: statsRes.data
-          ? {
-              id: statsRes.data.id,
-              userId: statsRes.data.user_id,
-              logDate: statsRes.data.log_date,
-              strength: statsRes.data.strength,
-              resilience: statsRes.data.resilience,
-              momentum: statsRes.data.momentum,
-              vitality: statsRes.data.vitality,
-              stage: statsRes.data.stage,
-              createdAt: statsRes.data.created_at,
-            }
-          : null,
-        metrics: metricsRes.data
-          ? {
-              id: metricsRes.data.id,
-              userId: metricsRes.data.user_id,
-              logDate: metricsRes.data.log_date,
-              currentStreak: metricsRes.data.current_streak,
-              longestStreak: metricsRes.data.longest_streak,
-              daysLoggedLast7: metricsRes.data.days_logged_last_7,
-              lastLogDate: metricsRes.data.last_log_date,
-              createdAt: metricsRes.data.created_at,
-            }
-          : null,
-      }
-    },
-  })
 }
 
 export default function CreaturePage() {
@@ -83,33 +28,29 @@ export default function CreaturePage() {
   const streakToEvolution = Math.max(0, QUALIFYING_STREAK_DAYS_FOR_ADULT - currentStreak)
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-950">
-        <div className="text-slate-400 text-sm">Loading…</div>
-      </div>
-    )
+    return <LoadingState fullScreen />
   }
 
   return (
-    <div className="min-h-full bg-slate-950 px-4 py-6 pb-24 flex flex-col items-center">
-      <h1 className="text-xl font-bold text-white mb-6 self-start">Your Companion</h1>
+    <div className="app-page flex min-h-full flex-col items-center px-4 py-6 pb-24">
+      <h1 className="text-xl font-bold text-[var(--app-text-primary)] mb-6 self-start">Your Companion</h1>
 
       {/* Creature visual */}
       <div className="relative mb-6">
-        <div className="w-40 h-40 rounded-full bg-gradient-to-br from-indigo-900 to-slate-800 flex items-center justify-center shadow-2xl">
+        <div className="w-40 h-40 rounded-full bg-gradient-to-br from-[var(--app-brand-soft)] to-[var(--app-surface-elevated)] flex items-center justify-center shadow-lg">
           <span className="text-7xl">🥚</span>
         </div>
-        <div className="absolute -bottom-1 -right-1 bg-slate-800 rounded-full px-2 py-0.5 border border-slate-700">
-          <span className="text-xs text-slate-300 capitalize">{stats?.stage ?? 'baby'}</span>
+        <div className="absolute -bottom-1 -right-1 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-0.5">
+          <span className="text-xs text-[var(--app-text-secondary)] capitalize">{stats?.stage ?? 'baby'}</span>
         </div>
       </div>
 
       {/* Streak badge */}
       <div className="flex items-center gap-2 mb-6">
-        <span className="text-orange-400 text-2xl font-bold">{currentStreak}</span>
+        <span className="text-[var(--app-warning)] text-2xl font-bold">{currentStreak}</span>
         <div>
-          <p className="text-white text-sm font-medium">day streak</p>
-          <p className="text-slate-400 text-xs">
+          <p className="text-[var(--app-text-primary)] text-sm font-medium">day streak</p>
+          <p className="text-[var(--app-text-muted)] text-xs">
             Longest: {metrics?.longestStreak ?? 0} days
           </p>
         </div>
@@ -117,16 +58,16 @@ export default function CreaturePage() {
 
       {/* Stats */}
       {stats ? (
-        <div className="w-full max-w-sm space-y-4 bg-slate-800 rounded-xl p-5">
+        <div className="app-card w-full max-w-sm space-y-4 p-5">
           <StatBar label="Strength" value={stats.strength} color="bg-red-500" />
           <StatBar label="Resilience" value={stats.resilience} color="bg-blue-500" />
           <StatBar label="Momentum" value={stats.momentum} color="bg-yellow-500" />
           <div>
             <div className="flex justify-between mb-1">
-              <span className="text-sm text-slate-300">Vitality</span>
-              <span className="text-sm font-semibold text-white">{stats.vitality}</span>
+              <span className="text-sm text-[var(--app-text-secondary)]">Vitality</span>
+              <span className="text-sm font-semibold text-[var(--app-text-primary)]">{stats.vitality}</span>
             </div>
-            <div className="h-2.5 bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-2.5 rounded-full overflow-hidden bg-[var(--app-border)]">
               <div
                 className="h-full rounded-full bg-green-500 transition-all duration-500"
                 style={{ width: `${Math.min((stats.vitality / 200) * 100, 100)}%` }}
@@ -135,24 +76,21 @@ export default function CreaturePage() {
           </div>
         </div>
       ) : (
-        <div className="w-full max-w-sm bg-slate-800 rounded-xl p-5 text-center">
-          <p className="text-slate-400 text-sm">
-            Finalize your first day to see your creature's stats.
-          </p>
+        <div className="app-card w-full max-w-sm p-5">
+          <EmptyState title="Finalize your first day to see your creature's stats." className="py-0" />
         </div>
       )}
 
       {/* Evolution teaser */}
-      <div className="w-full max-w-sm mt-4 bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-        <p className="text-slate-300 text-sm text-center">
+      <div className="mt-4 w-full max-w-sm rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
+        <p className="text-[var(--app-text-secondary)] text-sm text-center">
           {streakToEvolution > 0
             ? `Next evolution in ${streakToEvolution} more qualifying day${streakToEvolution !== 1 ? 's' : ''}`
             : `Next evolution at ${QUALIFYING_STREAK_DAYS_FOR_ADULT}-day streak`}
         </p>
-        {/* Progress toward evolution */}
-        <div className="mt-2 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+        <div className="mt-2 h-1.5 rounded-full overflow-hidden bg-[var(--app-border)]">
           <div
-            className="h-full bg-indigo-500 rounded-full transition-all"
+            className="h-full rounded-full transition-all bg-[var(--app-brand)]"
             style={{
               width: `${Math.min((currentStreak / QUALIFYING_STREAK_DAYS_FOR_ADULT) * 100, 100)}%`,
             }}

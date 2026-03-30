@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/app/providers/auth'
 import { useEffect, useState } from 'react'
 import type { Product } from '@/types/domain'
+import { mapProduct } from '@/lib/domainMappers'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -106,21 +107,7 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
       return null
     }
 
-    return {
-      id: product.id,
-      userId: product.user_id,
-      name: product.name,
-      calories: product.calories,
-      proteinG: product.protein_g,
-      carbsG: product.carbs_g,
-      fatG: product.fat_g,
-      defaultServingAmount: product.default_serving_amount,
-      defaultServingUnit: product.default_serving_unit,
-      useCount: product.use_count,
-      lastUsedAt: product.last_used_at,
-      createdAt: product.created_at,
-      updatedAt: product.updated_at,
-    }
+    return mapProduct(product)
   }
 
   return (
@@ -134,7 +121,7 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
           type="text"
           autoFocus
           {...register('name')}
-          className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="app-input px-3 py-2"
           placeholder="e.g. Chicken breast"
         />
         {errors.name && (
@@ -150,7 +137,7 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
           id="calories"
           type="number"
           {...register('calories', { valueAsNumber: true })}
-          className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="app-input px-3 py-2"
           placeholder="350"
         />
         {errors.calories && (
@@ -176,7 +163,7 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
               type="number"
               step="0.1"
               {...register(field, { valueAsNumber: true, setValueAs: v => v === '' ? null : Number(v) })}
-              className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="app-input px-3 py-2 text-sm"
               placeholder="—"
             />
           </div>
@@ -194,7 +181,7 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
             type="number"
             step="0.1"
             {...register('defaultServingAmount', { valueAsNumber: true, setValueAs: v => v === '' ? null : Number(v) })}
-            className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="app-input px-3 py-2 text-sm"
             placeholder="100"
           />
         </div>
@@ -206,7 +193,7 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
             id="servingUnit"
             type="text"
             {...register('defaultServingUnit')}
-            className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="app-input px-3 py-2 text-sm"
             placeholder="g / ml / oz"
           />
         </div>
@@ -220,7 +207,7 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 py-2.5 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors"
+          className="app-button-secondary flex-1 py-2.5"
         >
           Cancel
         </button>
@@ -231,7 +218,7 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
             const product = await save(data)
             if (product) onSave(product)
           })}
-          className="flex-1 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors disabled:opacity-50"
+          className="app-button-secondary flex-1 py-2.5"
         >
           {isEditMode ? 'Save changes' : 'Save'}
         </button>
@@ -243,7 +230,7 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
               const product = await save(data)
               if (product) onSaveAndAdd(product)
             })}
-            className="flex-1 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors disabled:opacity-50"
+            className="app-button-primary flex-1 py-2.5"
           >
             Save & Add
           </button>

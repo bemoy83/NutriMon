@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { createMealWithItems } from '@/features/logging/api'
-import { useInvalidateProducts } from '@/features/logging/useProducts'
+import { useInvalidateProductQueries } from '@/features/logging/queryInvalidation'
 import type { MealMutationResult } from '@/types/database'
 import type { FoodSource } from '@/types/domain'
 import { useFrequentFoodSources, useRecentFoodSources } from './useFoodSources'
+import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Props {
   logDate: string
@@ -25,19 +27,13 @@ function ProductButton({
       type="button"
       disabled={disabled}
       onClick={onSelect}
-      className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-3 text-left transition-colors hover:bg-slate-700 disabled:opacity-50"
+      className="app-card px-3 py-3 text-left transition-colors hover:bg-slate-700 disabled:opacity-50"
     >
       <div className="flex items-center gap-2">
         <p className="text-sm text-white truncate">{product.name}</p>
-        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
-          product.sourceType === 'user_product'
-            ? 'bg-slate-700 text-slate-200'
-            : 'bg-emerald-950 text-emerald-300'
-        }`}>
-          {product.sourceType === 'user_product' ? 'My product' : 'Built-in'}
-        </span>
+        <FoodSourceBadge sourceType={product.sourceType} />
       </div>
-      <p className="mt-1 text-xs text-slate-400">{product.calories} kcal</p>
+      <p className="mt-1 text-xs text-[var(--app-text-muted)]">{product.calories} kcal</p>
     </button>
   )
 }
@@ -45,7 +41,7 @@ function ProductButton({
 export default function InlineQuickAdd({ logDate, loggedAt, onCreated }: Props) {
   const recentQuery = useRecentFoodSources()
   const frequentQuery = useFrequentFoodSources()
-  const invalidateProducts = useInvalidateProducts()
+  const invalidateProducts = useInvalidateProductQueries()
   const [addingProductId, setAddingProductId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -75,19 +71,19 @@ export default function InlineQuickAdd({ logDate, loggedAt, onCreated }: Props) 
   const frequentProducts: FoodSource[] = (frequentQuery.data ?? []).slice(0, 6)
 
   return (
-    <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+    <div className="space-y-4 rounded-2xl border border-[var(--app-border-muted)] bg-[var(--app-surface-muted)] p-4">
       <div>
         <h2 className="text-sm font-semibold text-white">Quick add</h2>
-        <p className="mt-1 text-xs text-slate-400">Tap a recent or frequent food to log it instantly.</p>
+        <p className="mt-1 text-xs text-[var(--app-text-muted)]">Tap a recent or frequent food to log it instantly.</p>
       </div>
 
       {error && <p className="text-xs text-red-400">{error}</p>}
 
       <div className="space-y-3">
         <section>
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">Recent</h3>
+          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--app-text-muted)]">Recent</h3>
           {recentProducts.length === 0 ? (
-            <p className="text-sm text-slate-500">No recent products yet.</p>
+            <EmptyState title="No recent products yet." className="py-2 text-left" />
           ) : (
             <div className="grid grid-cols-2 gap-2">
               {recentProducts.map((product: FoodSource) => (
@@ -103,9 +99,9 @@ export default function InlineQuickAdd({ logDate, loggedAt, onCreated }: Props) 
         </section>
 
         <section>
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">Frequent</h3>
+          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--app-text-muted)]">Frequent</h3>
           {frequentProducts.length === 0 ? (
-            <p className="text-sm text-slate-500">No frequent products yet.</p>
+            <EmptyState title="No frequent products yet." className="py-2 text-left" />
           ) : (
             <div className="grid grid-cols-2 gap-2">
               {frequentProducts.map((product: FoodSource) => (

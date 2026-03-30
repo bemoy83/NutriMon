@@ -1,7 +1,17 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/app/providers/auth'
-import type { DailyLog, Meal, MealItem, DailyEvaluation, HabitMetrics, BehaviorAttributes, CreatureStats, DailyFeedback } from '@/types/domain'
+import type { DailyEvaluation, HabitMetrics, BehaviorAttributes, CreatureStats, DailyFeedback, DailyLog, Meal } from '@/types/domain'
+import {
+  mapBehaviorAttributes,
+  mapCreatureStats,
+  mapDailyEvaluation,
+  mapDailyFeedback,
+  mapDailyLog,
+  mapHabitMetrics,
+  mapMeal,
+} from '@/lib/domainMappers'
+import { groupMealItemsByMealId } from './mealItemGroups'
 
 export interface DailyLogData {
   dailyLog: DailyLog | null
@@ -32,19 +42,7 @@ export function useDailyLog(date: string) {
         .eq('log_date', date)
         .maybeSingle()
 
-      const dailyLog: DailyLog | null = logRow
-        ? {
-            id: logRow.id,
-            userId: logRow.user_id,
-            logDate: logRow.log_date,
-            totalCalories: logRow.total_calories,
-            mealCount: logRow.meal_count,
-            isFinalized: logRow.is_finalized,
-            finalizedAt: logRow.finalized_at,
-            createdAt: logRow.created_at,
-            updatedAt: logRow.updated_at,
-          }
-        : null
+      const dailyLog: DailyLog | null = logRow ? mapDailyLog(logRow) : null
 
       // Fetch meals with items
       const meals: Meal[] = []
@@ -64,38 +62,10 @@ export function useDailyLog(date: string) {
                 .select('*')
                 .in('meal_id', mealIds)
             : { data: [] }
+          const itemsByMealId = groupMealItemsByMealId(itemRows)
 
           for (const m of mealRows) {
-            const items: MealItem[] = (itemRows ?? [])
-              .filter((i) => i.meal_id === m.id)
-              .map((i) => ({
-                id: i.id,
-                mealId: i.meal_id,
-                productId: i.product_id,
-                catalogItemId: i.catalog_item_id,
-                quantity: i.quantity,
-                productNameSnapshot: i.product_name_snapshot,
-                caloriesPerServingSnapshot: i.calories_per_serving_snapshot,
-                proteinGSnapshot: i.protein_g_snapshot,
-                carbsGSnapshot: i.carbs_g_snapshot,
-                fatGSnapshot: i.fat_g_snapshot,
-                servingAmountSnapshot: i.serving_amount_snapshot,
-                servingUnitSnapshot: i.serving_unit_snapshot,
-                lineTotalCalories: i.line_total_calories,
-                createdAt: i.created_at,
-              }))
-
-            meals.push({
-              id: m.id,
-              userId: m.user_id,
-              dailyLogId: m.daily_log_id,
-              loggedAt: m.logged_at,
-              totalCalories: m.total_calories,
-              itemCount: m.item_count,
-              createdAt: m.created_at,
-              updatedAt: m.updated_at,
-              items,
-            })
+            meals.push(mapMeal(m, itemsByMealId[m.id] ?? []))
           }
         }
       }
@@ -133,118 +103,21 @@ export function useDailyLog(date: string) {
             .maybeSingle(),
         ])
         if (fhm.data) {
-          fallbackHabitMetrics = {
-            id: fhm.data.id,
-            userId: fhm.data.user_id,
-            logDate: fhm.data.log_date,
-            currentStreak: fhm.data.current_streak,
-            longestStreak: fhm.data.longest_streak,
-            daysLoggedLast7: fhm.data.days_logged_last_7,
-            lastLogDate: fhm.data.last_log_date,
-            createdAt: fhm.data.created_at,
-          }
+          fallbackHabitMetrics = mapHabitMetrics(fhm.data)
         }
         if (fcs.data) {
-          fallbackCreatureStats = {
-            id: fcs.data.id,
-            userId: fcs.data.user_id,
-            logDate: fcs.data.log_date,
-            strength: fcs.data.strength,
-            resilience: fcs.data.resilience,
-            momentum: fcs.data.momentum,
-            vitality: fcs.data.vitality,
-            stage: fcs.data.stage,
-            createdAt: fcs.data.created_at,
-          }
+          fallbackCreatureStats = mapCreatureStats(fcs.data)
         }
       }
-
-      const toEval = (r: typeof evalRes.data): DailyEvaluation | null =>
-        r
-          ? {
-              id: r.id,
-              userId: r.user_id,
-              dailyLogId: r.daily_log_id,
-              logDate: r.log_date,
-              targetCalories: r.target_calories,
-              consumedCalories: r.consumed_calories,
-              calorieDelta: r.calorie_delta,
-              adherenceScore: r.adherence_score,
-              adjustedAdherence: r.adjusted_adherence,
-              status: r.status,
-              calculationVersion: r.calculation_version,
-              finalizedAt: r.finalized_at,
-              createdAt: r.created_at,
-            }
-          : null
-
-      const toHM = (r: typeof hmRes.data): HabitMetrics | null =>
-        r
-          ? {
-              id: r.id,
-              userId: r.user_id,
-              logDate: r.log_date,
-              currentStreak: r.current_streak,
-              longestStreak: r.longest_streak,
-              daysLoggedLast7: r.days_logged_last_7,
-              lastLogDate: r.last_log_date,
-              createdAt: r.created_at,
-            }
-          : null
-
-      const toBA = (r: typeof baRes.data): BehaviorAttributes | null =>
-        r
-          ? {
-              id: r.id,
-              userId: r.user_id,
-              logDate: r.log_date,
-              consistencyScore: r.consistency_score,
-              stabilityScore: r.stability_score,
-              momentumScore: r.momentum_score,
-              disciplineScore: r.discipline_score,
-              calculationVersion: r.calculation_version,
-              calculatedAt: r.calculated_at,
-              createdAt: r.created_at,
-            }
-          : null
-
-      const toCS = (r: typeof csRes.data): CreatureStats | null =>
-        r
-          ? {
-              id: r.id,
-              userId: r.user_id,
-              logDate: r.log_date,
-              strength: r.strength,
-              resilience: r.resilience,
-              momentum: r.momentum,
-              vitality: r.vitality,
-              stage: r.stage,
-              createdAt: r.created_at,
-            }
-          : null
-
-      const toFB = (r: typeof fbRes.data): DailyFeedback | null =>
-        r
-          ? {
-              id: r.id,
-              userId: r.user_id,
-              logDate: r.log_date,
-              dailyEvaluationId: r.daily_evaluation_id,
-              status: r.status,
-              message: r.message,
-              recommendation: r.recommendation,
-              createdAt: r.created_at,
-            }
-          : null
 
       return {
         dailyLog,
         meals,
-        evaluation: toEval(evalRes.data),
-        habitMetrics: toHM(hmRes.data),
-        behaviorAttributes: toBA(baRes.data),
-        creatureStats: toCS(csRes.data),
-        feedback: toFB(fbRes.data),
+        evaluation: evalRes.data ? mapDailyEvaluation(evalRes.data) : null,
+        habitMetrics: hmRes.data ? mapHabitMetrics(hmRes.data) : null,
+        behaviorAttributes: baRes.data ? mapBehaviorAttributes(baRes.data) : null,
+        creatureStats: csRes.data ? mapCreatureStats(csRes.data) : null,
+        feedback: fbRes.data ? mapDailyFeedback(fbRes.data) : null,
         fallbackHabitMetrics,
         fallbackCreatureStats,
       }

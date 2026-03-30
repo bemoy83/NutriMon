@@ -1,0 +1,35 @@
+import type { ReactNode } from 'react'
+
+interface AuthShellProps {
+  title: string
+  subtitle: string
+  meta?: ReactNode
+  children: ReactNode
+  footer?: ReactNode
+  centered?: boolean
+}
+
+export default function AuthShell({
+  title,
+  subtitle,
+  meta,
+  children,
+  footer,
+  centered = false,
+}: AuthShellProps) {
+  return (
+    <div className="app-page flex min-h-screen items-center justify-center px-4">
+      <div className={`w-full max-w-sm ${centered ? 'text-center' : ''}`}>
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl font-bold text-white">{title}</h1>
+          <p className="mt-1 text-sm text-[var(--app-text-muted)]">{subtitle}</p>
+          {meta ? <div className="mt-2 text-xs text-[var(--app-text-subtle)]">{meta}</div> : null}
+        </div>
+
+        {children}
+
+        {footer ? <div className="mt-6 text-center">{footer}</div> : null}
+      </div>
+    </div>
+  )
+}

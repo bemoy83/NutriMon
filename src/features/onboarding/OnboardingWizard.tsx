@@ -143,7 +143,7 @@ export default function OnboardingWizard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-10 flex items-start justify-center">
+    <div className="app-page flex min-h-screen items-start justify-center px-4 py-10">
       <div className="w-full max-w-md">
         {/* Progress indicator */}
         <div className="flex gap-2 mb-8">
@@ -202,7 +202,7 @@ export default function OnboardingWizard() {
                 id="age"
                 type="number"
                 {...step1Form.register('ageYears', { valueAsNumber: true })}
-                className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="app-input px-3 py-2"
                 placeholder="30"
               />
               {step1Form.formState.errors.ageYears && (
@@ -237,7 +237,7 @@ export default function OnboardingWizard() {
                 <input
                   type="number"
                   {...step1Form.register('heightCm', { valueAsNumber: true })}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="app-input px-3 py-2"
                   placeholder="175"
                 />
               ) : (
@@ -245,13 +245,13 @@ export default function OnboardingWizard() {
                   <input
                     type="number"
                     {...step1Form.register('heightFt', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="app-input px-3 py-2"
                     placeholder="5 ft"
                   />
                   <input
                     type="number"
                     {...step1Form.register('heightIn', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="app-input px-3 py-2"
                     placeholder="9 in"
                   />
                 </div>
@@ -283,7 +283,7 @@ export default function OnboardingWizard() {
                 type="number"
                 step="0.1"
                 {...step1Form.register('weightValue', { valueAsNumber: true })}
-                className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="app-input px-3 py-2"
                 placeholder={weightUnit === 'kg' ? '80' : '176'}
               />
               {step1Form.formState.errors.weightValue && (
@@ -327,7 +327,7 @@ export default function OnboardingWizard() {
                 id="timezone"
                 type="text"
                 {...step1Form.register('timezone')}
-                className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="app-input px-3 py-2"
                 placeholder="America/New_York"
               />
               {step1Form.formState.errors.timezone && (
@@ -347,14 +347,14 @@ export default function OnboardingWizard() {
                 type="number"
                 step="0.1"
                 {...step1Form.register('goalWeightValue', { valueAsNumber: true })}
-                className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="app-input px-3 py-2"
                 placeholder={weightUnit === 'kg' ? '72' : '158'}
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors"
+              className="app-button-primary w-full py-2.5"
             >
               Calculate my TDEE
             </button>
@@ -366,7 +366,7 @@ export default function OnboardingWizard() {
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-white">Your estimated needs</h2>
 
-            <div className="bg-slate-800 rounded-xl p-5 space-y-4">
+            <div className="app-card space-y-4 p-5">
               <div>
                 <p className="text-slate-400 text-sm">Total Daily Energy Expenditure</p>
                 <p className="text-3xl font-bold text-white mt-1">
@@ -390,7 +390,7 @@ export default function OnboardingWizard() {
 
             <button
               onClick={() => setStep(3)}
-              className="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors"
+              className="app-button-primary w-full py-2.5"
             >
               Set my target
             </button>
@@ -413,7 +413,7 @@ export default function OnboardingWizard() {
                 id="calorieTarget"
                 type="number"
                 {...step3Form.register('calorieTarget', { valueAsNumber: true })}
-                className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="app-input px-3 py-2 text-lg font-semibold"
               />
               {step3Form.formState.errors.calorieTarget && (
                 <p className="text-red-400 text-xs mt-1">
@@ -433,14 +433,14 @@ export default function OnboardingWizard() {
               <button
                 type="button"
                 onClick={() => setStep(2)}
-                className="flex-1 py-2.5 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors"
+                className="app-button-secondary flex-1 py-2.5"
               >
                 Back
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors disabled:opacity-50"
+                className="app-button-primary flex-1 py-2.5"
               >
                 {saving ? 'Saving…' : 'Confirm'}
               </button>
@@ -462,7 +462,7 @@ export default function OnboardingWizard() {
               </p>
             </div>
 
-            <div className="bg-slate-800 rounded-xl p-4 text-left space-y-2">
+            <div className="app-card space-y-2 p-4 text-left">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-indigo-400" />
                 <span className="text-slate-300 text-sm">Log meals daily to build streaks</span>
@@ -483,7 +483,7 @@ export default function OnboardingWizard() {
 
             <button
               onClick={() => navigate('/app')}
-              className="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors"
+              className="app-button-primary w-full py-2.5"
             >
               Start logging
             </button>

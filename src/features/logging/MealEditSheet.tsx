@@ -1,9 +1,14 @@
 import { useState } from 'react'
 import { useInvalidateDailyLog } from './useDailyLog'
-import { useInvalidateProducts } from './useProducts'
 import type { FoodSource, Meal } from '@/types/domain'
 import { updateMealWithItems } from './api'
 import { useFoodSourceSearch, useFrequentFoodSources, useRecentFoodSources } from './useFoodSources'
+import { useInvalidateProductQueries } from './queryInvalidation'
+import BottomSheet from '@/components/ui/BottomSheet'
+import EmptyState from '@/components/ui/EmptyState'
+import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
+import QuantityStepper from '@/components/ui/QuantityStepper'
+import SegmentedTabs from '@/components/ui/SegmentedTabs'
 
 interface EditItem {
   productId?: string
@@ -29,7 +34,7 @@ interface Props {
 
 export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props) {
   const invalidateDailyLog = useInvalidateDailyLog()
-  const invalidateProducts = useInvalidateProducts()
+  const invalidateProducts = useInvalidateProductQueries()
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -186,44 +191,42 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
         : searchQuery_.data ?? []
 
   return (
-    <>
-      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} aria-hidden="true" />
-      <div className="fixed inset-x-0 bottom-0 z-50 flex flex-col bg-slate-900 rounded-t-2xl max-h-[85vh] sm:max-w-lg sm:mx-auto sm:rounded-xl sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-          <h3 className="text-white font-semibold">Edit meal</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="flex border-b border-slate-700">
-          <button
-            onClick={() => setTab('items')}
-            className={`flex-1 py-2.5 text-xs font-medium transition-colors ${
-              tab === 'items' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-slate-400'
-            }`}
-          >
-            Items ({items.length})
-          </button>
-          <button
-            onClick={() => setTab('add')}
-            className={`flex-1 py-2.5 text-xs font-medium transition-colors ${
-              tab === 'add' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-slate-400'
-            }`}
-          >
-            Add
-          </button>
-        </div>
+    <BottomSheet
+      onClose={onClose}
+      title="Edit meal"
+      footer={
+        <>
+          {saveError ? <p className="px-0 pb-2 text-xs text-red-400">{saveError}</p> : null}
+          <div className="flex gap-3">
+            <button type="button" onClick={onClose} className="app-button-secondary flex-1 py-2.5">
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || items.length === 0}
+              className="app-button-primary flex-1 py-2.5"
+            >
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </>
+      }
+    >
+        <SegmentedTabs
+          value={tab}
+          options={[
+            { value: 'items', label: `Items (${items.length})` },
+            { value: 'add', label: 'Add' },
+          ]}
+          onChange={setTab}
+        />
 
         <div className="flex-1 overflow-y-auto">
           {tab === 'items' ? (
             <div className="p-4 space-y-2">
               {items.length === 0 && (
-                <p className="text-slate-500 text-sm text-center py-4">
-                  No items. Switch to Add to add products.
-                </p>
+                <EmptyState title="No items. Switch to Add to add products." className="py-4" />
               )}
               {items.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-3">
@@ -231,52 +234,34 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
                     <div className="flex items-center gap-2">
                       <p className="text-white text-sm truncate">{getLabel(item)}</p>
                       {getSourceBadge(item) && (
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                          getSourceBadge(item) === 'My product'
-                            ? 'bg-slate-700 text-slate-200'
-                            : 'bg-emerald-950 text-emerald-300'
-                        }`}>
-                          {getSourceBadge(item)}
-                        </span>
+                        <FoodSourceBadge
+                          sourceType={getSourceBadge(item) === 'My product' ? 'user_product' : 'catalog_item'}
+                        />
                       )}
                     </div>
                     <p className="text-slate-400 text-xs">
                       {Math.round(item.quantity * getCalories(item))} kcal
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => updateQty(idx, item.quantity - 0.5)}
-                      className="w-7 h-7 flex items-center justify-center bg-slate-700 rounded-full text-slate-400 hover:text-white"
-                    >
-                      −
-                    </button>
-                    <span className="text-white text-sm w-8 text-center">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQty(idx, item.quantity + 0.5)}
-                      className="w-7 h-7 flex items-center justify-center bg-slate-700 rounded-full text-slate-400 hover:text-white"
-                    >
-                      +
-                    </button>
-                  </div>
+                  <QuantityStepper
+                    quantity={item.quantity}
+                    onDecrease={() => updateQty(idx, item.quantity - 0.5)}
+                    onIncrease={() => updateQty(idx, item.quantity + 0.5)}
+                  />
                 </div>
               ))}
             </div>
           ) : (
             <div>
-              <div className="flex border-b border-slate-700">
-                {(['recent', 'frequent', 'search'] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setSearchTab(t)}
-                    className={`flex-1 py-2 text-xs font-medium capitalize transition-colors ${
-                      searchTab === t ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-slate-400'
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
+              <SegmentedTabs
+                value={searchTab}
+                options={[
+                  { value: 'recent', label: 'Recent' },
+                  { value: 'frequent', label: 'Frequent' },
+                  { value: 'search', label: 'Search' },
+                ]}
+                onChange={setSearchTab}
+              />
               {searchTab === 'search' && (
                 <div className="px-4 py-2">
                   <input
@@ -285,7 +270,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search foods…"
-                    className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="app-input px-3 py-2 text-sm"
                   />
                 </div>
               )}
@@ -298,13 +283,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="text-white text-sm">{foodSource.name}</p>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                        foodSource.sourceType === 'user_product'
-                          ? 'bg-slate-700 text-slate-200'
-                          : 'bg-emerald-950 text-emerald-300'
-                      }`}>
-                        {foodSource.sourceType === 'user_product' ? 'My product' : 'Built-in'}
-                      </span>
+                      <FoodSourceBadge sourceType={foodSource.sourceType} />
                     </div>
                     <p className="text-slate-400 text-xs">{foodSource.calories} kcal</p>
                   </div>
@@ -314,24 +293,6 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
             </div>
           )}
         </div>
-
-        {saveError && <p className="text-red-400 text-xs px-4 pb-2">{saveError}</p>}
-        <div className="p-4 border-t border-slate-700 flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving || items.length === 0}
-            className="flex-1 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors disabled:opacity-40"
-          >
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
-      </div>
-    </>
+    </BottomSheet>
   )
 }

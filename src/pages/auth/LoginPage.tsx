@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useState } from 'react'
+import AuthShell from '@/components/auth/AuthShell'
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -36,17 +37,29 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-white">NutriMon</h1>
-          <p className="text-slate-400 text-sm mt-1">Sign in to your account</p>
-          <p className="text-slate-500 text-xs mt-2">Confirm your email first if you just created an account.</p>
+    <AuthShell
+      title="NutriMon"
+      subtitle="Sign in to your account"
+      meta="Confirm your email first if you just created an account."
+      footer={
+        <div className="space-y-2">
+          <p className="text-sm text-[var(--app-text-muted)]">
+            No account?{' '}
+            <Link to="/signup" className="app-link hover:underline">
+              Sign up
+            </Link>
+          </p>
+          <p>
+            <Link to="/reset-password" className="text-xs text-[var(--app-text-subtle)] hover:underline">
+              Forgot password?
+            </Link>
+          </p>
         </div>
-
+      }
+    >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm text-slate-300 mb-1">
+            <label htmlFor="email" className="mb-1 block text-sm text-[var(--app-text-secondary)]">
               Email
             </label>
             <input
@@ -54,7 +67,7 @@ export default function LoginPage() {
               type="email"
               autoComplete="email"
               {...register('email')}
-              className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="app-input px-3 py-2"
               placeholder="you@example.com"
             />
             {errors.email && (
@@ -63,7 +76,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm text-slate-300 mb-1">
+            <label htmlFor="password" className="mb-1 block text-sm text-[var(--app-text-secondary)]">
               Password
             </label>
             <input
@@ -71,7 +84,7 @@ export default function LoginPage() {
               type="password"
               autoComplete="current-password"
               {...register('password')}
-              className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="app-input px-3 py-2"
               placeholder="••••••••"
             />
             {errors.password && (
@@ -86,26 +99,11 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors disabled:opacity-50"
+            className="app-button-primary w-full py-2.5"
           >
             {isSubmitting ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
-
-        <div className="mt-6 text-center space-y-2">
-          <p className="text-slate-400 text-sm">
-            No account?{' '}
-            <Link to="/signup" className="text-indigo-400 hover:underline">
-              Sign up
-            </Link>
-          </p>
-          <p>
-            <Link to="/reset-password" className="text-slate-500 text-xs hover:underline">
-              Forgot password?
-            </Link>
-          </p>
-        </div>
-      </div>
-    </div>
+    </AuthShell>
   )
 }
