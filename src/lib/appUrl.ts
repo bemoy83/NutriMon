@@ -12,14 +12,18 @@ export function getRouterMode(): RouterMode {
   return import.meta.env.VITE_ROUTER_MODE === 'hash' ? 'hash' : 'browser'
 }
 
-export function getRouterBasename(): string {
+export function getAppBasePath(): string {
   const baseUrl = import.meta.env.BASE_URL as string | undefined
   return normalizeBasePath(baseUrl)
 }
 
+export function getRouterBasename(): string {
+  return getRouterMode() === 'hash' ? '/' : getAppBasePath()
+}
+
 export function getExternalAppUrl(path: string): string {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  const basePath = getRouterBasename()
+  const basePath = getAppBasePath()
   const origin = window.location.origin
 
   if (getRouterMode() === 'hash') {
