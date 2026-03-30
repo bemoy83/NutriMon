@@ -145,6 +145,34 @@ VITE_APP_BASE_PATH=/NutriMon/
 VITE_ROUTER_MODE=hash
 ```
 
+## GitHub Pages Deployment
+
+This repo includes a GitHub Actions workflow for GitHub Pages at:
+
+- [.github/workflows/deploy-pages.yml](/Users/bemoy/Developer/NutriMon/.github/workflows/deploy-pages.yml)
+
+The workflow builds the app for a project-site deployment using:
+
+```bash
+VITE_APP_BASE_PATH=/NutriMon/
+VITE_ROUTER_MODE=hash
+```
+
+Before it can deploy successfully:
+
+1. In GitHub repository settings, enable:
+   - `Pages -> Source -> GitHub Actions`
+2. Add repository secrets:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+3. Keep the repository name aligned with the configured base path:
+   - current workflow assumes the Pages subpath is `/NutriMon/`
+
+After deployment, the expected public URLs are:
+
+- `https://yourname.github.io/NutriMon/`
+- `https://yourname.github.io/NutriMon/#/login`
+
 ## Scheduler Setup
 
 To make `auto-finalize-day` operational in production:
