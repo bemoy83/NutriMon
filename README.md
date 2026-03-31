@@ -2,6 +2,8 @@
 
 NutriMon is a behavior-first nutrition tracker. The MVP focuses on fast meal logging, calorie-target adherence, lightweight weight tracking, and creature feedback driven by finalized daily evaluations.
 
+NutriMon is currently an online-first PWA. It is installable and can warm-cache the application shell and previously visited assets, but it does not yet implement offline sync, local-first persistence, or offline mutation queues for Supabase-backed flows.
+
 ## Stack
 
 - React 19

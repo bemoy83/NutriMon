@@ -1,17 +1,10 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { getTodayInTimezone, guessTimezone } from '@/lib/date'
-import { useTimezone } from '@/features/profile/useTimezone'
+import { Outlet, NavLink } from 'react-router-dom'
 
 export default function AppShell() {
-  const tzQuery = useTimezone()
-  const navigate = useNavigate()
-  const timezone = tzQuery.data ?? guessTimezone()
-  const today = getTodayInTimezone(timezone)
-
   const navItems = [
     {
       label: 'Log',
-      href: `/app/log/${today}`,
+      href: '/app',
       matchPrefix: '/app/log/',
       icon: (active: boolean) => (
         <svg
@@ -112,10 +105,10 @@ export default function AppShell() {
       >
         <div className="flex max-w-lg mx-auto items-end">
           {/* Log */}
-          <NavItem item={navItems[0]} onNavigate={navigate} />
+          <NavItem item={navItems[0]} />
 
           {/* Creature */}
-          <NavItem item={navItems[1]} onNavigate={navigate} />
+          <NavItem item={navItems[1]} />
 
           {/* Center FAB — Trends */}
           <div className="flex-1 flex flex-col items-center pb-2">
@@ -156,10 +149,10 @@ export default function AppShell() {
           </div>
 
           {/* Weight */}
-          <NavItem item={navItems[2]} onNavigate={navigate} />
+          <NavItem item={navItems[2]} />
 
           {/* Profile */}
-          <NavItem item={navItems[3]} onNavigate={navigate} />
+          <NavItem item={navItems[3]} />
         </div>
       </nav>
     </div>
@@ -173,10 +166,9 @@ type NavItemProps = {
     matchPrefix: string
     icon: (active: boolean) => React.ReactNode
   }
-  onNavigate: (href: string) => void
 }
 
-function NavItem({ item, onNavigate }: NavItemProps) {
+function NavItem({ item }: NavItemProps) {
   return (
     <NavLink
       to={item.href}
@@ -188,12 +180,6 @@ function NavItem({ item, onNavigate }: NavItemProps) {
             window.location.pathname.startsWith(item.matchPrefix))
         return {
           color: active ? 'var(--app-brand)' : 'var(--app-text-muted)',
-        }
-      }}
-      onClick={(e) => {
-        if (item.href.startsWith('/app/log/')) {
-          e.preventDefault()
-          onNavigate(item.href)
         }
       }}
     >

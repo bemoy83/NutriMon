@@ -367,7 +367,7 @@ describe('DailyLogPage', () => {
 
     renderPage()
     fireEvent.click(screen.getByText('trigger-edit'))
-    fireEvent.click(screen.getByText('save-edit'))
+    fireEvent.click(await screen.findByText('save-edit'))
 
     expect(screen.getByText('Meal updated')).toBeInTheDocument()
     fireEvent.click(screen.getByText('Undo'))

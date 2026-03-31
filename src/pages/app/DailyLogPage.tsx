@@ -1,10 +1,8 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useDailyLog } from '@/features/logging/useDailyLog'
 import { useInvalidateDailyLog } from '@/features/logging/useDailyLog'
 import MealList from '@/features/logging/MealList'
-import QuickAddSheet from '@/features/logging/QuickAddSheet'
-import MealEditSheet from '@/features/logging/MealEditSheet'
 import { getTodayInTimezone, isToday } from '@/lib/date'
 import type { Meal } from '@/types/domain'
 import { buildMealSnapshotItems, buildMealUpdateItems } from '@/features/logging/mealPayloads'
@@ -21,6 +19,9 @@ import DailyLogFinalizeCta from '@/features/logging/DailyLogFinalizeCta'
 import DailyLogRepeatCta from '@/features/logging/DailyLogRepeatCta'
 import UndoToast from '@/features/logging/UndoToast'
 import LoadingState from '@/components/ui/LoadingState'
+
+const QuickAddSheet = lazy(() => import('@/features/logging/QuickAddSheet'))
+const MealEditSheet = lazy(() => import('@/features/logging/MealEditSheet'))
 
 export default function DailyLogPage() {
   const { date } = useParams<{ date: string }>()
@@ -195,31 +196,35 @@ export default function DailyLogPage() {
 
       {/* Quick add sheet */}
       {showQuickAdd && (
-        <QuickAddSheet
+        <Suspense fallback={<SheetLoadingFallback />}>
+          <QuickAddSheet
             logDate={logDate}
-          loggedAt={loggedAt}
-          onClose={() => setShowQuickAdd(false)}
-          onAdded={(result) => handleMealCreated(result)}
-        />
+            loggedAt={loggedAt}
+            onClose={() => setShowQuickAdd(false)}
+            onAdded={(result) => handleMealCreated(result)}
+          />
+        </Suspense>
       )}
 
       {/* Meal edit sheet */}
       {editingMeal && (
-        <MealEditSheet
-          meal={editingMeal}
-          logDate={logDate}
-          onClose={() => setEditingMeal(null)}
-          onSaved={(previousMeal) => {
-            showUndo({
-              label: 'Meal updated',
-              undo: async () => {
-                await updateMealWithItems(previousMeal.id, previousMeal.loggedAt, buildMealUpdateItems(previousMeal))
-                invalidateDailyLog(logDate)
-              },
-            })
-            setEditingMeal(null)
-          }}
-        />
+        <Suspense fallback={<SheetLoadingFallback />}>
+          <MealEditSheet
+            meal={editingMeal}
+            logDate={logDate}
+            onClose={() => setEditingMeal(null)}
+            onSaved={(previousMeal) => {
+              showUndo({
+                label: 'Meal updated',
+                undo: async () => {
+                  await updateMealWithItems(previousMeal.id, previousMeal.loggedAt, buildMealUpdateItems(previousMeal))
+                  invalidateDailyLog(logDate)
+                },
+              })
+              setEditingMeal(null)
+            }}
+          />
+        </Suspense>
       )}
 
       {undoAction && (
@@ -231,6 +236,14 @@ export default function DailyLogPage() {
           }}
         />
       )}
+    </div>
+  )
+}
+
+function SheetLoadingFallback() {
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-lg rounded-t-3xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-lg">
+      <p className="text-sm text-[var(--app-text-muted)]">Loading…</p>
     </div>
   )
 }

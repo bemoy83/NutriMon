@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -7,15 +7,6 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/app/providers/auth'
 import { getTodayInTimezone, guessTimezone, formatShortDate } from '@/lib/date'
 import { lbToKg, kgToLb } from '@/lib/tdee'
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts'
 import { useWeightEntries } from '@/features/weight/useWeightEntries'
 import EmptyState from '@/components/ui/EmptyState'
 
@@ -26,6 +17,8 @@ const schema = z.object({
 })
 
 type FormData = z.infer<typeof schema>
+
+const WeightHistoryChart = lazy(() => import('@/features/weight/WeightHistoryChart'))
 
 export default function WeightPage() {
   const { user } = useAuth()
@@ -192,40 +185,15 @@ export default function WeightPage() {
             <EmptyState title="Log at least 2 entries to see the chart." className="py-0" />
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--app-chart-grid)" />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 11, fill: 'var(--app-text-muted)' }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: 'var(--app-text-muted)' }}
-                tickLine={false}
-                axisLine={false}
-                domain={['auto', 'auto']}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: 'var(--app-surface)',
-                  border: '1px solid var(--app-border)',
-                  borderRadius: 8,
-                  color: 'var(--app-text-primary)',
-                }}
-                formatter={(v) => [`${v ?? ''} ${weightUnit}`, 'Weight']}
-              />
-              <Line
-                type="monotone"
-                dataKey="weight"
-                stroke="var(--app-chart-line)"
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <Suspense
+            fallback={
+              <div className="h-[200px] flex items-center justify-center text-sm text-[var(--app-text-muted)]">
+                Loading chart...
+              </div>
+            }
+          >
+            <WeightHistoryChart data={chartData} weightUnit={weightUnit} />
+          </Suspense>
         )}
       </div>
     </div>
