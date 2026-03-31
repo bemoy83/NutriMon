@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useDeferredValue } from 'react'
 import { useInvalidateDailyLog } from './useDailyLog'
 import { createMealWithItems, deleteMealTemplate } from './api'
 import type { FoodSource, MealTemplate, Product } from '@/types/domain'
@@ -8,6 +8,7 @@ import { useFoodSourceSearch, useFrequentFoodSources, useRecentFoodSources } fro
 import { useInvalidateMealTemplates, useInvalidateProductQueries } from './queryInvalidation'
 import { useMealTemplates } from './useMealTemplates'
 import BottomSheet from '@/components/ui/BottomSheet'
+import EmptyState from '@/components/ui/EmptyState'
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import GramInput from '@/components/ui/GramInput'
 import MealTypeSelector from '@/components/ui/MealTypeSelector'
@@ -37,9 +38,11 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
   const invalidateProducts = useInvalidateProductQueries()
   const invalidateTemplates = useInvalidateMealTemplates()
 
+  const deferredSearchQuery = useDeferredValue(searchQuery)
+
   const recentQuery = useRecentFoodSources()
   const frequentQuery = useFrequentFoodSources()
-  const searchQuery_ = useFoodSourceSearch(searchQuery)
+  const searchQuery_ = useFoodSourceSearch(deferredSearchQuery)
   const templatesQuery = useMealTemplates()
 
   function getFoodSourceKey(foodSource: FoodSource): string {
@@ -178,6 +181,7 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
     <BottomSheet
       onClose={onClose}
       title="Add meal"
+      className="h-[85vh] sm:h-[580px]"
       footer={
         <>
           {addError ? <p className="px-0 pb-2 text-xs text-[var(--app-danger)]">{addError}</p> : null}
@@ -244,17 +248,22 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
       />
 
       {/* Search input */}
-      {tab === 'search' && (
-        <div className="px-4 py-2">
-          <input
-            type="text"
-            autoFocus
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search foods…"
-            className="app-input px-3 py-2 text-sm"
-          />
-        </div>
+      <div className={`px-4${tab !== 'search' ? ' h-0 overflow-hidden py-0' : ' py-2'}`}>
+        <input
+          type="text"
+          autoFocus={tab === 'search'}
+          tabIndex={tab !== 'search' ? -1 : undefined}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search foods…"
+          className="app-input px-3 py-2 text-sm"
+        />
+      </div>
+      {tab === 'search' && searchQuery_.isPending && deferredSearchQuery.trim().length > 0 && (
+        <div className="px-4 py-3 text-sm text-[var(--app-text-muted)]">Searching…</div>
+      )}
+      {tab === 'search' && !searchQuery_.isPending && deferredSearchQuery.trim().length > 0 && (searchQuery_.data?.length ?? 0) === 0 && (
+        <EmptyState title="No foods found" className="py-4" />
       )}
 
       {/* Saved templates */}
