@@ -1,8 +1,9 @@
 import { MEAL_TYPES } from '@/lib/mealType'
+import type { MealType } from '@/lib/mealType'
 
 interface Props {
-  value: string
-  onChange: (v: string) => void
+  value: MealType
+  onChange: (v: MealType) => void
 }
 
 export default function MealTypeSelector({ value, onChange }: Props) {

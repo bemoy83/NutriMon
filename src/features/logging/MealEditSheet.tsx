@@ -10,7 +10,8 @@ import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import GramInput from '@/components/ui/GramInput'
 import MealTypeSelector from '@/components/ui/MealTypeSelector'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
-import { getDefaultMealType } from '@/lib/mealType'
+import { getDefaultMealType, MEAL_TYPES } from '@/lib/mealType'
+import type { MealType } from '@/lib/mealType'
 
 interface EditItem {
   productId?: string
@@ -41,7 +42,12 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
   const [saveError, setSaveError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [tab, setTab] = useState<'items' | 'add'>('items')
-  const [mealType, setMealType] = useState(() => meal.mealType ?? getDefaultMealType(meal.loggedAt))
+  const [mealType, setMealType] = useState<MealType>(() => {
+    if (meal.mealType && MEAL_TYPES.includes(meal.mealType as MealType)) {
+      return meal.mealType as MealType
+    }
+    return getDefaultMealType(meal.loggedAt)
+  })
   const [mealName, setMealName] = useState(() => meal.mealName ?? '')
 
   const recentQuery = useRecentFoodSources()

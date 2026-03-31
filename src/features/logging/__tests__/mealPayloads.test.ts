@@ -7,6 +7,8 @@ const meal: Meal = {
   userId: 'user-1',
   dailyLogId: 'log-1',
   loggedAt: '2026-01-05T08:30:00.000Z',
+  mealType: null,
+  mealName: null,
   totalCalories: 520,
   itemCount: 2,
   createdAt: '2026-01-05T08:30:00.000Z',
