@@ -9,7 +9,9 @@ import { useInvalidateProductQueries } from './queryInvalidation'
 import BottomSheet from '@/components/ui/BottomSheet'
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import GramInput from '@/components/ui/GramInput'
+import MealTypeSelector from '@/components/ui/MealTypeSelector'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
+import { getDefaultMealType } from '@/lib/mealType'
 
 interface PendingItem {
   foodSource: FoodSource
@@ -29,6 +31,7 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
   const [pendingItems, setPendingItems] = useState<PendingItem[]>([])
   const [adding, setAdding] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
+  const [mealType, setMealType] = useState(() => getDefaultMealType(loggedAt))
   const invalidateDailyLog = useInvalidateDailyLog()
   const invalidateProducts = useInvalidateProductQueries()
 
@@ -89,6 +92,7 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
             : { catalog_item_id: item.foodSource.sourceId }),
           quantity: item.grams / (item.foodSource.defaultServingAmount ?? 100),
         })),
+        mealType,
       )
       invalidateDailyLog(logDate)
       invalidateProducts()
@@ -149,6 +153,9 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
         </>
       }
     >
+      {/* Meal type selector */}
+      <MealTypeSelector value={mealType} onChange={setMealType} />
+
       {/* Pending items summary */}
       {pendingItems.length > 0 && (
         <div className="border-b border-[var(--app-border)] bg-[var(--app-brand-soft)] px-4 py-2">

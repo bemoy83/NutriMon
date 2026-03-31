@@ -149,7 +149,7 @@ export default function DailyLogPage() {
               showUndo({
                 label: 'Meal deleted',
                 undo: async () => {
-                  await restoreMealFromSnapshot(logDate, meal.loggedAt, buildMealSnapshotItems(meal))
+                  await restoreMealFromSnapshot(logDate, meal.loggedAt, buildMealSnapshotItems(meal), meal.mealType)
                   invalidateDailyLog(logDate)
                 },
               })

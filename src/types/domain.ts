@@ -66,6 +66,7 @@ export interface Meal {
   userId: string
   dailyLogId: string
   loggedAt: string
+  mealType: string | null
   totalCalories: number
   itemCount: number
   createdAt: string

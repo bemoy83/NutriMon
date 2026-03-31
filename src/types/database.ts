@@ -86,11 +86,11 @@ export interface Database {
         Returns: DailyLogRow
       }
       create_meal_with_items: {
-        Args: { p_log_date: string; p_logged_at: string; p_items: MealItemInput[] }
+        Args: { p_log_date: string; p_logged_at: string; p_items: MealItemInput[]; p_meal_type?: string | null }
         Returns: MealMutationResult
       }
       update_meal_with_items: {
-        Args: { p_meal_id: string; p_logged_at: string; p_items: MealItemUpdateInput[] }
+        Args: { p_meal_id: string; p_logged_at: string; p_items: MealItemUpdateInput[]; p_meal_type?: string | null }
         Returns: MealMutationResult
       }
       delete_meal: {
@@ -197,6 +197,7 @@ export interface MealRow {
   user_id: string
   daily_log_id: string
   logged_at: string
+  meal_type: string | null
   total_calories: number
   item_count: number
   created_at: string
@@ -331,6 +332,7 @@ export interface MealMutationResult {
     id: string
     daily_log_id: string
     logged_at: string
+    meal_type: string | null
     total_calories: number
     item_count: number
   }

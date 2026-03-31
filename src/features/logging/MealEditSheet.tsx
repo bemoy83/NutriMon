@@ -8,7 +8,9 @@ import BottomSheet from '@/components/ui/BottomSheet'
 import EmptyState from '@/components/ui/EmptyState'
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import GramInput from '@/components/ui/GramInput'
+import MealTypeSelector from '@/components/ui/MealTypeSelector'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
+import { getDefaultMealType } from '@/lib/mealType'
 
 interface EditItem {
   productId?: string
@@ -39,6 +41,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
   const [saveError, setSaveError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [tab, setTab] = useState<'items' | 'add'>('items')
+  const [mealType, setMealType] = useState(() => meal.mealType ?? getDefaultMealType(meal.loggedAt))
 
   const recentQuery = useRecentFoodSources()
   const frequentQuery = useFrequentFoodSources()
@@ -170,6 +173,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
             serving_unit_snapshot: item.snapshotServingUnit,
           }
         }),
+        mealType,
       )
 
       invalidateDailyLog(logDate)
@@ -216,6 +220,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
         </>
       }
     >
+        <MealTypeSelector value={mealType} onChange={setMealType} />
         <SegmentedTabs
           value={tab}
           options={[

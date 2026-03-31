@@ -117,6 +117,7 @@ export function mapMeal(row: MealRow, items: MealItem[] = []): Meal {
     userId: row.user_id,
     dailyLogId: row.daily_log_id,
     loggedAt: row.logged_at,
+    mealType: row.meal_type ?? null,
     totalCalories: row.total_calories,
     itemCount: row.item_count,
     createdAt: row.created_at,

@@ -101,9 +101,12 @@ function MealCard({
       >
         <div>
           <p className="text-[var(--app-text-primary)] text-sm font-medium">
-            {formatTime(meal.loggedAt, timezone)}
+            {meal.mealType ?? formatTime(meal.loggedAt, timezone)}
           </p>
           <p className="text-[var(--app-text-muted)] text-xs mt-0.5">
+            {meal.mealType && (
+              <span className="mr-1">{formatTime(meal.loggedAt, timezone)} ·</span>
+            )}
             {meal.itemCount} item{meal.itemCount !== 1 ? 's' : ''}
             {hasMacros && (
               <span className="ml-1.5">
