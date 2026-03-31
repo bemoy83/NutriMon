@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useDeferredValue } from 'react'
 import { useInvalidateDailyLog } from './useDailyLog'
 import type { FoodSource, Meal } from '@/types/domain'
 import { updateMealWithItems } from './api'
@@ -50,9 +50,11 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
   })
   const [mealName, setMealName] = useState(() => meal.mealName ?? '')
 
+  const deferredSearchQuery = useDeferredValue(searchQuery)
+
   const recentQuery = useRecentFoodSources()
   const frequentQuery = useFrequentFoodSources()
-  const searchQuery_ = useFoodSourceSearch(searchQuery)
+  const searchQuery_ = useFoodSourceSearch(deferredSearchQuery)
   const [searchTab, setSearchTab] = useState<'recent' | 'frequent' | 'search'>('recent')
 
   function getFoodSourceKey(foodSource: FoodSource): string {
@@ -209,6 +211,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
     <BottomSheet
       onClose={onClose}
       title="Edit meal"
+      className="h-[85vh] sm:h-[580px]"
       footer={
         <>
           {saveError ? <p className="px-0 pb-2 text-xs text-[var(--app-danger)]">{saveError}</p> : null}
@@ -287,17 +290,22 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
                 ]}
                 onChange={setSearchTab}
               />
-              {searchTab === 'search' && (
-                <div className="px-4 py-2">
-                  <input
-                    type="text"
-                    autoFocus
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search foods…"
-                    className="app-input px-3 py-2 text-sm"
-                  />
-                </div>
+              <div className={`px-4${searchTab !== 'search' ? ' h-0 overflow-hidden py-0' : ' py-2'}`}>
+                <input
+                  type="text"
+                  autoFocus={searchTab === 'search'}
+                  tabIndex={searchTab !== 'search' ? -1 : undefined}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search foods…"
+                  className="app-input px-3 py-2 text-sm"
+                />
+              </div>
+              {searchTab === 'search' && searchQuery_.isPending && deferredSearchQuery.trim().length > 0 && (
+                <div className="px-4 py-3 text-sm text-[var(--app-text-muted)]">Searching…</div>
+              )}
+              {searchTab === 'search' && !searchQuery_.isPending && deferredSearchQuery.trim().length > 0 && (searchQuery_.data?.length ?? 0) === 0 && (
+                <EmptyState title="No foods found" className="py-4" />
               )}
               {activeFoodSources.map((foodSource: FoodSource) => (
                 <button

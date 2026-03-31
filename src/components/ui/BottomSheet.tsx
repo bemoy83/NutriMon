@@ -6,9 +6,10 @@ interface BottomSheetProps {
   onClose: () => void
   title: string
   footer?: ReactNode
+  className?: string
 }
 
-export default function BottomSheet({ children, onClose, title, footer }: BottomSheetProps) {
+export default function BottomSheet({ children, onClose, title, footer, className }: BottomSheetProps) {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') onClose()
@@ -21,7 +22,7 @@ export default function BottomSheet({ children, onClose, title, footer }: Bottom
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} aria-hidden="true" />
-      <div className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85vh] flex-col rounded-t-2xl border border-[var(--app-border)] bg-[var(--app-surface-elevated)] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl">
+      <div className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl border border-[var(--app-border)] bg-[var(--app-surface-elevated)] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl${className ? ` ${className}` : ' max-h-[85vh]'}`}>
         <div className="flex items-center justify-between border-b border-[var(--app-border)] px-4 py-3">
           <h3 className="font-semibold text-[var(--app-text-primary)]">{title}</h3>
           <button
