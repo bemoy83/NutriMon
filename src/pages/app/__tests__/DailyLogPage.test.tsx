@@ -334,6 +334,7 @@ describe('DailyLogPage', () => {
           },
         ],
         null,
+        null,
       )
     })
   })

@@ -86,7 +86,7 @@ describe('MealEditSheet', () => {
           serving_amount_snapshot: 1,
           serving_unit_snapshot: 'slice',
         },
-      ], 'Breakfast')
+      ], 'Breakfast', null)
       expect(invalidateDailyLogMock).toHaveBeenCalledWith('2026-01-05')
       expect(invalidateProductsMock).toHaveBeenCalled()
       expect(onSaved).toHaveBeenCalled()
