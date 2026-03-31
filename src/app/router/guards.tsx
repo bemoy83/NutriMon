@@ -1,26 +1,13 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { getTodayInTimezone, guessTimezone } from '@/lib/date'
 import { useAuth } from '@/app/providers/auth'
+import { useProfileSummary } from '@/features/profile/useProfileSummary'
 
 export function AppIndexRedirect() {
-  const { user } = useAuth()
-  const [timezone, setTimezone] = useState<string | null>(null)
+  const profileQuery = useProfileSummary()
 
-  useEffect(() => {
-    if (!user) return
-    supabase
-      .from('profiles')
-      .select('timezone')
-      .eq('user_id', user.id)
-      .single()
-      .then(({ data }) => {
-        setTimezone(data?.timezone ?? guessTimezone())
-      })
-  }, [user])
-
-  if (!timezone) return null
+  if (profileQuery.isLoading) return null
+  const timezone = profileQuery.data?.timezone ?? guessTimezone()
   const today = getTodayInTimezone(timezone)
   return <Navigate to={`/app/log/${today}`} replace />
 }
@@ -34,21 +21,10 @@ export function RequireAuth() {
 
 export function RequireOnboarding() {
   const { user, loading } = useAuth()
-  const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null)
+  const profileQuery = useProfileSummary()
 
-  useEffect(() => {
-    if (!user) return
-    supabase
-      .from('profiles')
-      .select('onboarding_completed_at')
-      .eq('user_id', user.id)
-      .single()
-      .then(({ data }) => {
-        setOnboardingDone(!!data?.onboarding_completed_at)
-      })
-  }, [user])
-
-  if (loading || onboardingDone === null) return null
-  if (!onboardingDone) return <Navigate to="/onboarding" replace />
+  if (loading || profileQuery.isLoading) return null
+  if (!user) return null
+  if (!profileQuery.data?.onboardingCompletedAt) return <Navigate to="/onboarding" replace />
   return <Outlet />
 }

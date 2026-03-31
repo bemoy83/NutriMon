@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 interface ProfileSummary {
   timezone: string | null
   calorieTarget: number | null
+  onboardingCompletedAt: string | null
 }
 
 export function useProfileSummary() {
@@ -16,7 +17,7 @@ export function useProfileSummary() {
     queryFn: async (): Promise<ProfileSummary> => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('timezone, calorie_target')
+        .select('timezone, calorie_target, onboarding_completed_at')
         .eq('user_id', user!.id)
         .single()
 
@@ -25,6 +26,7 @@ export function useProfileSummary() {
       return {
         timezone: data.timezone,
         calorieTarget: data.calorie_target,
+        onboardingCompletedAt: data.onboarding_completed_at,
       }
     },
   })

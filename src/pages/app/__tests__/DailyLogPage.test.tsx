@@ -4,10 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import DailyLogPage from '../DailyLogPage'
 import type { Meal } from '@/types/domain'
 
-const useDailyLogMock = vi.fn()
+const useDailyLogCoreMock = vi.fn()
+const useDailyLogDerivedMock = vi.fn()
+const useLatestFallbackMetricsMock = vi.fn()
 const useInvalidateDailyLogMock = vi.fn()
 const useAuthMock = vi.fn()
-const useQueryMock = vi.fn()
+const useProfileSummaryMock = vi.fn()
+const useCanRepeatLastMealMock = vi.fn()
 const repeatLastMealMock = vi.fn()
 const deleteMealMock = vi.fn()
 const restoreMealFromSnapshotMock = vi.fn()
@@ -15,8 +18,19 @@ const updateMealWithItemsMock = vi.fn()
 const getTodayInTimezoneMock = vi.fn()
 const isTodayMock = vi.fn()
 
+vi.mock('@/features/logging/useDailyLogCore', () => ({
+  useDailyLogCore: (...args: unknown[]) => useDailyLogCoreMock(...args),
+}))
+
+vi.mock('@/features/logging/useDailyLogDerived', () => ({
+  useDailyLogDerived: (...args: unknown[]) => useDailyLogDerivedMock(...args),
+}))
+
+vi.mock('@/features/logging/useLatestFallbackMetrics', () => ({
+  useLatestFallbackMetrics: (...args: unknown[]) => useLatestFallbackMetricsMock(...args),
+}))
+
 vi.mock('@/features/logging/useDailyLog', () => ({
-  useDailyLog: (...args: unknown[]) => useDailyLogMock(...args),
   useInvalidateDailyLog: () => useInvalidateDailyLogMock(),
 }))
 
@@ -24,8 +38,12 @@ vi.mock('@/app/providers/auth', () => ({
   useAuth: () => useAuthMock(),
 }))
 
-vi.mock('@tanstack/react-query', () => ({
-  useQuery: (...args: unknown[]) => useQueryMock(...args),
+vi.mock('@/features/profile/useProfileSummary', () => ({
+  useProfileSummary: () => useProfileSummaryMock(),
+}))
+
+vi.mock('@/features/logging/useCanRepeatLastMeal', () => ({
+  useCanRepeatLastMeal: (...args: unknown[]) => useCanRepeatLastMealMock(...args),
 }))
 
 vi.mock('@/lib/supabase', () => ({
@@ -48,10 +66,6 @@ vi.mock('@/features/logging/api', () => ({
   repeatLastMeal: (...args: unknown[]) => repeatLastMealMock(...args),
   restoreMealFromSnapshot: (...args: unknown[]) => restoreMealFromSnapshotMock(...args),
   updateMealWithItems: (...args: unknown[]) => updateMealWithItemsMock(...args),
-}))
-
-vi.mock('@/features/logging/InlineQuickAdd', () => ({
-  default: () => <div>inline-quick-add</div>,
 }))
 
 vi.mock('@/features/logging/QuickAddSheet', () => ({
@@ -181,19 +195,36 @@ describe('DailyLogPage', () => {
     })
     restoreMealFromSnapshotMock.mockResolvedValue({})
     updateMealWithItemsMock.mockResolvedValue({})
-    useQueryMock.mockImplementation(({ queryKey }: { queryKey: unknown[] }) => {
-      if (queryKey[0] === 'profile') {
-        return { data: { timezone: 'UTC', calorieTarget: 2000 }, isLoading: false }
-      }
-      if (queryKey[0] === 'repeat-last-meal-available') {
-        return { data: false, isLoading: false }
-      }
-      return { data: null, isLoading: false }
+    useProfileSummaryMock.mockReturnValue({
+      data: {
+        timezone: 'UTC',
+        calorieTarget: 2000,
+        onboardingCompletedAt: '2026-01-01T00:00:00.000Z',
+      },
+      isLoading: false,
+    })
+    useCanRepeatLastMealMock.mockReturnValue({ data: false, isLoading: false })
+    useDailyLogDerivedMock.mockReturnValue({
+      data: {
+        evaluation: null,
+        habitMetrics: null,
+        behaviorAttributes: null,
+        creatureStats: null,
+        feedback: null,
+      },
+      isLoading: false,
+    })
+    useLatestFallbackMetricsMock.mockReturnValue({
+      data: {
+        habitMetrics: null,
+        creatureStats: null,
+      },
+      isLoading: false,
     })
   })
 
-  it('shows inline quick add and hides finalization on an empty unfinalized day', () => {
-    useDailyLogMock.mockReturnValue({
+  it('shows the static empty-day card without blocking on derived data', () => {
+    useDailyLogCoreMock.mockReturnValue({
       data: {
         dailyLog: {
           id: 'log-1',
@@ -207,25 +238,30 @@ describe('DailyLogPage', () => {
           updatedAt: '2026-01-05T00:00:00.000Z',
         },
         meals: [],
+      },
+      isLoading: false,
+    })
+    useDailyLogDerivedMock.mockReturnValue({
+      data: {
         evaluation: null,
         habitMetrics: null,
         behaviorAttributes: null,
         creatureStats: null,
         feedback: null,
-        fallbackHabitMetrics: null,
-        fallbackCreatureStats: null,
       },
-      isLoading: false,
+      isLoading: true,
     })
 
     renderPage()
 
-    expect(screen.getByText('inline-quick-add')).toBeInTheDocument()
+    expect(screen.getByText('No meals logged yet.')).toBeInTheDocument()
+    expect(screen.getByText('Tap + to add your first meal.')).toBeInTheDocument()
+    expect(screen.queryByText('inline-quick-add')).not.toBeInTheDocument()
     expect(screen.queryByText('Finalize Day')).not.toBeInTheDocument()
   })
 
   it('repeats the last meal and offers undo via delete', async () => {
-    useDailyLogMock.mockReturnValue({
+    useDailyLogCoreMock.mockReturnValue({
       data: {
         dailyLog: {
           id: 'log-1',
@@ -239,25 +275,10 @@ describe('DailyLogPage', () => {
           updatedAt: '2026-01-05T00:00:00.000Z',
         },
         meals: [baseMeal],
-        evaluation: null,
-        habitMetrics: null,
-        behaviorAttributes: null,
-        creatureStats: null,
-        feedback: null,
-        fallbackHabitMetrics: null,
-        fallbackCreatureStats: null,
       },
       isLoading: false,
     })
-    useQueryMock.mockImplementation(({ queryKey }: { queryKey: unknown[] }) => {
-      if (queryKey[0] === 'profile') {
-        return { data: { timezone: 'UTC', calorieTarget: 2000 }, isLoading: false }
-      }
-      if (queryKey[0] === 'repeat-last-meal-available') {
-        return { data: true, isLoading: false }
-      }
-      return { data: null, isLoading: false }
-    })
+    useCanRepeatLastMealMock.mockReturnValue({ data: true, isLoading: false })
     isTodayMock.mockReturnValue(false)
 
     renderPage()
@@ -276,7 +297,7 @@ describe('DailyLogPage', () => {
   })
 
   it('restores a deleted meal from snapshots on undo', async () => {
-    useDailyLogMock.mockReturnValue({
+    useDailyLogCoreMock.mockReturnValue({
       data: {
         dailyLog: {
           id: 'log-1',
@@ -290,13 +311,6 @@ describe('DailyLogPage', () => {
           updatedAt: '2026-01-05T00:00:00.000Z',
         },
         meals: [baseMeal],
-        evaluation: null,
-        habitMetrics: null,
-        behaviorAttributes: null,
-        creatureStats: null,
-        feedback: null,
-        fallbackHabitMetrics: null,
-        fallbackCreatureStats: null,
       },
       isLoading: false,
     })
@@ -340,7 +354,7 @@ describe('DailyLogPage', () => {
   })
 
   it('offers undo after editing a meal', async () => {
-    useDailyLogMock.mockReturnValue({
+    useDailyLogCoreMock.mockReturnValue({
       data: {
         dailyLog: {
           id: 'log-1',
@@ -354,13 +368,6 @@ describe('DailyLogPage', () => {
           updatedAt: '2026-01-05T00:00:00.000Z',
         },
         meals: [baseMeal],
-        evaluation: null,
-        habitMetrics: null,
-        behaviorAttributes: null,
-        creatureStats: null,
-        feedback: null,
-        fallbackHabitMetrics: null,
-        fallbackCreatureStats: null,
       },
       isLoading: false,
     })

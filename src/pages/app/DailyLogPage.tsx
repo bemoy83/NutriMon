@@ -1,14 +1,15 @@
 import { lazy, Suspense, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useDailyLog } from '@/features/logging/useDailyLog'
 import { useInvalidateDailyLog } from '@/features/logging/useDailyLog'
+import { useDailyLogCore } from '@/features/logging/useDailyLogCore'
+import { useDailyLogDerived } from '@/features/logging/useDailyLogDerived'
+import { useLatestFallbackMetrics } from '@/features/logging/useLatestFallbackMetrics'
 import MealList from '@/features/logging/MealList'
 import { getTodayInTimezone, isToday } from '@/lib/date'
 import type { Meal } from '@/types/domain'
 import { buildMealSnapshotItems, buildMealUpdateItems } from '@/features/logging/mealPayloads'
 import { deleteMeal, restoreMealFromSnapshot, updateMealWithItems } from '@/features/logging/api'
 import type { MealMutationResult } from '@/types/database'
-import InlineQuickAdd from '@/features/logging/InlineQuickAdd'
 import { useCanRepeatLastMeal } from '@/features/logging/useCanRepeatLastMeal'
 import { useProfileSummary } from '@/features/profile/useProfileSummary'
 import { useFinalizeDay } from '@/features/logging/useFinalizeDay'
@@ -32,7 +33,17 @@ export default function DailyLogPage() {
   const timezone = profileQuery.data?.timezone ?? 'UTC'
   const calorieTarget = profileQuery.data?.calorieTarget ?? 0
 
-  const { data, isLoading } = useDailyLog(logDate)
+  const coreQuery = useDailyLogCore(logDate)
+  const derivedQuery = useDailyLogDerived(logDate)
+  const fallbackMetricsQuery = useLatestFallbackMetrics(
+    !coreQuery.isLoading &&
+      !derivedQuery.isLoading &&
+      (
+        !(derivedQuery.data?.habitMetrics) ||
+        !(derivedQuery.data?.creatureStats) ||
+        !(coreQuery.data?.dailyLog?.isFinalized ?? false)
+      ),
+  )
   const invalidateDailyLog = useInvalidateDailyLog()
   const canRepeatLastMealQuery = useCanRepeatLastMeal(logDate)
 
@@ -40,18 +51,24 @@ export default function DailyLogPage() {
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null)
   const { undoAction, showUndo, clearUndo } = useUndoToast()
 
-  const totalCalories = data?.dailyLog?.totalCalories ?? 0
+  const dailyLog = coreQuery.data?.dailyLog ?? null
+  const meals = coreQuery.data?.meals ?? []
+  const feedback = derivedQuery.data?.feedback ?? null
+  const habitMetrics = derivedQuery.data?.habitMetrics ?? null
+  const fallbackHabitMetrics = fallbackMetricsQuery.data?.habitMetrics ?? null
+
+  const totalCalories = dailyLog?.totalCalories ?? 0
   const remaining = calorieTarget - totalCalories
   const progressPct = calorieTarget > 0 ? (totalCalories / calorieTarget) * 100 : 0
-  const isFinalized = data?.dailyLog?.isFinalized ?? false
-  const mealCount = data?.dailyLog?.mealCount ?? 0
+  const isFinalized = dailyLog?.isFinalized ?? false
+  const mealCount = dailyLog?.mealCount ?? 0
   const currentStreak =
-    data?.habitMetrics?.currentStreak ??
-    data?.fallbackHabitMetrics?.currentStreak ??
+    habitMetrics?.currentStreak ??
+    fallbackHabitMetrics?.currentStreak ??
     0
 
   // Macro totals from meal item snapshots
-  const allItems = (data?.meals ?? []).flatMap((m) => m.items ?? [])
+  const allItems = meals.flatMap((m) => m.items ?? [])
   const totalProteinG = allItems.reduce((s, i) => s + (i.proteinGSnapshot ?? 0) * i.quantity, 0)
   const totalCarbsG = allItems.reduce((s, i) => s + (i.carbsGSnapshot ?? 0) * i.quantity, 0)
   const totalFatG = allItems.reduce((s, i) => s + (i.fatGSnapshot ?? 0) * i.quantity, 0)
@@ -83,7 +100,7 @@ export default function DailyLogPage() {
     })
   }
 
-  if (isLoading || profileQuery.isLoading) {
+  if (profileQuery.isLoading || coreQuery.isLoading) {
     return <LoadingState fullScreen />
   }
 
@@ -110,30 +127,33 @@ export default function DailyLogPage() {
       />
 
       {/* Feedback card (finalized) */}
-      {data?.feedback && isFinalized && (
+      {feedback && isFinalized && (
         <div className="app-card mx-4 mt-4 p-4">
           <div className="flex items-start gap-3">
             <span className="text-2xl mt-0.5">
-              {data.feedback.status === 'optimal' ? '🌟' :
-               data.feedback.status === 'acceptable' ? '👍' :
-               data.feedback.status === 'poor' ? '💪' : '📝'}
+              {feedback.status === 'optimal' ? '🌟' :
+               feedback.status === 'acceptable' ? '👍' :
+               feedback.status === 'poor' ? '💪' : '📝'}
             </span>
             <div>
-              <p className="text-[var(--app-text-primary)] text-sm">{data.feedback.message}</p>
-              <p className="text-[var(--app-text-muted)] text-xs mt-1">{data.feedback.recommendation}</p>
+              <p className="text-[var(--app-text-primary)] text-sm">{feedback.message}</p>
+              <p className="text-[var(--app-text-muted)] text-xs mt-1">{feedback.recommendation}</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Quick-add content for empty unfinalized days */}
+      {/* Empty-day prompt for unfinalized days */}
       {!isFinalized && mealCount === 0 && (
         <div className="px-4 mt-4">
-          <InlineQuickAdd
-                logDate={logDate}
-            loggedAt={new Date().toISOString()}
-            onCreated={(result) => handleMealCreated(result)}
-          />
+          <div className="app-card p-4">
+            <h2 className="text-base font-semibold text-[var(--app-text-primary)]">
+              No meals logged yet.
+            </h2>
+            <p className="mt-1 text-sm text-[var(--app-text-muted)]">
+              Tap + to add your first meal.
+            </p>
+          </div>
         </div>
       )}
 
@@ -141,10 +161,10 @@ export default function DailyLogPage() {
       <div className="px-4 mt-4 space-y-3 flex-1">
         {mealCount > 0 && (
           <MealList
-            meals={data?.meals ?? []}
+            meals={meals}
             isFinalized={isFinalized}
             timezone={timezone}
-              logDate={logDate}
+            logDate={logDate}
             onEditMeal={setEditingMeal}
             onDeleteSuccess={(meal) => {
               showUndo({

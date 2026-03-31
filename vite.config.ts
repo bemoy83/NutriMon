@@ -5,16 +5,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { loadEnv } from 'vite'
-
-interface ManifestChunk {
-  file: string
-  css?: string[]
-  assets?: string[]
-  imports?: string[]
-  isEntry?: boolean
-}
-
-type BuildManifest = Record<string, ManifestChunk>
+import { collectEagerAssetUrls, filterPrecacheEntries, type BuildManifest } from './src/lib/pwaPrecache'
 
 function normalizeBasePath(value?: string): string {
   const trimmed = (value ?? '/').trim()
@@ -27,54 +18,12 @@ function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-function stripBasePath(url: string, basePath: string): string {
-  const normalizedUrl = url.startsWith('/') ? url.slice(1) : url
-  const normalizedBase = basePath === '/' ? '' : basePath.replace(/^\/|\/$/g, '')
-
-  if (normalizedBase && normalizedUrl.startsWith(`${normalizedBase}/`)) {
-    return normalizedUrl.slice(normalizedBase.length + 1)
-  }
-
-  return normalizedUrl
-}
-
-function loadEagerAssetUrls(manifestPath: string): Set<string> {
+function loadBuildManifest(manifestPath: string): BuildManifest {
   if (!existsSync(manifestPath)) {
     throw new Error(`Missing Vite manifest at ${manifestPath}`)
   }
 
-  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as BuildManifest
-  const entryKey =
-    Object.keys(manifest).find((key) => key === 'index.html') ??
-    Object.keys(manifest).find((key) => manifest[key]?.isEntry)
-
-  if (!entryKey) {
-    throw new Error('Unable to locate the Vite entry chunk in the build manifest')
-  }
-
-  const eagerUrls = new Set<string>()
-  const visited = new Set<string>()
-
-  function visitChunk(chunkKey: string) {
-    if (visited.has(chunkKey)) return
-    visited.add(chunkKey)
-
-    const chunk = manifest[chunkKey]
-    if (!chunk) return
-
-    eagerUrls.add(chunk.file)
-    chunk.css?.forEach((cssFile) => eagerUrls.add(cssFile))
-    chunk.assets?.forEach((assetFile) => eagerUrls.add(assetFile))
-    chunk.imports?.forEach((importKey) => visitChunk(importKey))
-  }
-
-  visitChunk(entryKey)
-  return eagerUrls
-}
-
-function isPrecacheUrl(url: string, basePath: string, eagerAssetUrls: Set<string>): boolean {
-  const path = stripBasePath(url, basePath)
-  return eagerAssetUrls.has(path)
+  return JSON.parse(readFileSync(manifestPath, 'utf8')) as BuildManifest
 }
 
 export default defineConfig(({ mode }) => {
@@ -124,7 +73,16 @@ export default defineConfig(({ mode }) => {
           navigateFallback: `${basePath}index.html`,
           manifestTransforms: [
             (manifestEntries) => {
-              const eagerAssetUrls = loadEagerAssetUrls(manifestPath)
+              const manifest = loadBuildManifest(manifestPath)
+              const entryKey =
+                Object.keys(manifest).find((key) => key === 'index.html') ??
+                Object.keys(manifest).find((key) => manifest[key]?.isEntry)
+
+              if (!entryKey) {
+                throw new Error('Unable to locate the Vite entry chunk in the build manifest')
+              }
+
+              const eagerAssetUrls = collectEagerAssetUrls(manifest, entryKey)
               const staticShellUrls = new Set([
                 'index.html',
                 'manifest.webmanifest',
@@ -134,10 +92,7 @@ export default defineConfig(({ mode }) => {
               ])
 
               return {
-                manifest: manifestEntries.filter((entry) => {
-                  const path = stripBasePath(entry.url, basePath)
-                  return staticShellUrls.has(path) || isPrecacheUrl(entry.url, basePath, eagerAssetUrls)
-                }),
+                manifest: filterPrecacheEntries(manifestEntries, basePath, eagerAssetUrls, staticShellUrls),
                 warnings: [],
               }
             },
