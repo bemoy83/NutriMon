@@ -66,14 +66,16 @@ describe('MealEditSheet', () => {
 
     render(<MealEditSheet meal={meal} logDate="2026-01-05" onClose={onClose} onSaved={onSaved} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Increase quantity' }))
+    fireEvent.click(screen.getByRole('button', { name: '1g' }))
+    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '2' } })
+    fireEvent.keyDown(screen.getByRole('spinbutton'), { key: 'Enter' })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => {
       expect(updateMealWithItemsMock).toHaveBeenCalledWith('meal-1', '2026-01-05T08:30:00.000Z', [
         {
           meal_item_id: 'item-1',
-          quantity: 1.5,
+          quantity: 2,
           product_name_snapshot: 'Deleted toast',
           calories_per_serving_snapshot: 120,
           protein_g_snapshot: 4,
