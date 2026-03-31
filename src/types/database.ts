@@ -86,11 +86,11 @@ export interface Database {
         Returns: DailyLogRow
       }
       create_meal_with_items: {
-        Args: { p_log_date: string; p_logged_at: string; p_items: MealItemInput[]; p_meal_type?: string | null }
+        Args: { p_log_date: string; p_logged_at: string; p_items: MealItemInput[]; p_meal_type?: string | null; p_meal_name?: string | null; p_template_id?: string | null }
         Returns: MealMutationResult
       }
       update_meal_with_items: {
-        Args: { p_meal_id: string; p_logged_at: string; p_items: MealItemUpdateInput[]; p_meal_type?: string | null }
+        Args: { p_meal_id: string; p_logged_at: string; p_items: MealItemUpdateInput[]; p_meal_type?: string | null; p_meal_name?: string | null }
         Returns: MealMutationResult
       }
       delete_meal: {
@@ -102,8 +102,20 @@ export interface Database {
         Returns: MealMutationResult
       }
       restore_meal_from_snapshot: {
-        Args: { p_log_date: string; p_logged_at: string; p_items: RestoreMealSnapshotItemInput[] }
+        Args: { p_log_date: string; p_logged_at: string; p_items: RestoreMealSnapshotItemInput[]; p_meal_type?: string | null; p_meal_name?: string | null }
         Returns: MealMutationResult
+      }
+      save_meal_as_template: {
+        Args: { p_meal_id: string; p_name: string }
+        Returns: MealTemplateRow
+      }
+      delete_meal_template: {
+        Args: { p_template_id: string }
+        Returns: void
+      }
+      get_meal_templates: {
+        Args: Record<string, never>
+        Returns: MealTemplateWithItemsRow[]
       }
       get_recent_food_sources: {
         Args: { p_limit?: number }
@@ -198,10 +210,35 @@ export interface MealRow {
   daily_log_id: string
   logged_at: string
   meal_type: string | null
+  meal_name: string | null
   total_calories: number
   item_count: number
   created_at: string
   updated_at: string
+}
+
+export interface MealTemplateRow {
+  id: string
+  user_id: string
+  name: string
+  default_meal_type: string | null
+  use_count: number
+  last_used_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface MealTemplateItemRow {
+  id: string
+  template_id: string
+  product_id: string | null
+  catalog_item_id: string | null
+  quantity: number
+  name_snapshot: string
+  calories_snapshot: number
+  serving_amount_snapshot: number | null
+  serving_unit_snapshot: string | null
+  created_at: string
 }
 
 export interface MealItemRow {
@@ -327,12 +364,17 @@ export interface RestoreMealSnapshotItemInput {
   serving_unit_snapshot?: string | null
 }
 
+export interface MealTemplateWithItemsRow extends MealTemplateRow {
+  items: MealTemplateItemRow[]
+}
+
 export interface MealMutationResult {
   meal: {
     id: string
     daily_log_id: string
     logged_at: string
     meal_type: string | null
+    meal_name: string | null
     total_calories: number
     item_count: number
   }

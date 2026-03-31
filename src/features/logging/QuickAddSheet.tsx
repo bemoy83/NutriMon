@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useInvalidateDailyLog } from './useDailyLog'
-import { createMealWithItems } from './api'
-import type { FoodSource, Product } from '@/types/domain'
+import { createMealWithItems, deleteMealTemplate } from './api'
+import type { FoodSource, MealTemplate, Product } from '@/types/domain'
 import ProductForm from './ProductForm'
 import type { MealMutationResult } from '@/types/database'
 import { useFoodSourceSearch, useFrequentFoodSources, useRecentFoodSources } from './useFoodSources'
-import { useInvalidateProductQueries } from './queryInvalidation'
+import { useInvalidateMealTemplates, useInvalidateProductQueries } from './queryInvalidation'
+import { useMealTemplates } from './useMealTemplates'
 import BottomSheet from '@/components/ui/BottomSheet'
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import GramInput from '@/components/ui/GramInput'
@@ -26,7 +27,7 @@ interface Props {
 }
 
 export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: Props) {
-  const [tab, setTab] = useState<'recent' | 'frequent' | 'search' | 'create'>('recent')
+  const [tab, setTab] = useState<'recent' | 'frequent' | 'search' | 'saved' | 'create'>('recent')
   const [searchQuery, setSearchQuery] = useState('')
   const [pendingItems, setPendingItems] = useState<PendingItem[]>([])
   const [adding, setAdding] = useState(false)
@@ -34,10 +35,12 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
   const [mealType, setMealType] = useState(() => getDefaultMealType(loggedAt))
   const invalidateDailyLog = useInvalidateDailyLog()
   const invalidateProducts = useInvalidateProductQueries()
+  const invalidateTemplates = useInvalidateMealTemplates()
 
   const recentQuery = useRecentFoodSources()
   const frequentQuery = useFrequentFoodSources()
   const searchQuery_ = useFoodSourceSearch(searchQuery)
+  const templatesQuery = useMealTemplates()
 
   function getFoodSourceKey(foodSource: FoodSource): string {
     return `${foodSource.sourceType}:${foodSource.sourceId}`
@@ -102,6 +105,46 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
       setAddError(error instanceof Error ? error.message : 'Unable to add meal')
     } finally {
       setAdding(false)
+    }
+  }
+
+  async function handleLogTemplate(template: MealTemplate) {
+    setAdding(true)
+    setAddError(null)
+    try {
+      const items = template.items
+        .filter((i) => i.productId || i.catalogItemId)
+        .map((i) => ({
+          ...(i.productId ? { product_id: i.productId } : { catalog_item_id: i.catalogItemId! }),
+          quantity: i.quantity,
+        }))
+      if (items.length === 0) throw new Error('Template has no usable items')
+      const result = await createMealWithItems(
+        logDate,
+        loggedAt,
+        items,
+        template.defaultMealType ?? mealType,
+        template.name,
+        template.id,
+      )
+      invalidateDailyLog(logDate)
+      invalidateProducts()
+      invalidateTemplates()
+      onAdded(result)
+      onClose()
+    } catch (error) {
+      setAddError(error instanceof Error ? error.message : 'Unable to log template')
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  async function handleDeleteTemplate(templateId: string) {
+    try {
+      await deleteMealTemplate(templateId)
+      invalidateTemplates()
+    } catch {
+      // silently ignore
     }
   }
 
@@ -192,6 +235,7 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
           { value: 'recent', label: 'Recent' },
           { value: 'frequent', label: 'Frequent' },
           { value: 'search', label: 'Search' },
+          { value: 'saved', label: 'Saved' },
         ]}
         onChange={(nextTab) => {
           setTab(nextTab)
@@ -213,33 +257,101 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
         </div>
       )}
 
-      {/* Product list */}
-      <div className="flex-1 overflow-y-auto">
-        {getActiveProducts().map((foodSource: FoodSource) => {
-          const pending = pendingItems.find((i) => getFoodSourceKey(i.foodSource) === getFoodSourceKey(foodSource))
-          return (
-            <ProductRow
-              key={getFoodSourceKey(foodSource)}
-              foodSource={foodSource}
-              grams={pending?.grams ?? null}
-              onAdd={() => addPendingItem(foodSource)}
-              onUpdateGrams={(g) => updateGrams(getFoodSourceKey(foodSource), g)}
-            />
-          )
-        })}
+      {/* Saved templates */}
+      {tab === 'saved' && (
+        <div className="flex-1 overflow-y-auto">
+          {(templatesQuery.data ?? []).length === 0 ? (
+            <div className="px-4 py-8 text-center">
+              <p className="text-sm text-[var(--app-text-muted)]">No saved meals yet.</p>
+              <p className="mt-1 text-xs text-[var(--app-text-subtle)]">Save a meal from the meal card to reuse it here.</p>
+            </div>
+          ) : (
+            (templatesQuery.data ?? []).map((template) => (
+              <TemplateRow
+                key={template.id}
+                template={template}
+                loading={adding}
+                onLog={() => handleLogTemplate(template)}
+                onDelete={() => handleDeleteTemplate(template.id)}
+              />
+            ))
+          )}
+        </div>
+      )}
 
-        {/* Create new shortcut */}
+      {/* Product list */}
+      {tab !== 'saved' && (
+        <div className="flex-1 overflow-y-auto">
+          {getActiveProducts().map((foodSource: FoodSource) => {
+            const pending = pendingItems.find((i) => getFoodSourceKey(i.foodSource) === getFoodSourceKey(foodSource))
+            return (
+              <ProductRow
+                key={getFoodSourceKey(foodSource)}
+                foodSource={foodSource}
+                grams={pending?.grams ?? null}
+                onAdd={() => addPendingItem(foodSource)}
+                onUpdateGrams={(g) => updateGrams(getFoodSourceKey(foodSource), g)}
+              />
+            )
+          })}
+
+          {/* Create new shortcut */}
+          <button
+            onClick={() => setTab('create')}
+            className="w-full border-t border-[var(--app-border-muted)] px-4 py-3 text-[var(--app-brand)] transition-colors hover:bg-[var(--app-surface-elevated)]"
+          >
+            <span className="w-8 h-8 flex items-center justify-center bg-[var(--app-brand-soft)] rounded-full text-[var(--app-brand)]">
+              +
+            </span>
+            <span className="text-sm">Create new product</span>
+          </button>
+        </div>
+      )}
+    </BottomSheet>
+  )
+}
+
+function TemplateRow({
+  template,
+  loading,
+  onLog,
+  onDelete,
+}: {
+  template: MealTemplate
+  loading: boolean
+  onLog: () => void
+  onDelete: () => void
+}) {
+  const estimatedCalories = template.items.reduce(
+    (sum, i) => sum + Math.round(i.quantity * i.caloriesSnapshot),
+    0,
+  )
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--app-border-muted)] hover:bg-[var(--app-surface-elevated)] transition-colors">
+      <div className="flex-1 min-w-0">
+        <p className="text-[var(--app-text-primary)] text-sm font-medium truncate">{template.name}</p>
+        <p className="text-[var(--app-text-muted)] text-xs">
+          {template.items.length} item{template.items.length !== 1 ? 's' : ''} · ~{estimatedCalories} kcal
+          {template.defaultMealType && <span className="ml-1">· {template.defaultMealType}</span>}
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
         <button
-          onClick={() => setTab('create')}
-          className="w-full border-t border-[var(--app-border-muted)] px-4 py-3 text-[var(--app-brand)] transition-colors hover:bg-[var(--app-surface-elevated)]"
+          onClick={onDelete}
+          className="text-[var(--app-text-subtle)] hover:text-[var(--app-danger)] transition-colors text-xs px-1.5 py-1"
+          aria-label="Delete template"
         >
-          <span className="w-8 h-8 flex items-center justify-center bg-[var(--app-brand-soft)] rounded-full text-[var(--app-brand)]">
-            +
-          </span>
-          <span className="text-sm">Create new product</span>
+          ✕
+        </button>
+        <button
+          onClick={onLog}
+          disabled={loading}
+          className="app-button-primary px-3 py-1.5 text-xs disabled:opacity-50"
+        >
+          Log
         </button>
       </div>
-    </BottomSheet>
+    </div>
   )
 }
 

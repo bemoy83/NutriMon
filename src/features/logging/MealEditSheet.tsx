@@ -42,6 +42,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
   const [searchQuery, setSearchQuery] = useState('')
   const [tab, setTab] = useState<'items' | 'add'>('items')
   const [mealType, setMealType] = useState(() => meal.mealType ?? getDefaultMealType(meal.loggedAt))
+  const [mealName, setMealName] = useState(() => meal.mealName ?? '')
 
   const recentQuery = useRecentFoodSources()
   const frequentQuery = useFrequentFoodSources()
@@ -174,6 +175,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
           }
         }),
         mealType,
+        mealName.trim() || null,
       )
 
       invalidateDailyLog(logDate)
@@ -220,6 +222,15 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
         </>
       }
     >
+        <div className="px-4 py-3 border-b border-[var(--app-border)]">
+          <input
+            type="text"
+            value={mealName}
+            onChange={(e) => setMealName(e.target.value)}
+            placeholder="Meal name (optional)"
+            className="app-input px-3 py-2 text-sm"
+          />
+        </div>
         <MealTypeSelector value={mealType} onChange={setMealType} />
         <SegmentedTabs
           value={tab}

@@ -67,11 +67,37 @@ export interface Meal {
   dailyLogId: string
   loggedAt: string
   mealType: string | null
+  mealName: string | null
   totalCalories: number
   itemCount: number
   createdAt: string
   updatedAt: string
   items?: MealItem[]
+}
+
+export interface MealTemplateItem {
+  id: string
+  templateId: string
+  productId: string | null
+  catalogItemId: string | null
+  quantity: number
+  nameSnapshot: string
+  caloriesSnapshot: number
+  servingAmountSnapshot: number | null
+  servingUnitSnapshot: string | null
+  createdAt: string
+}
+
+export interface MealTemplate {
+  id: string
+  userId: string
+  name: string
+  defaultMealType: string | null
+  useCount: number
+  lastUsedAt: string | null
+  createdAt: string
+  updatedAt: string
+  items: MealTemplateItem[]
 }
 
 export interface MealItem {

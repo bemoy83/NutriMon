@@ -2,8 +2,8 @@ import { useState } from 'react'
 import type { Meal, MealItem } from '@/types/domain'
 import { formatTime } from '@/lib/date'
 import { useInvalidateDailyLog } from './useDailyLog'
-import { useInvalidateProductQueries } from './queryInvalidation'
-import { deleteMeal } from './api'
+import { useInvalidateMealTemplates, useInvalidateProductQueries } from './queryInvalidation'
+import { deleteMeal, saveMealAsTemplate } from './api'
 import EmptyState from '@/components/ui/EmptyState'
 
 interface Props {
@@ -27,8 +27,10 @@ function getMealMacros(meal: Meal) {
 export default function MealList({ meals, isFinalized, timezone, logDate, onEditMeal, onDeleteSuccess }: Props) {
   const [expandedMealId, setExpandedMealId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [savingTemplateId, setSavingTemplateId] = useState<string | null>(null)
   const invalidateDailyLog = useInvalidateDailyLog()
   const invalidateProducts = useInvalidateProductQueries()
+  const invalidateTemplates = useInvalidateMealTemplates()
 
   async function handleDelete(meal: Meal) {
     setDeletingId(meal.id)
@@ -39,6 +41,16 @@ export default function MealList({ meals, isFinalized, timezone, logDate, onEdit
       onDeleteSuccess(meal)
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  async function handleSaveTemplate(meal: Meal, name: string) {
+    setSavingTemplateId(meal.id)
+    try {
+      await saveMealAsTemplate(meal.id, name)
+      invalidateTemplates()
+    } finally {
+      setSavingTemplateId(null)
     }
   }
 
@@ -59,11 +71,13 @@ export default function MealList({ meals, isFinalized, timezone, logDate, onEdit
             timezone={timezone}
             expanded={expandedMealId === meal.id}
             deleting={deletingId === meal.id}
+            savingTemplate={savingTemplateId === meal.id}
             onToggle={() =>
               setExpandedMealId((prev) => (prev === meal.id ? null : meal.id))
             }
             onEdit={() => onEditMeal(meal)}
             onDelete={() => handleDelete(meal)}
+            onSaveTemplate={(name) => handleSaveTemplate(meal, name)}
           />
         ))}
       </div>
@@ -77,19 +91,25 @@ function MealCard({
   timezone,
   expanded,
   deleting,
+  savingTemplate,
   onToggle,
   onEdit,
   onDelete,
+  onSaveTemplate,
 }: {
   meal: Meal
   isFinalized: boolean
   timezone: string
   expanded: boolean
   deleting: boolean
+  savingTemplate: boolean
   onToggle: () => void
   onEdit: () => void
   onDelete: () => void
+  onSaveTemplate: (name: string) => void
 }) {
+  const [showSavePrompt, setShowSavePrompt] = useState(false)
+  const [templateName, setTemplateName] = useState('')
   const macros = getMealMacros(meal)
   const hasMacros = macros.protein > 0 || macros.carbs > 0 || macros.fat > 0
 
@@ -101,11 +121,14 @@ function MealCard({
       >
         <div>
           <p className="text-[var(--app-text-primary)] text-sm font-medium">
-            {meal.mealType ?? formatTime(meal.loggedAt, timezone)}
+            {meal.mealName ?? meal.mealType ?? formatTime(meal.loggedAt, timezone)}
           </p>
           <p className="text-[var(--app-text-muted)] text-xs mt-0.5">
-            {meal.mealType && (
+            {(meal.mealName || meal.mealType) && (
               <span className="mr-1">{formatTime(meal.loggedAt, timezone)} ·</span>
+            )}
+            {meal.mealName && meal.mealType && (
+              <span className="mr-1">{meal.mealType} ·</span>
             )}
             {meal.itemCount} item{meal.itemCount !== 1 ? 's' : ''}
             {hasMacros && (
@@ -160,21 +183,63 @@ function MealCard({
 
           {/* Actions */}
           {!isFinalized && (
-            <div className="flex border-t border-[var(--app-border)]">
-              <button
-                onClick={onEdit}
-                className="flex-1 py-2.5 text-sm text-[var(--app-brand)] transition-colors hover:bg-[var(--app-surface-elevated)]"
-              >
-                Edit
-              </button>
-              <button
-                onClick={onDelete}
-                disabled={deleting}
-                className="flex-1 py-2.5 text-sm text-[var(--app-danger)] transition-colors hover:bg-[var(--app-surface-elevated)] disabled:opacity-40"
-              >
-                {deleting ? 'Deleting…' : 'Delete'}
-              </button>
-            </div>
+            <>
+              <div className="flex border-t border-[var(--app-border)]">
+                <button
+                  onClick={onEdit}
+                  className="flex-1 py-2.5 text-sm text-[var(--app-brand)] transition-colors hover:bg-[var(--app-surface-elevated)]"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => {
+                    setTemplateName(meal.mealName ?? meal.mealType ?? '')
+                    setShowSavePrompt(true)
+                  }}
+                  disabled={savingTemplate}
+                  className="flex-1 py-2.5 text-sm text-[var(--app-text-secondary)] transition-colors hover:bg-[var(--app-surface-elevated)] disabled:opacity-40"
+                >
+                  {savingTemplate ? 'Saving…' : 'Save'}
+                </button>
+                <button
+                  onClick={onDelete}
+                  disabled={deleting}
+                  className="flex-1 py-2.5 text-sm text-[var(--app-danger)] transition-colors hover:bg-[var(--app-surface-elevated)] disabled:opacity-40"
+                >
+                  {deleting ? 'Deleting…' : 'Delete'}
+                </button>
+              </div>
+              {showSavePrompt && (
+                <div className="border-t border-[var(--app-border)] px-4 py-3 flex gap-2">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    placeholder="Name this meal…"
+                    className="app-input flex-1 px-3 py-2 text-sm"
+                  />
+                  <button
+                    onClick={() => {
+                      if (!templateName.trim()) return
+                      onSaveTemplate(templateName.trim())
+                      setShowSavePrompt(false)
+                      setTemplateName('')
+                    }}
+                    disabled={!templateName.trim()}
+                    className="app-button-primary px-3 py-2 text-sm disabled:opacity-40"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setShowSavePrompt(false)}
+                    className="app-button-secondary px-3 py-2 text-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

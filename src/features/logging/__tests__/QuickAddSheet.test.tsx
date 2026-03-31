@@ -5,6 +5,7 @@ import QuickAddSheet from '../QuickAddSheet'
 const createMealWithItemsMock = vi.fn()
 const invalidateDailyLogMock = vi.fn()
 const invalidateProductsMock = vi.fn()
+const invalidateTemplatesMock = vi.fn()
 
 vi.mock('../api', () => ({
   createMealWithItems: (...args: unknown[]) => createMealWithItemsMock(...args),
@@ -16,6 +17,7 @@ vi.mock('../useDailyLog', () => ({
 
 vi.mock('../queryInvalidation', () => ({
   useInvalidateProductQueries: () => invalidateProductsMock,
+  useInvalidateMealTemplates: () => invalidateTemplatesMock,
 }))
 
 vi.mock('../useFoodSources', () => ({
@@ -38,6 +40,10 @@ vi.mock('../useFoodSources', () => ({
   }),
   useFrequentFoodSources: () => ({ data: [] }),
   useFoodSourceSearch: () => ({ data: [] }),
+}))
+
+vi.mock('../useMealTemplates', () => ({
+  useMealTemplates: () => ({ data: [] }),
 }))
 
 describe('QuickAddSheet', () => {
@@ -85,7 +91,7 @@ describe('QuickAddSheet', () => {
     await waitFor(() => {
       expect(createMealWithItemsMock).toHaveBeenCalledWith('2026-01-05', '2026-01-05T08:00:00.000Z', [
         { product_id: 'product-1', quantity: 1 },
-      ])
+      ], 'Breakfast')
       expect(invalidateDailyLogMock).toHaveBeenCalledWith('2026-01-05')
       expect(invalidateProductsMock).toHaveBeenCalled()
       expect(onAdded).toHaveBeenCalled()

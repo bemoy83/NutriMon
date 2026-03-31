@@ -30,6 +30,8 @@ const meal: Meal = {
   userId: 'user-1',
   dailyLogId: 'log-1',
   loggedAt: '2026-01-05T08:30:00.000Z',
+  mealType: null,
+  mealName: null,
   totalCalories: 120,
   itemCount: 1,
   createdAt: '2026-01-05T08:30:00.000Z',
@@ -84,7 +86,7 @@ describe('MealEditSheet', () => {
           serving_amount_snapshot: 1,
           serving_unit_snapshot: 'slice',
         },
-      ])
+      ], 'Breakfast')
       expect(invalidateDailyLogMock).toHaveBeenCalledWith('2026-01-05')
       expect(invalidateProductsMock).toHaveBeenCalled()
       expect(onSaved).toHaveBeenCalled()

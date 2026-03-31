@@ -9,3 +9,8 @@ export function useInvalidateProductQueries() {
     queryClient.invalidateQueries({ queryKey: ['food-sources'] })
   }
 }
+
+export function useInvalidateMealTemplates() {
+  const queryClient = useQueryClient()
+  return () => queryClient.invalidateQueries({ queryKey: ['meal-templates'] })
+}

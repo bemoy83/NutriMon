@@ -8,6 +8,8 @@ import type {
   HabitMetrics,
   Meal,
   MealItem,
+  MealTemplate,
+  MealTemplateItem,
   Product,
   Profile,
   WeightEntry,
@@ -22,6 +24,8 @@ import type {
   HabitMetricsRow,
   MealItemRow,
   MealRow,
+  MealTemplateItemRow,
+  MealTemplateWithItemsRow,
   ProductRow,
   ProfileRow,
   WeightEntryRow,
@@ -118,11 +122,41 @@ export function mapMeal(row: MealRow, items: MealItem[] = []): Meal {
     dailyLogId: row.daily_log_id,
     loggedAt: row.logged_at,
     mealType: row.meal_type ?? null,
+    mealName: row.meal_name ?? null,
     totalCalories: row.total_calories,
     itemCount: row.item_count,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     items,
+  }
+}
+
+export function mapMealTemplateItem(row: MealTemplateItemRow): MealTemplateItem {
+  return {
+    id: row.id,
+    templateId: row.template_id,
+    productId: row.product_id,
+    catalogItemId: row.catalog_item_id,
+    quantity: row.quantity,
+    nameSnapshot: row.name_snapshot,
+    caloriesSnapshot: row.calories_snapshot,
+    servingAmountSnapshot: row.serving_amount_snapshot,
+    servingUnitSnapshot: row.serving_unit_snapshot,
+    createdAt: row.created_at,
+  }
+}
+
+export function mapMealTemplate(row: MealTemplateWithItemsRow): MealTemplate {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    name: row.name,
+    defaultMealType: row.default_meal_type,
+    useCount: row.use_count,
+    lastUsedAt: row.last_used_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    items: (row.items ?? []).map(mapMealTemplateItem),
   }
 }
 
