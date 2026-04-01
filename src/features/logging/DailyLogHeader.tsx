@@ -13,8 +13,6 @@ interface DailyLogHeaderProps {
   logDate: string
   todayDate: string
   isFinalized: boolean
-  totalCalories: number
-  calorieTarget: number
   remaining: number
   progressPct: number
   currentStreak: number
@@ -31,8 +29,6 @@ export default function DailyLogHeader({
   logDate,
   todayDate,
   isFinalized,
-  totalCalories,
-  calorieTarget,
   remaining,
   progressPct,
   currentStreak,

@@ -54,6 +54,10 @@
   --app-surface-purple-text: #581C87;
   --app-surface-green: #DCFCE7;
   --app-surface-green-text: #14532D;
+  --app-surface-amber: #FEF3C7;
+  --app-surface-amber-text: #78350F;
+  --app-surface-blue: #DBEAFE;
+  --app-surface-blue-text: #1E3A8A;
 
   /* Spacing */
   --app-radius-sm: 0.5rem;

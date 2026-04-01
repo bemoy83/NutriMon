@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Meal, MealItem } from '@/types/domain'
 import { formatTime } from '@/lib/date'
+import { getMealTypeTheme } from '@/lib/mealType'
 import { useInvalidateDailyLog } from './useDailyLog'
 import { useInvalidateMealTemplates, useInvalidateProductQueries } from './queryInvalidation'
 import { deleteMeal, saveMealAsTemplate } from './api'
@@ -112,12 +113,16 @@ function MealCard({
   const [templateName, setTemplateName] = useState('')
   const macros = getMealMacros(meal)
   const hasMacros = macros.protein > 0 || macros.carbs > 0 || macros.fat > 0
+  const theme = getMealTypeTheme(meal.mealType)
 
   return (
-    <div className="app-card overflow-hidden">
+    <div
+      className="app-card overflow-hidden"
+      style={theme ? { background: theme.bg } : undefined}
+    >
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors hover:bg-[var(--app-surface-elevated)]"
+        className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors hover:bg-black/5"
       >
         <div>
           <p className="text-[var(--app-text-primary)] text-sm font-medium">
@@ -156,14 +161,14 @@ function MealCard({
       </button>
 
       {expanded && (
-        <div className="border-t border-[var(--app-border)]">
+        <div className="border-t" style={{ borderColor: theme ? theme.divider : 'var(--app-border)' }}>
           {/* Macro summary strip */}
           {hasMacros && (
             <div
               className="flex items-center justify-around px-4 py-2.5 border-b"
               style={{
-                borderColor: 'var(--app-border-muted)',
-                background: 'var(--app-surface-elevated)',
+                borderColor: theme ? theme.divider : 'var(--app-border-muted)',
+                background: theme ? 'rgba(0,0,0,0.04)' : 'var(--app-surface-elevated)',
               }}
             >
               <MacroStat label="Protein" value={macros.protein} color="var(--app-macro-protein)" />
@@ -184,10 +189,10 @@ function MealCard({
           {/* Actions */}
           {!isFinalized && (
             <>
-              <div className="flex border-t border-[var(--app-border)]">
+              <div className="flex border-t" style={{ borderColor: theme ? theme.divider : 'var(--app-border)' }}>
                 <button
                   onClick={onEdit}
-                  className="flex-1 py-2.5 text-sm text-[var(--app-brand)] transition-colors hover:bg-[var(--app-surface-elevated)]"
+                  className="flex-1 py-2.5 text-sm text-[var(--app-brand)] transition-colors hover:bg-black/5"
                 >
                   Edit
                 </button>
@@ -197,20 +202,20 @@ function MealCard({
                     setShowSavePrompt(true)
                   }}
                   disabled={savingTemplate}
-                  className="flex-1 py-2.5 text-sm text-[var(--app-text-secondary)] transition-colors hover:bg-[var(--app-surface-elevated)] disabled:opacity-40"
+                  className="flex-1 py-2.5 text-sm text-[var(--app-text-secondary)] transition-colors hover:bg-black/5 disabled:opacity-40"
                 >
                   {savingTemplate ? 'Saving…' : 'Template'}
                 </button>
                 <button
                   onClick={onDelete}
                   disabled={deleting}
-                  className="flex-1 py-2.5 text-sm text-[var(--app-danger)] transition-colors hover:bg-[var(--app-surface-elevated)] disabled:opacity-40"
+                  className="flex-1 py-2.5 text-sm text-[var(--app-danger)] transition-colors hover:bg-black/5 disabled:opacity-40"
                 >
                   {deleting ? 'Deleting…' : 'Delete'}
                 </button>
               </div>
               {showSavePrompt && (
-                <div className="border-t border-[var(--app-border)] px-4 py-3 flex gap-2">
+                <div className="border-t px-4 py-3 flex gap-2" style={{ borderColor: theme ? theme.divider : 'var(--app-border)' }}>
                   <input
                     autoFocus
                     type="text"

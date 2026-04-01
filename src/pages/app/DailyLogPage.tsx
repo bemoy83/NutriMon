@@ -112,8 +112,6 @@ export default function DailyLogPage() {
         logDate={logDate}
         todayDate={todayDate}
         isFinalized={isFinalized}
-        totalCalories={totalCalories}
-        calorieTarget={calorieTarget}
         remaining={remaining}
         progressPct={progressPct}
         currentStreak={currentStreak}
