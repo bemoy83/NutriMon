@@ -1,8 +1,10 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import LoadingState from '@/components/ui/LoadingState'
 import { useBattleRun, useSubmitBattleAction } from '@/features/creature/useBattleRun'
-import type { BattleLogEntry } from '@/types/domain'
+import type { BattleLogEntry, BattleRunSession } from '@/types/domain'
+
+const ENTRY_DELAY_MS = 600
 
 function HpBar({ current, max, color }: { current: number; max: number; color: 'brand' | 'danger' }) {
   const pct = max > 0 ? Math.round((current / max) * 100) : 0
@@ -41,18 +43,112 @@ function LogEntry({ entry }: { entry: BattleLogEntry }) {
   )
 }
 
+// Reveal the HP panels and result card from the latest session state only after
+// all new log entries have been displayed.
+function CombatantPanels({
+  session,
+  displayedLog,
+}: {
+  session: BattleRunSession
+  displayedLog: BattleLogEntry[]
+}) {
+  // Derive displayed HP by replaying damage from the displayed log entries.
+  // This keeps HP bars in sync with whatever log is currently visible.
+  let opponentHp = session.opponentMaxHp
+  let playerHp = session.playerMaxHp
+
+  for (const entry of displayedLog) {
+    if (entry.target === 'opponent' && entry.targetHpAfter !== null) {
+      opponentHp = entry.targetHpAfter
+    }
+    if (entry.target === 'player' && entry.targetHpAfter !== null) {
+      playerHp = entry.targetHpAfter
+    }
+  }
+
+  return (
+    <div className="relative shrink-0 px-4 pt-4 pb-2">
+      {/* Opponent — top right */}
+      <div className="ml-auto w-52 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-3">
+        <p className="truncate text-xs uppercase tracking-[0.1em] text-[var(--app-text-muted)]">Opponent</p>
+        <p className="mt-0.5 truncate text-base font-bold text-[var(--app-text-primary)]">
+          {session.opponent.name}
+        </p>
+        <div className="mt-2">
+          <HpBar current={opponentHp} max={session.opponentMaxHp} color="danger" />
+          <p className="mt-1 text-right text-xs text-[var(--app-text-secondary)]">
+            {opponentHp} / {session.opponentMaxHp} HP
+          </p>
+        </div>
+      </div>
+
+      {/* Player — below opponent, left-aligned */}
+      <div className="mt-2 w-52 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-3">
+        <p className="truncate text-xs uppercase tracking-[0.1em] text-[var(--app-text-muted)]">Companion</p>
+        <p className="mt-0.5 truncate text-base font-bold text-[var(--app-text-primary)]">
+          {session.companion.name}
+        </p>
+        <div className="mt-2">
+          <HpBar current={playerHp} max={session.playerMaxHp} color="brand" />
+          <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
+            {playerHp} / {session.playerMaxHp} HP
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function BattlePage() {
   const { battleRunId } = useParams<{ battleRunId: string }>()
   const navigate = useNavigate()
   const logEndRef = useRef<HTMLDivElement>(null)
+  const animTimers = useRef<ReturnType<typeof setTimeout>[]>([])
 
   const { data: session, isLoading, error } = useBattleRun(battleRunId)
   const { mutate: submitAction, isPending } = useSubmitBattleAction()
 
-  const logLength = session?.battleLog.length ?? 0
+  // The subset of log entries currently visible — filled in one-by-one after
+  // each round so entries appear sequentially instead of all at once.
+  const [displayedLog, setDisplayedLog] = useState<BattleLogEntry[]>([])
+  const [isAnimating, setIsAnimating] = useState(false)
+
+  // Seed displayed log from the initial session load (resume scenario).
+  const seeded = useRef(false)
   useEffect(() => {
-    logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [logLength])
+    if (session && !seeded.current) {
+      seeded.current = true
+      setDisplayedLog(session.battleLog)
+    }
+  }, [session])
+
+  // Reveal new log entries one-by-one after a round resolves.
+  const revealEntries = useCallback((newEntries: BattleLogEntry[], base: BattleLogEntry[]) => {
+    // Clear any stale timers from a previous call
+    animTimers.current.forEach(clearTimeout)
+    animTimers.current = []
+
+    if (newEntries.length === 0) return
+
+    setIsAnimating(true)
+
+    newEntries.forEach((entry, i) => {
+      const t = setTimeout(() => {
+        setDisplayedLog([...base, ...newEntries.slice(0, i + 1)])
+        logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+
+        if (i === newEntries.length - 1) {
+          setIsAnimating(false)
+        }
+      }, i * ENTRY_DELAY_MS)
+      animTimers.current.push(t)
+    })
+  }, [])
+
+  // Clean up timers on unmount
+  useEffect(() => {
+    return () => animTimers.current.forEach(clearTimeout)
+  }, [])
 
   if (isLoading) return <LoadingState fullScreen />
 
@@ -76,10 +172,20 @@ export default function BattlePage() {
   const isActive = session.status === 'active'
   const isCompleted = session.status === 'completed'
   const isWin = session.outcome === 'win'
+  const allEntriesShown = displayedLog.length === session.battleLog.length
 
   function handleAttack() {
-    if (!session || !isActive || isPending) return
-    submitAction({ battleRunId: session.id, action: 'attack' })
+    if (!session || !isActive || isPending || isAnimating) return
+    const prevLog = [...displayedLog]
+    submitAction(
+      { battleRunId: session.id, action: 'attack' },
+      {
+        onSuccess: (updated) => {
+          const newEntries = updated.battleLog.slice(prevLog.length)
+          revealEntries(newEntries, prevLog)
+        },
+      },
+    )
   }
 
   return (
@@ -97,52 +203,24 @@ export default function BattlePage() {
         <span className="w-10" />
       </div>
 
-      {/* Combatant panels */}
-      <div className="relative shrink-0 px-4 pt-4 pb-2">
-        {/* Opponent — top right */}
-        <div className="ml-auto w-52 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-3">
-          <p className="truncate text-xs uppercase tracking-[0.1em] text-[var(--app-text-muted)]">Opponent</p>
-          <p className="mt-0.5 truncate text-base font-bold text-[var(--app-text-primary)]">
-            {session.opponent.name}
-          </p>
-          <div className="mt-2">
-            <HpBar current={session.opponentCurrentHp} max={session.opponentMaxHp} color="danger" />
-            <p className="mt-1 text-right text-xs text-[var(--app-text-secondary)]">
-              {session.opponentCurrentHp} / {session.opponentMaxHp} HP
-            </p>
-          </div>
-        </div>
-
-        {/* Player — below opponent, left-aligned */}
-        <div className="mt-2 w-52 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-3">
-          <p className="truncate text-xs uppercase tracking-[0.1em] text-[var(--app-text-muted)]">Companion</p>
-          <p className="mt-0.5 truncate text-base font-bold text-[var(--app-text-primary)]">
-            {session.companion.name}
-          </p>
-          <div className="mt-2">
-            <HpBar current={session.playerCurrentHp} max={session.playerMaxHp} color="brand" />
-            <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
-              {session.playerCurrentHp} / {session.playerMaxHp} HP
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* HP panels — driven by displayedLog so bars animate with the entries */}
+      <CombatantPanels session={session} displayedLog={displayedLog} />
 
       {/* Battle log */}
       <div className="flex-1 overflow-y-auto px-4 py-2">
-        {session.battleLog.length === 0 && isActive ? (
+        {displayedLog.length === 0 && isActive ? (
           <p className="py-4 text-center text-sm text-[var(--app-text-muted)]">
             Round {session.currentRound} — tap Attack to begin
           </p>
         ) : null}
         <div className="space-y-2">
-          {session.battleLog.map((entry) => (
+          {displayedLog.map((entry) => (
             <LogEntry key={entry.id} entry={entry} />
           ))}
         </div>
 
-        {/* Result overlay inside log */}
-        {isCompleted ? (
+        {/* Result card — only shown once all entries have been revealed */}
+        {isCompleted && allEntriesShown ? (
           <div className="mt-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 text-center">
             <p
               className={`text-3xl font-extrabold ${isWin ? 'text-[var(--app-success)]' : 'text-[var(--app-danger)]'}`}
@@ -173,15 +251,23 @@ export default function BattlePage() {
 
       {/* Action tray */}
       <div className="shrink-0 border-t border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-4">
-        {isActive ? (
+        {isCompleted && allEntriesShown ? (
+          <button
+            type="button"
+            onClick={() => navigate('/app/creature')}
+            className="w-full rounded-xl bg-[var(--app-brand)] py-3 text-base font-semibold text-white transition-colors hover:bg-[var(--app-brand-hover)]"
+          >
+            Return to Companion
+          </button>
+        ) : isActive ? (
           <>
             <button
               type="button"
               onClick={handleAttack}
-              disabled={isPending}
+              disabled={isPending || isAnimating}
               className="w-full rounded-xl bg-[var(--app-brand)] py-3 text-base font-semibold text-white transition-colors hover:bg-[var(--app-brand-hover)] disabled:opacity-50"
             >
-              {isPending ? 'Attacking…' : 'Attack'}
+              {isPending || isAnimating ? 'Attacking…' : 'Attack'}
             </button>
             <div className="mt-2 grid grid-cols-3 gap-2">
               {(['Defend', 'Skill', 'Items'] as const).map((label) => (
@@ -198,17 +284,7 @@ export default function BattlePage() {
               ))}
             </div>
           </>
-        ) : (
-          <div className="space-y-2">
-            <button
-              type="button"
-              onClick={() => navigate('/app/creature')}
-              className="w-full rounded-xl bg-[var(--app-brand)] py-3 text-base font-semibold text-white transition-colors hover:bg-[var(--app-brand-hover)]"
-            >
-              Return to Companion
-            </button>
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   )
