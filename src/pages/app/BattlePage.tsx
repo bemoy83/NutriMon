@@ -108,25 +108,30 @@ export default function BattlePage() {
   const { data: session, isLoading, error } = useBattleRun(battleRunId)
   const { mutate: submitAction, isPending } = useSubmitBattleAction()
 
-  // The subset of log entries currently visible — filled in one-by-one after
-  // each round so entries appear sequentially instead of all at once.
-  const [displayedLog, setDisplayedLog] = useState<BattleLogEntry[]>([])
+  // Local override used only while revealing a newly returned round.
+  // When absent, render the current query data directly.
+  const [displayedLogOverride, setDisplayedLogOverride] = useState<{
+    sessionId: string
+    entries: BattleLogEntry[]
+  } | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
 
-  // Seed displayed log from the initial session load (resume scenario).
-  const seeded = useRef(false)
-  useEffect(() => {
-    if (session && !seeded.current) {
-      seeded.current = true
-      setDisplayedLog(session.battleLog)
-    }
-  }, [session])
+  const displayedLog =
+    session && displayedLogOverride?.sessionId === session.id
+      ? isAnimating || displayedLogOverride.entries.length > session.battleLog.length
+        ? displayedLogOverride.entries
+        : session.battleLog
+      : session?.battleLog ?? []
 
   // Reveal new log entries one-by-one after a round resolves.
-  const revealEntries = useCallback((newEntries: BattleLogEntry[], base: BattleLogEntry[]) => {
+  const revealEntries = useCallback((sessionId: string, fullLog: BattleLogEntry[], base: BattleLogEntry[]) => {
     // Clear any stale timers from a previous call
     animTimers.current.forEach(clearTimeout)
     animTimers.current = []
+
+    const newEntries = fullLog.slice(base.length)
+
+    setDisplayedLogOverride({ sessionId, entries: base })
 
     if (newEntries.length === 0) return
 
@@ -134,7 +139,10 @@ export default function BattlePage() {
 
     newEntries.forEach((entry, i) => {
       const t = setTimeout(() => {
-        setDisplayedLog([...base, ...newEntries.slice(0, i + 1)])
+        setDisplayedLogOverride({
+          sessionId,
+          entries: [...base, ...newEntries.slice(0, i + 1)],
+        })
         logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
 
         if (i === newEntries.length - 1) {
@@ -181,8 +189,7 @@ export default function BattlePage() {
       { battleRunId: session.id, action: 'attack' },
       {
         onSuccess: (updated) => {
-          const newEntries = updated.battleLog.slice(prevLog.length)
-          revealEntries(newEntries, prevLog)
+          revealEntries(updated.id, updated.battleLog, prevLog)
         },
       },
     )
