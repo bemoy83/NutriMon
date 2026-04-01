@@ -1,16 +1,21 @@
-import { QUALIFYING_STREAK_DAYS_FOR_ADULT } from '@/lib/constants'
-import { useLatestCreatureStats } from '@/features/creature/useLatestCreatureStats'
+import { useState } from 'react'
 import LoadingState from '@/components/ui/LoadingState'
 import EmptyState from '@/components/ui/EmptyState'
+import { useLatestCreatureStats } from '@/features/creature/useLatestCreatureStats'
+import { resolveBattleRun, startBattleRun } from '@/features/creature/api'
+import { useBattleHub, useInvalidateBattleHub } from '@/features/creature/useBattleHub'
+import { useProfileSummary } from '@/features/profile/useProfileSummary'
+import { getTodayInTimezone } from '@/lib/date'
+import type { BattleLikelyOutcome, BattleOpponent, CreatureCondition, CreatureStage, ReadinessBand } from '@/types/domain'
 
 function StatBar({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div>
-      <div className="flex justify-between mb-1">
+      <div className="mb-1 flex justify-between">
         <span className="text-sm text-[var(--app-text-secondary)]">{label}</span>
         <span className="text-sm font-semibold text-[var(--app-text-primary)]">{value}</span>
       </div>
-      <div className="h-2.5 rounded-full overflow-hidden bg-[var(--app-border)]">
+      <div className="h-2.5 overflow-hidden rounded-full bg-[var(--app-border)]">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${Math.min(value, 100)}%`, background: color }}
@@ -20,81 +25,301 @@ function StatBar({ label, value, color }: { label: string; value: number; color:
   )
 }
 
-export default function CreaturePage() {
-  const { data, isLoading } = useLatestCreatureStats()
-  const stats = data?.stats
-  const metrics = data?.metrics
-  const currentStreak = metrics?.currentStreak ?? 0
-  const streakToEvolution = Math.max(0, QUALIFYING_STREAK_DAYS_FOR_ADULT - currentStreak)
+function getStageEmoji(stage: CreatureStage) {
+  if (stage === 'champion') return '🐉'
+  if (stage === 'adult') return '🦊'
+  return '🥚'
+}
 
-  if (isLoading) {
+function getConditionTone(condition: CreatureCondition) {
+  switch (condition) {
+    case 'thriving':
+      return 'text-[var(--app-success)]'
+    case 'recovering':
+      return 'text-[var(--app-warning)]'
+    case 'quiet':
+      return 'text-[var(--app-text-muted)]'
+    default:
+      return 'text-[var(--app-brand)]'
+  }
+}
+
+function getOutcomeTone(outcome: BattleLikelyOutcome) {
+  switch (outcome) {
+    case 'favored':
+      return 'text-[var(--app-success)]'
+    case 'risky':
+      return 'text-[var(--app-danger)]'
+    default:
+      return 'text-[var(--app-warning)]'
+  }
+}
+
+function getReadinessDescription(readiness: ReadinessBand) {
+  switch (readiness) {
+    case 'peak':
+      return 'Peak means your locked prep is in the strongest range for today.'
+    case 'ready':
+      return 'Ready means the companion is well prepared for a solid battle today.'
+    case 'building':
+      return 'Building means readiness is moving in the right direction, with room to strengthen it further.'
+    default:
+      return 'Recovering means today starts from a weaker prep snapshot and may need a safer matchup.'
+  }
+}
+
+export default function CreaturePage() {
+  const profileQuery = useProfileSummary()
+  const timezone = profileQuery.data?.timezone ?? 'UTC'
+  const battleDate = getTodayInTimezone(timezone)
+  const statsQuery = useLatestCreatureStats()
+  const battleHubQuery = useBattleHub(battleDate, timezone)
+  const invalidateBattleHub = useInvalidateBattleHub()
+  const [runningOpponentId, setRunningOpponentId] = useState<string | null>(null)
+  const [battleActionError, setBattleActionError] = useState<string | null>(null)
+
+  const stats = battleHubQuery.data?.snapshot ?? statsQuery.data?.stats ?? null
+  const companion = battleHubQuery.data?.companion ?? {
+    userId: '',
+    name: 'Sprout',
+    stage: stats?.stage ?? 'baby',
+    level: 1,
+    xp: 0,
+    currentCondition: 'steady' as const,
+    hatchedAt: '',
+    evolvedToAdultAt: null,
+    evolvedToChampionAt: null,
+    createdAt: '',
+    updatedAt: '',
+  }
+
+  async function handleBattle(opponent: BattleOpponent) {
+    if (!battleHubQuery.data?.snapshot) return
+    setRunningOpponentId(opponent.id)
+    setBattleActionError(null)
+
+    try {
+      const startedRun = await startBattleRun(battleHubQuery.data.snapshot.id, opponent.id)
+      await resolveBattleRun(startedRun.id)
+      invalidateBattleHub(battleDate)
+    } catch (error) {
+      setBattleActionError(error instanceof Error ? error.message : 'Unable to resolve battle')
+    } finally {
+      setRunningOpponentId(null)
+    }
+  }
+
+  if (profileQuery.isLoading || statsQuery.isLoading) {
     return <LoadingState fullScreen />
   }
 
   return (
-    <div className="app-page flex min-h-full flex-col items-center px-4 py-6 pb-24">
-      <h1 className="text-xl font-bold text-[var(--app-text-primary)] mb-6 self-start">Your Companion</h1>
+    <div className="app-page min-h-full px-4 py-6 pb-24">
+      <h1 className="mb-6 text-xl font-bold text-[var(--app-text-primary)]">Your Companion</h1>
 
-      {/* Creature visual */}
-      <div className="relative mb-6">
-        <div className="w-40 h-40 rounded-full bg-gradient-to-br from-[var(--app-brand-soft)] to-[var(--app-surface-elevated)] flex items-center justify-center shadow-lg">
-          <span className="text-7xl">🥚</span>
-        </div>
-        <div className="absolute -bottom-1 -right-1 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-0.5">
-          <span className="text-xs text-[var(--app-text-secondary)] capitalize">{stats?.stage ?? 'baby'}</span>
-        </div>
-      </div>
-
-      {/* Streak badge */}
-      <div className="flex items-center gap-2 mb-6">
-        <span className="text-[var(--app-warning)] text-2xl font-bold">{currentStreak}</span>
-        <div>
-          <p className="text-[var(--app-text-primary)] text-sm font-medium">day streak</p>
-          <p className="text-[var(--app-text-muted)] text-xs">
-            Longest: {metrics?.longestStreak ?? 0} days
-          </p>
-        </div>
-      </div>
-
-      {/* Stats */}
-      {stats ? (
-        <div className="app-card w-full max-w-sm space-y-4 p-5">
-          <StatBar label="Strength" value={stats.strength} color="var(--app-danger)" />
-          <StatBar label="Resilience" value={stats.resilience} color="var(--app-brand)" />
-          <StatBar label="Momentum" value={stats.momentum} color="var(--app-warning)" />
-          <div>
-            <div className="flex justify-between mb-1">
-              <span className="text-sm text-[var(--app-text-secondary)]">Vitality</span>
-              <span className="text-sm font-semibold text-[var(--app-text-primary)]">{stats.vitality}</span>
+      <div className="app-card overflow-hidden">
+        <div className="bg-gradient-to-br from-[var(--app-brand-soft)] via-[var(--app-surface)] to-[var(--app-surface-elevated)] px-5 py-6">
+          <div className="flex items-center gap-4">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white text-5xl shadow-sm">
+              {getStageEmoji(companion.stage)}
             </div>
-            <div className="h-2.5 rounded-full overflow-hidden bg-[var(--app-border)]">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Companion</p>
+              <h2 className="truncate text-2xl font-bold text-[var(--app-text-primary)]">{companion.name}</h2>
+              <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                <span className="rounded-full bg-white px-3 py-1 font-medium capitalize text-[var(--app-text-secondary)]">
+                  {companion.stage}
+                </span>
+                <span className="rounded-full bg-white px-3 py-1 font-medium text-[var(--app-text-secondary)]">
+                  Level {companion.level}
+                </span>
+                <span className={`rounded-full bg-white px-3 py-1 font-medium capitalize ${getConditionTone(companion.currentCondition)}`}>
+                  {companion.currentCondition}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <div className="mb-1 flex justify-between text-sm">
+              <span className="text-[var(--app-text-secondary)]">XP</span>
+              <span className="font-semibold text-[var(--app-text-primary)]">{companion.xp}</span>
+            </div>
+            <div className="h-2.5 overflow-hidden rounded-full bg-white/70">
               <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${Math.min((stats.vitality / 200) * 100, 100)}%`, background: 'var(--app-success)' }}
+                className="h-full rounded-full bg-[var(--app-brand)] transition-all duration-500"
+                style={{ width: `${Math.min((companion.xp % 100), 100)}%` }}
               />
             </div>
           </div>
         </div>
-      ) : (
-        <div className="app-card w-full max-w-sm p-5">
-          <EmptyState title="Finalize your first day to see your creature's stats." className="py-0" />
-        </div>
-      )}
 
-      {/* Evolution teaser */}
-      <div className="mt-4 w-full max-w-sm rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
-        <p className="text-[var(--app-text-secondary)] text-sm text-center">
-          {streakToEvolution > 0
-            ? `Next evolution in ${streakToEvolution} more qualifying day${streakToEvolution !== 1 ? 's' : ''}`
-            : `Next evolution at ${QUALIFYING_STREAK_DAYS_FOR_ADULT}-day streak`}
-        </p>
-        <div className="mt-2 h-1.5 rounded-full overflow-hidden bg-[var(--app-border)]">
-          <div
-            className="h-full rounded-full transition-all bg-[var(--app-brand)]"
-            style={{
-              width: `${Math.min((currentStreak / QUALIFYING_STREAK_DAYS_FOR_ADULT) * 100, 100)}%`,
-            }}
-          />
+        {stats ? (
+          <div className="space-y-4 p-5">
+            <StatBar label="Strength" value={stats.strength} color="var(--app-danger)" />
+            <StatBar label="Resilience" value={stats.resilience} color="var(--app-brand)" />
+            <StatBar label="Momentum" value={stats.momentum} color="var(--app-warning)" />
+            <div>
+              <div className="mb-1 flex justify-between">
+                <span className="text-sm text-[var(--app-text-secondary)]">Vitality</span>
+                <span className="text-sm font-semibold text-[var(--app-text-primary)]">{stats.vitality}</span>
+              </div>
+              <div className="h-2.5 overflow-hidden rounded-full bg-[var(--app-border)]">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min((stats.vitality / 200) * 100, 100)}%`, background: 'var(--app-success)' }}
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-5">
+            <EmptyState title="Finalize your first day to hatch your companion." className="py-2" />
+          </div>
+        )}
+      </div>
+
+      <div className="app-card mt-4 p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Today&apos;s Battle Prep</p>
+            <p className="mt-1 text-sm text-[var(--app-text-secondary)]">Locked snapshot for {battleDate}</p>
+          </div>
+          {battleHubQuery.data?.snapshot ? (
+            <div className="rounded-full bg-[var(--app-surface-muted)] px-3 py-1 text-sm font-semibold capitalize text-[var(--app-text-primary)]">
+              Readiness: {battleHubQuery.data.snapshot.readinessBand}
+            </div>
+          ) : null}
+        </div>
+
+        {battleHubQuery.isLoading ? (
+          <LoadingState label="Loading battle prep…" />
+        ) : battleHubQuery.error ? (
+          <div className="mt-4 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
+            <p className="text-sm text-[var(--app-text-primary)]">Battle data is unavailable right now.</p>
+            <p className="mt-1 text-xs text-[var(--app-text-muted)]">
+              Logging and finalization still work normally. Try this page again after your next refresh.
+            </p>
+          </div>
+        ) : battleHubQuery.data?.snapshot ? (
+          <>
+            <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+              <div className="rounded-xl bg-[var(--app-surface-muted)] px-3 py-2">
+                <p className="text-xs text-[var(--app-text-muted)]">Readiness</p>
+                <p className="font-semibold text-[var(--app-text-primary)]">{battleHubQuery.data.snapshot.readinessScore}</p>
+              </div>
+              <div className="rounded-xl bg-[var(--app-surface-muted)] px-3 py-2 capitalize">
+                <p className="text-xs text-[var(--app-text-muted)]">Condition</p>
+                <p className="font-semibold text-[var(--app-text-primary)]">{battleHubQuery.data.snapshot.condition}</p>
+              </div>
+            </div>
+            <div className="mt-4 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Readiness</p>
+                  <p className="mt-2 text-lg font-semibold capitalize text-[var(--app-text-primary)]">
+                    {battleHubQuery.data.snapshot.readinessBand}
+                  </p>
+                </div>
+                <div className="rounded-full bg-[var(--app-brand-soft)] px-3 py-1 text-sm font-semibold text-[var(--app-brand)]">
+                  {battleHubQuery.data.snapshot.readinessScore}/100
+                </div>
+              </div>
+              <p className="mt-3 text-sm text-[var(--app-text-secondary)]">
+                {getReadinessDescription(battleHubQuery.data.snapshot.readinessBand)}
+              </p>
+            </div>
+            {battleHubQuery.data.recommendedOpponent ? (
+              <div className="mt-4 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
+                <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Recommended Opponent</p>
+                <p className="mt-2 text-base font-semibold text-[var(--app-text-primary)]">
+                  {battleHubQuery.data.recommendedOpponent.name}
+                </p>
+                <p className="mt-1 text-sm text-[var(--app-text-secondary)]">
+                  {battleHubQuery.data.recommendedOpponent.archetype} | Level {battleHubQuery.data.recommendedOpponent.recommendedLevel}
+                </p>
+                <p className={`mt-2 text-sm font-medium capitalize ${getOutcomeTone(battleHubQuery.data.recommendedOpponent.likelyOutcome)}`}>
+                  {battleHubQuery.data.recommendedOpponent.likelyOutcome}
+                </p>
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <div className="mt-4 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
+            <p className="text-sm text-[var(--app-text-primary)]">No battle snapshot is locked yet.</p>
+            <p className="mt-1 text-xs text-[var(--app-text-muted)]">
+              Finalize the previous day to prepare today&apos;s battle.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="app-card mt-4 p-5">
+        <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Arena 1 Opponents</p>
+        {battleActionError ? (
+          <p className="mt-3 text-sm text-[var(--app-danger)]">{battleActionError}</p>
+        ) : null}
+        <div className="mt-4 space-y-3">
+          {(battleHubQuery.data?.unlockedOpponents ?? []).map((opponent) => {
+            const isRecommended = battleHubQuery.data?.recommendedOpponent?.opponentId === opponent.id
+            const isRunning = runningOpponentId === opponent.id
+            return (
+              <div key={opponent.id} className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-semibold text-[var(--app-text-primary)]">{opponent.name}</p>
+                      {isRecommended ? (
+                        <span className="rounded-full bg-[var(--app-brand-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--app-brand)]">
+                          Recommended
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
+                      {opponent.archetype} | Level {opponent.recommendedLevel}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleBattle(opponent)}
+                    disabled={!battleHubQuery.data?.snapshot || isRunning}
+                    className="rounded-xl bg-[var(--app-brand)] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--app-brand-hover)] disabled:opacity-50"
+                  >
+                    {isRunning ? 'Battling…' : 'Challenge'}
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+          {(battleHubQuery.data?.unlockedOpponents.length ?? 0) === 0 ? (
+            <EmptyState title="No Arena 1 opponents unlocked yet." className="py-2" />
+          ) : null}
+        </div>
+      </div>
+
+      <div className="app-card mt-4 p-5">
+        <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Today&apos;s Battle History</p>
+        <div className="mt-4 space-y-3">
+          {(battleHubQuery.data?.battleHistory ?? []).map((battleRun) => (
+            <div key={battleRun.id} className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold capitalize text-[var(--app-text-primary)]">
+                    {battleRun.opponent?.name ?? 'Opponent'} | {battleRun.outcome}
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
+                    {battleRun.turnCount ? `${battleRun.turnCount} turns` : 'Pending'} | HP {battleRun.remainingHpPct ?? 0}% | XP {battleRun.xpAwarded}
+                  </p>
+                </div>
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[var(--app-text-secondary)]">
+                  {battleRun.rewardClaimed ? 'Rewarded' : battleRun.outcome === 'win' ? 'Practice' : 'No reward'}
+                </span>
+              </div>
+            </div>
+          ))}
+          {(battleHubQuery.data?.battleHistory.length ?? 0) === 0 ? (
+            <EmptyState title="No battles run for today yet." className="py-2" />
+          ) : null}
         </div>
       </div>
     </div>

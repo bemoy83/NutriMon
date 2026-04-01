@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  mapBattleHub,
+  mapCreaturePreview,
   mapDailyLog,
   mapFoodSource,
   mapHabitMetrics,
@@ -145,6 +147,137 @@ describe('domainMappers', () => {
       daysLoggedLast7: 6,
       lastLogDate: '2026-01-03',
       createdAt: '2026-01-03T22:00:00.000Z',
+    })
+  })
+
+  it('maps creature preview and battle hub payloads', () => {
+    expect(
+      mapCreaturePreview({
+        tomorrow_readiness_score: 78,
+        tomorrow_readiness_band: 'ready',
+        projected_strength: 74,
+        projected_resilience: 71,
+        projected_momentum: 79,
+        projected_vitality: 101,
+        meal_rating: 'strong',
+        meal_feedback_message: 'Strong meal.',
+      }),
+    ).toEqual({
+      tomorrowReadinessScore: 78,
+      tomorrowReadinessBand: 'ready',
+      projectedStrength: 74,
+      projectedResilience: 71,
+      projectedMomentum: 79,
+      projectedVitality: 101,
+      mealRating: 'strong',
+      mealFeedbackMessage: 'Strong meal.',
+    })
+
+    expect(
+      mapBattleHub({
+        companion: {
+          user_id: 'user-1',
+          name: 'Sprout',
+          stage: 'adult',
+          level: 4,
+          xp: 340,
+          current_condition: 'thriving',
+          hatched_at: '2026-01-01T00:00:00.000Z',
+          evolved_to_adult_at: '2026-01-07T00:00:00.000Z',
+          evolved_to_champion_at: null,
+          created_at: '2026-01-01T00:00:00.000Z',
+          updated_at: '2026-01-08T00:00:00.000Z',
+        },
+        snapshot: {
+          id: 'snapshot-1',
+          user_id: 'user-1',
+          prep_date: '2026-01-07',
+          battle_date: '2026-01-08',
+          strength: 72,
+          resilience: 68,
+          momentum: 74,
+          vitality: 96,
+          readiness_score: 75,
+          readiness_band: 'ready',
+          condition: 'thriving',
+          level: 4,
+          stage: 'adult',
+          source_daily_evaluation_id: 'eval-1',
+          xp_gained: 18,
+          created_at: '2026-01-07T23:00:00.000Z',
+        },
+        recommended_opponent: {
+          opponent_id: 'opp-1',
+          name: 'Pebble Pup',
+          archetype: 'steady bruiser',
+          recommended_level: 2,
+          likely_outcome: 'favored',
+        },
+        unlocked_opponents: [
+          {
+            id: 'opp-1',
+            arena_id: 'arena-1',
+            name: 'Pebble Pup',
+            archetype: 'steady bruiser',
+            recommended_level: 2,
+            strength: 42,
+            resilience: 45,
+            momentum: 38,
+            vitality: 78,
+            sort_order: 1,
+            unlock_level: 1,
+            is_active: true,
+            created_at: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+        battle_history: [
+          {
+            id: 'run-1',
+            user_id: 'user-1',
+            battle_date: '2026-01-08',
+            snapshot_id: 'snapshot-1',
+            opponent_id: 'opp-1',
+            outcome: 'win',
+            turn_count: 4,
+            remaining_hp_pct: 61,
+            xp_awarded: 18,
+            arena_progress_awarded: 1,
+            reward_claimed: true,
+            created_at: '2026-01-08T09:00:00.000Z',
+            opponent: {
+              id: 'opp-1',
+              arena_id: 'arena-1',
+              name: 'Pebble Pup',
+              archetype: 'steady bruiser',
+              recommended_level: 2,
+              strength: 42,
+              resilience: 45,
+              momentum: 38,
+              vitality: 78,
+              sort_order: 1,
+              unlock_level: 1,
+              is_active: true,
+              created_at: '2026-01-01T00:00:00.000Z',
+            },
+          },
+        ],
+      }),
+    ).toEqual({
+      companion: expect.objectContaining({
+        name: 'Sprout',
+        stage: 'adult',
+        currentCondition: 'thriving',
+      }),
+      snapshot: expect.objectContaining({
+        battleDate: '2026-01-08',
+        readinessBand: 'ready',
+      }),
+      recommendedOpponent: expect.objectContaining({
+        opponentId: 'opp-1',
+        likelyOutcome: 'favored',
+      }),
+      unlockedOpponents: [expect.objectContaining({ id: 'opp-1', unlockLevel: 1 })],
+      battleHistory: [expect.objectContaining({ id: 'run-1', rewardClaimed: true })],
     })
   })
 })

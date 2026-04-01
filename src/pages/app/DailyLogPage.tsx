@@ -6,10 +6,10 @@ import { useDailyLogDerived } from '@/features/logging/useDailyLogDerived'
 import { useLatestFallbackMetrics } from '@/features/logging/useLatestFallbackMetrics'
 import MealList from '@/features/logging/MealList'
 import { getTodayInTimezone, isToday } from '@/lib/date'
-import type { Meal } from '@/types/domain'
+import type { BattlePrepSummary, CreaturePreview, FinalizeDayResponse, Meal } from '@/types/domain'
 import { buildMealSnapshotItems, buildMealUpdateItems } from '@/features/logging/mealPayloads'
 import { deleteMeal, restoreMealFromSnapshot, updateMealWithItems } from '@/features/logging/api'
-import type { MealMutationResult } from '@/types/database'
+import type { DeleteMealResult, MealMutationResult } from '@/types/database'
 import { useCanRepeatLastMeal } from '@/features/logging/useCanRepeatLastMeal'
 import { useProfileSummary } from '@/features/profile/useProfileSummary'
 import { useFinalizeDay } from '@/features/logging/useFinalizeDay'
@@ -23,6 +23,42 @@ import LoadingState from '@/components/ui/LoadingState'
 
 const QuickAddSheet = lazy(() => import('@/features/logging/QuickAddSheet'))
 const MealEditSheet = lazy(() => import('@/features/logging/MealEditSheet'))
+
+function mapCreaturePreviewPayload(preview: MealMutationResult['creature_preview'] | DeleteMealResult['creature_preview']): CreaturePreview | null {
+  if (!preview) return null
+  return {
+    tomorrowReadinessScore: preview.tomorrow_readiness_score,
+    tomorrowReadinessBand: preview.tomorrow_readiness_band,
+    projectedStrength: preview.projected_strength,
+    projectedResilience: preview.projected_resilience,
+    projectedMomentum: preview.projected_momentum,
+    projectedVitality: preview.projected_vitality,
+    mealRating: preview.meal_rating,
+    mealFeedbackMessage: preview.meal_feedback_message,
+  }
+}
+
+function mapBattlePrepPayload(payload: FinalizeDayResponse['battle_prep']): BattlePrepSummary | null {
+  if (!payload) return null
+  return {
+    prepDate: payload.prep_date,
+    battleDate: payload.battle_date,
+    snapshotId: payload.snapshot_id,
+    readinessScore: payload.readiness_score,
+    readinessBand: payload.readiness_band,
+    condition: payload.condition,
+    recommendedOpponent: payload.recommended_opponent
+      ? {
+          opponentId: payload.recommended_opponent.opponent_id,
+          name: payload.recommended_opponent.name,
+          archetype: payload.recommended_opponent.archetype,
+          recommendedLevel: payload.recommended_opponent.recommended_level,
+          likelyOutcome: payload.recommended_opponent.likely_outcome,
+        }
+      : null,
+    xpGained: payload.xp_gained,
+  }
+}
 
 export default function DailyLogPage() {
   const { date } = useParams<{ date: string }>()
@@ -49,6 +85,8 @@ export default function DailyLogPage() {
 
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null)
+  const [creaturePreviewState, setCreaturePreviewState] = useState<{ date: string; preview: CreaturePreview | null } | null>(null)
+  const [battlePrepState, setBattlePrepState] = useState<{ date: string; summary: BattlePrepSummary | null } | null>(null)
   const { undoAction, showUndo, clearUndo } = useUndoToast()
 
   const dailyLog = coreQuery.data?.dailyLog ?? null
@@ -82,7 +120,11 @@ export default function DailyLogPage() {
   const isCurrentDay = isToday(logDate, timezone)
   const { finalizing, finalizeError, finalizeDay } = useFinalizeDay({
     logDate,
-    onSuccess: () => invalidateDailyLog(logDate),
+    onSuccess: (result) => {
+      setCreaturePreviewState({ date: logDate, preview: null })
+      setBattlePrepState({ date: logDate, summary: mapBattlePrepPayload(result.battle_prep ?? null) })
+      invalidateDailyLog(logDate)
+    },
   })
   const { repeating, repeatError, handleRepeatLastMeal } = useRepeatLastMealAction({
     logDate,
@@ -90,6 +132,8 @@ export default function DailyLogPage() {
   })
 
   function handleMealCreated(result: MealMutationResult, label = 'Meal added') {
+    setCreaturePreviewState({ date: logDate, preview: mapCreaturePreviewPayload(result.creature_preview ?? null) })
+    setBattlePrepState({ date: logDate, summary: null })
     invalidateDailyLog(logDate)
     showUndo({
       label,
@@ -99,6 +143,8 @@ export default function DailyLogPage() {
       },
     })
   }
+  const creaturePreview = creaturePreviewState?.date === logDate ? creaturePreviewState.preview : null
+  const battlePrep = battlePrepState?.date === logDate ? battlePrepState.summary : null
 
   if (profileQuery.isLoading || coreQuery.isLoading) {
     return <LoadingState fullScreen />
@@ -156,6 +202,36 @@ export default function DailyLogPage() {
         </div>
       )}
 
+      {!isFinalized && creaturePreview && (
+        <div className="mx-4 mt-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--app-text-muted)]">
+                Creature Preview
+              </p>
+              <p className="mt-2 text-sm text-[var(--app-text-primary)]">{creaturePreview.mealFeedbackMessage}</p>
+            </div>
+            <div className="rounded-full bg-[var(--app-surface)] px-3 py-1 text-xs font-semibold capitalize text-[var(--app-brand)]">
+              {creaturePreview.mealRating}
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-[var(--app-text-secondary)]">
+            <div className="rounded-xl bg-[var(--app-surface)] px-3 py-2">
+              Tomorrow readiness: <span className="font-semibold text-[var(--app-text-primary)]">{creaturePreview.tomorrowReadinessScore}</span>
+            </div>
+            <div className="rounded-xl bg-[var(--app-surface)] px-3 py-2 capitalize">
+              Readiness: <span className="font-semibold text-[var(--app-text-primary)]">{creaturePreview.tomorrowReadinessBand}</span>
+            </div>
+            <div className="rounded-xl bg-[var(--app-surface)] px-3 py-2">
+              Strength {creaturePreview.projectedStrength}
+            </div>
+            <div className="rounded-xl bg-[var(--app-surface)] px-3 py-2">
+              Momentum {creaturePreview.projectedMomentum}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Meals */}
       <div className="px-4 mt-4 space-y-3 flex-1">
         {mealCount > 0 && (
@@ -165,7 +241,9 @@ export default function DailyLogPage() {
             timezone={timezone}
             logDate={logDate}
             onEditMeal={setEditingMeal}
-            onDeleteSuccess={(meal) => {
+            onDeleteSuccess={(meal, result) => {
+              setCreaturePreviewState({ date: logDate, preview: mapCreaturePreviewPayload(result.creature_preview ?? null) })
+              setBattlePrepState({ date: logDate, summary: null })
               showUndo({
                 label: 'Meal deleted',
                 undo: async () => {
@@ -215,6 +293,34 @@ export default function DailyLogPage() {
         </div>
       )}
 
+      {battlePrep && (
+        <div className="app-card mx-4 mt-4 p-4">
+          <p className="text-xs font-medium mb-3 text-[var(--app-text-muted)]">Tomorrow&apos;s Battle Prep</p>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="rounded-xl bg-[var(--app-surface-muted)] px-3 py-2">
+              <p className="text-xs text-[var(--app-text-muted)]">Readiness</p>
+              <p className="font-semibold text-[var(--app-text-primary)]">{battlePrep.readinessScore}</p>
+            </div>
+            <div className="rounded-xl bg-[var(--app-surface-muted)] px-3 py-2 capitalize">
+              <p className="text-xs text-[var(--app-text-muted)]">Condition</p>
+              <p className="font-semibold text-[var(--app-text-primary)]">{battlePrep.condition}</p>
+            </div>
+          </div>
+          <p className="mt-3 text-sm text-[var(--app-text-primary)] capitalize">
+            {battlePrep.readinessBand} prep locked for {battlePrep.battleDate}. XP gained: {battlePrep.xpGained}.
+          </p>
+          {battlePrep.recommendedOpponent ? (
+            <p className="mt-2 text-xs text-[var(--app-text-secondary)]">
+              Recommended opponent: {battlePrep.recommendedOpponent.name} ({battlePrep.recommendedOpponent.archetype}) | {battlePrep.recommendedOpponent.likelyOutcome}
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-[var(--app-text-secondary)]">
+              No opponent recommendation yet. Your snapshot is still locked for tomorrow.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Quick add sheet */}
       {showQuickAdd && (
         <Suspense fallback={<SheetLoadingFallback />}>
@@ -234,7 +340,9 @@ export default function DailyLogPage() {
             meal={editingMeal}
             logDate={logDate}
             onClose={() => setEditingMeal(null)}
-            onSaved={(previousMeal) => {
+            onSaved={(previousMeal, result) => {
+              setCreaturePreviewState({ date: logDate, preview: mapCreaturePreviewPayload(result.creature_preview ?? null) })
+              setBattlePrepState({ date: logDate, summary: null })
               showUndo({
                 label: 'Meal updated',
                 undo: async () => {

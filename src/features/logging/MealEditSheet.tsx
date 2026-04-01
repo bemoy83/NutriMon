@@ -12,6 +12,7 @@ import MealTypeSelector from '@/components/ui/MealTypeSelector'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
 import { getDefaultMealType, MEAL_TYPES } from '@/lib/mealType'
 import type { MealType } from '@/lib/mealType'
+import type { MealMutationResult } from '@/types/database'
 
 interface EditItem {
   productId?: string
@@ -32,7 +33,7 @@ interface Props {
   meal: Meal
   logDate: string
   onClose: () => void
-  onSaved: (previousMeal: Meal) => void
+  onSaved: (previousMeal: Meal, result: MealMutationResult) => void
 }
 
 export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props) {
@@ -153,7 +154,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
     setSaveError(null)
 
     try {
-      await updateMealWithItems(
+      const result = await updateMealWithItems(
         meal.id,
         meal.loggedAt,
         items.map((item) => {
@@ -186,7 +187,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
       onSaved({
         ...previousMeal,
         items: previousMeal.items ? previousMeal.items.map((item) => ({ ...item })) : [],
-      })
+      }, result)
       onClose()
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Unable to save meal')

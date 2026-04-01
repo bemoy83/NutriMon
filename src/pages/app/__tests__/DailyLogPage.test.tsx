@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import DailyLogPage from '../DailyLogPage'
 import type { Meal } from '@/types/domain'
+import type { DeleteMealResult, MealMutationResult } from '@/types/database'
 
 const useDailyLogCoreMock = vi.fn()
 const useDailyLogDerivedMock = vi.fn()
@@ -79,11 +80,39 @@ vi.mock('@/features/logging/MealList', () => ({
     onEditMeal,
   }: {
     meals: Meal[]
-    onDeleteSuccess: (meal: Meal) => void
+    onDeleteSuccess: (meal: Meal, result: DeleteMealResult) => void
     onEditMeal: (meal: Meal) => void
   }) => (
     <div>
-      <button type="button" onClick={() => onDeleteSuccess(meals[0])}>
+      <button
+        type="button"
+        onClick={() =>
+          onDeleteSuccess(meals[0], {
+            deleted_meal_id: meals[0].id,
+            daily_log: {
+              id: 'log-1',
+              user_id: 'user-1',
+              log_date: '2026-01-05',
+              total_calories: 0,
+              meal_count: 0,
+              is_finalized: false,
+              finalized_at: null,
+              created_at: '2026-01-05T00:00:00.000Z',
+              updated_at: '2026-01-05T00:00:00.000Z',
+            },
+            creature_preview: {
+              tomorrow_readiness_score: 58,
+              tomorrow_readiness_band: 'building',
+              projected_strength: 56,
+              projected_resilience: 55,
+              projected_momentum: 59,
+              projected_vitality: 82,
+              meal_rating: 'solid',
+              meal_feedback_message: 'Preview updated after delete.',
+            },
+          })
+        }
+      >
         trigger-delete
       </button>
       <button type="button" onClick={() => onEditMeal(meals[0])}>
@@ -99,9 +128,46 @@ vi.mock('@/features/logging/MealEditSheet', () => ({
     onSaved,
   }: {
     meal: Meal
-    onSaved: (meal: Meal) => void
+    onSaved: (meal: Meal, result: MealMutationResult) => void
   }) => (
-    <button type="button" onClick={() => onSaved(meal)}>
+    <button
+      type="button"
+      onClick={() =>
+        onSaved(meal, {
+          meal: {
+            id: meal.id,
+            daily_log_id: meal.dailyLogId,
+            logged_at: meal.loggedAt,
+            meal_type: meal.mealType,
+            meal_name: meal.mealName,
+            total_calories: meal.totalCalories,
+            item_count: meal.itemCount,
+          },
+          meal_items: [],
+          daily_log: {
+            id: 'log-1',
+            user_id: 'user-1',
+            log_date: '2026-01-05',
+            total_calories: 520,
+            meal_count: 1,
+            is_finalized: false,
+            finalized_at: null,
+            created_at: '2026-01-05T00:00:00.000Z',
+            updated_at: '2026-01-05T00:00:00.000Z',
+          },
+          creature_preview: {
+            tomorrow_readiness_score: 71,
+            tomorrow_readiness_band: 'ready',
+            projected_strength: 69,
+            projected_resilience: 68,
+            projected_momentum: 72,
+            projected_vitality: 94,
+            meal_rating: 'strong',
+            meal_feedback_message: 'Preview updated after edit.',
+          },
+        })
+      }
+    >
       save-edit
     </button>
   ),
@@ -191,6 +257,16 @@ describe('DailyLogPage', () => {
         finalized_at: null,
         created_at: '2026-01-05T00:00:00.000Z',
         updated_at: '2026-01-05T00:00:00.000Z',
+      },
+      creature_preview: {
+        tomorrow_readiness_score: 83,
+        tomorrow_readiness_band: 'ready',
+        projected_strength: 80,
+        projected_resilience: 78,
+        projected_momentum: 82,
+        projected_vitality: 101,
+        meal_rating: 'strong',
+        meal_feedback_message: "This is pushing tomorrow's prep in a strong direction. Keep the same steady rhythm.",
       },
     })
     restoreMealFromSnapshotMock.mockResolvedValue({})
@@ -289,6 +365,8 @@ describe('DailyLogPage', () => {
     })
 
     expect(screen.getByText('Last meal repeated')).toBeInTheDocument()
+    expect(screen.getByText('Creature Preview')).toBeInTheDocument()
+    expect(screen.getByText(/Tomorrow readiness:/)).toBeInTheDocument()
     fireEvent.click(screen.getByText('Undo'))
 
     await waitFor(() => {

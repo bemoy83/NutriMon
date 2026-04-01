@@ -73,10 +73,40 @@ export interface Database {
         Update: Partial<Omit<CreatureStatsRow, 'id' | 'user_id' | 'created_at'>>
         Relationships: []
       }
+      creature_companions: {
+        Row: CreatureCompanionRow
+        Insert: Omit<CreatureCompanionRow, 'created_at' | 'updated_at'>
+        Update: Partial<Omit<CreatureCompanionRow, 'user_id' | 'created_at'>>
+        Relationships: []
+      }
+      creature_battle_snapshots: {
+        Row: CreatureBattleSnapshotRow
+        Insert: Omit<CreatureBattleSnapshotRow, 'id' | 'created_at'>
+        Update: Partial<Omit<CreatureBattleSnapshotRow, 'id' | 'user_id' | 'created_at'>>
+        Relationships: []
+      }
       daily_feedback: {
         Row: DailyFeedbackRow
         Insert: Omit<DailyFeedbackRow, 'id' | 'created_at'>
         Update: Partial<Omit<DailyFeedbackRow, 'id' | 'user_id' | 'created_at'>>
+        Relationships: []
+      }
+      battle_arenas: {
+        Row: BattleArenaRow
+        Insert: Omit<BattleArenaRow, 'id' | 'created_at'>
+        Update: Partial<Omit<BattleArenaRow, 'id' | 'created_at'>>
+        Relationships: []
+      }
+      battle_opponents: {
+        Row: BattleOpponentRow
+        Insert: Omit<BattleOpponentRow, 'id' | 'created_at'>
+        Update: Partial<Omit<BattleOpponentRow, 'id' | 'created_at'>>
+        Relationships: []
+      }
+      battle_runs: {
+        Row: BattleRunRow
+        Insert: Omit<BattleRunRow, 'id' | 'created_at'>
+        Update: Partial<Omit<BattleRunRow, 'id' | 'user_id' | 'created_at'>>
         Relationships: []
       }
     }
@@ -128,6 +158,18 @@ export interface Database {
       search_food_sources: {
         Args: { p_query: string; p_limit?: number }
         Returns: FoodSourceRow[]
+      }
+      get_battle_hub: {
+        Args: { p_battle_date: string }
+        Returns: BattleHubRow
+      }
+      start_battle_run: {
+        Args: { p_snapshot_id: string; p_opponent_id: string }
+        Returns: BattleRunMutationResult
+      }
+      resolve_battle_run: {
+        Args: { p_battle_run_id: string }
+        Returns: BattleRunMutationResult
       }
     }
     Views: Record<string, never>
@@ -322,6 +364,39 @@ export interface CreatureStatsRow {
   created_at: string
 }
 
+export interface CreatureCompanionRow {
+  user_id: string
+  name: string
+  stage: 'baby' | 'adult' | 'champion'
+  level: number
+  xp: number
+  current_condition: 'thriving' | 'steady' | 'recovering' | 'quiet'
+  hatched_at: string
+  evolved_to_adult_at: string | null
+  evolved_to_champion_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CreatureBattleSnapshotRow {
+  id: string
+  user_id: string
+  prep_date: string
+  battle_date: string
+  strength: number
+  resilience: number
+  momentum: number
+  vitality: number
+  readiness_score: number
+  readiness_band: 'recovering' | 'building' | 'ready' | 'peak'
+  condition: 'thriving' | 'steady' | 'recovering' | 'quiet'
+  level: number
+  stage: 'baby' | 'adult' | 'champion'
+  source_daily_evaluation_id: string
+  xp_gained: number
+  created_at: string
+}
+
 export interface DailyFeedbackRow {
   id: string
   user_id: string
@@ -330,6 +405,47 @@ export interface DailyFeedbackRow {
   status: 'optimal' | 'acceptable' | 'poor' | 'no_data'
   message: string
   recommendation: string
+  created_at: string
+}
+
+export interface BattleArenaRow {
+  id: string
+  arena_key: string
+  name: string
+  description: string | null
+  sort_order: number
+  is_active: boolean
+  created_at: string
+}
+
+export interface BattleOpponentRow {
+  id: string
+  arena_id: string
+  name: string
+  archetype: string
+  recommended_level: number
+  strength: number
+  resilience: number
+  momentum: number
+  vitality: number
+  sort_order: number
+  unlock_level: number
+  is_active: boolean
+  created_at: string
+}
+
+export interface BattleRunRow {
+  id: string
+  user_id: string
+  battle_date: string
+  snapshot_id: string
+  opponent_id: string
+  outcome: 'pending' | 'win' | 'loss'
+  turn_count: number | null
+  remaining_hp_pct: number | null
+  xp_awarded: number
+  arena_progress_awarded: number
+  reward_claimed: boolean
   created_at: string
 }
 
@@ -368,6 +484,17 @@ export interface MealTemplateWithItemsRow extends MealTemplateRow {
   items: MealTemplateItemRow[]
 }
 
+export interface CreaturePreviewRow {
+  tomorrow_readiness_score: number
+  tomorrow_readiness_band: 'recovering' | 'building' | 'ready' | 'peak'
+  projected_strength: number
+  projected_resilience: number
+  projected_momentum: number
+  projected_vitality: number
+  meal_rating: 'strong' | 'solid' | 'weak'
+  meal_feedback_message: string
+}
+
 export interface MealMutationResult {
   meal: {
     id: string
@@ -388,6 +515,7 @@ export interface MealMutationResult {
     line_total_calories: number
   }[]
   daily_log: DailyLogRow
+  creature_preview?: CreaturePreviewRow | null
 }
 
 export interface FoodSourceRow {
@@ -407,4 +535,30 @@ export interface FoodSourceRow {
 export interface DeleteMealResult {
   deleted_meal_id: string
   daily_log: DailyLogRow
+  creature_preview?: CreaturePreviewRow | null
+}
+
+export interface BattleRecommendationRow {
+  opponent_id: string
+  name: string
+  archetype: string
+  recommended_level: number
+  likely_outcome: 'favored' | 'competitive' | 'risky'
+}
+
+export interface BattleHubRow {
+  companion: CreatureCompanionRow | null
+  snapshot: CreatureBattleSnapshotRow | null
+  recommended_opponent: BattleRecommendationRow | null
+  unlocked_opponents: BattleOpponentRow[]
+  battle_history: BattleRunWithOpponentRow[]
+}
+
+export interface BattleRunWithOpponentRow extends BattleRunRow {
+  opponent?: BattleOpponentRow | null
+}
+
+export interface BattleRunMutationResult {
+  battle_run: BattleRunRow
+  opponent?: BattleOpponentRow | null
 }

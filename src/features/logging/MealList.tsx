@@ -6,6 +6,7 @@ import { useInvalidateDailyLog } from './useDailyLog'
 import { useInvalidateMealTemplates, useInvalidateProductQueries } from './queryInvalidation'
 import { deleteMeal, saveMealAsTemplate } from './api'
 import EmptyState from '@/components/ui/EmptyState'
+import type { DeleteMealResult } from '@/types/database'
 
 interface Props {
   meals: Meal[]
@@ -13,7 +14,7 @@ interface Props {
   timezone: string
   logDate: string
   onEditMeal: (meal: Meal) => void
-  onDeleteSuccess: (meal: Meal) => void
+  onDeleteSuccess: (meal: Meal, result: DeleteMealResult) => void
 }
 
 function getMealMacros(meal: Meal) {
@@ -36,10 +37,10 @@ export default function MealList({ meals, isFinalized, timezone, logDate, onEdit
   async function handleDelete(meal: Meal) {
     setDeletingId(meal.id)
     try {
-      await deleteMeal(meal.id)
+      const result = await deleteMeal(meal.id)
       invalidateDailyLog(logDate)
       invalidateProducts()
-      onDeleteSuccess(meal)
+      onDeleteSuccess(meal, result)
     } finally {
       setDeletingId(null)
     }

@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/app/providers/auth'
+import type { FinalizeDayResponse } from '@/types/domain'
 
 interface UseFinalizeDayOptions {
   logDate: string
-  onSuccess: () => void
+  onSuccess: (result: FinalizeDayResponse) => void
 }
 
 export function useFinalizeDay({ logDate, onSuccess }: UseFinalizeDayOptions) {
@@ -35,14 +36,16 @@ export function useFinalizeDay({ logDate, onSuccess }: UseFinalizeDayOptions) {
       body: JSON.stringify({ date: logDate }),
     })
 
-    setFinalizing(false)
     if (!resp.ok) {
+      setFinalizing(false)
       const err = await resp.json().catch(() => ({ error: 'Unknown error' }))
       setFinalizeError(err.error ?? 'Finalization failed')
       return
     }
 
-    onSuccess()
+    const result = (await resp.json()) as FinalizeDayResponse
+    setFinalizing(false)
+    onSuccess(result)
   }
 
   return {

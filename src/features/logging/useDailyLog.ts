@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/app/providers/auth'
+import { BATTLE_HUB_QUERY_KEY } from '@/features/creature/useBattleHub'
 import type {
   BehaviorAttributes,
   CreatureStats,
@@ -47,5 +48,7 @@ export function useInvalidateDailyLog() {
     qc.invalidateQueries({ queryKey: coreQueryKey })
     qc.invalidateQueries({ queryKey: derivedQueryKey })
     qc.invalidateQueries({ queryKey: [LATEST_FALLBACK_METRICS_QUERY_KEY, user?.id] })
+    qc.invalidateQueries({ queryKey: ['creature-stats', 'latest', user?.id] })
+    qc.invalidateQueries({ queryKey: [BATTLE_HUB_QUERY_KEY, user?.id] })
   }
 }

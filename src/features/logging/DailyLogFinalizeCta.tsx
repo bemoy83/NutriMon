@@ -22,7 +22,7 @@ export default function DailyLogFinalizeCta({
         disabled={finalizing}
         className="flex-1 rounded-2xl bg-[var(--app-success)] py-3 font-medium text-white shadow-sm transition-colors hover:bg-[var(--app-success-hover)] disabled:opacity-50"
       >
-        {finalizing ? 'Finalizing…' : 'Finalize Day'}
+        {finalizing ? 'Finalizing…' : 'Finalize & Prep'}
       </button>
     </div>
   )

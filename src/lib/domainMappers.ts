@@ -1,5 +1,13 @@
 import type {
   BehaviorAttributes,
+  BattleArena,
+  BattleHub,
+  BattleOpponent,
+  BattleRecommendation,
+  BattleRun,
+  CreatureBattleSnapshot,
+  CreatureCompanion,
+  CreaturePreview,
   CreatureStats,
   DailyEvaluation,
   DailyFeedback,
@@ -16,6 +24,15 @@ import type {
 } from '@/types/domain'
 import type {
   BehaviorAttributesRow,
+  BattleArenaRow,
+  BattleHubRow,
+  BattleOpponentRow,
+  BattleRecommendationRow,
+  BattleRunRow,
+  BattleRunWithOpponentRow,
+  CreatureBattleSnapshotRow,
+  CreatureCompanionRow,
+  CreaturePreviewRow,
   CreatureStatsRow,
   DailyEvaluationRow,
   DailyFeedbackRow,
@@ -220,6 +237,56 @@ export function mapCreatureStats(row: CreatureStatsRow): CreatureStats {
   }
 }
 
+export function mapCreatureCompanion(row: CreatureCompanionRow): CreatureCompanion {
+  return {
+    userId: row.user_id,
+    name: row.name,
+    stage: row.stage,
+    level: row.level,
+    xp: row.xp,
+    currentCondition: row.current_condition,
+    hatchedAt: row.hatched_at,
+    evolvedToAdultAt: row.evolved_to_adult_at,
+    evolvedToChampionAt: row.evolved_to_champion_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
+
+export function mapCreatureBattleSnapshot(row: CreatureBattleSnapshotRow): CreatureBattleSnapshot {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    prepDate: row.prep_date,
+    battleDate: row.battle_date,
+    strength: row.strength,
+    resilience: row.resilience,
+    momentum: row.momentum,
+    vitality: row.vitality,
+    readinessScore: row.readiness_score,
+    readinessBand: row.readiness_band,
+    condition: row.condition,
+    level: row.level,
+    stage: row.stage,
+    sourceDailyEvaluationId: row.source_daily_evaluation_id,
+    xpGained: row.xp_gained,
+    createdAt: row.created_at,
+  }
+}
+
+export function mapCreaturePreview(row: CreaturePreviewRow): CreaturePreview {
+  return {
+    tomorrowReadinessScore: row.tomorrow_readiness_score,
+    tomorrowReadinessBand: row.tomorrow_readiness_band,
+    projectedStrength: row.projected_strength,
+    projectedResilience: row.projected_resilience,
+    projectedMomentum: row.projected_momentum,
+    projectedVitality: row.projected_vitality,
+    mealRating: row.meal_rating,
+    mealFeedbackMessage: row.meal_feedback_message,
+  }
+}
+
 export function mapDailyFeedback(row: DailyFeedbackRow): DailyFeedback {
   return {
     id: row.id,
@@ -230,6 +297,80 @@ export function mapDailyFeedback(row: DailyFeedbackRow): DailyFeedback {
     message: row.message,
     recommendation: row.recommendation,
     createdAt: row.created_at,
+  }
+}
+
+export function mapBattleRecommendation(row: BattleRecommendationRow): BattleRecommendation {
+  return {
+    opponentId: row.opponent_id,
+    name: row.name,
+    archetype: row.archetype,
+    recommendedLevel: row.recommended_level,
+    likelyOutcome: row.likely_outcome,
+  }
+}
+
+export function mapBattleArena(row: BattleArenaRow): BattleArena {
+  return {
+    id: row.id,
+    arenaKey: row.arena_key,
+    name: row.name,
+    description: row.description,
+    sortOrder: row.sort_order,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+  }
+}
+
+export function mapBattleOpponent(row: BattleOpponentRow): BattleOpponent {
+  return {
+    id: row.id,
+    arenaId: row.arena_id,
+    name: row.name,
+    archetype: row.archetype,
+    recommendedLevel: row.recommended_level,
+    strength: row.strength,
+    resilience: row.resilience,
+    momentum: row.momentum,
+    vitality: row.vitality,
+    sortOrder: row.sort_order,
+    unlockLevel: row.unlock_level,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+  }
+}
+
+export function mapBattleRun(row: BattleRunRow): BattleRun {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    battleDate: row.battle_date,
+    snapshotId: row.snapshot_id,
+    opponentId: row.opponent_id,
+    outcome: row.outcome,
+    turnCount: row.turn_count,
+    remainingHpPct: row.remaining_hp_pct,
+    xpAwarded: row.xp_awarded,
+    arenaProgressAwarded: row.arena_progress_awarded,
+    rewardClaimed: row.reward_claimed,
+    createdAt: row.created_at,
+  }
+}
+
+export function mapBattleRunWithOpponent(row: BattleRunWithOpponentRow): BattleRun {
+  return {
+    ...mapBattleRun(row),
+    opponent: row.opponent ? mapBattleOpponent(row.opponent) : null,
+  }
+}
+
+export function mapBattleHub(row: BattleHubRow): BattleHub {
+  return {
+    companion: row.companion ? mapCreatureCompanion(row.companion) : null,
+    snapshot: row.snapshot ? mapCreatureBattleSnapshot(row.snapshot) : null,
+    recommendedOpponent: row.recommended_opponent ? mapBattleRecommendation(row.recommended_opponent) : null,
+    unlockedOpponents: (row.unlocked_opponents ?? []).map(mapBattleOpponent),
+    battleHistory: (row.battle_history ?? []).map(mapBattleRunWithOpponent),
   }
 }
 

@@ -1,4 +1,16 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+  DEFAULT_COMPANION_NAME,
+  getCondition,
+  getFinalizationXp,
+  getHigherStage,
+  getLevelFromXp,
+  getLikelyOutcome,
+  getReadinessBand,
+  getReadinessScore,
+  getUnlockedStage,
+  type CreatureStage,
+} from './battleSystem.ts'
 
 export const CALCULATION_VERSION = 'v1'
 
@@ -25,6 +37,7 @@ interface DailyEvaluationRow {
 interface HabitMetricsRow {
   current_streak: number
   longest_streak: number
+  days_logged_last_7: number
   last_log_date: string | null
   log_date: string
 }
@@ -35,8 +48,84 @@ interface EvaluationWindowRow {
   consumed_calories: number
 }
 
+interface CreatureStatsRow {
+  id: string
+  user_id: string
+  log_date: string
+  strength: number
+  resilience: number
+  momentum: number
+  vitality: number
+  stage: CreatureStage
+}
+
+interface CreatureCompanionRow {
+  user_id: string
+  name: string
+  stage: CreatureStage
+  level: number
+  xp: number
+  current_condition: 'thriving' | 'steady' | 'recovering' | 'quiet'
+  hatched_at: string
+  evolved_to_adult_at: string | null
+  evolved_to_champion_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+interface CreatureBattleSnapshotRow {
+  id: string
+  user_id: string
+  prep_date: string
+  battle_date: string
+  strength: number
+  resilience: number
+  momentum: number
+  vitality: number
+  readiness_score: number
+  readiness_band: 'recovering' | 'building' | 'ready' | 'peak'
+  condition: 'thriving' | 'steady' | 'recovering' | 'quiet'
+  level: number
+  stage: CreatureStage
+  source_daily_evaluation_id: string
+  xp_gained: number
+  created_at: string
+}
+
+interface BattleOpponentRow {
+  id: string
+  name: string
+  archetype: string
+  recommended_level: number
+  strength: number
+  resilience: number
+  momentum: number
+  vitality: number
+  sort_order: number
+  unlock_level: number
+}
+
 interface ExistingPayloadResult<T> {
   data: T | null
+}
+
+interface BattleRecommendationPayload {
+  opponent_id: string
+  name: string
+  archetype: string
+  recommended_level: number
+  likely_outcome: 'favored' | 'competitive' | 'risky'
+}
+
+interface BattlePrepPayload {
+  prep_date: string
+  battle_date: string
+  snapshot_id: string
+  readiness_score: number
+  readiness_band: 'recovering' | 'building' | 'ready' | 'peak'
+  condition: 'thriving' | 'steady' | 'recovering' | 'quiet'
+  recommended_opponent: BattleRecommendationPayload | null
+  xp_gained: number
 }
 
 export interface FinalizedPayload {
@@ -46,6 +135,7 @@ export interface FinalizedPayload {
   behavior_attributes: Record<string, unknown> | null
   creature_stats: Record<string, unknown> | null
   daily_feedback: Record<string, unknown> | null
+  battle_prep?: BattlePrepPayload | null
 }
 
 export async function finalizeDay(
@@ -79,6 +169,7 @@ export async function finalizeDay(
   const dailyLog = dailyLogData as DailyLogRow
 
   if (dailyLog.is_finalized) {
+    await ensureLegacyBattlePrepBackfill(supabase, userId, logDate, dailyLog)
     return loadExistingFinalizedPayload(supabase, userId, logDate, dailyLog)
   }
 
@@ -167,6 +258,7 @@ export async function finalizeDay(
   const longestStreak = Math.max(prevMetricsRow?.longest_streak ?? 0, currentStreak)
   const daysLoggedLast7 = recentEvals.filter((entry) => entry.consumed_calories > 0).length
   const lastLogDate = hasMeals ? logDate : (prevMetricsRow?.last_log_date ?? null)
+  const unlockedStage = getUnlockedStage(longestStreak)
 
   const { data: habitMetrics, error: habitErr } = await supabase
     .from('habit_metrics')
@@ -221,13 +313,26 @@ export async function finalizeDay(
         resilience: clamp(Math.round(stabilityScore), 0, 100),
         momentum: clamp(Math.round(momentumScore), 0, 100),
         vitality: clamp(50 + currentStreak * 5, 50, 999),
-        stage: 'baby',
+        stage: unlockedStage,
       },
       { onConflict: 'user_id,log_date' },
     )
     .select()
     .single()
   if (creatureErr) throw new Error(creatureErr.message)
+
+  const battlePrep = await upsertCompanionBattleState(supabase, {
+    userId,
+    logDate,
+    finalizedAt,
+    evaluationId: (evaluation as { id: string }).id,
+    creatureStats: creatureStats as CreatureStatsRow,
+    hasMeals,
+    adjustedAdherence: finalAdjustedAdherence,
+    currentStreak,
+    longestStreak,
+    daysLoggedLast7,
+  })
 
   const feedback = getFeedbackMessage(status)
   const { data: dailyFeedback, error: feedbackErr } = await supabase
@@ -262,7 +367,210 @@ export async function finalizeDay(
     behavior_attributes: behaviorAttributes as Record<string, unknown>,
     creature_stats: creatureStats as Record<string, unknown>,
     daily_feedback: dailyFeedback as Record<string, unknown>,
+    battle_prep: battlePrep,
   }
+}
+
+async function upsertCompanionBattleState(
+  supabase: SupabaseClient,
+  input: {
+    userId: string
+    logDate: string
+    finalizedAt: string
+    evaluationId: string
+    creatureStats: CreatureStatsRow
+    hasMeals: boolean
+    adjustedAdherence: number
+    currentStreak: number
+    longestStreak: number
+    daysLoggedLast7: number
+  },
+): Promise<BattlePrepPayload> {
+  const battleDate = addDays(input.logDate, 1)
+
+  const [existingCompanionRes, existingSnapshotRes, allSnapshotXpRes, rewardedBattleXpRes] = await Promise.all([
+    supabase.from('creature_companions').select('*').eq('user_id', input.userId).maybeSingle(),
+    supabase.from('creature_battle_snapshots').select('*').eq('user_id', input.userId).eq('prep_date', input.logDate).maybeSingle(),
+    supabase.from('creature_battle_snapshots').select('xp_gained').eq('user_id', input.userId),
+    supabase.from('battle_runs').select('xp_awarded').eq('user_id', input.userId).eq('reward_claimed', true),
+  ])
+
+  const existingCompanion = (existingCompanionRes.data ?? null) as CreatureCompanionRow | null
+  const existingSnapshot = (existingSnapshotRes.data ?? null) as CreatureBattleSnapshotRow | null
+  const existingSnapshotXp = existingSnapshot?.xp_gained ?? 0
+  const totalSnapshotXpBefore = (allSnapshotXpRes.data ?? []).reduce(
+    (sum, row) => sum + ((row as { xp_gained: number }).xp_gained ?? 0),
+    0,
+  )
+  const totalRewardedBattleXp = (rewardedBattleXpRes.data ?? []).reduce(
+    (sum, row) => sum + ((row as { xp_awarded: number }).xp_awarded ?? 0),
+    0,
+  )
+
+  const stage = getHigherStage(existingCompanion?.stage ?? getUnlockedStage(input.longestStreak), getUnlockedStage(input.longestStreak))
+  const xpGained = getFinalizationXp(input.adjustedAdherence, input.hasMeals ? classifyStatus(input.adjustedAdherence) : 'no_data', input.currentStreak)
+  const totalXp = totalSnapshotXpBefore - existingSnapshotXp + xpGained + totalRewardedBattleXp
+  const level = getLevelFromXp(totalXp)
+  const readinessScore = getReadinessScore(input.creatureStats)
+  const readinessBand = getReadinessBand(readinessScore)
+  const condition = getCondition({
+    hasMeals: input.hasMeals,
+    adjustedAdherence: input.adjustedAdherence,
+    currentStreak: input.currentStreak,
+    daysLoggedLast7: input.daysLoggedLast7,
+    readinessScore,
+  })
+
+  const { data: snapshotData, error: snapshotErr } = await supabase
+    .from('creature_battle_snapshots')
+    .upsert(
+      {
+        user_id: input.userId,
+        prep_date: input.logDate,
+        battle_date: battleDate,
+        strength: input.creatureStats.strength,
+        resilience: input.creatureStats.resilience,
+        momentum: input.creatureStats.momentum,
+        vitality: input.creatureStats.vitality,
+        readiness_score: readinessScore,
+        readiness_band: readinessBand,
+        condition,
+        level,
+        stage,
+        source_daily_evaluation_id: input.evaluationId,
+        xp_gained: xpGained,
+      },
+      { onConflict: 'user_id,battle_date' },
+    )
+    .select()
+    .single()
+  if (snapshotErr || !snapshotData) throw new Error(snapshotErr?.message ?? 'Unable to upsert battle snapshot')
+
+  const evolvedToAdultAt = stage === 'adult' || stage === 'champion'
+    ? existingCompanion?.evolved_to_adult_at ?? await getEvolutionTimestamp(supabase, input.userId, 7, input.finalizedAt)
+    : null
+  const evolvedToChampionAt = stage === 'champion'
+    ? existingCompanion?.evolved_to_champion_at ?? await getEvolutionTimestamp(supabase, input.userId, 30, input.finalizedAt)
+    : null
+
+  const { error: companionErr } = await supabase
+    .from('creature_companions')
+    .upsert(
+      {
+        user_id: input.userId,
+        name: existingCompanion?.name ?? DEFAULT_COMPANION_NAME,
+        stage,
+        level,
+        xp: totalXp,
+        current_condition: condition,
+        hatched_at: existingCompanion?.hatched_at ?? input.finalizedAt,
+        evolved_to_adult_at: evolvedToAdultAt,
+        evolved_to_champion_at: evolvedToChampionAt,
+      },
+      { onConflict: 'user_id' },
+    )
+  if (companionErr) throw new Error(companionErr.message)
+
+  const unlockedOpponents = await getUnlockedOpponents(supabase, level)
+  const recommendedOpponent = getRecommendedOpponent(snapshotData as CreatureBattleSnapshotRow, unlockedOpponents)
+
+  return {
+    prep_date: input.logDate,
+    battle_date: battleDate,
+    snapshot_id: (snapshotData as CreatureBattleSnapshotRow).id,
+    readiness_score: readinessScore,
+    readiness_band: readinessBand,
+    condition,
+    recommended_opponent: recommendedOpponent,
+    xp_gained: xpGained,
+  }
+}
+
+async function getEvolutionTimestamp(
+  supabase: SupabaseClient,
+  userId: string,
+  threshold: number,
+  fallbackTimestamp: string,
+): Promise<string> {
+  const { data } = await supabase
+    .from('habit_metrics')
+    .select('log_date')
+    .eq('user_id', userId)
+    .gte('current_streak', threshold)
+    .order('log_date', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  if (!data?.log_date) return fallbackTimestamp
+  return `${data.log_date}T00:00:00.000Z`
+}
+
+async function getUnlockedOpponents(
+  supabase: SupabaseClient,
+  level: number,
+): Promise<BattleOpponentRow[]> {
+  const { data, error } = await supabase
+    .from('battle_opponents')
+    .select('id, name, archetype, recommended_level, strength, resilience, momentum, vitality, sort_order, unlock_level')
+    .eq('is_active', true)
+    .lte('unlock_level', level)
+    .order('sort_order', { ascending: true })
+
+  if (error) throw new Error(error.message)
+  return (data ?? []) as BattleOpponentRow[]
+}
+
+function getRecommendedOpponent(
+  snapshot: CreatureBattleSnapshotRow,
+  opponents: BattleOpponentRow[],
+): BattleRecommendationPayload | null {
+  if (opponents.length === 0) return null
+
+  return [...opponents]
+    .map((opponent) => {
+      const likelyOutcome = getLikelyOutcome(
+        {
+          strength: snapshot.strength,
+          resilience: snapshot.resilience,
+          momentum: snapshot.momentum,
+          vitality: snapshot.vitality,
+          level: snapshot.level,
+          stage: snapshot.stage,
+        },
+        {
+          recommendedLevel: opponent.recommended_level,
+          strength: opponent.strength,
+          resilience: opponent.resilience,
+          momentum: opponent.momentum,
+          vitality: opponent.vitality,
+        },
+      )
+
+      return {
+        opponent_id: opponent.id,
+        name: opponent.name,
+        archetype: opponent.archetype,
+        recommended_level: opponent.recommended_level,
+        likely_outcome: likelyOutcome,
+        rank:
+          likelyOutcome === 'favored'
+            ? 0
+            : likelyOutcome === 'competitive'
+              ? 1
+              : 2,
+        sortOrder: opponent.sort_order,
+      }
+    })
+    .sort((left, right) => {
+      if (left.rank !== right.rank) return left.rank - right.rank
+      if (left.rank === 0 && left.recommended_level !== right.recommended_level) {
+        return right.recommended_level - left.recommended_level
+      }
+      if (left.rank !== 0 && left.recommended_level !== right.recommended_level) {
+        return left.recommended_level - right.recommended_level
+      }
+      return left.sortOrder - right.sortOrder
+    })[0]
 }
 
 async function loadExistingFinalizedPayload(
@@ -271,12 +579,13 @@ async function loadExistingFinalizedPayload(
   logDate: string,
   dailyLog: DailyLogRow,
 ): Promise<FinalizedPayload> {
-  const [evaluation, habitMetrics, behaviorAttributes, creatureStats, dailyFeedback] = await Promise.all([
+  const [evaluation, habitMetrics, behaviorAttributes, creatureStats, dailyFeedback, battlePrep] = await Promise.all([
     supabase.from('daily_evaluations').select('*').eq('user_id', userId).eq('log_date', logDate).maybeSingle(),
     supabase.from('habit_metrics').select('*').eq('user_id', userId).eq('log_date', logDate).maybeSingle(),
     supabase.from('behavior_attributes').select('*').eq('user_id', userId).eq('log_date', logDate).maybeSingle(),
     supabase.from('creature_stats').select('*').eq('user_id', userId).eq('log_date', logDate).maybeSingle(),
     supabase.from('daily_feedback').select('*').eq('user_id', userId).eq('log_date', logDate).maybeSingle(),
+    loadBattlePrepSummary(supabase, userId, logDate),
   ])
 
   return {
@@ -286,6 +595,85 @@ async function loadExistingFinalizedPayload(
     behavior_attributes: unwrapPayload(behaviorAttributes),
     creature_stats: unwrapPayload(creatureStats),
     daily_feedback: unwrapPayload(dailyFeedback),
+    battle_prep: battlePrep,
+  }
+}
+
+async function ensureLegacyBattlePrepBackfill(
+  supabase: SupabaseClient,
+  userId: string,
+  logDate: string,
+  dailyLog: DailyLogRow,
+): Promise<void> {
+  const { data: snapshotData, error: snapshotErr } = await supabase
+    .from('creature_battle_snapshots')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('prep_date', logDate)
+    .maybeSingle()
+
+  if (snapshotErr) throw new Error(snapshotErr.message)
+  if (snapshotData?.id) return
+
+  const [evaluationRes, habitMetricsRes, creatureStatsRes] = await Promise.all([
+    supabase.from('daily_evaluations').select('*').eq('user_id', userId).eq('log_date', logDate).maybeSingle(),
+    supabase.from('habit_metrics').select('*').eq('user_id', userId).eq('log_date', logDate).maybeSingle(),
+    supabase.from('creature_stats').select('*').eq('user_id', userId).eq('log_date', logDate).maybeSingle(),
+  ])
+
+  if (evaluationRes.error) throw new Error(evaluationRes.error.message)
+  if (habitMetricsRes.error) throw new Error(habitMetricsRes.error.message)
+  if (creatureStatsRes.error) throw new Error(creatureStatsRes.error.message)
+
+  const evaluation = evaluationRes.data as {
+    id: string
+    adjusted_adherence: number
+  } | null
+  const habitMetrics = habitMetricsRes.data as HabitMetricsRow | null
+  const creatureStats = creatureStatsRes.data as CreatureStatsRow | null
+
+  if (!evaluation || !habitMetrics || !creatureStats) return
+
+  await upsertCompanionBattleState(supabase, {
+    userId,
+    logDate,
+    finalizedAt: dailyLog.finalized_at ?? new Date().toISOString(),
+    evaluationId: evaluation.id,
+    creatureStats,
+    hasMeals: dailyLog.meal_count > 0,
+    adjustedAdherence: evaluation.adjusted_adherence,
+    currentStreak: habitMetrics.current_streak,
+    longestStreak: habitMetrics.longest_streak,
+    daysLoggedLast7: habitMetrics.days_logged_last_7,
+  })
+}
+
+async function loadBattlePrepSummary(
+  supabase: SupabaseClient,
+  userId: string,
+  logDate: string,
+): Promise<BattlePrepPayload | null> {
+  const [snapshotRes, companionRes] = await Promise.all([
+    supabase.from('creature_battle_snapshots').select('*').eq('user_id', userId).eq('prep_date', logDate).maybeSingle(),
+    supabase.from('creature_companions').select('*').eq('user_id', userId).maybeSingle(),
+  ])
+
+  const snapshot = (snapshotRes.data ?? null) as CreatureBattleSnapshotRow | null
+  if (!snapshot) return null
+
+  const companion = (companionRes.data ?? null) as CreatureCompanionRow | null
+  const unlockedOpponents = await getUnlockedOpponents(supabase, companion?.level ?? snapshot.level)
+  const recommendedOpponent = getRecommendedOpponent(snapshot, unlockedOpponents)
+
+  return {
+    prep_date: snapshot.prep_date,
+    battle_date: snapshot.battle_date,
+    snapshot_id: snapshot.id,
+    readiness_score: snapshot.readiness_score,
+    readiness_band: snapshot.readiness_band,
+    condition: snapshot.condition,
+    recommended_opponent: recommendedOpponent,
+    xp_gained: snapshot.xp_gained,
   }
 }
 
