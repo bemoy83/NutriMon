@@ -84,10 +84,6 @@ export default function AppShell() {
     },
   ]
 
-  const trendsFabActive =
-    typeof window !== 'undefined' &&
-    window.location.pathname.startsWith('/app/trends')
-
   return (
     <div className="app-page flex min-h-screen flex-col">
       {/* Main content */}
@@ -103,55 +99,10 @@ export default function AppShell() {
           background: 'var(--app-nav-bg)',
         }}
       >
-        <div className="flex max-w-lg mx-auto items-end">
-          {/* Log */}
+        <div className="flex max-w-lg mx-auto">
           <NavItem item={navItems[0]} />
-
-          {/* Creature */}
           <NavItem item={navItems[1]} />
-
-          {/* Center FAB — Trends */}
-          <div className="flex-1 flex flex-col items-center pb-2">
-            <NavLink
-              to="/app/trends"
-              aria-label="Trends"
-              className="flex flex-col items-center gap-0.5"
-              style={trendsFabActive ? { color: 'var(--app-brand)' } : { color: 'var(--app-text-muted)' }}
-            >
-              {() => (
-                <>
-                  <span
-                    className="w-12 h-12 rounded-full flex items-center justify-center shadow-md -mt-5 transition-colors"
-                    style={{
-                      background: trendsFabActive
-                        ? 'var(--app-brand-hover)'
-                        : 'var(--app-brand)',
-                    }}
-                  >
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="white"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                      />
-                    </svg>
-                  </span>
-                  <span className="text-xs">Trends</span>
-                </>
-              )}
-            </NavLink>
-          </div>
-
-          {/* Weight */}
           <NavItem item={navItems[2]} />
-
-          {/* Profile */}
           <NavItem item={navItems[3]} />
         </div>
       </nav>

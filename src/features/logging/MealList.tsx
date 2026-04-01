@@ -133,11 +133,11 @@ function MealCard({
             {meal.itemCount} item{meal.itemCount !== 1 ? 's' : ''}
             {hasMacros && (
               <span className="ml-1.5">
-                <span style={{ color: 'var(--app-danger)' }}>P{Math.round(macros.protein)}</span>
+                <span style={{ color: 'var(--app-macro-protein)' }}>P{Math.round(macros.protein)}</span>
                 <span style={{ color: 'var(--app-text-subtle)' }}> · </span>
-                <span style={{ color: 'var(--app-brand)' }}>C{Math.round(macros.carbs)}</span>
+                <span style={{ color: 'var(--app-macro-carbs)' }}>C{Math.round(macros.carbs)}</span>
                 <span style={{ color: 'var(--app-text-subtle)' }}> · </span>
-                <span style={{ color: 'var(--app-warning)' }}>F{Math.round(macros.fat)}</span>
+                <span style={{ color: 'var(--app-macro-fat)' }}>F{Math.round(macros.fat)}</span>
               </span>
             )}
           </p>
@@ -166,11 +166,11 @@ function MealCard({
                 background: 'var(--app-surface-elevated)',
               }}
             >
-              <MacroStat label="Protein" value={macros.protein} color="var(--app-danger)" />
+              <MacroStat label="Protein" value={macros.protein} color="var(--app-macro-protein)" />
               <div className="w-px h-6 bg-[var(--app-border)]" />
-              <MacroStat label="Carbs" value={macros.carbs} color="var(--app-brand)" />
+              <MacroStat label="Carbs" value={macros.carbs} color="var(--app-macro-carbs)" />
               <div className="w-px h-6 bg-[var(--app-border)]" />
-              <MacroStat label="Fat" value={macros.fat} color="var(--app-warning)" />
+              <MacroStat label="Fat" value={macros.fat} color="var(--app-macro-fat)" />
             </div>
           )}
 
@@ -199,7 +199,7 @@ function MealCard({
                   disabled={savingTemplate}
                   className="flex-1 py-2.5 text-sm text-[var(--app-text-secondary)] transition-colors hover:bg-[var(--app-surface-elevated)] disabled:opacity-40"
                 >
-                  {savingTemplate ? 'Saving…' : 'Save'}
+                  {savingTemplate ? 'Saving…' : 'Template'}
                 </button>
                 <button
                   onClick={onDelete}

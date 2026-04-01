@@ -109,10 +109,10 @@ export default function WeightPage() {
                       key={u}
                       type="button"
                       onClick={() => setWeightUnit(u)}
-                      className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
+                      className={`text-xs px-3 py-1 rounded-full transition-colors ${
                         weightUnit === u
                           ? 'bg-[var(--app-brand)] text-white'
-                          : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
+                          : 'bg-[var(--app-surface-elevated)] text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
                       }`}
                     >
                       {u}

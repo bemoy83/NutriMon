@@ -84,6 +84,11 @@ export default function DailyLogHeader({
         <div className="text-center">
           <h1 className="font-semibold" style={{ color: 'var(--app-text-primary)' }}>
             {formatDisplayDate(logDate)}
+            {currentStreak > 0 && (
+              <span className="ml-1.5 text-xs font-medium" style={{ color: 'var(--app-warning)' }}>
+                🔥 {currentStreak}
+              </span>
+            )}
           </h1>
           {isFinalized ? (
             <span className="text-xs" style={{ color: 'var(--app-success)' }}>Finalized</span>
@@ -147,21 +152,16 @@ export default function DailyLogHeader({
           </svg>
 
           {/* Center text */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center -mt-2">
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span
               className="text-xl font-bold leading-none"
               style={{ color: progressPct >= 100 ? 'var(--app-danger)' : 'var(--app-text-primary)' }}
             >
               {Math.abs(remaining)}
             </span>
-            <span className="text-[10px] mt-0.5" style={{ color: 'var(--app-text-muted)' }}>
+            <span className="text-xs mt-0.5" style={{ color: 'var(--app-text-muted)' }}>
               {remaining < 0 ? 'over' : 'remaining'}
             </span>
-            {currentStreak > 0 && (
-              <span className="text-[10px] mt-1 font-medium" style={{ color: 'var(--app-warning)' }}>
-                🔥 {currentStreak}
-              </span>
-            )}
           </div>
         </div>
 
@@ -171,27 +171,23 @@ export default function DailyLogHeader({
             label="Protein"
             consumed={totalProteinG}
             target={proteinTargetG}
-            color="var(--app-danger)"
+            color="var(--app-macro-protein)"
           />
           <MacroBar
             label="Carbs"
             consumed={totalCarbsG}
             target={carbsTargetG}
-            color="var(--app-brand)"
+            color="var(--app-macro-carbs)"
           />
           <MacroBar
             label="Fat"
             consumed={totalFatG}
             target={fatTargetG}
-            color="var(--app-warning)"
+            color="var(--app-macro-fat)"
           />
         </div>
       </div>
 
-      {/* Consumed total — subtle footer line */}
-      <p className="mt-2 text-right text-[10px]" style={{ color: 'var(--app-text-subtle)' }}>
-        {totalCalories.toLocaleString()} / {calorieTarget.toLocaleString()} kcal consumed
-      </p>
     </div>
   )
 }
@@ -213,10 +209,10 @@ function MacroBar({
   return (
     <div>
       <div className="flex items-baseline justify-between mb-1">
-        <span className="text-[11px]" style={{ color: 'var(--app-text-muted)' }}>
+        <span className="text-xs" style={{ color: 'var(--app-text-muted)' }}>
           {label}
         </span>
-        <span className="text-[11px]" style={{ color: 'var(--app-text-secondary)' }}>
+        <span className="text-xs" style={{ color: 'var(--app-text-secondary)' }}>
           <span style={{ color: 'var(--app-text-primary)', fontWeight: 500 }}>{consumedRounded}</span>
           <span style={{ color: 'var(--app-text-subtle)' }}>/{target}g</span>
         </span>

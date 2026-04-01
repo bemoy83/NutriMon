@@ -12,8 +12,8 @@ function StatBar({ label, value, color }: { label: string; value: number; color:
       </div>
       <div className="h-2.5 rounded-full overflow-hidden bg-[var(--app-border)]">
         <div
-          className={`h-full rounded-full transition-all duration-500 ${color}`}
-          style={{ width: `${Math.min(value, 100)}%` }}
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${Math.min(value, 100)}%`, background: color }}
         />
       </div>
     </div>
@@ -59,9 +59,9 @@ export default function CreaturePage() {
       {/* Stats */}
       {stats ? (
         <div className="app-card w-full max-w-sm space-y-4 p-5">
-          <StatBar label="Strength" value={stats.strength} color="bg-red-500" />
-          <StatBar label="Resilience" value={stats.resilience} color="bg-blue-500" />
-          <StatBar label="Momentum" value={stats.momentum} color="bg-yellow-500" />
+          <StatBar label="Strength" value={stats.strength} color="var(--app-danger)" />
+          <StatBar label="Resilience" value={stats.resilience} color="var(--app-brand)" />
+          <StatBar label="Momentum" value={stats.momentum} color="var(--app-warning)" />
           <div>
             <div className="flex justify-between mb-1">
               <span className="text-sm text-[var(--app-text-secondary)]">Vitality</span>
@@ -69,8 +69,8 @@ export default function CreaturePage() {
             </div>
             <div className="h-2.5 rounded-full overflow-hidden bg-[var(--app-border)]">
               <div
-                className="h-full rounded-full bg-green-500 transition-all duration-500"
-                style={{ width: `${Math.min((stats.vitality / 200) * 100, 100)}%` }}
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${Math.min((stats.vitality / 200) * 100, 100)}%`, background: 'var(--app-success)' }}
               />
             </div>
           </div>
