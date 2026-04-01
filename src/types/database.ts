@@ -370,7 +370,7 @@ export interface CreatureCompanionRow {
   stage: 'baby' | 'adult' | 'champion'
   level: number
   xp: number
-  current_condition: 'thriving' | 'steady' | 'recovering' | 'quiet'
+  current_condition: 'thriving' | 'steady' | 'recovering'
   hatched_at: string
   evolved_to_adult_at: string | null
   evolved_to_champion_at: string | null
@@ -389,7 +389,7 @@ export interface CreatureBattleSnapshotRow {
   vitality: number
   readiness_score: number
   readiness_band: 'recovering' | 'building' | 'ready' | 'peak'
-  condition: 'thriving' | 'steady' | 'recovering' | 'quiet'
+  condition: 'thriving' | 'steady' | 'recovering'
   level: number
   stage: 'baby' | 'adult' | 'champion'
   source_daily_evaluation_id: string

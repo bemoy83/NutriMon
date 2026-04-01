@@ -65,7 +65,7 @@ interface CreatureCompanionRow {
   stage: CreatureStage
   level: number
   xp: number
-  current_condition: 'thriving' | 'steady' | 'recovering' | 'quiet'
+  current_condition: 'thriving' | 'steady' | 'recovering'
   hatched_at: string
   evolved_to_adult_at: string | null
   evolved_to_champion_at: string | null
@@ -84,7 +84,7 @@ interface CreatureBattleSnapshotRow {
   vitality: number
   readiness_score: number
   readiness_band: 'recovering' | 'building' | 'ready' | 'peak'
-  condition: 'thriving' | 'steady' | 'recovering' | 'quiet'
+  condition: 'thriving' | 'steady' | 'recovering'
   level: number
   stage: CreatureStage
   source_daily_evaluation_id: string
@@ -123,7 +123,7 @@ interface BattlePrepPayload {
   snapshot_id: string
   readiness_score: number
   readiness_band: 'recovering' | 'building' | 'ready' | 'peak'
-  condition: 'thriving' | 'steady' | 'recovering' | 'quiet'
+  condition: 'thriving' | 'steady' | 'recovering'
   recommended_opponent: BattleRecommendationPayload | null
   xp_gained: number
 }
@@ -331,7 +331,6 @@ export async function finalizeDay(
     adjustedAdherence: finalAdjustedAdherence,
     currentStreak,
     longestStreak,
-    daysLoggedLast7,
   })
 
   const feedback = getFeedbackMessage(status)
@@ -383,7 +382,6 @@ async function upsertCompanionBattleState(
     adjustedAdherence: number
     currentStreak: number
     longestStreak: number
-    daysLoggedLast7: number
   },
 ): Promise<BattlePrepPayload> {
   const battleDate = addDays(input.logDate, 1)
@@ -417,7 +415,6 @@ async function upsertCompanionBattleState(
     hasMeals: input.hasMeals,
     adjustedAdherence: input.adjustedAdherence,
     currentStreak: input.currentStreak,
-    daysLoggedLast7: input.daysLoggedLast7,
     readinessScore,
   })
 
@@ -644,7 +641,6 @@ async function ensureLegacyBattlePrepBackfill(
     adjustedAdherence: evaluation.adjusted_adherence,
     currentStreak: habitMetrics.current_streak,
     longestStreak: habitMetrics.longest_streak,
-    daysLoggedLast7: habitMetrics.days_logged_last_7,
   })
 }
 

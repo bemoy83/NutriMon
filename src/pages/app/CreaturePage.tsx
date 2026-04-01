@@ -37,8 +37,6 @@ function getConditionTone(condition: CreatureCondition) {
       return 'text-[var(--app-success)]'
     case 'recovering':
       return 'text-[var(--app-warning)]'
-    case 'quiet':
-      return 'text-[var(--app-text-muted)]'
     default:
       return 'text-[var(--app-brand)]'
   }
@@ -65,6 +63,17 @@ function getReadinessDescription(readiness: ReadinessBand) {
       return 'Building means readiness is moving in the right direction, with room to strengthen it further.'
     default:
       return 'Recovering means today starts from a weaker prep snapshot and may need a safer matchup.'
+  }
+}
+
+function getFormDescription(condition: CreatureCondition) {
+  switch (condition) {
+    case 'thriving':
+      return 'Your companion is in top form right now.'
+    case 'recovering':
+      return 'Your companion is below peak form and can build back up with steadier days.'
+    default:
+      return 'Your companion is in a stable form with room to improve.'
   }
 }
 
@@ -124,17 +133,17 @@ export default function CreaturePage() {
               {getStageEmoji(companion.stage)}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Companion</p>
+              <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Companion Progress</p>
               <h2 className="truncate text-2xl font-bold text-[var(--app-text-primary)]">{companion.name}</h2>
               <div className="mt-2 flex flex-wrap gap-2 text-xs">
                 <span className="rounded-full bg-white px-3 py-1 font-medium capitalize text-[var(--app-text-secondary)]">
-                  {companion.stage}
+                  Stage: {companion.stage}
                 </span>
                 <span className="rounded-full bg-white px-3 py-1 font-medium text-[var(--app-text-secondary)]">
                   Level {companion.level}
                 </span>
                 <span className={`rounded-full bg-white px-3 py-1 font-medium capitalize ${getConditionTone(companion.currentCondition)}`}>
-                  {companion.currentCondition}
+                  Form: {companion.currentCondition}
                 </span>
               </div>
             </div>
@@ -156,9 +165,16 @@ export default function CreaturePage() {
 
         {stats ? (
           <div className="space-y-4 p-5">
-            <StatBar label="Strength" value={stats.strength} color="var(--app-danger)" />
-            <StatBar label="Resilience" value={stats.resilience} color="var(--app-brand)" />
-            <StatBar label="Momentum" value={stats.momentum} color="var(--app-warning)" />
+            <div>
+              <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Current Form</p>
+              <p className="mt-1 text-sm text-[var(--app-text-secondary)]">
+                These values show your companion&apos;s current form, not permanent max stats.
+              </p>
+              <p className="mt-1 text-sm text-[var(--app-text-secondary)]">{getFormDescription(companion.currentCondition)}</p>
+            </div>
+            <StatBar label="Strength Form" value={stats.strength} color="var(--app-danger)" />
+            <StatBar label="Resilience Form" value={stats.resilience} color="var(--app-brand)" />
+            <StatBar label="Momentum Form" value={stats.momentum} color="var(--app-warning)" />
             <div>
               <div className="mb-1 flex justify-between">
                 <span className="text-sm text-[var(--app-text-secondary)]">Vitality</span>
@@ -182,8 +198,8 @@ export default function CreaturePage() {
       <div className="app-card mt-4 p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Today&apos;s Battle Prep</p>
-            <p className="mt-1 text-sm text-[var(--app-text-secondary)]">Locked snapshot for {battleDate}</p>
+            <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Battle Readiness</p>
+            <p className="mt-1 text-sm text-[var(--app-text-secondary)]">Locked battle prep for {battleDate}</p>
           </div>
           {battleHubQuery.data?.snapshot ? (
             <div className="rounded-full bg-[var(--app-surface-muted)] px-3 py-1 text-sm font-semibold capitalize text-[var(--app-text-primary)]">
@@ -209,7 +225,7 @@ export default function CreaturePage() {
                 <p className="font-semibold text-[var(--app-text-primary)]">{battleHubQuery.data.snapshot.readinessScore}</p>
               </div>
               <div className="rounded-xl bg-[var(--app-surface-muted)] px-3 py-2 capitalize">
-                <p className="text-xs text-[var(--app-text-muted)]">Condition</p>
+                <p className="text-xs text-[var(--app-text-muted)]">Current Form</p>
                 <p className="font-semibold text-[var(--app-text-primary)]">{battleHubQuery.data.snapshot.condition}</p>
               </div>
             </div>
@@ -227,6 +243,9 @@ export default function CreaturePage() {
               </div>
               <p className="mt-3 text-sm text-[var(--app-text-secondary)]">
                 {getReadinessDescription(battleHubQuery.data.snapshot.readinessBand)}
+              </p>
+              <p className="mt-2 text-sm text-[var(--app-text-secondary)]">
+                Readiness reflects how your companion&apos;s current form translates into battle prep.
               </p>
             </div>
             {battleHubQuery.data.recommendedOpponent ? (

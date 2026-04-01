@@ -26,17 +26,15 @@ describe('battleSystem', () => {
         hasMeals: false,
         adjustedAdherence: 0,
         currentStreak: 0,
-        daysLoggedLast7: 0,
         readinessScore: 20,
       }),
-    ).toBe('quiet')
+    ).toBe('recovering')
 
     expect(
       getCondition({
         hasMeals: true,
         adjustedAdherence: 92,
         currentStreak: 4,
-        daysLoggedLast7: 6,
         readinessScore: 91,
       }),
     ).toBe('thriving')

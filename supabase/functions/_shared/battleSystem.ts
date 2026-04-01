@@ -4,7 +4,7 @@ export const DEFAULT_COMPANION_NAME = 'Sprout'
 export const XP_PER_LEVEL = 100
 
 export type CreatureStage = 'baby' | 'adult' | 'champion'
-export type CreatureCondition = 'thriving' | 'steady' | 'recovering' | 'quiet'
+export type CreatureCondition = 'thriving' | 'steady' | 'recovering'
 export type ReadinessBand = 'recovering' | 'building' | 'ready' | 'peak'
 export type BattleLikelyOutcome = 'favored' | 'competitive' | 'risky'
 
@@ -21,7 +21,6 @@ export interface CreatureConditionInput {
   hasMeals: boolean
   adjustedAdherence: number
   currentStreak: number
-  daysLoggedLast7: number
   readinessScore: number
 }
 
@@ -84,9 +83,8 @@ export function getReadinessBand(score: number): ReadinessBand {
 }
 
 export function getCondition(input: CreatureConditionInput): CreatureCondition {
-  if (!input.hasMeals || input.daysLoggedLast7 <= 1) return 'quiet'
   if (input.readinessScore >= 88 && input.adjustedAdherence >= 85 && input.currentStreak >= 3) return 'thriving'
-  if (input.adjustedAdherence < 70 || input.readinessScore < 50) return 'recovering'
+  if (!input.hasMeals || input.adjustedAdherence < 70 || input.readinessScore < 50) return 'recovering'
   return 'steady'
 }
 

@@ -110,6 +110,14 @@ Additional required hosted function secret:
 CRON_SHARED_SECRET=choose-a-long-random-secret
 ```
 
+Optional hosted function secret:
+
+```bash
+ENABLE_AUTO_FINALIZE_DAY=true
+```
+
+`auto-finalize-day` is now disabled by default unless `ENABLE_AUTO_FINALIZE_DAY` is explicitly set to `true`.
+
 For local server-side tools and local function serving, use [.env.server.example](/Users/bemoy/Developer/NutriMon/.env.server.example) as the template for non-frontend secrets.
 
 Serve functions locally with the Supabase CLI if you have it installed:
@@ -183,14 +191,15 @@ To make `auto-finalize-day` operational in production:
 
 1. Deploy the functions.
 2. Set `CRON_SHARED_SECRET` for the project.
-3. Create an hourly schedule that calls `auto-finalize-day`.
-4. Include the header:
+3. Set `ENABLE_AUTO_FINALIZE_DAY=true` for the project.
+4. Create an hourly schedule that calls `auto-finalize-day`.
+5. Include the header:
 
 ```text
 x-cron-secret: <CRON_SHARED_SECRET>
 ```
 
-5. Manually invoke once and verify the JSON payload includes:
+6. Manually invoke once and verify the JSON payload includes:
    - `processed`
    - `processedIds`
    - `errors`

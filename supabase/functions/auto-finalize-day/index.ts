@@ -14,6 +14,10 @@ interface ProfileWindowRow {
   onboarding_completed_at: string
 }
 
+function isAutoFinalizeEnabled() {
+  return Deno.env.get('ENABLE_AUTO_FINALIZE_DAY') === 'true'
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS_HEADERS })
@@ -26,6 +30,19 @@ serve(async (req) => {
         status: 401,
         headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
       })
+    }
+
+    if (!isAutoFinalizeEnabled()) {
+      return new Response(
+        JSON.stringify({
+          processed: 0,
+          processedIds: [],
+          errors: [],
+          disabled: true,
+          reason: 'auto-finalize-day disabled',
+        }),
+        { headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+      )
     }
 
     const supabase = createClient(
