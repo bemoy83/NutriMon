@@ -50,12 +50,10 @@ export default function DailyLogHeader({
 
   return (
     <div
-      className="sticky top-0 z-10 border-b backdrop-blur px-4 pt-3 pb-4"
-      style={{
-        borderColor: 'var(--app-border)',
-        background: 'var(--app-nav-bg)',
-      }}
+      className="sticky top-0 z-10 px-4 pt-3 pb-4"
+      style={{ background: 'var(--app-bg)' }}
     >
+      <div className="app-card px-4 pt-3 pb-4">
       {/* Date navigation */}
       <div className="flex items-center justify-between mb-3">
         <button
@@ -183,7 +181,7 @@ export default function DailyLogHeader({
           />
         </div>
       </div>
-
+      </div>
     </div>
   )
 }
