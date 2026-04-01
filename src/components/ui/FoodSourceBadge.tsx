@@ -9,13 +9,9 @@ export default function FoodSourceBadge({ sourceType }: FoodSourceBadgeProps) {
 
   return (
     <span
-      className={`app-badge ${
-        isUserProduct
-          ? 'bg-[var(--app-surface-elevated)] text-[var(--app-text-secondary)]'
-          : 'bg-[var(--app-surface-green)] text-[var(--app-surface-green-text)]'
-      }`}
-    >
-      {isUserProduct ? 'My product' : 'Built-in'}
-    </span>
+      className="inline-block w-2 h-2 rounded-full flex-none"
+      style={{ background: isUserProduct ? 'var(--app-macro-protein)' : 'var(--app-brand)' }}
+      title={isUserProduct ? 'My product' : 'Built-in'}
+    />
   )
 }

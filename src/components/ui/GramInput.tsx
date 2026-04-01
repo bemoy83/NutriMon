@@ -6,7 +6,7 @@ interface GramInputProps {
   step?: number
 }
 
-export default function GramInput({ grams, onChange, step = 25 }: GramInputProps) {
+export default function GramInput({ grams, onChange, step = 10 }: GramInputProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
