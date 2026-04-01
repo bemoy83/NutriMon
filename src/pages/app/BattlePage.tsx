@@ -5,6 +5,7 @@ import { useBattleRun, useSubmitBattleAction } from '@/features/creature/useBatt
 import type { BattleLogEntry } from '@/types/domain'
 
 const ENTRY_DELAY_MS = 1200
+const ACTION_LABELS = ['Attack', 'Defend', 'Skill', 'Items'] as const
 
 function HpBar({ current, max, color }: { current: number; max: number; color: 'brand' | 'danger' }) {
   const pct = max > 0 ? Math.round((current / max) * 100) : 0
@@ -120,13 +121,6 @@ export default function BattlePage() {
     )
   }
 
-  const actions = [
-    { label: 'Attack', enabled: isActive && !isPending && !isAnimating, onClick: handleAttack },
-    { label: 'Defend', enabled: false, onClick: undefined },
-    { label: 'Skill', enabled: false, onClick: undefined },
-    { label: 'Items', enabled: false, onClick: undefined },
-  ]
-
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[var(--app-bg)]">
       {/* ── Arena ─────────────────────────────────────────────────── */}
@@ -195,20 +189,26 @@ export default function BattlePage() {
 
         {/* Action menu — right */}
         <div className="flex w-44 shrink-0 flex-col justify-center gap-1 px-4 py-3">
-          {actions.map((action) => (
-            <button
-              key={action.label}
-              type="button"
-              disabled={!action.enabled}
-              onClick={action.onClick}
-              className={`rounded-lg px-3 py-1.5 text-left text-sm font-semibold transition-colors ${action.enabled
-                  ? 'bg-[var(--app-brand)] text-white hover:bg-[var(--app-brand-hover)]'
-                  : 'bg-[var(--app-surface-muted)] text-[var(--app-text-muted)] opacity-50'
+          {ACTION_LABELS.map((label) => {
+            const isAttack = label === 'Attack'
+            const isEnabled = isAttack && isActive && !isPending && !isAnimating
+
+            return (
+              <button
+                key={label}
+                type="button"
+                disabled={!isEnabled}
+                onClick={isAttack ? handleAttack : undefined}
+                className={`rounded-lg px-3 py-1.5 text-left text-sm font-semibold transition-colors ${
+                  isEnabled
+                    ? 'bg-[var(--app-brand)] text-white hover:bg-[var(--app-brand-hover)]'
+                    : 'bg-[var(--app-surface-muted)] text-[var(--app-text-muted)] opacity-50'
                 }`}
-            >
-              {action.label === 'Attack' && (isPending || isAnimating) ? 'Attacking…' : action.label}
-            </button>
-          ))}
+              >
+                {isAttack && (isPending || isAnimating) ? 'Attacking…' : label}
+              </button>
+            )
+          })}
         </div>
       </div>
 
