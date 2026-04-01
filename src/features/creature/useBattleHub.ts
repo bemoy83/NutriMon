@@ -14,9 +14,14 @@ async function ensureBattlePrepSnapshot(battleDate: string, timezone: string) {
   const token = sessionData.session?.access_token
   if (!token) return
 
+  const { data: userData } = await supabase.auth.getUser()
+  const userId = userData.user?.id
+  if (!userId) return
+
   const { data: snapshotRow, error: snapshotError } = await supabase
     .from('creature_battle_snapshots')
     .select('id')
+    .eq('user_id', userId)
     .eq('battle_date', battleDate)
     .maybeSingle()
 
@@ -27,6 +32,7 @@ async function ensureBattlePrepSnapshot(battleDate: string, timezone: string) {
   const { error: prepLogError } = await supabase
     .from('daily_logs')
     .select('is_finalized')
+    .eq('user_id', userId)
     .eq('log_date', prepDate)
     .maybeSingle()
 

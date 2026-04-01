@@ -5,7 +5,7 @@ import { useDailyLogCore } from '@/features/logging/useDailyLogCore'
 import { useDailyLogDerived } from '@/features/logging/useDailyLogDerived'
 import { useLatestFallbackMetrics } from '@/features/logging/useLatestFallbackMetrics'
 import MealList from '@/features/logging/MealList'
-import { getTodayInTimezone, isToday } from '@/lib/date'
+import { getTodayInTimezone } from '@/lib/date'
 import type { BattlePrepSummary, CreaturePreview, FinalizeDayResponse, Meal } from '@/types/domain'
 import { buildMealSnapshotItems, buildMealUpdateItems } from '@/features/logging/mealPayloads'
 import { deleteMeal, restoreMealFromSnapshot, updateMealWithItems } from '@/features/logging/api'
@@ -117,7 +117,6 @@ export default function DailyLogPage() {
   const fatTargetG = Math.round(calorieTarget * 0.30 / 9)
 
   const todayDate = getTodayInTimezone(timezone)
-  const isCurrentDay = isToday(logDate, timezone)
   const { finalizing, finalizeError, finalizeDay } = useFinalizeDay({
     logDate,
     onSuccess: (result) => {
@@ -261,7 +260,7 @@ export default function DailyLogPage() {
         <div className="fixed inset-x-0 bottom-20 z-30 px-4">
           <div className="mx-auto max-w-lg flex items-end gap-2">
             {/* Left slot: Finalize (priority) or Repeat */}
-            {isCurrentDay && mealCount > 0 ? (
+            {mealCount > 0 ? (
               <DailyLogFinalizeCta
                 finalizing={finalizing}
                 finalizeError={finalizeError}

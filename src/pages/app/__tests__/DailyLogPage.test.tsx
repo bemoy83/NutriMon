@@ -333,10 +333,10 @@ describe('DailyLogPage', () => {
     expect(screen.getByText('No meals logged yet.')).toBeInTheDocument()
     expect(screen.getByText('Tap + to add your first meal.')).toBeInTheDocument()
     expect(screen.queryByText('inline-quick-add')).not.toBeInTheDocument()
-    expect(screen.queryByText('Finalize Day')).not.toBeInTheDocument()
+    expect(screen.queryByText('Finalize & Prep')).not.toBeInTheDocument()
   })
 
-  it('repeats the last meal and offers undo via delete', async () => {
+  it('shows finalize for past unfinalized days that already have meals', async () => {
     useDailyLogCoreMock.mockReturnValue({
       data: {
         dailyLog: {
@@ -358,20 +358,9 @@ describe('DailyLogPage', () => {
     isTodayMock.mockReturnValue(false)
 
     renderPage()
-    fireEvent.click(screen.getByText('Repeat last meal'))
 
-    await waitFor(() => {
-      expect(repeatLastMealMock).toHaveBeenCalledWith('2026-01-05')
-    })
-
-    expect(screen.getByText('Last meal repeated')).toBeInTheDocument()
-    expect(screen.getByText('Creature Preview')).toBeInTheDocument()
-    expect(screen.getByText(/Tomorrow readiness:/)).toBeInTheDocument()
-    fireEvent.click(screen.getByText('Undo'))
-
-    await waitFor(() => {
-      expect(deleteMealMock).toHaveBeenCalledWith('meal-repeated')
-    })
+    expect(screen.getByText('Finalize & Prep')).toBeInTheDocument()
+    expect(screen.queryByText('Repeat last meal')).not.toBeInTheDocument()
   })
 
   it('restores a deleted meal from snapshots on undo', async () => {
