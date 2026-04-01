@@ -137,7 +137,7 @@ export default function BattlePage() {
 
     setIsAnimating(true)
 
-    newEntries.forEach((entry, i) => {
+    newEntries.forEach((_, i) => {
       const t = setTimeout(() => {
         setDisplayedLogOverride({
           sessionId,
