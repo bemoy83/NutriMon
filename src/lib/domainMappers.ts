@@ -2,9 +2,11 @@ import type {
   BehaviorAttributes,
   BattleArena,
   BattleHub,
+  BattleLogEntry,
   BattleOpponent,
   BattleRecommendation,
   BattleRun,
+  BattleRunSession,
   CreatureBattleSnapshot,
   CreatureCompanion,
   CreaturePreview,
@@ -26,9 +28,11 @@ import type {
   BehaviorAttributesRow,
   BattleArenaRow,
   BattleHubRow,
+  BattleLogEntryRow,
   BattleOpponentRow,
   BattleRecommendationRow,
   BattleRunRow,
+  BattleRunSessionRow,
   BattleRunWithOpponentRow,
   CreatureBattleSnapshotRow,
   CreatureCompanionRow,
@@ -364,6 +368,36 @@ export function mapBattleRunWithOpponent(row: BattleRunWithOpponentRow): BattleR
   }
 }
 
+export function mapBattleLogEntry(row: BattleLogEntryRow): BattleLogEntry {
+  return {
+    id: row.id,
+    round: row.round,
+    actor: row.actor,
+    action: row.action,
+    damage: row.damage,
+    target: row.target,
+    targetHpAfter: row.target_hp_after,
+    message: row.message,
+  }
+}
+
+export function mapBattleRunSession(row: BattleRunSessionRow): BattleRunSession {
+  return {
+    ...mapBattleRun(row),
+    status: row.status,
+    playerMaxHp: row.player_max_hp,
+    playerCurrentHp: row.player_current_hp,
+    opponentMaxHp: row.opponent_max_hp,
+    opponentCurrentHp: row.opponent_current_hp,
+    currentRound: row.current_round,
+    battleLog: (row.battle_log ?? []).map(mapBattleLogEntry),
+    completedAt: row.completed_at,
+    snapshot: mapCreatureBattleSnapshot(row.snapshot),
+    opponent: mapBattleOpponent(row.opponent),
+    companion: mapCreatureCompanion(row.companion),
+  }
+}
+
 export function mapBattleHub(row: BattleHubRow): BattleHub {
   return {
     companion: row.companion ? mapCreatureCompanion(row.companion) : null,
@@ -371,6 +405,7 @@ export function mapBattleHub(row: BattleHubRow): BattleHub {
     recommendedOpponent: row.recommended_opponent ? mapBattleRecommendation(row.recommended_opponent) : null,
     unlockedOpponents: (row.unlocked_opponents ?? []).map(mapBattleOpponent),
     battleHistory: (row.battle_history ?? []).map(mapBattleRunWithOpponent),
+    activeBattleRun: row.active_battle_run ? mapBattleRunSession(row.active_battle_run) : null,
   }
 }
 

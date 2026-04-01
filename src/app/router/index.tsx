@@ -43,6 +43,8 @@ const routes = [
                   { path: '/app/profile', lazy: () => import('@/app/router/route-modules/profile') },
                 ],
               },
+              // Battle screen: full-screen, no bottom nav
+              { path: '/app/creature/battle/:battleRunId', lazy: () => import('@/app/router/route-modules/battle') },
             ],
           },
         ],

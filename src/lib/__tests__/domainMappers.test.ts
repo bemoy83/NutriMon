@@ -230,6 +230,7 @@ describe('domainMappers', () => {
             created_at: '2026-01-01T00:00:00.000Z',
           },
         ],
+        active_battle_run: null,
         battle_history: [
           {
             id: 'run-1',
@@ -244,6 +245,14 @@ describe('domainMappers', () => {
             arena_progress_awarded: 1,
             reward_claimed: true,
             created_at: '2026-01-08T09:00:00.000Z',
+            status: 'completed',
+            player_max_hp: 50,
+            player_current_hp: 30,
+            opponent_max_hp: 40,
+            opponent_current_hp: 0,
+            current_round: 4,
+            battle_log: [],
+            completed_at: '2026-01-08T09:05:00.000Z',
             opponent: {
               id: 'opp-1',
               arena_id: 'arena-1',
@@ -278,6 +287,7 @@ describe('domainMappers', () => {
       }),
       unlockedOpponents: [expect.objectContaining({ id: 'opp-1', unlockLevel: 1 })],
       battleHistory: [expect.objectContaining({ id: 'run-1', rewardClaimed: true })],
+      activeBattleRun: null,
     })
   })
 })

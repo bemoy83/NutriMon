@@ -7,6 +7,9 @@ export type ReadinessBand = 'recovering' | 'building' | 'ready' | 'peak'
 export type MealRating = 'strong' | 'solid' | 'weak'
 export type BattleLikelyOutcome = 'favored' | 'competitive' | 'risky'
 export type BattleOutcome = 'pending' | 'win' | 'loss'
+export type BattleAction = 'attack' | 'defend' | 'skill' | 'items'
+export type BattleStatus = 'active' | 'completed'
+export type BattleLogActor = 'player' | 'opponent' | 'system'
 export type WeightUnit = 'kg' | 'lb'
 
 export interface Profile {
@@ -302,12 +305,38 @@ export interface BattleRun {
   opponent?: BattleOpponent | null
 }
 
+export interface BattleLogEntry {
+  id: string
+  round: number
+  actor: BattleLogActor
+  action: string
+  damage: number
+  target: 'opponent' | 'player' | null
+  targetHpAfter: number | null
+  message: string
+}
+
+export interface BattleRunSession extends Omit<BattleRun, 'opponent'> {
+  status: BattleStatus
+  playerMaxHp: number
+  playerCurrentHp: number
+  opponentMaxHp: number
+  opponentCurrentHp: number
+  currentRound: number
+  battleLog: BattleLogEntry[]
+  completedAt: string | null
+  snapshot: CreatureBattleSnapshot
+  opponent: BattleOpponent
+  companion: CreatureCompanion
+}
+
 export interface BattleHub {
   companion: CreatureCompanion | null
   snapshot: CreatureBattleSnapshot | null
   recommendedOpponent: BattleRecommendation | null
   unlockedOpponents: BattleOpponent[]
   battleHistory: BattleRun[]
+  activeBattleRun: BattleRunSession | null
 }
 
 export interface FinalizeDayResponse {

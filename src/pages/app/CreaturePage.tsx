@@ -1,9 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import LoadingState from '@/components/ui/LoadingState'
 import EmptyState from '@/components/ui/EmptyState'
 import { useLatestCreatureStats } from '@/features/creature/useLatestCreatureStats'
-import { resolveBattleRun, startBattleRun } from '@/features/creature/api'
-import { useBattleHub, useInvalidateBattleHub } from '@/features/creature/useBattleHub'
+import { startBattleRun } from '@/features/creature/api'
+import { useBattleHub } from '@/features/creature/useBattleHub'
 import { useProfileSummary } from '@/features/profile/useProfileSummary'
 import { getTodayInTimezone } from '@/lib/date'
 import type { BattleLikelyOutcome, BattleOpponent, CreatureCondition, CreatureStage, ReadinessBand } from '@/types/domain'
@@ -78,13 +79,13 @@ function getFormDescription(condition: CreatureCondition) {
 }
 
 export default function CreaturePage() {
+  const navigate = useNavigate()
   const profileQuery = useProfileSummary()
   const timezone = profileQuery.data?.timezone ?? 'UTC'
   const battleDate = getTodayInTimezone(timezone)
   const statsQuery = useLatestCreatureStats()
   const battleHubQuery = useBattleHub(battleDate, timezone)
-  const invalidateBattleHub = useInvalidateBattleHub()
-  const [runningOpponentId, setRunningOpponentId] = useState<string | null>(null)
+  const [startingOpponentId, setStartingOpponentId] = useState<string | null>(null)
   const [battleActionError, setBattleActionError] = useState<string | null>(null)
 
   const stats = battleHubQuery.data?.snapshot ?? statsQuery.data?.stats ?? null
@@ -102,19 +103,26 @@ export default function CreaturePage() {
     updatedAt: '',
   }
 
-  async function handleBattle(opponent: BattleOpponent) {
+  const activeBattleRun = battleHubQuery.data?.activeBattleRun ?? null
+
+  async function handleChallenge(opponent: BattleOpponent) {
+    // Resume active battle for this opponent
+    if (activeBattleRun?.opponentId === opponent.id) {
+      navigate(`/app/creature/battle/${activeBattleRun.id}`)
+      return
+    }
+
     if (!battleHubQuery.data?.snapshot) return
-    setRunningOpponentId(opponent.id)
+    setStartingOpponentId(opponent.id)
     setBattleActionError(null)
 
     try {
-      const startedRun = await startBattleRun(battleHubQuery.data.snapshot.id, opponent.id)
-      await resolveBattleRun(startedRun.id)
-      invalidateBattleHub(battleDate)
+      const session = await startBattleRun(battleHubQuery.data.snapshot.id, opponent.id)
+      navigate(`/app/creature/battle/${session.id}`)
     } catch (error) {
-      setBattleActionError(error instanceof Error ? error.message : 'Unable to resolve battle')
+      setBattleActionError(error instanceof Error ? error.message : 'Unable to start battle')
     } finally {
-      setRunningOpponentId(null)
+      setStartingOpponentId(null)
     }
   }
 
@@ -281,7 +289,12 @@ export default function CreaturePage() {
         <div className="mt-4 space-y-3">
           {(battleHubQuery.data?.unlockedOpponents ?? []).map((opponent) => {
             const isRecommended = battleHubQuery.data?.recommendedOpponent?.opponentId === opponent.id
-            const isRunning = runningOpponentId === opponent.id
+            const isActiveOpponent = activeBattleRun?.opponentId === opponent.id
+            const hasOtherActive = !!activeBattleRun && !isActiveOpponent
+            const isStarting = startingOpponentId === opponent.id
+            const isDisabled = !battleHubQuery.data?.snapshot || isStarting || hasOtherActive
+            const buttonLabel = isActiveOpponent ? 'Resume battle' : isStarting ? 'Starting…' : 'Challenge'
+
             return (
               <div key={opponent.id} className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -293,6 +306,11 @@ export default function CreaturePage() {
                           Recommended
                         </span>
                       ) : null}
+                      {isActiveOpponent ? (
+                        <span className="rounded-full bg-[var(--app-warning-soft,var(--app-brand-soft))] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--app-warning,var(--app-brand))]">
+                          In progress
+                        </span>
+                      ) : null}
                     </div>
                     <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
                       {opponent.archetype} | Level {opponent.recommendedLevel}
@@ -300,11 +318,11 @@ export default function CreaturePage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleBattle(opponent)}
-                    disabled={!battleHubQuery.data?.snapshot || isRunning}
+                    onClick={() => handleChallenge(opponent)}
+                    disabled={isDisabled}
                     className="rounded-xl bg-[var(--app-brand)] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--app-brand-hover)] disabled:opacity-50"
                   >
-                    {isRunning ? 'Battling…' : 'Challenge'}
+                    {buttonLabel}
                   </button>
                 </div>
               </div>

@@ -165,11 +165,19 @@ export interface Database {
       }
       start_battle_run: {
         Args: { p_snapshot_id: string; p_opponent_id: string }
-        Returns: BattleRunMutationResult
+        Returns: BattleRunSessionRow
       }
       resolve_battle_run: {
         Args: { p_battle_run_id: string }
         Returns: BattleRunMutationResult
+      }
+      get_battle_run: {
+        Args: { p_battle_run_id: string }
+        Returns: BattleRunSessionRow
+      }
+      submit_battle_action: {
+        Args: { p_battle_run_id: string; p_action: string }
+        Returns: BattleRunSessionRow
       }
     }
     Views: Record<string, never>
@@ -434,6 +442,17 @@ export interface BattleOpponentRow {
   created_at: string
 }
 
+export interface BattleLogEntryRow {
+  id: string
+  round: number
+  actor: 'player' | 'opponent' | 'system'
+  action: string
+  damage: number
+  target: 'opponent' | 'player' | null
+  target_hp_after: number | null
+  message: string
+}
+
 export interface BattleRunRow {
   id: string
   user_id: string
@@ -447,6 +466,20 @@ export interface BattleRunRow {
   arena_progress_awarded: number
   reward_claimed: boolean
   created_at: string
+  status: 'active' | 'completed'
+  player_max_hp: number
+  player_current_hp: number
+  opponent_max_hp: number
+  opponent_current_hp: number
+  current_round: number
+  battle_log: BattleLogEntryRow[]
+  completed_at: string | null
+}
+
+export interface BattleRunSessionRow extends BattleRunRow {
+  snapshot: CreatureBattleSnapshotRow
+  opponent: BattleOpponentRow
+  companion: CreatureCompanionRow
 }
 
 export interface MealItemInput {
@@ -552,6 +585,7 @@ export interface BattleHubRow {
   recommended_opponent: BattleRecommendationRow | null
   unlocked_opponents: BattleOpponentRow[]
   battle_history: BattleRunWithOpponentRow[]
+  active_battle_run: BattleRunSessionRow | null
 }
 
 export interface BattleRunWithOpponentRow extends BattleRunRow {
