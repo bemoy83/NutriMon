@@ -85,8 +85,8 @@ describe('QuickAddSheet', () => {
       />,
     )
 
-    fireEvent.click(screen.getAllByRole('button').find((button) => button.textContent === '+')!)
-    fireEvent.click(screen.getByRole('button', { name: 'Add 1 item' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add My oats' }))
+    fireEvent.click(screen.getByRole('button', { name: /Add 1 item/ }))
 
     await waitFor(() => {
       expect(createMealWithItemsMock).toHaveBeenCalledWith('2026-01-05', '2026-01-05T08:00:00.000Z', [
