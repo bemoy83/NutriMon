@@ -107,7 +107,7 @@ export default function DailyLogPage() {
   const loggedAt = new Date().toISOString()
 
   return (
-    <div className="app-page flex min-h-full flex-col pb-24">
+    <div className="app-page flex min-h-full flex-col pb-40">
       <DailyLogHeader
         logDate={logDate}
         todayDate={todayDate}
