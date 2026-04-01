@@ -136,15 +136,6 @@ function MealCard({
               <span className="mr-1">{meal.mealType} ·</span>
             )}
             {meal.itemCount} item{meal.itemCount !== 1 ? 's' : ''}
-            {hasMacros && (
-              <span className="ml-1.5">
-                <span style={{ color: 'var(--app-macro-protein)' }}>P{Math.round(macros.protein)}</span>
-                <span style={{ color: 'var(--app-text-subtle)' }}> · </span>
-                <span style={{ color: 'var(--app-macro-carbs)' }}>C{Math.round(macros.carbs)}</span>
-                <span style={{ color: 'var(--app-text-subtle)' }}> · </span>
-                <span style={{ color: 'var(--app-macro-fat)' }}>F{Math.round(macros.fat)}</span>
-              </span>
-            )}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -166,15 +157,10 @@ function MealCard({
           {hasMacros && (
             <div
               className="flex items-center justify-around px-4 py-2.5 border-b"
-              style={{
-                borderColor: theme ? theme.divider : 'var(--app-border-muted)',
-                background: theme ? 'rgba(0,0,0,0.04)' : 'var(--app-surface-elevated)',
-              }}
+              style={{ borderColor: theme ? theme.divider : 'var(--app-border-muted)' }}
             >
               <MacroStat label="Protein" value={macros.protein} color="var(--app-macro-protein)" />
-              <div className="w-px h-6 bg-[var(--app-border)]" />
               <MacroStat label="Carbs" value={macros.carbs} color="var(--app-macro-carbs)" />
-              <div className="w-px h-6 bg-[var(--app-border)]" />
               <MacroStat label="Fat" value={macros.fat} color="var(--app-macro-fat)" />
             </div>
           )}
@@ -272,12 +258,12 @@ function MealItemRow({ item }: { item: MealItem }) {
       : `×${item.quantity}`
 
   return (
-    <div className="flex items-center justify-between">
-      <div>
-        <span className="text-[var(--app-text-primary)] text-sm">{item.productNameSnapshot}</span>
-        <span className="text-[var(--app-text-muted)] text-xs ml-2">{servingLabel}</span>
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-baseline gap-1.5 min-w-0">
+        <span className="text-[var(--app-text-primary)] text-sm truncate">{item.productNameSnapshot}</span>
+        <span className="text-[var(--app-text-muted)] text-xs flex-none">{servingLabel}</span>
       </div>
-      <span className="text-[var(--app-text-secondary)] text-sm">{item.lineTotalCalories} kcal</span>
+      <span className="text-[var(--app-text-secondary)] text-sm flex-none">{item.lineTotalCalories} kcal</span>
     </div>
   )
 }

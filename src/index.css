@@ -124,24 +124,6 @@ select {
   box-shadow: var(--app-shadow-sm);
 }
 
-.app-card-teal {
-  border-radius: var(--app-radius-lg);
-  background: var(--app-surface-teal);
-  color: var(--app-surface-teal-text);
-}
-
-.app-card-purple {
-  border-radius: var(--app-radius-lg);
-  background: var(--app-surface-purple);
-  color: var(--app-surface-purple-text);
-}
-
-.app-card-green {
-  border-radius: var(--app-radius-lg);
-  background: var(--app-surface-green);
-  color: var(--app-surface-green-text);
-}
-
 .app-input {
   width: 100%;
   border: 1px solid var(--app-border);
