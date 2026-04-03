@@ -2,10 +2,18 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import LoadingState from '@/components/ui/LoadingState'
 import { useBattleRun, useSubmitBattleAction } from '@/features/creature/useBattleRun'
-import type { BattleLogEntry } from '@/types/domain'
+import type { BattleAction, BattleLogEntry } from '@/types/domain'
 
 const ENTRY_DELAY_MS = 1200
-const ACTION_LABELS = ['Attack', 'Defend', 'Skill', 'Items'] as const
+
+const ACTION_LABELS = ['Attack', 'Defend', 'Focus'] as const
+type ActionLabel = (typeof ACTION_LABELS)[number]
+
+const ACTION_MAP: Record<ActionLabel, BattleAction> = {
+  Attack: 'attack',
+  Defend: 'defend',
+  Focus: 'focus',
+}
 
 function HpBar({ current, max, color }: { current: number; max: number; color: 'brand' | 'danger' }) {
   const pct = max > 0 ? Math.round((current / max) * 100) : 0
@@ -35,6 +43,7 @@ export default function BattlePage() {
     entries: BattleLogEntry[]
   } | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
+  const [pendingAction, setPendingAction] = useState<ActionLabel | null>(null)
 
   const displayedLog =
     session && displayedLogOverride?.sessionId === session.id
@@ -108,14 +117,19 @@ export default function BattlePage() {
   const allEntriesShown = displayedLog.length === session.battleLog.length
   const lastEntry = displayedLog[displayedLog.length - 1] ?? null
 
-  function handleAttack() {
+  function handleAction(label: ActionLabel) {
     if (!session || !isActive || isPending || isAnimating) return
     const prevLog = [...displayedLog]
+    setPendingAction(label)
     submitAction(
-      { battleRunId: session.id, action: 'attack' },
+      { battleRunId: session.id, action: ACTION_MAP[label] },
       {
         onSuccess: (updated) => {
+          setPendingAction(null)
           revealEntries(updated.id, updated.battleLog, prevLog)
+        },
+        onError: () => {
+          setPendingAction(null)
         },
       },
     )
@@ -190,22 +204,22 @@ export default function BattlePage() {
         {/* Action menu — right */}
         <div className="flex w-44 shrink-0 flex-col justify-center gap-1 px-4 py-3">
           {ACTION_LABELS.map((label) => {
-            const isAttack = label === 'Attack'
-            const isEnabled = isAttack && isActive && !isPending && !isAnimating
+            const isEnabled = isActive && !isPending && !isAnimating
+            const isThisPending = pendingAction === label
 
             return (
               <button
                 key={label}
                 type="button"
                 disabled={!isEnabled}
-                onClick={isAttack ? handleAttack : undefined}
+                onClick={() => handleAction(label)}
                 className={`rounded-lg px-3 py-1.5 text-left text-sm font-semibold transition-colors ${
                   isEnabled
                     ? 'bg-[var(--app-brand)] text-white hover:bg-[var(--app-brand-hover)]'
                     : 'bg-[var(--app-surface-muted)] text-[var(--app-text-muted)] opacity-50'
                 }`}
               >
-                {isAttack && (isPending || isAnimating) ? 'Attacking…' : label}
+                {isThisPending ? `${label}…` : label}
               </button>
             )
           })}

@@ -444,17 +444,23 @@ export interface BattleOpponentRow {
   required_previous_opponent_id?: string | null
   required_previous_opponent_name?: string | null
   lock_reason?: string | null
+  action_weights: Record<string, number>
   created_at: string
 }
 
 export interface BattleLogEntryRow {
   id: string
   round: number
+  phase: 'initiative' | 'action' | 'result'
   actor: 'player' | 'opponent' | 'system'
   action: string
   damage: number
   target: 'opponent' | 'player' | null
   target_hp_after: number | null
+  crit: boolean
+  defended: boolean
+  consumed_momentum_boost: boolean
+  consumed_next_attack_bonus: boolean
   message: string
 }
 
@@ -479,6 +485,12 @@ export interface BattleRunRow {
   current_round: number
   battle_log: BattleLogEntryRow[]
   completed_at: string | null
+  player_last_action: string | null
+  enemy_last_action: string | null
+  player_momentum_boost: number
+  enemy_momentum_boost: number
+  player_next_attack_bonus: number
+  enemy_next_attack_bonus: number
 }
 
 export interface BattleRunSessionRow extends BattleRunRow {

@@ -345,6 +345,7 @@ export function mapBattleOpponent(row: BattleOpponentRow): BattleOpponent {
     requiredPreviousOpponentId: row.required_previous_opponent_id ?? null,
     requiredPreviousOpponentName: row.required_previous_opponent_name ?? null,
     lockReason: row.lock_reason ?? null,
+    actionWeights: row.action_weights ?? { attack: 100, defend: 0, focus: 0 },
     createdAt: row.created_at,
   }
 }
@@ -377,11 +378,16 @@ export function mapBattleLogEntry(row: BattleLogEntryRow): BattleLogEntry {
   return {
     id: row.id,
     round: row.round,
+    phase: row.phase ?? 'action',
     actor: row.actor,
     action: row.action,
     damage: row.damage,
     target: row.target,
     targetHpAfter: row.target_hp_after,
+    crit: row.crit ?? false,
+    defended: row.defended ?? false,
+    consumedMomentumBoost: row.consumed_momentum_boost ?? false,
+    consumedNextAttackBonus: row.consumed_next_attack_bonus ?? false,
     message: row.message,
   }
 }
@@ -400,6 +406,12 @@ export function mapBattleRunSession(row: BattleRunSessionRow): BattleRunSession 
     snapshot: mapCreatureBattleSnapshot(row.snapshot),
     opponent: mapBattleOpponent(row.opponent),
     companion: mapCreatureCompanion(row.companion),
+    playerLastAction: row.player_last_action ?? null,
+    enemyLastAction: row.enemy_last_action ?? null,
+    playerMomentumBoost: row.player_momentum_boost ?? 0,
+    enemyMomentumBoost: row.enemy_momentum_boost ?? 0,
+    playerNextAttackBonus: row.player_next_attack_bonus ?? 0,
+    enemyNextAttackBonus: row.enemy_next_attack_bonus ?? 0,
   }
 }
 

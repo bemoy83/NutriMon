@@ -7,7 +7,7 @@ export type ReadinessBand = 'recovering' | 'building' | 'ready' | 'peak'
 export type MealRating = 'strong' | 'solid' | 'weak'
 export type BattleLikelyOutcome = 'favored' | 'competitive' | 'risky'
 export type BattleOutcome = 'pending' | 'win' | 'loss'
-export type BattleAction = 'attack' | 'defend' | 'skill' | 'items'
+export type BattleAction = 'attack' | 'defend' | 'focus'
 export type BattleStatus = 'active' | 'completed'
 export type BattleLogActor = 'player' | 'opponent' | 'system'
 export type WeightUnit = 'kg' | 'lb'
@@ -291,6 +291,7 @@ export interface BattleOpponent {
   requiredPreviousOpponentId: string | null
   requiredPreviousOpponentName: string | null
   lockReason: string | null
+  actionWeights: Record<string, number>
   createdAt: string
 }
 
@@ -313,11 +314,16 @@ export interface BattleRun {
 export interface BattleLogEntry {
   id: string
   round: number
+  phase: 'initiative' | 'action' | 'result'
   actor: BattleLogActor
   action: string
   damage: number
   target: 'opponent' | 'player' | null
   targetHpAfter: number | null
+  crit: boolean
+  defended: boolean
+  consumedMomentumBoost: boolean
+  consumedNextAttackBonus: boolean
   message: string
 }
 
@@ -333,6 +339,12 @@ export interface BattleRunSession extends Omit<BattleRun, 'opponent'> {
   snapshot: CreatureBattleSnapshot
   opponent: BattleOpponent
   companion: CreatureCompanion
+  playerLastAction: string | null
+  enemyLastAction: string | null
+  playerMomentumBoost: number
+  enemyMomentumBoost: number
+  playerNextAttackBonus: number
+  enemyNextAttackBonus: number
 }
 
 export interface BattleHub {
