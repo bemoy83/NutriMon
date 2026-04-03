@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import LoadingState from '@/components/ui/LoadingState'
 import EmptyState from '@/components/ui/EmptyState'
+import CreatureSprite from '@/components/ui/CreatureSprite'
 import { useLatestCreatureStats } from '@/features/creature/useLatestCreatureStats'
 import { startBattleRun } from '@/features/creature/api'
 import { useBattleHub } from '@/features/creature/useBattleHub'
 import { useProfileSummary } from '@/features/profile/useProfileSummary'
 import { getTodayInTimezone } from '@/lib/date'
+import { getPlayerSpriteDescriptor } from '@/lib/sprites'
 import type { BattleLikelyOutcome, BattleOpponent, CreatureCondition, CreatureStage, ReadinessBand } from '@/types/domain'
 
 function StatBar({ label, value, color }: { label: string; value: number; color: string }) {
@@ -24,12 +26,6 @@ function StatBar({ label, value, color }: { label: string; value: number; color:
       </div>
     </div>
   )
-}
-
-function getStageEmoji(stage: CreatureStage) {
-  if (stage === 'champion') return '🐉'
-  if (stage === 'adult') return '🦊'
-  return '🥚'
 }
 
 function getConditionTone(condition: CreatureCondition) {
@@ -137,9 +133,12 @@ export default function CreaturePage() {
       <div className="app-card overflow-hidden">
         <div className="bg-gradient-to-br from-[var(--app-brand-soft)] via-[var(--app-surface)] to-[var(--app-surface-elevated)] px-5 py-6">
           <div className="flex items-center gap-4">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white text-5xl shadow-sm">
-              {getStageEmoji(companion.stage)}
-            </div>
+            <CreatureSprite
+              className="shrink-0"
+              descriptor={getPlayerSpriteDescriptor(companion.stage, companion.currentCondition)}
+              displaySize={80}
+              flip={false}
+            />
             <div className="min-w-0 flex-1">
               <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Companion Progress</p>
               <h2 className="truncate text-2xl font-bold text-[var(--app-text-primary)]">{companion.name}</h2>

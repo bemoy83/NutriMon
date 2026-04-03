@@ -111,6 +111,42 @@ select {
   font: inherit;
 }
 
+/* ── Sprite system ───────────────────────────────────────────────────────── */
+
+.sprite-pixel-art {
+  image-rendering: -webkit-optimize-contrast; /* Safari ≤15 */
+  image-rendering: crisp-edges;               /* Firefox */
+  image-rendering: pixelated;                 /* Chrome, modern Safari */
+}
+
+@keyframes sprite-shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-4px); }
+  40%       { transform: translateX(4px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(2px); }
+}
+.animate-shake { animation: sprite-shake 350ms ease-out; }
+
+@keyframes float-up {
+  0%   { transform: translateY(0);     opacity: 1; }
+  100% { transform: translateY(-40px); opacity: 0; }
+}
+
+@keyframes hit-flash {
+  0%, 100% { opacity: 0; }
+  30%       { opacity: 0.85; }
+  60%       { opacity: 0.4; }
+}
+
+@keyframes crit-pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  40%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1.0); opacity: 0; }
+}
+
+/* ── App utilities ───────────────────────────────────────────────────────── */
+
 .app-page {
   min-height: 100%;
   background: var(--app-bg);

@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import LoadingState from '@/components/ui/LoadingState'
+import CreatureSprite from '@/components/ui/CreatureSprite'
+import type { CreatureSpriteHandle } from '@/components/ui/CreatureSprite'
+import SpriteStage from '@/components/ui/SpriteStage'
+import type { SpriteStageHandle } from '@/components/ui/SpriteStage'
+import EffectsLayer from '@/components/ui/EffectsLayer'
+import type { EffectsLayerHandle } from '@/components/ui/EffectsLayer'
 import { useBattleRun, useSubmitBattleAction } from '@/features/creature/useBattleRun'
+import { getPlayerBattleSpriteDescriptor, getOpponentSpriteDescriptor } from '@/lib/sprites'
 import type { BattleAction, BattleLogEntry } from '@/types/domain'
 
 const ENTRY_DELAY_MS = 1200
@@ -35,6 +42,15 @@ export default function BattlePage() {
   const navigate = useNavigate()
   const animTimers = useRef<ReturnType<typeof setTimeout>[]>([])
 
+  // Sprite refs
+  const arenaRef = useRef<HTMLDivElement>(null)
+  const playerStageRef = useRef<SpriteStageHandle>(null)
+  const opponentStageRef = useRef<SpriteStageHandle>(null)
+  const playerSpriteRef = useRef<CreatureSpriteHandle>(null)
+  const opponentSpriteRef = useRef<CreatureSpriteHandle>(null)
+  const playerEffectsRef = useRef<EffectsLayerHandle>(null)
+  const opponentEffectsRef = useRef<EffectsLayerHandle>(null)
+
   const { data: session, isLoading, error } = useBattleRun(battleRunId)
   const { mutate: submitAction, isPending } = useSubmitBattleAction()
 
@@ -52,6 +68,15 @@ export default function BattlePage() {
         : session.battleLog
       : session?.battleLog ?? []
 
+  function triggerArenaShake() {
+    const el = arenaRef.current
+    if (!el) return
+    el.classList.remove('animate-shake')
+    void el.offsetWidth
+    el.classList.add('animate-shake')
+    setTimeout(() => el.classList.remove('animate-shake'), 400)
+  }
+
   const revealEntries = useCallback(
     (sessionId: string, fullLog: BattleLogEntry[], base: BattleLogEntry[]) => {
       animTimers.current.forEach(clearTimeout)
@@ -64,12 +89,37 @@ export default function BattlePage() {
 
       setIsAnimating(true)
 
-      newEntries.forEach((_, i) => {
+      newEntries.forEach((entry, i) => {
         const t = setTimeout(() => {
           setDisplayedLogOverride({
             sessionId,
             entries: [...base, ...newEntries.slice(0, i + 1)],
           })
+
+          // Trigger sprite effects for this entry
+          if (entry.phase === 'action' && entry.damage > 0) {
+            if (entry.target === 'player') {
+              playerSpriteRef.current?.triggerAnimation('hurt', 500)
+              playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
+              if (entry.crit) playerEffectsRef.current?.showCritBadge()
+              triggerArenaShake()
+            } else if (entry.target === 'opponent') {
+              opponentSpriteRef.current?.triggerAnimation('hurt', 500)
+              opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
+              if (entry.crit) opponentEffectsRef.current?.showCritBadge()
+              triggerArenaShake()
+            }
+          }
+
+          // Faint when HP reaches 0
+          if (entry.targetHpAfter === 0) {
+            if (entry.target === 'player') {
+              playerSpriteRef.current?.triggerAnimation('faint', 1200)
+            } else if (entry.target === 'opponent') {
+              opponentSpriteRef.current?.triggerAnimation('faint', 1200)
+            }
+          }
+
           if (i === newEntries.length - 1) {
             setIsAnimating(false)
           }
@@ -138,7 +188,7 @@ export default function BattlePage() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[var(--app-bg)]">
       {/* ── Arena ─────────────────────────────────────────────────── */}
-      <div className="relative flex-1 overflow-hidden">
+      <div ref={arenaRef} className="relative flex-1 overflow-hidden">
         {/* Opponent HP panel — top-left */}
         <div className="absolute top-4 left-4 w-44 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 shadow-sm">
           <div className="flex items-baseline justify-between">
@@ -155,14 +205,30 @@ export default function BattlePage() {
           <HpBar current={opponentHp} max={session.opponentMaxHp} color="danger" />
         </div>
 
-        {/* Opponent sprite placeholder — top-right */}
-        <div className="absolute top-4 right-6 flex h-28 w-28 items-center justify-center rounded-2xl border-2 border-dashed border-[var(--app-border)] bg-[var(--app-surface-muted)]">
-          <span className="text-xs text-[var(--app-text-muted)]">Opponent</span>
+        {/* Opponent sprite — top-right, art faces left */}
+        <div className="absolute top-4 right-6">
+          <SpriteStage ref={opponentStageRef} displaySize={128}>
+            <CreatureSprite
+              ref={opponentSpriteRef}
+              descriptor={getOpponentSpriteDescriptor(session.opponent.name)}
+              displaySize={128}
+              flip={false}
+            />
+            <EffectsLayer ref={opponentEffectsRef} />
+          </SpriteStage>
         </div>
 
-        {/* Player sprite placeholder — bottom-left */}
-        <div className="absolute bottom-4 left-6 flex h-28 w-28 items-center justify-center rounded-2xl border-2 border-dashed border-[var(--app-border)] bg-[var(--app-surface-muted)]">
-          <span className="text-xs text-[var(--app-text-muted)]">You</span>
+        {/* Player sprite — bottom-left, art faces right */}
+        <div className="absolute bottom-4 left-6">
+          <SpriteStage ref={playerStageRef} displaySize={128}>
+            <CreatureSprite
+              ref={playerSpriteRef}
+              descriptor={getPlayerBattleSpriteDescriptor(session.companion.stage, session.companion.currentCondition)}
+              displaySize={128}
+              flip={false}
+            />
+            <EffectsLayer ref={playerEffectsRef} />
+          </SpriteStage>
         </div>
 
         {/* Player HP panel — bottom-right */}
