@@ -132,7 +132,7 @@ export default function BattlePage() {
               {session.opponent.name}
             </p>
             <p className="ml-2 shrink-0 text-xs text-[var(--app-text-muted)]">
-              Lv{session.snapshot.level}
+              Lv{session.opponent.recommendedLevel}
             </p>
           </div>
           <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-[var(--app-text-muted)]">

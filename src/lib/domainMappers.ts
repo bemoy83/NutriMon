@@ -340,6 +340,11 @@ export function mapBattleOpponent(row: BattleOpponentRow): BattleOpponent {
     sortOrder: row.sort_order,
     unlockLevel: row.unlock_level,
     isActive: row.is_active,
+    isDefeated: row.is_defeated ?? false,
+    isChallengeable: row.is_challengeable ?? true,
+    requiredPreviousOpponentId: row.required_previous_opponent_id ?? null,
+    requiredPreviousOpponentName: row.required_previous_opponent_name ?? null,
+    lockReason: row.lock_reason ?? null,
     createdAt: row.created_at,
   }
 }
@@ -403,7 +408,7 @@ export function mapBattleHub(row: BattleHubRow): BattleHub {
     companion: row.companion ? mapCreatureCompanion(row.companion) : null,
     snapshot: row.snapshot ? mapCreatureBattleSnapshot(row.snapshot) : null,
     recommendedOpponent: row.recommended_opponent ? mapBattleRecommendation(row.recommended_opponent) : null,
-    unlockedOpponents: (row.unlocked_opponents ?? []).map(mapBattleOpponent),
+    arenaOpponents: (row.arena_opponents ?? []).map(mapBattleOpponent),
     battleHistory: (row.battle_history ?? []).map(mapBattleRunWithOpponent),
     activeBattleRun: row.active_battle_run ? mapBattleRunSession(row.active_battle_run) : null,
   }

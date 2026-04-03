@@ -13,7 +13,7 @@ NutriMon
 
 ## Meaning
 - Nutri -> Nutrition
-- Mon -> Monitor / Companion
+- Mon -> Monitor / Monster
 
 ## Positioning
 A behavior-driven nutrition system that helps users stay consistent through measurable progress and a companion-based feedback loop.

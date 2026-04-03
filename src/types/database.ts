@@ -439,6 +439,11 @@ export interface BattleOpponentRow {
   sort_order: number
   unlock_level: number
   is_active: boolean
+  is_defeated?: boolean
+  is_challengeable?: boolean
+  required_previous_opponent_id?: string | null
+  required_previous_opponent_name?: string | null
+  lock_reason?: string | null
   created_at: string
 }
 
@@ -583,7 +588,7 @@ export interface BattleHubRow {
   companion: CreatureCompanionRow | null
   snapshot: CreatureBattleSnapshotRow | null
   recommended_opponent: BattleRecommendationRow | null
-  unlocked_opponents: BattleOpponentRow[]
+  arena_opponents: BattleOpponentRow[]
   battle_history: BattleRunWithOpponentRow[]
   active_battle_run: BattleRunSessionRow | null
 }

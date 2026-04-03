@@ -213,7 +213,7 @@ describe('domainMappers', () => {
           recommended_level: 2,
           likely_outcome: 'favored',
         },
-        unlocked_opponents: [
+        arena_opponents: [
           {
             id: 'opp-1',
             arena_id: 'arena-1',
@@ -227,6 +227,11 @@ describe('domainMappers', () => {
             sort_order: 1,
             unlock_level: 1,
             is_active: true,
+            is_defeated: true,
+            is_challengeable: true,
+            required_previous_opponent_id: null,
+            required_previous_opponent_name: null,
+            lock_reason: null,
             created_at: '2026-01-01T00:00:00.000Z',
           },
         ],
@@ -285,7 +290,7 @@ describe('domainMappers', () => {
         opponentId: 'opp-1',
         likelyOutcome: 'favored',
       }),
-      unlockedOpponents: [expect.objectContaining({ id: 'opp-1', unlockLevel: 1 })],
+      arenaOpponents: [expect.objectContaining({ id: 'opp-1', unlockLevel: 1, isDefeated: true, isChallengeable: true })],
       battleHistory: [expect.objectContaining({ id: 'run-1', rewardClaimed: true })],
       activeBattleRun: null,
     })

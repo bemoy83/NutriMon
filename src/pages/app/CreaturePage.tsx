@@ -287,13 +287,20 @@ export default function CreaturePage() {
           <p className="mt-3 text-sm text-[var(--app-danger)]">{battleActionError}</p>
         ) : null}
         <div className="mt-4 space-y-3">
-          {(battleHubQuery.data?.unlockedOpponents ?? []).map((opponent) => {
+          {(battleHubQuery.data?.arenaOpponents ?? []).map((opponent) => {
             const isRecommended = battleHubQuery.data?.recommendedOpponent?.opponentId === opponent.id
             const isActiveOpponent = activeBattleRun?.opponentId === opponent.id
             const hasOtherActive = !!activeBattleRun && !isActiveOpponent
             const isStarting = startingOpponentId === opponent.id
-            const isDisabled = !battleHubQuery.data?.snapshot || isStarting || hasOtherActive
-            const buttonLabel = isActiveOpponent ? 'Resume battle' : isStarting ? 'Starting…' : 'Challenge'
+            const isLockedByProgression = !opponent.isChallengeable
+            const isDisabled = !battleHubQuery.data?.snapshot || isStarting || hasOtherActive || isLockedByProgression
+            const buttonLabel = isActiveOpponent
+              ? 'Resume battle'
+              : isLockedByProgression
+                ? 'Locked'
+                : isStarting
+                  ? 'Starting…'
+                  : 'Challenge'
 
             return (
               <div key={opponent.id} className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
@@ -311,10 +318,23 @@ export default function CreaturePage() {
                           In progress
                         </span>
                       ) : null}
+                      {opponent.isDefeated ? (
+                        <span className="rounded-full bg-[var(--app-success-soft,var(--app-brand-soft))] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--app-success,var(--app-brand))]">
+                          Defeated
+                        </span>
+                      ) : null}
+                      {isLockedByProgression ? (
+                        <span className="rounded-full bg-[var(--app-surface)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--app-text-muted)]">
+                          Locked
+                        </span>
+                      ) : null}
                     </div>
                     <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
                       {opponent.archetype} | Level {opponent.recommendedLevel}
                     </p>
+                    {opponent.lockReason ? (
+                      <p className="mt-2 text-xs text-[var(--app-text-muted)]">{opponent.lockReason}</p>
+                    ) : null}
                   </div>
                   <button
                     type="button"
@@ -328,8 +348,8 @@ export default function CreaturePage() {
               </div>
             )
           })}
-          {(battleHubQuery.data?.unlockedOpponents.length ?? 0) === 0 ? (
-            <EmptyState title="No Arena 1 opponents unlocked yet." className="py-2" />
+          {(battleHubQuery.data?.arenaOpponents.length ?? 0) === 0 ? (
+            <EmptyState title="No Arena 1 opponents available right now." className="py-2" />
           ) : null}
         </div>
       </div>

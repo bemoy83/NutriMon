@@ -103,6 +103,11 @@ interface BattleOpponentRow {
   vitality: number
   sort_order: number
   unlock_level: number
+  is_defeated?: boolean
+  is_challengeable?: boolean
+  required_previous_opponent_id?: string | null
+  required_previous_opponent_name?: string | null
+  lock_reason?: string | null
 }
 
 interface ExistingPayloadResult<T> {
@@ -468,8 +473,8 @@ async function upsertCompanionBattleState(
     )
   if (companionErr) throw new Error(companionErr.message)
 
-  const unlockedOpponents = await getUnlockedOpponents(supabase, level)
-  const recommendedOpponent = getRecommendedOpponent(snapshotData as CreatureBattleSnapshotRow, unlockedOpponents)
+  const arenaOpponents = await getArenaOpponents(supabase, input.userId)
+  const recommendedOpponent = getRecommendedOpponent(snapshotData as CreatureBattleSnapshotRow, arenaOpponents)
 
   return {
     prep_date: input.logDate,
@@ -502,28 +507,63 @@ async function getEvolutionTimestamp(
   return `${data.log_date}T00:00:00.000Z`
 }
 
-async function getUnlockedOpponents(
+async function getArenaOpponents(
   supabase: SupabaseClient,
-  level: number,
+  userId: string,
 ): Promise<BattleOpponentRow[]> {
-  const { data, error } = await supabase
-    .from('battle_opponents')
-    .select('id, name, archetype, recommended_level, strength, resilience, momentum, vitality, sort_order, unlock_level')
+  const { data: arenaRow, error: arenaError } = await supabase
+    .from('battle_arenas')
+    .select('id')
+    .eq('arena_key', 'arena_1')
     .eq('is_active', true)
-    .lte('unlock_level', level)
-    .order('sort_order', { ascending: true })
+    .maybeSingle()
 
-  if (error) throw new Error(error.message)
-  return (data ?? []) as BattleOpponentRow[]
+  if (arenaError) throw new Error(arenaError.message)
+  if (!arenaRow?.id) return []
+
+  const [{ data: opponentsData, error: opponentsError }, { data: winsData, error: winsError }] = await Promise.all([
+    supabase
+      .from('battle_opponents')
+      .select('id, name, archetype, recommended_level, strength, resilience, momentum, vitality, sort_order, unlock_level')
+      .eq('arena_id', arenaRow.id)
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true }),
+    supabase
+      .from('battle_runs')
+      .select('opponent_id')
+      .eq('user_id', userId)
+      .eq('outcome', 'win'),
+  ])
+
+  if (opponentsError) throw new Error(opponentsError.message)
+  if (winsError) throw new Error(winsError.message)
+
+  const wins = new Set((winsData ?? []).map((row) => (row as { opponent_id: string }).opponent_id))
+  const opponents = (opponentsData ?? []) as BattleOpponentRow[]
+
+  return opponents.map((opponent, index) => {
+    const previous = index > 0 ? opponents[index - 1] : null
+    const isChallengeable = previous ? wins.has(previous.id) : true
+
+    return {
+      ...opponent,
+      is_defeated: wins.has(opponent.id),
+      is_challengeable: isChallengeable,
+      required_previous_opponent_id: previous?.id ?? null,
+      required_previous_opponent_name: previous?.name ?? null,
+      lock_reason: isChallengeable || !previous ? null : `Beat ${previous.name} first.`,
+    }
+  })
 }
 
 function getRecommendedOpponent(
   snapshot: CreatureBattleSnapshotRow,
   opponents: BattleOpponentRow[],
 ): BattleRecommendationPayload | null {
-  if (opponents.length === 0) return null
+  const challengeableOpponents = opponents.filter((opponent) => opponent.is_challengeable !== false)
+  if (challengeableOpponents.length === 0) return null
 
-  return [...opponents]
+  return [...challengeableOpponents]
     .map((opponent) => {
       const likelyOutcome = getLikelyOutcome(
         {
@@ -549,6 +589,7 @@ function getRecommendedOpponent(
         archetype: opponent.archetype,
         recommended_level: opponent.recommended_level,
         likely_outcome: likelyOutcome,
+        isDefeated: opponent.is_defeated ?? false,
         rank:
           likelyOutcome === 'favored'
             ? 0
@@ -559,6 +600,7 @@ function getRecommendedOpponent(
       }
     })
     .sort((left, right) => {
+      if (left.isDefeated !== right.isDefeated) return left.isDefeated ? 1 : -1
       if (left.rank !== right.rank) return left.rank - right.rank
       if (left.rank === 0 && left.recommended_level !== right.recommended_level) {
         return right.recommended_level - left.recommended_level
@@ -658,8 +700,8 @@ async function loadBattlePrepSummary(
   if (!snapshot) return null
 
   const companion = (companionRes.data ?? null) as CreatureCompanionRow | null
-  const unlockedOpponents = await getUnlockedOpponents(supabase, companion?.level ?? snapshot.level)
-  const recommendedOpponent = getRecommendedOpponent(snapshot, unlockedOpponents)
+  const arenaOpponents = await getArenaOpponents(supabase, userId)
+  const recommendedOpponent = getRecommendedOpponent(snapshot, arenaOpponents)
 
   return {
     prep_date: snapshot.prep_date,

@@ -286,6 +286,11 @@ export interface BattleOpponent {
   sortOrder: number
   unlockLevel: number
   isActive: boolean
+  isDefeated: boolean
+  isChallengeable: boolean
+  requiredPreviousOpponentId: string | null
+  requiredPreviousOpponentName: string | null
+  lockReason: string | null
   createdAt: string
 }
 
@@ -334,7 +339,7 @@ export interface BattleHub {
   companion: CreatureCompanion | null
   snapshot: CreatureBattleSnapshot | null
   recommendedOpponent: BattleRecommendation | null
-  unlockedOpponents: BattleOpponent[]
+  arenaOpponents: BattleOpponent[]
   battleHistory: BattleRun[]
   activeBattleRun: BattleRunSession | null
 }
