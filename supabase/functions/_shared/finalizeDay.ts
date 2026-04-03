@@ -691,15 +691,16 @@ async function loadBattlePrepSummary(
   userId: string,
   logDate: string,
 ): Promise<BattlePrepPayload | null> {
-  const [snapshotRes, companionRes] = await Promise.all([
-    supabase.from('creature_battle_snapshots').select('*').eq('user_id', userId).eq('prep_date', logDate).maybeSingle(),
-    supabase.from('creature_companions').select('*').eq('user_id', userId).maybeSingle(),
-  ])
+  const snapshotRes = await supabase
+    .from('creature_battle_snapshots')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('prep_date', logDate)
+    .maybeSingle()
 
   const snapshot = (snapshotRes.data ?? null) as CreatureBattleSnapshotRow | null
   if (!snapshot) return null
 
-  const companion = (companionRes.data ?? null) as CreatureCompanionRow | null
   const arenaOpponents = await getArenaOpponents(supabase, userId)
   const recommendedOpponent = getRecommendedOpponent(snapshot, arenaOpponents)
 

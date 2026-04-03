@@ -1652,3 +1652,254 @@ Build in this order:
 10. polish, accessibility, PWA
 
 Do not start Phase 2 or Phase 3 work during MVP execution.
+
+---
+
+## 20. Post-MVP Battle Evolution Map
+
+This section maps the revised battle design to the current implementation.
+
+Use it when evolving NutriMon from the current lightweight battle session into a more Pokemon-style turn-based battle loop.
+
+This section does not replace the MVP scope above.
+It defines the implementation target for the next battle revision.
+
+### 20.1 Design Goal
+
+Evolve battles from a deterministic stat-exchange into a lightweight, decision-based turn system with:
+
+- exactly 3 player actions in v1:
+  - `attack`
+  - `defend`
+  - `focus`
+- per-turn action selection for both sides
+- momentum-based turn order each round
+- short battles that usually end in 3 to 5 turns
+- visible tactical choices without introducing deep move lists, items, or build complexity
+
+### 20.2 Current Implementation Summary
+
+The current codebase already has a usable battle foundation:
+
+- persistent battle sessions exist in `battle_runs`
+- runtime state already tracks:
+  - session `status`
+  - player and opponent HP
+  - current round
+  - battle log
+- RPCs already exist for:
+  - `start_battle_run`
+  - `get_battle_run`
+  - `submit_battle_action`
+- the battle page already renders a battle scene, HP bars, round text, and sequential battle-log animation
+- readiness, likely outcome, and recommended opponent already exist as a separate prep layer
+
+The current runtime is still much simpler than the revised design:
+
+- only `attack` is accepted by the server
+- turn order is fixed: player acts first, then opponent counters if alive
+- HP is currently equal to raw `vitality`
+- damage currently ignores action type and temporary effects
+- the UI shows `Attack`, `Defend`, `Skill`, and `Items`, but only `Attack` is real
+- level and stage affect paper-power and recommendation, but not the per-turn combat formula directly
+
+### 20.3 Revised Spec vs Current Implementation
+
+| Area | Revised target | Current implementation | Required change |
+| --- | --- | --- | --- |
+| Turn structure | One full turn resolves after both sides choose actions and turn order is rolled | One request resolves a fixed player attack and then an opponent counterattack | Rewrite `submit_battle_action` to resolve action selection, initiative, first action, survival check, second action, then end-of-turn cleanup |
+| Player action set | `attack`, `defend`, `focus` | Only `attack` is supported; non-attack actions are rejected | Replace the current action enum and RPC validation with the 3-action v1 contract |
+| Enemy action set | Weighted AI action choice based on archetype | Enemy always attacks | Add AI action selection per opponent each round |
+| Turn order | `momentum + random(-5..+5)` each turn | Player always goes first | Add initiative calculation and log who acted first |
+| Damage model | Action-aware damage with crits, defend mitigation, and one-turn bonuses | Simple stat formula with variance; latest override mainly boosts opponent base damage | Replace `battle_compute_damage` with an action-aware resolver or a new helper family |
+| HP pacing | Battle HP should be `vitality * 0.7` to target 3 to 5 turns | Battle HP equals raw `vitality` | Change battle-run initialization to derive combat HP separately from visible vitality |
+| Temporary effects | Track one-shot `momentum_boost` and `next_attack_bonus` for each side | No temporary combat effects exist | Extend session state and consume/reset buffs during turn resolution |
+| Last-action state | Session should know each side's previous action | Not stored | Add `player_last_action` and `enemy_last_action` fields |
+| UI action menu | 3 meaningful choices every turn | 4 labels are shown, but only `Attack` is enabled | Replace placeholder actions with the actual 3-action menu and surface action consequences clearly |
+| Combat log | Log initiative, chosen actions, crits, buffs, mitigation, and result | Log only attack and result messages | Extend `battle_log` entries and domain types |
+| AI archetypes | Slime, Wolf, Golem, Dragon-style weighted rules | Opponent `archetype` is descriptive text only | Convert archetype into behavior-driving data, preferably explicit AI weights |
+| Prep vs combat alignment | Stats shown in readiness should feel true in battle | Prep layer and runtime layer are only loosely aligned | Re-tune likely-outcome thresholds after the new runtime lands |
+
+### 20.4 Existing Foundations To Keep
+
+Keep these pieces and extend them rather than replacing them:
+
+- `creature_battle_snapshots` as the locked daily prep snapshot
+- `battle_runs` as the persistent battle-session record
+- `get_battle_hub` as the companion screen contract
+- `start_battle_run` and `get_battle_run` as the session lifecycle entry points
+- the current battle page route and progressive log reveal pattern
+- the nutrition-driven stat pipeline and readiness pipeline
+- sequential arena progression gating
+
+### 20.5 Data Model Changes
+
+Add the following fields to `battle_runs` in a new migration:
+
+- `player_last_action text null`
+- `enemy_last_action text null`
+- `player_momentum_boost numeric not null default 0`
+- `enemy_momentum_boost numeric not null default 0`
+- `player_next_attack_bonus numeric not null default 0`
+- `enemy_next_attack_bonus numeric not null default 0`
+
+Use action constraints limited to:
+
+- `attack`
+- `defend`
+- `focus`
+
+Do not add `skill`, `items`, status effects, or move inventories in this revision.
+
+If AI weights need to vary by opponent, add one of these:
+
+- `battle_opponents.ai_profile text not null`
+- or explicit per-opponent action weights in jsonb
+
+Prefer explicit weights over inferring combat behavior from free-text archetype labels.
+
+### 20.6 Runtime Logic Changes
+
+Implement the battle turn as:
+
+1. accept player action
+2. choose enemy action
+3. compute initiative for both sides
+4. resolve first actor action
+5. if defender survives, resolve second actor action
+6. apply end-of-turn cleanup
+7. persist updated session state
+8. return the full session payload
+
+Combat rules for v1:
+
+- `attack`
+  - uses `strength`, `momentum`, defender `resilience`, variance, and crit chance
+- `defend`
+  - halves incoming damage for that turn
+  - grants `next_attack_bonus = 0.10`
+- `focus`
+  - grants `momentum_boost = 0.20` for the next attack only
+  - does not reduce incoming damage
+
+Implementation constraints:
+
+- one request must resolve exactly one round
+- buffs are one-shot and must reset immediately after their next eligible attack
+- battle completion still happens immediately when a combatant reaches `0` HP
+- reward logic should remain end-of-battle only
+
+### 20.7 API and Type Contract Changes
+
+Update the client and database contracts so that:
+
+- `BattleAction = 'attack' | 'defend' | 'focus'`
+- `BattleRunSession` includes the new temporary-effect fields
+- `BattleLogEntry` can represent:
+  - initiative result
+  - action selection
+  - crit events
+  - defend mitigation
+  - focus/bonus consumption
+  - battle result
+
+Do not keep placeholder action types in the public client contract after this revision.
+
+### 20.8 UI Changes
+
+Revise the battle page so the player can make a real choice every round:
+
+- replace `Skill` and `Items` with `Focus`
+- enable all 3 actions during active turns
+- show action feedback in the text panel:
+  - who moved first
+  - whether defend reduced damage
+  - whether focus was consumed
+  - whether an attack crit
+- derive displayed HP from canonical session state, not only by replaying the log
+
+The UI should feel closer to a Pokemon battle menu, but still remain minimal and fast.
+
+Do not add:
+
+- long move descriptions
+- multi-page move selection
+- inventory screens
+- creature ability trees
+
+### 20.9 Balance and Readiness Alignment
+
+Treat balance as two passes:
+
+#### Pass A: Runtime Feel
+
+Tune first:
+
+- battle HP scaling
+- action-aware damage formula
+- crit rate
+- defend and focus values
+- AI action weights
+
+Success criteria:
+
+- most battles finish in 3 to 5 rounds
+- weak opponents still threaten careless play
+- player choice changes outcomes in close matches
+
+#### Pass B: Prep Accuracy
+
+Tune second:
+
+- readiness thresholds
+- likely outcome thresholds
+- recommended opponent logic
+
+Success criteria:
+
+- a `favored` battle usually feels favorable
+- a `competitive` battle usually feels winnable with good choices
+- a `risky` battle usually punishes poor prep or poor action selection
+
+Do not try to perfectly predict battle outcomes before the new runtime exists.
+
+### 20.10 Recommended Delivery Order For This Revision
+
+Build the revised battle system in this order:
+
+1. add schema fields for action state and temporary effects
+2. replace the public action contract with `attack | defend | focus`
+3. implement enemy AI action selection
+4. implement per-turn initiative
+5. replace damage resolution with action-aware combat logic
+6. switch battle HP from raw vitality to combat HP
+7. update battle log payload and client types
+8. update the battle page action menu and text feedback
+9. rebalance readiness, likely outcome, and recommendations
+10. add tests for turn resolution, buff consumption, AI selection, and UI action states
+
+### 20.11 Test Coverage Requirements
+
+Add or update tests for:
+
+- action validation in `submit_battle_action`
+- defend reducing only that turn's incoming damage
+- focus increasing only the next attack
+- initiative changing turn order based on momentum plus variance
+- completed battles short-circuiting the second actor
+- HP initialization using combat HP rather than raw vitality
+- battle-log payloads for crits, buffs, and results
+- battle-page action buttons reflecting the new 3-action contract
+
+### 20.12 Explicit Non-Goals For This Revision
+
+Do not implement these in the first Pokemon-style pass:
+
+- creature-specific move sets
+- abilities or passive traits
+- elemental typing
+- items
+- status conditions
+- double battles
+- PvP
+- meta-progression systems beyond the existing reward loop
