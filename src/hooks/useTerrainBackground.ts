@@ -59,16 +59,20 @@ async function samplePlatform(url: string): Promise<string> {
  * the image hasn't loaded or sampling fails.
  */
 export function useTerrainBackground(playerPlatformUrl: string | null): string {
-  const [bg, setBg] = useState(DEFAULT_BG)
+  const [sampledBg, setSampledBg] = useState<{ url: string; css: string } | null>(null)
 
   useEffect(() => {
-    if (!playerPlatformUrl) { setBg(DEFAULT_BG); return }
+    if (!playerPlatformUrl) return
     let cancelled = false
     samplePlatform(playerPlatformUrl)
-      .then(css => { if (!cancelled) setBg(css) })
-      .catch(() => { if (!cancelled) setBg(DEFAULT_BG) })
+      .then((css) => {
+        if (!cancelled) setSampledBg({ url: playerPlatformUrl, css })
+      })
+      .catch(() => {
+        if (!cancelled) setSampledBg({ url: playerPlatformUrl, css: DEFAULT_BG })
+      })
     return () => { cancelled = true }
   }, [playerPlatformUrl])
 
-  return bg
+  return playerPlatformUrl && sampledBg?.url === playerPlatformUrl ? sampledBg.css : DEFAULT_BG
 }
