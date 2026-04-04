@@ -86,16 +86,68 @@ export interface TerrainDescriptor {
   backgroundCss: string
   /** Ground strip anchored bottom-left under the player sprite */
   playerPlatformUrl: string | null
-  /**
-   * Positioning for the player platform image.
-   * Tune per-arena so the oval center stays under the player sprite regardless of art dimensions.
-   * width: rendered px. left/bottom: negative values bleed the image off-screen.
-   */
   playerPlatformStyle: PlatformStyle | null
   /** Oval platform anchored at the opponent sprite's feet */
   opponentPlatformUrl: string | null
-  /** Positioning for the opponent platform image. top is pixels from arena top. */
   opponentPlatformStyle: PlatformStyle | null
+}
+
+// ── Platform image spec ───────────────────────────────────────────────────────
+// All platform PNGs MUST conform to this spec for automatic positioning.
+//
+//   Canvas:               512 × 240 px with alpha channel
+//   Oval centre X:        297 px from left  (≈58% — calibrated from arena_1)
+//   Oval walkable surface:  97 px from top  (≈40% — calibrated from arena_1)
+//
+// To add a new arena platform:
+//   1. Export PNG at exactly 512 × 240 px with alpha
+//   2. Place the oval centre at x=297, walkable surface top at y=97
+//   3. Use computePlayerPlatformStyle(width) / computeOpponentPlatformStyle(width)
+//      in ARENA_TERRAIN — no manual pixel tuning needed
+const PLATFORM_SPEC = {
+  nativeW: 512,
+  nativeH: 240,
+  ovalCenterX:  297 / 512, // fraction from left edge
+  ovalSurfaceY:  97 / 240, // fraction from top edge (walkable surface, not oval centre)
+} as const
+
+// Sprite layout constants — must stay in sync with BattlePage className values
+const PLAYER_LEFT         = 24  // left-6  (1.5 rem)
+const PLAYER_SIZE         = 128
+const PLAYER_FEET_FROM_BOT = 16  // bottom-4 (1 rem)
+
+const OPP_RIGHT           = 24  // right-6
+const OPP_SIZE            = 128
+const OPP_FEET_FROM_TOP   = 16 + OPP_SIZE  // top-4 + sprite height = 144
+
+/**
+ * Computes the absolute CSS position for the player platform image so the oval
+ * centre sits directly beneath the player sprite, regardless of rendered width.
+ * Only valid for spec-conforming images (512×240, oval at x=297 y=97).
+ */
+export function computePlayerPlatformStyle(renderedWidth: number): PlatformStyle {
+  const renderedH = Math.round(renderedWidth * PLATFORM_SPEC.nativeH / PLATFORM_SPEC.nativeW)
+  const spriteCenterX = PLAYER_LEFT + PLAYER_SIZE / 2
+  return {
+    width:  renderedWidth,
+    left:   Math.round(spriteCenterX - PLATFORM_SPEC.ovalCenterX * renderedWidth),
+    bottom: Math.round(PLAYER_FEET_FROM_BOT - renderedH * (1 - PLATFORM_SPEC.ovalSurfaceY)),
+  }
+}
+
+/**
+ * Computes the absolute CSS position for the opponent platform image so the oval
+ * centre sits directly beneath the opponent sprite, regardless of rendered width.
+ * Only valid for spec-conforming images (512×240, oval at x=297 y=97).
+ */
+export function computeOpponentPlatformStyle(renderedWidth: number): PlatformStyle {
+  const renderedH = Math.round(renderedWidth * PLATFORM_SPEC.nativeH / PLATFORM_SPEC.nativeW)
+  const spriteCenterFromRight = OPP_RIGHT + OPP_SIZE / 2
+  return {
+    width: renderedWidth,
+    right: Math.round(spriteCenterFromRight - (1 - PLATFORM_SPEC.ovalCenterX) * renderedWidth),
+    top:   Math.round(OPP_FEET_FROM_TOP - PLATFORM_SPEC.ovalSurfaceY * renderedH),
+  }
 }
 
 const DEFAULT_TERRAIN: TerrainDescriptor = {
@@ -109,10 +161,10 @@ const DEFAULT_TERRAIN: TerrainDescriptor = {
 const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
   '37543fca-9f22-41c7-83b5-2ded30d7b063': {
     backgroundCss: 'linear-gradient(to bottom, #c8dba0 0%, #6aaa30 50%, #3d8018 100%)',
-    playerPlatformUrl:    s('/terrain/arena_1_player_platform.png'),
-    playerPlatformStyle:  { width: 320, left: -100, bottom: -73 },
-    opponentPlatformUrl:  s('/terrain/arena_1_opponent_platform.png'),
-    opponentPlatformStyle: { width: 224, right: -13, top: 106 },
+    playerPlatformUrl:     s('/terrain/arena_1_player_platform.png'),
+    playerPlatformStyle:   computePlayerPlatformStyle(320),
+    opponentPlatformUrl:   s('/terrain/arena_1_opponent_platform.png'),
+    opponentPlatformStyle: computeOpponentPlatformStyle(224),
   },
 }
 
