@@ -9,6 +9,7 @@ import EffectsLayer from '@/components/ui/EffectsLayer'
 import type { EffectsLayerHandle } from '@/components/ui/EffectsLayer'
 import { useBattleRun, useSubmitBattleAction } from '@/features/creature/useBattleRun'
 import { getPlayerBattleSpriteDescriptor, getOpponentSpriteDescriptor, getArenaTerrain } from '@/lib/sprites'
+import { useTerrainBackground } from '@/hooks/useTerrainBackground'
 import type { BattleAction, BattleLogEntry } from '@/types/domain'
 
 const ENTRY_DELAY_MS = 1200
@@ -53,6 +54,9 @@ export default function BattlePage() {
 
   const { data: session, isLoading, error } = useBattleRun(battleRunId)
   const { mutate: submitAction, isPending } = useSubmitBattleAction()
+
+  const terrain = session ? getArenaTerrain(session.opponent.arenaId) : null
+  const arenaBackground = useTerrainBackground(terrain?.playerPlatformUrl ?? null)
 
   const [displayedLogOverride, setDisplayedLogOverride] = useState<{
     sessionId: string
@@ -188,10 +192,8 @@ export default function BattlePage() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[var(--app-bg)]">
       {/* ── Arena ─────────────────────────────────────────────────── */}
-      {(() => {
-        const terrain = getArenaTerrain(session.opponent.arenaId)
-        return (
-      <div ref={arenaRef} className="relative flex-1 overflow-hidden" style={{ background: terrain.backgroundCss }}>
+      {terrain && (
+      <div ref={arenaRef} className="relative flex-1 overflow-hidden" style={{ background: arenaBackground }}>
 
         {/* ── Terrain layer (z-0) ─────────────────────────────────── */}
         {/* Player platform — style from terrain registry centers oval under player sprite */}
@@ -276,8 +278,7 @@ export default function BattlePage() {
           </p>
         </div>
       </div>
-        )
-      })()}
+      )}
 
       {/* ── Divider ───────────────────────────────────────────────── */}
       <div className="h-px shrink-0 bg-[var(--app-border)]" />

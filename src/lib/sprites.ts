@@ -82,8 +82,6 @@ export interface PlatformStyle {
 }
 
 export interface TerrainDescriptor {
-  /** CSS gradient applied to the arena div background */
-  backgroundCss: string
   /** Ground strip anchored bottom-left under the player sprite */
   playerPlatformUrl: string | null
   playerPlatformStyle: PlatformStyle | null
@@ -151,7 +149,6 @@ export function computeOpponentPlatformStyle(renderedWidth: number): PlatformSty
 }
 
 const DEFAULT_TERRAIN: TerrainDescriptor = {
-  backgroundCss: 'linear-gradient(to bottom, #c8dba0 0%, #6aaa30 50%, #3d8018 100%)',
   playerPlatformUrl: null,
   playerPlatformStyle: null,
   opponentPlatformUrl: null,
@@ -160,7 +157,6 @@ const DEFAULT_TERRAIN: TerrainDescriptor = {
 
 const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
   '37543fca-9f22-41c7-83b5-2ded30d7b063': {
-    backgroundCss: 'linear-gradient(to bottom, #c8dba0 0%, #6aaa30 50%, #3d8018 100%)',
     playerPlatformUrl:     s('/terrain/arena_1_player_platform.png'),
     playerPlatformStyle:   computePlayerPlatformStyle(320),
     opponentPlatformUrl:   s('/terrain/arena_1_opponent_platform.png'),
