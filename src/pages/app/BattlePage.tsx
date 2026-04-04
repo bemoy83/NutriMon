@@ -8,7 +8,7 @@ import type { SpriteStageHandle } from '@/components/ui/SpriteStage'
 import EffectsLayer from '@/components/ui/EffectsLayer'
 import type { EffectsLayerHandle } from '@/components/ui/EffectsLayer'
 import { useBattleRun, useSubmitBattleAction } from '@/features/creature/useBattleRun'
-import { getPlayerBattleSpriteDescriptor, getOpponentSpriteDescriptor } from '@/lib/sprites'
+import { getPlayerBattleSpriteDescriptor, getOpponentSpriteDescriptor, getArenaTerrain } from '@/lib/sprites'
 import type { BattleAction, BattleLogEntry } from '@/types/domain'
 
 const ENTRY_DELAY_MS = 1200
@@ -188,9 +188,35 @@ export default function BattlePage() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[var(--app-bg)]">
       {/* ── Arena ─────────────────────────────────────────────────── */}
-      <div ref={arenaRef} className="relative flex-1 overflow-hidden">
-        {/* Opponent HP panel — top-left, vertically centred on opponent sprite */}
-        <div className="absolute top-10 left-4 w-44 max-sm:min-w-[10.25rem] max-sm:w-auto max-sm:max-w-[calc(100vw-3.5rem-128px)] rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 shadow-sm max-sm:px-2.5">
+      {(() => {
+        const terrain = getArenaTerrain(session.opponent.arenaId)
+        return (
+      <div ref={arenaRef} className="relative flex-1 overflow-hidden" style={{ background: terrain.backgroundCss }}>
+
+        {/* ── Terrain layer (z-0) ─────────────────────────────────── */}
+        {/* Player platform — style from terrain registry centers oval under player sprite */}
+        {terrain.playerPlatformUrl && terrain.playerPlatformStyle && (
+          <img
+            src={terrain.playerPlatformUrl}
+            alt=""
+            draggable={false}
+            className="absolute z-0 object-contain"
+            style={terrain.playerPlatformStyle}
+          />
+        )}
+        {/* Opponent platform — style from terrain registry anchors at opponent sprite feet */}
+        {terrain.opponentPlatformUrl && terrain.opponentPlatformStyle && (
+          <img
+            src={terrain.opponentPlatformUrl}
+            alt=""
+            draggable={false}
+            className="absolute z-0 object-contain"
+            style={terrain.opponentPlatformStyle}
+          />
+        )}
+
+        {/* Opponent HP panel — top-left, vertically centred on opponent sprite (z-10) */}
+        <div className="absolute top-10 left-4 z-10 w-44 max-sm:min-w-[10.25rem] max-sm:w-auto max-sm:max-w-[calc(100vw-3.5rem-128px)] rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 shadow-sm max-sm:px-2.5">
           <div className="flex min-w-0 items-baseline justify-between">
             <p className="truncate text-sm font-bold text-[var(--app-text-primary)]">
               {session.opponent.name}
@@ -205,8 +231,8 @@ export default function BattlePage() {
           <HpBar current={opponentHp} max={session.opponentMaxHp} color="danger" />
         </div>
 
-        {/* Opponent sprite — top-right, art faces left */}
-        <div className="absolute top-4 right-6">
+        {/* Opponent sprite — top-right, art faces left (z-20) */}
+        <div className="absolute top-4 right-6 z-20">
           <SpriteStage ref={opponentStageRef} displaySize={128}>
             <CreatureSprite
               ref={opponentSpriteRef}
@@ -218,8 +244,8 @@ export default function BattlePage() {
           </SpriteStage>
         </div>
 
-        {/* Player sprite — bottom-left, art faces right */}
-        <div className="absolute bottom-4 left-6">
+        {/* Player sprite — bottom-left, art faces right (z-20) */}
+        <div className="absolute bottom-4 left-6 z-20">
           <SpriteStage ref={playerStageRef} displaySize={128}>
             <CreatureSprite
               ref={playerSpriteRef}
@@ -231,8 +257,8 @@ export default function BattlePage() {
           </SpriteStage>
         </div>
 
-        {/* Player HP panel — bottom-right, vertically centred on player sprite */}
-        <div className="absolute right-4 bottom-10 w-44 max-sm:min-w-[10.25rem] max-sm:w-auto max-sm:max-w-[min(11rem,calc(100vw-3.5rem-128px))] rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 shadow-sm max-sm:px-2.5">
+        {/* Player HP panel — bottom-right, vertically centred on player sprite (z-10) */}
+        <div className="absolute right-4 bottom-10 z-10 w-44 max-sm:min-w-[10.25rem] max-sm:w-auto max-sm:max-w-[min(11rem,calc(100vw-3.5rem-128px))] rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 shadow-sm max-sm:px-2.5">
           <div className="flex min-w-0 items-baseline justify-between">
             <p className="truncate text-sm font-bold text-[var(--app-text-primary)]">
               {session.companion.name}
@@ -250,6 +276,8 @@ export default function BattlePage() {
           </p>
         </div>
       </div>
+        )
+      })()}
 
       {/* ── Divider ───────────────────────────────────────────────── */}
       <div className="h-px shrink-0 bg-[var(--app-border)]" />

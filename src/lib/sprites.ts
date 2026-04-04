@@ -70,6 +70,56 @@ const OPPONENT_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
   // 'sunscale_drake': { url: s('/sprites/opponents/sunscale_drake.png'), nativeWidth: 64, nativeHeight: 64, facing: 'left' },
 }
 
+// ── Terrain registry ─────────────────────────────────────────────────────────
+// Keyed by arenaId UUID. Background is a CSS gradient string (no image needed).
+// Platform PNGs are optional — null renders nothing for that slot.
+export interface PlatformStyle {
+  width: number
+  left?: number
+  right?: number
+  top?: number
+  bottom?: number
+}
+
+export interface TerrainDescriptor {
+  /** CSS gradient applied to the arena div background */
+  backgroundCss: string
+  /** Ground strip anchored bottom-left under the player sprite */
+  playerPlatformUrl: string | null
+  /**
+   * Positioning for the player platform image.
+   * Tune per-arena so the oval center stays under the player sprite regardless of art dimensions.
+   * width: rendered px. left/bottom: negative values bleed the image off-screen.
+   */
+  playerPlatformStyle: PlatformStyle | null
+  /** Oval platform anchored at the opponent sprite's feet */
+  opponentPlatformUrl: string | null
+  /** Positioning for the opponent platform image. top is pixels from arena top. */
+  opponentPlatformStyle: PlatformStyle | null
+}
+
+const DEFAULT_TERRAIN: TerrainDescriptor = {
+  backgroundCss: 'linear-gradient(to bottom, #c8dba0 0%, #6aaa30 50%, #3d8018 100%)',
+  playerPlatformUrl: null,
+  playerPlatformStyle: null,
+  opponentPlatformUrl: null,
+  opponentPlatformStyle: null,
+}
+
+const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
+  '37543fca-9f22-41c7-83b5-2ded30d7b063': {
+    backgroundCss: 'linear-gradient(to bottom, #c8dba0 0%, #6aaa30 50%, #3d8018 100%)',
+    playerPlatformUrl:    s('/terrain/arena_1_player_platform.png'),
+    playerPlatformStyle:  { width: 320, left: -100, bottom: -73 },
+    opponentPlatformUrl:  s('/terrain/arena_1_opponent_platform.png'),
+    opponentPlatformStyle: { width: 224, right: -13, top: 106 },
+  },
+}
+
+export function getArenaTerrain(arenaId: string): TerrainDescriptor {
+  return ARENA_TERRAIN[arenaId] ?? DEFAULT_TERRAIN
+}
+
 // ── Animation registry ───────────────────────────────────────────────────────
 // Key format: `${stage}_${condition}_${animationType}`
 const ANIMATIONS: Partial<Record<string, AnimationDescriptor>> = {
