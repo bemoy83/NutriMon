@@ -114,6 +114,20 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
         ? idleAnimation.frames[currentFrame]
         : descriptor?.url ?? null
 
+    const hitFlashStyle: React.CSSProperties =
+      frameUrl != null
+        ? {
+            WebkitMaskImage: `url(${JSON.stringify(frameUrl)})`,
+            WebkitMaskSize: 'contain',
+            WebkitMaskPosition: 'center',
+            WebkitMaskRepeat: 'no-repeat',
+            maskImage: `url(${JSON.stringify(frameUrl)})`,
+            maskSize: 'contain',
+            maskPosition: 'center',
+            maskRepeat: 'no-repeat',
+          }
+        : {}
+
     return (
       <div style={containerStyle} className={className}>
         {frameUrl ? (
@@ -132,17 +146,18 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
           </div>
         )}
 
-        {/* Hit flash overlay */}
+        {/* Hit flash: masked to sprite alpha so flash follows the creature silhouette */}
         {activeAnimation === 'hurt' && (
           <div
             aria-hidden="true"
             style={{
               position: 'absolute',
               inset: 0,
-              borderRadius: 8,
+              transform,
               background: 'white',
               animation: 'hit-flash 500ms ease-out forwards',
               pointerEvents: 'none',
+              ...hitFlashStyle,
             }}
           />
         )}

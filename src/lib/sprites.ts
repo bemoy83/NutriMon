@@ -70,6 +70,17 @@ const OPPONENT_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
   // 'sunscale_drake': { url: s('/sprites/opponents/sunscale_drake.png'), nativeWidth: 64, nativeHeight: 64, facing: 'left' },
 }
 
+// ── Opponent recovery sprite registry ────────────────────────────────────────
+// Shown after the opponent faints. Same key format as OPPONENT_SPRITES.
+// Falls back to null (opponent sprite stays fainted) if no recovery art is registered.
+const OPPONENT_RECOVERY_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
+  'pebble_pup': { url: s('/sprites/opponents/pebble_pup_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  // 'cinder_finch':   { url: s('/sprites/opponents/cinder_finch_recovering.png'),   nativeWidth: 64, nativeHeight: 64, facing: 'left' },
+  // 'mossback_ram':   { url: s('/sprites/opponents/mossback_ram_recovering.png'),   nativeWidth: 64, nativeHeight: 64, facing: 'left' },
+  // 'tide_lynx':      { url: s('/sprites/opponents/tide_lynx_recovering.png'),      nativeWidth: 64, nativeHeight: 64, facing: 'left' },
+  // 'sunscale_drake': { url: s('/sprites/opponents/sunscale_drake_recovering.png'), nativeWidth: 64, nativeHeight: 64, facing: 'left' },
+}
+
 // ── Terrain registry ─────────────────────────────────────────────────────────
 // Keyed by arenaId UUID. Background is a CSS gradient string (no image needed).
 // Platform PNGs are optional — null renders nothing for that slot.
@@ -198,6 +209,10 @@ export function getPlayerBattleSpriteDescriptor(
 
 export function getOpponentSpriteDescriptor(name: string): SpriteDescriptor | null {
   return OPPONENT_SPRITES[slugify(name)] ?? null
+}
+
+export function getOpponentRecoverySpriteDescriptor(name: string): SpriteDescriptor | null {
+  return OPPONENT_RECOVERY_SPRITES[slugify(name)] ?? null
 }
 
 export function getAnimationDescriptor(

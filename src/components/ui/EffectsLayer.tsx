@@ -66,10 +66,10 @@ const EffectsLayer = forwardRef<EffectsLayerHandle>(
               transform: 'translateX(-50%)',
               animation: 'float-up 1000ms ease-out forwards',
               fontWeight: 700,
-              fontSize: n.isCrit ? 18 : 14,
+              fontSize: n.isCrit ? 28 : 20,
               lineHeight: 1,
               color: n.isCrit ? 'var(--app-warning)' : 'var(--app-text-primary)',
-              textShadow: '0 1px 3px rgba(0,0,0,0.35)',
+              textShadow: '0 2px 5px rgba(0,0,0,0.4)',
               whiteSpace: 'nowrap',
             }}
           >

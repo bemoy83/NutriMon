@@ -8,7 +8,7 @@ import type { SpriteStageHandle } from '@/components/ui/SpriteStage'
 import EffectsLayer from '@/components/ui/EffectsLayer'
 import type { EffectsLayerHandle } from '@/components/ui/EffectsLayer'
 import { useBattleRun, useSubmitBattleAction } from '@/features/creature/useBattleRun'
-import { getPlayerBattleSpriteDescriptor, getOpponentSpriteDescriptor, getArenaTerrain } from '@/lib/sprites'
+import { getPlayerBattleSpriteDescriptor, getOpponentSpriteDescriptor, getOpponentRecoverySpriteDescriptor, getArenaTerrain } from '@/lib/sprites'
 import { useTerrainBackground } from '@/hooks/useTerrainBackground'
 import type { BattleAction, BattleLogEntry } from '@/types/domain'
 
@@ -64,6 +64,7 @@ export default function BattlePage() {
   } | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
   const [pendingAction, setPendingAction] = useState<ActionLabel | null>(null)
+  const [showOpponentRecovery, setShowOpponentRecovery] = useState(false)
 
   const displayedLog =
     session && displayedLogOverride?.sessionId === session.id
@@ -121,6 +122,9 @@ export default function BattlePage() {
               playerSpriteRef.current?.triggerAnimation('faint', 1200)
             } else if (entry.target === 'opponent') {
               opponentSpriteRef.current?.triggerAnimation('faint', 1200)
+              // Swap to recovery sprite once the faint animation completes
+              const rt = setTimeout(() => setShowOpponentRecovery(true), 1200)
+              animTimers.current.push(rt)
             }
           }
 
@@ -238,7 +242,11 @@ export default function BattlePage() {
           <SpriteStage ref={opponentStageRef} displaySize={128}>
             <CreatureSprite
               ref={opponentSpriteRef}
-              descriptor={getOpponentSpriteDescriptor(session.opponent.name)}
+              descriptor={
+                showOpponentRecovery
+                  ? (getOpponentRecoverySpriteDescriptor(session.opponent.name) ?? getOpponentSpriteDescriptor(session.opponent.name))
+                  : getOpponentSpriteDescriptor(session.opponent.name)
+              }
               displaySize={128}
               flip={false}
             />
