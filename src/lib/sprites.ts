@@ -62,23 +62,33 @@ const PLAYER_BATTLE_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
 
 // ── Opponent sprite registry ─────────────────────────────────────────────────
 // Key format: slugified opponent name e.g. "Pebble Pup" → "pebble_pup"
-const OPPONENT_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
-  'pebble_pup': { url: s('/sprites/opponents/pebble_pup.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // 'cinder_finch':   { url: s('/sprites/opponents/cinder_finch.png'),   nativeWidth: 64, nativeHeight: 64, facing: 'left' },
-  // 'mossback_ram':   { url: s('/sprites/opponents/mossback_ram.png'),   nativeWidth: 64, nativeHeight: 64, facing: 'left' },
-  // 'tide_lynx':      { url: s('/sprites/opponents/tide_lynx.png'),      nativeWidth: 64, nativeHeight: 64, facing: 'left' },
-  // 'sunscale_drake': { url: s('/sprites/opponents/sunscale_drake.png'), nativeWidth: 64, nativeHeight: 64, facing: 'left' },
+// `recovering` is optional — omit it and the sprite stays fainted after defeat.
+interface OpponentSpriteEntry {
+  battle: SpriteDescriptor
+  recovering?: SpriteDescriptor
 }
 
-// ── Opponent recovery sprite registry ────────────────────────────────────────
-// Shown after the opponent faints. Same key format as OPPONENT_SPRITES.
-// Falls back to null (opponent sprite stays fainted) if no recovery art is registered.
-const OPPONENT_RECOVERY_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
-  'pebble_pup': { url: s('/sprites/opponents/pebble_pup_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // 'cinder_finch':   { url: s('/sprites/opponents/cinder_finch_recovering.png'),   nativeWidth: 64, nativeHeight: 64, facing: 'left' },
-  // 'mossback_ram':   { url: s('/sprites/opponents/mossback_ram_recovering.png'),   nativeWidth: 64, nativeHeight: 64, facing: 'left' },
-  // 'tide_lynx':      { url: s('/sprites/opponents/tide_lynx_recovering.png'),      nativeWidth: 64, nativeHeight: 64, facing: 'left' },
-  // 'sunscale_drake': { url: s('/sprites/opponents/sunscale_drake_recovering.png'), nativeWidth: 64, nativeHeight: 64, facing: 'left' },
+const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
+  'pebble_pup': {
+    battle:     { url: s('/sprites/opponents/pebble_pup.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    recovering: { url: s('/sprites/opponents/pebble_pup_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  },
+  // 'cinder_finch': {
+  //   battle:     { url: s('/sprites/opponents/cinder_finch.png'),           nativeWidth: 64, nativeHeight: 64, facing: 'left' },
+  //   recovering: { url: s('/sprites/opponents/cinder_finch_recovering.png'), nativeWidth: 64, nativeHeight: 64, facing: 'left' },
+  // },
+  // 'mossback_ram': {
+  //   battle:     { url: s('/sprites/opponents/mossback_ram.png'),           nativeWidth: 64, nativeHeight: 64, facing: 'left' },
+  //   recovering: { url: s('/sprites/opponents/mossback_ram_recovering.png'), nativeWidth: 64, nativeHeight: 64, facing: 'left' },
+  // },
+  // 'tide_lynx': {
+  //   battle:     { url: s('/sprites/opponents/tide_lynx.png'),           nativeWidth: 64, nativeHeight: 64, facing: 'left' },
+  //   recovering: { url: s('/sprites/opponents/tide_lynx_recovering.png'), nativeWidth: 64, nativeHeight: 64, facing: 'left' },
+  // },
+  // 'sunscale_drake': {
+  //   battle:     { url: s('/sprites/opponents/sunscale_drake.png'),           nativeWidth: 64, nativeHeight: 64, facing: 'left' },
+  //   recovering: { url: s('/sprites/opponents/sunscale_drake_recovering.png'), nativeWidth: 64, nativeHeight: 64, facing: 'left' },
+  // },
 }
 
 // ── Terrain registry ─────────────────────────────────────────────────────────
@@ -208,11 +218,11 @@ export function getPlayerBattleSpriteDescriptor(
 }
 
 export function getOpponentSpriteDescriptor(name: string): SpriteDescriptor | null {
-  return OPPONENT_SPRITES[slugify(name)] ?? null
+  return OPPONENT_SPRITES[slugify(name)]?.battle ?? null
 }
 
 export function getOpponentRecoverySpriteDescriptor(name: string): SpriteDescriptor | null {
-  return OPPONENT_RECOVERY_SPRITES[slugify(name)] ?? null
+  return OPPONENT_SPRITES[slugify(name)]?.recovering ?? null
 }
 
 export function getAnimationDescriptor(

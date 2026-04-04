@@ -4,7 +4,6 @@ import LoadingState from '@/components/ui/LoadingState'
 import CreatureSprite from '@/components/ui/CreatureSprite'
 import type { CreatureSpriteHandle } from '@/components/ui/CreatureSprite'
 import SpriteStage from '@/components/ui/SpriteStage'
-import type { SpriteStageHandle } from '@/components/ui/SpriteStage'
 import EffectsLayer from '@/components/ui/EffectsLayer'
 import type { EffectsLayerHandle } from '@/components/ui/EffectsLayer'
 import { useBattleRun, useSubmitBattleAction } from '@/features/creature/useBattleRun'
@@ -45,8 +44,6 @@ export default function BattlePage() {
 
   // Sprite refs
   const arenaRef = useRef<HTMLDivElement>(null)
-  const playerStageRef = useRef<SpriteStageHandle>(null)
-  const opponentStageRef = useRef<SpriteStageHandle>(null)
   const playerSpriteRef = useRef<CreatureSpriteHandle>(null)
   const opponentSpriteRef = useRef<CreatureSpriteHandle>(null)
   const playerEffectsRef = useRef<EffectsLayerHandle>(null)
@@ -55,8 +52,9 @@ export default function BattlePage() {
   const { data: session, isLoading, error } = useBattleRun(battleRunId)
   const { mutate: submitAction, isPending } = useSubmitBattleAction()
 
-  const terrain = session ? getArenaTerrain(session.opponent.arenaId) : null
-  const arenaBackground = useTerrainBackground(terrain?.playerPlatformUrl ?? null)
+  // Terrain is derived from session but the hook must be called unconditionally
+  const terrainPlatformUrl = session ? getArenaTerrain(session.opponent.arenaId).playerPlatformUrl : null
+  const arenaBackground = useTerrainBackground(terrainPlatformUrl)
 
   const [displayedLogOverride, setDisplayedLogOverride] = useState<{
     sessionId: string
@@ -161,6 +159,8 @@ export default function BattlePage() {
     )
   }
 
+  const terrain = getArenaTerrain(session.opponent.arenaId)
+
   // Derive current HP by replaying targetHpAfter from displayed log
   let opponentHp = session.opponentMaxHp
   let playerHp = session.playerMaxHp
@@ -196,7 +196,6 @@ export default function BattlePage() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[var(--app-bg)]">
       {/* ── Arena ─────────────────────────────────────────────────── */}
-      {terrain && (
       <div ref={arenaRef} className="relative flex-1 overflow-hidden" style={{ background: arenaBackground }}>
 
         {/* ── Terrain layer (z-0) ─────────────────────────────────── */}
@@ -239,7 +238,7 @@ export default function BattlePage() {
 
         {/* Opponent sprite — top-right, art faces left (z-20) */}
         <div className="absolute top-4 right-6 z-20">
-          <SpriteStage ref={opponentStageRef} displaySize={128}>
+          <SpriteStage displaySize={128}>
             <CreatureSprite
               ref={opponentSpriteRef}
               descriptor={
@@ -256,7 +255,7 @@ export default function BattlePage() {
 
         {/* Player sprite — bottom-left, art faces right (z-20) */}
         <div className="absolute bottom-4 left-6 z-20">
-          <SpriteStage ref={playerStageRef} displaySize={128}>
+          <SpriteStage displaySize={128}>
             <CreatureSprite
               ref={playerSpriteRef}
               descriptor={getPlayerBattleSpriteDescriptor(session.companion.stage, session.companion.currentCondition)}
@@ -286,7 +285,6 @@ export default function BattlePage() {
           </p>
         </div>
       </div>
-      )}
 
       {/* ── Divider ───────────────────────────────────────────────── */}
       <div className="h-px shrink-0 bg-[var(--app-border)]" />
