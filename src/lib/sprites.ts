@@ -34,8 +34,9 @@ export interface AnimationDescriptor {
 // Key format: `${stage}_${condition}`
 const PLAYER_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
   // Uncomment + add PNG to public/sprites/player/ to activate:
-  'baby_steady':         { url: s('/sprites/player/baby_steady.png'),         nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
-  // 'baby_thriving':      { url: s('/sprites/player/baby_thriving.png'),      nativeWidth: 64, nativeHeight: 64, facing: 'right' },
+  'baby_steady': { url: s('/sprites/player/baby_steady.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  'baby_thriving': { url: s('/sprites/player/baby_thriving.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  'baby_recovering': { url: s('/sprites/player/baby_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // 'adult_steady':       { url: s('/sprites/player/adult_steady.png'),       nativeWidth: 64, nativeHeight: 64, facing: 'right' },
   // 'adult_thriving':     { url: s('/sprites/player/adult_thriving.png'),     nativeWidth: 64, nativeHeight: 64, facing: 'right' },
   // 'adult_recovering':   { url: s('/sprites/player/adult_recovering.png'),   nativeWidth: 64, nativeHeight: 64, facing: 'right' },
@@ -48,7 +49,7 @@ const PLAYER_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
 // Side-profile sprites used in the battle arena (distinct from front-facing page sprites).
 // Key format: `${stage}_${condition}`
 const PLAYER_BATTLE_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
-  'baby_steady':         { url: s('/sprites/player_battle/baby_steady.png'),         nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
+  'baby_steady': { url: s('/sprites/player_battle/baby_steady.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // 'baby_thriving':       { url: s('/sprites/player_battle/baby_thriving.png'),       nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
   // 'baby_recovering':     { url: s('/sprites/player_battle/baby_recovering.png'),     nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
   // 'adult_steady':        { url: s('/sprites/player_battle/adult_steady.png'),        nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
@@ -62,7 +63,7 @@ const PLAYER_BATTLE_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
 // ── Opponent sprite registry ─────────────────────────────────────────────────
 // Key format: slugified opponent name e.g. "Pebble Pup" → "pebble_pup"
 const OPPONENT_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
-  // 'pebble_pup':     { url: s('/sprites/opponents/pebble_pup.png'),     nativeWidth: 64, nativeHeight: 64, facing: 'left' },
+  'pebble_pup': { url: s('/sprites/opponents/pebble_pup.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // 'cinder_finch':   { url: s('/sprites/opponents/cinder_finch.png'),   nativeWidth: 64, nativeHeight: 64, facing: 'left' },
   // 'mossback_ram':   { url: s('/sprites/opponents/mossback_ram.png'),   nativeWidth: 64, nativeHeight: 64, facing: 'left' },
   // 'tide_lynx':      { url: s('/sprites/opponents/tide_lynx.png'),      nativeWidth: 64, nativeHeight: 64, facing: 'left' },
