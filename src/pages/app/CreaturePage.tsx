@@ -9,7 +9,7 @@ import { useBattleHub } from '@/features/creature/useBattleHub'
 import { useProfileSummary } from '@/features/profile/useProfileSummary'
 import { getTodayInTimezone } from '@/lib/date'
 import { getPlayerSpriteDescriptor } from '@/lib/sprites'
-import type { BattleLikelyOutcome, BattleOpponent, CreatureCondition, CreatureStage, ReadinessBand } from '@/types/domain'
+import type { BattleLikelyOutcome, BattleOpponent, CreatureCondition, ReadinessBand } from '@/types/domain'
 
 function StatBar({ label, value, color }: { label: string; value: number; color: string }) {
   return (

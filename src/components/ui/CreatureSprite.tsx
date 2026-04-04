@@ -39,26 +39,29 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
   function CreatureSprite({ descriptor, displaySize, flip = false, idleAnimation, className }, ref) {
     const pixelArt = descriptor?.pixelArt ?? false
     const [activeAnimation, setActiveAnimation] = useState<'hurt' | 'faint' | 'attack' | null>(null)
-    const [currentFrame, setCurrentFrame] = useState(0)
+    const descriptorKey = descriptor ? `${descriptor.url}:${descriptor.facing}` : 'placeholder'
+    const [frameState, setFrameState] = useState({ descriptorKey, currentFrame: 0 })
     const animClearRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const frameIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+    const currentFrame = frameState.descriptorKey === descriptorKey ? frameState.currentFrame : 0
 
     // Idle animation frame cycling
     useEffect(() => {
       if (!idleAnimation || idleAnimation.frames.length <= 1) return
       const interval = Math.round(1000 / idleAnimation.fps)
       frameIntervalRef.current = setInterval(() => {
-        setCurrentFrame((f) => (f + 1) % idleAnimation.frames.length)
+        setFrameState((state) => {
+          const baseFrame = state.descriptorKey === descriptorKey ? state.currentFrame : 0
+          return {
+            descriptorKey,
+            currentFrame: (baseFrame + 1) % idleAnimation.frames.length,
+          }
+        })
       }, interval)
       return () => {
         if (frameIntervalRef.current) clearInterval(frameIntervalRef.current)
       }
-    }, [idleAnimation])
-
-    // Reset frame when descriptor changes
-    useEffect(() => {
-      setCurrentFrame(0)
-    }, [descriptor])
+    }, [descriptorKey, idleAnimation])
 
     useImperativeHandle(ref, () => ({
       triggerAnimation(type, durationMs) {
