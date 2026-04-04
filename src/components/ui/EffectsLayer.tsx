@@ -20,7 +20,7 @@ function nextId() {
   return ++_id
 }
 
-const EffectsLayer = forwardRef<EffectsLayerHandle, Record<string, never>>(
+const EffectsLayer = forwardRef<EffectsLayerHandle>(
   function EffectsLayer(_props, ref) {
     const [numbers, setNumbers] = useState<FloatingNumber[]>([])
     const [crits, setCrits] = useState<CritBadge[]>([])
