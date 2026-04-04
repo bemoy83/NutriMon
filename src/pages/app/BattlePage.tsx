@@ -189,9 +189,9 @@ export default function BattlePage() {
     <div className="flex h-screen flex-col overflow-hidden bg-[var(--app-bg)]">
       {/* ── Arena ─────────────────────────────────────────────────── */}
       <div ref={arenaRef} className="relative flex-1 overflow-hidden">
-        {/* Opponent HP panel — top-left */}
-        <div className="absolute top-4 left-4 w-44 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 shadow-sm">
-          <div className="flex items-baseline justify-between">
+        {/* Opponent HP panel — top-left, vertically centred on opponent sprite */}
+        <div className="absolute top-10 left-4 w-44 max-sm:min-w-[10.25rem] max-sm:w-auto max-sm:max-w-[calc(100vw-3.5rem-128px)] rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 shadow-sm max-sm:px-2.5">
+          <div className="flex min-w-0 items-baseline justify-between">
             <p className="truncate text-sm font-bold text-[var(--app-text-primary)]">
               {session.opponent.name}
             </p>
@@ -231,9 +231,9 @@ export default function BattlePage() {
           </SpriteStage>
         </div>
 
-        {/* Player HP panel — bottom-right */}
-        <div className="absolute right-4 bottom-4 w-44 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 shadow-sm">
-          <div className="flex items-baseline justify-between">
+        {/* Player HP panel — bottom-right, vertically centred on player sprite */}
+        <div className="absolute right-4 bottom-10 w-44 max-sm:min-w-[10.25rem] max-sm:w-auto max-sm:max-w-[min(11rem,calc(100vw-3.5rem-128px))] rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 shadow-sm max-sm:px-2.5">
+          <div className="flex min-w-0 items-baseline justify-between">
             <p className="truncate text-sm font-bold text-[var(--app-text-primary)]">
               {session.companion.name}
             </p>
