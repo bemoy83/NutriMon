@@ -37,7 +37,7 @@ export default function AppShell() {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            d="M12 2l9 4v6c0 5.25-3.75 10.15-9 11.25C6.75 22.15 3 17.25 3 12V6l9-4z"
           />
         </svg>
       ),
@@ -131,6 +131,7 @@ function NavItem({ item }: NavItemProps) {
             window.location.pathname.startsWith(item.matchPrefix))
         return {
           color: active ? 'var(--app-brand)' : 'var(--app-text-muted)',
+          borderTop: active ? '2px solid var(--app-brand)' : '2px solid transparent',
         }
       }}
     >
