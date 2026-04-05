@@ -2,7 +2,7 @@
 
 :root {
   /* Backgrounds */
-  --app-bg: #EDF2F7;
+  --app-bg: #D8EDAA;
   --app-surface: #FFFFFF;
   --app-surface-muted: rgb(241 245 249 / 0.7);
   --app-surface-elevated: #F1F5F9;
@@ -17,11 +17,11 @@
   --app-border: #CBD5E1;
   --app-border-muted: #E2E8F0;
 
-  /* Brand / accent (teal) */
-  --app-focus: #06B6D4;
-  --app-brand: #06B6D4;
-  --app-brand-hover: #0891B2;
-  --app-brand-soft: #CFFAFE;
+  /* Brand / accent (forest green) */
+  --app-focus: #16A34A;
+  --app-brand: #16A34A;
+  --app-brand-hover: #15803D;
+  --app-brand-soft: #DCFCE7;
 
   /* Semantic */
   --app-success: #059669;
@@ -39,7 +39,7 @@
 
   /* Nav */
   --app-info-soft: rgb(255 255 255 / 0.95);
-  --app-nav-bg: rgb(255 255 255 / 0.95);
+  --app-nav-bg: rgba(215, 237, 160, 0.97);
 
   /* Creature / accent (strength bar, etc.) */
   --app-coral: #E86A5C;
@@ -54,11 +54,11 @@
 
   /* Charts */
   --app-chart-grid: #E2E8F0;
-  --app-chart-line: #06B6D4;
+  --app-chart-line: #16A34A;
 
   /* Colored surfaces */
-  --app-surface-teal: #CFFAFE;
-  --app-surface-teal-text: #164E63;
+  --app-surface-teal: #DCFCE7;
+  --app-surface-teal-text: #14532D;
   --app-surface-purple: #F3E8FF;
   --app-surface-purple-text: #581C87;
   --app-surface-green: #DCFCE7;
@@ -107,7 +107,8 @@ body,
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  background: var(--app-bg);
+  background: linear-gradient(160deg, #C8E080 0%, #D8EC9A 45%, #C5E07A 100%);
+  background-attachment: fixed;
   color: var(--app-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -170,7 +171,7 @@ select {
 
 .app-page {
   min-height: 100%;
-  background: var(--app-bg);
+  background: transparent;
   color: var(--app-text-primary);
 }
 
@@ -215,7 +216,7 @@ select {
 .app-input:focus {
   outline: none;
   border-color: var(--app-focus);
-  box-shadow: 0 0 0 2px rgb(6 182 212 / 0.3);
+  box-shadow: 0 0 0 2px rgb(22 163 74 / 0.3);
 }
 
 .app-button-primary,
