@@ -73,10 +73,10 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
     battle:     { url: s('/sprites/opponents/pebble_pup.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     recovering: { url: s('/sprites/opponents/pebble_pup_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
-  // 'cinder_finch': {
-  //   battle:     { url: s('/sprites/opponents/cinder_finch.png'),           nativeWidth: 64, nativeHeight: 64, facing: 'left' },
-  //   recovering: { url: s('/sprites/opponents/cinder_finch_recovering.png'), nativeWidth: 64, nativeHeight: 64, facing: 'left' },
-  // },
+  'cinder_finch': {
+    battle: { url: s('/sprites/opponents/cinder_finch.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    recovering: { url: s('/sprites/opponents/cinder_finch_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  },
   // 'mossback_ram': {
   //   battle:     { url: s('/sprites/opponents/mossback_ram.png'),           nativeWidth: 64, nativeHeight: 64, facing: 'left' },
   //   recovering: { url: s('/sprites/opponents/mossback_ram_recovering.png'), nativeWidth: 64, nativeHeight: 64, facing: 'left' },
