@@ -40,7 +40,11 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
     const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
 
     useEffect(() => {
-      return () => timersRef.current.forEach(clearTimeout)
+      const timersContainer = timersRef
+      return () => {
+        const timeouts = timersContainer.current
+        timeouts.forEach(clearTimeout)
+      }
     }, [])
 
     useImperativeHandle(ref, () => ({

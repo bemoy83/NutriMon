@@ -80,7 +80,13 @@ export function useBattleLogReveal(opts: {
         animTimers.current.push(t)
       })
     },
-    [triggerArenaShake],
+    [
+      triggerArenaShake,
+      playerSpriteRef,
+      opponentSpriteRef,
+      playerEffectsRef,
+      opponentEffectsRef,
+    ],
   )
 
   useEffect(() => {
