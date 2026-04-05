@@ -82,6 +82,81 @@ function getFormDescription(condition: CreatureCondition) {
   }
 }
 
+interface OpponentCardProps {
+  opponent: BattleOpponent
+  isActive: boolean
+  isStarting: boolean
+  isDisabled: boolean
+  onChallenge: (opponent: BattleOpponent) => void
+}
+
+function OpponentCard({ opponent, isActive, isStarting, isDisabled, onChallenge }: OpponentCardProps) {
+  const isLockedByProgression = !opponent.isChallengeable
+  const victorySummary = opponent.isDefeated ? formatDefeatedVictorySummary(opponent) : null
+  const oppSprite = getOpponentSpriteDescriptor(opponent.name)
+
+  const buttonLabel = isActive
+    ? 'Resume'
+    : isLockedByProgression
+      ? 'Locked'
+      : isStarting
+        ? 'Starting…'
+        : 'Challenge'
+
+  const spriteFilter = (opponent.isDefeated || isActive)
+    ? 'none'
+    : isLockedByProgression
+      ? 'brightness(0) opacity(0.12)'
+      : 'brightness(0) opacity(0.35)'
+
+  return (
+    <div
+      className="app-card p-4"
+      style={isActive ? { borderColor: 'var(--app-warning)', borderWidth: '2px' } : undefined}
+    >
+      <div className="flex items-start justify-between gap-3">
+        {oppSprite ? (
+          <img
+            src={oppSprite.url}
+            alt=""
+            aria-hidden="true"
+            className="sprite-pixel-art mt-0.5 flex-shrink-0"
+            style={{ width: 40, height: 40, filter: spriteFilter }}
+          />
+        ) : null}
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-semibold text-[var(--app-text-primary)]">{opponent.name}</p>
+            {isLockedByProgression ? (
+                        <span className="rounded-full bg-[var(--app-muted-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--app-muted-soft-text)]">
+                          Locked
+                        </span>
+                      ) : null}
+          </div>
+          <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
+            {opponent.archetype} | Level {opponent.recommendedLevel}
+          </p>
+          {victorySummary ? (
+            <p className="mt-1 text-xs text-[var(--app-text-secondary)]">{victorySummary}</p>
+          ) : null}
+          {opponent.lockReason ? (
+            <p className="mt-2 text-xs text-[var(--app-text-muted)]">{opponent.lockReason}</p>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          onClick={() => onChallenge(opponent)}
+          disabled={isDisabled}
+          className="rounded-xl px-3 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50"
+          style={{ background: isActive ? 'var(--app-warning)' : 'var(--app-brand)' }}
+        >
+          {buttonLabel}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function CreaturePage() {
   const navigate = useNavigate()
   const profileQuery = useProfileSummary()
@@ -283,72 +358,20 @@ export default function CreaturePage() {
         ) : null}
         <div className="mt-3 space-y-3">
           {(battleHubQuery.data?.arenaOpponents ?? []).map((opponent) => {
-            const isRecommended = battleHubQuery.data?.recommendedOpponent?.opponentId === opponent.id
             const isActiveOpponent = activeBattleRun?.opponentId === opponent.id
             const hasOtherActive = !!activeBattleRun && !isActiveOpponent
             const isStarting = startingOpponentId === opponent.id
-            const isLockedByProgression = !opponent.isChallengeable
-            const isDisabled = !battleHubQuery.data?.snapshot || isStarting || hasOtherActive || isLockedByProgression
-            const victorySummary = opponent.isDefeated ? formatDefeatedVictorySummary(opponent) : null
-            const buttonLabel = isActiveOpponent
-              ? 'Resume'
-              : isLockedByProgression
-                ? 'Locked'
-                : isStarting
-                  ? 'Starting…'
-                  : 'Challenge'
-
-            const oppSprite = getOpponentSpriteDescriptor(opponent.name)
+            const isDisabled = !battleHubQuery.data?.snapshot || isStarting || hasOtherActive || !opponent.isChallengeable
 
             return (
-              <div key={opponent.id} className="app-card p-4" style={isActiveOpponent ? { borderColor: 'var(--app-warning)', borderWidth: '2px' } : undefined}>
-                <div className="flex items-start justify-between gap-3">
-                  {oppSprite ? (
-                    <img
-                      src={oppSprite.url}
-                      alt=""
-                      aria-hidden="true"
-                      className="sprite-pixel-art mt-0.5 flex-shrink-0"
-                      style={{
-                        width: 40, height: 40,
-                        filter: (opponent.isDefeated || isActiveOpponent)
-                          ? 'none'
-                          : isLockedByProgression
-                            ? 'brightness(0) opacity(0.12)'
-                            : 'brightness(0) opacity(0.35)',
-                      }}
-                    />
-                  ) : null}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold text-[var(--app-text-primary)]">{opponent.name}</p>
-                      {isLockedByProgression ? (
-                        <span className="rounded-full bg-[var(--app-muted-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--app-muted-soft-text)]">
-                          Locked
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
-                      {opponent.archetype} | Level {opponent.recommendedLevel}
-                    </p>
-                    {victorySummary ? (
-                      <p className="mt-1 text-xs text-[var(--app-text-secondary)]">{victorySummary}</p>
-                    ) : null}
-                    {opponent.lockReason ? (
-                      <p className="mt-2 text-xs text-[var(--app-text-muted)]">{opponent.lockReason}</p>
-                    ) : null}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleChallenge(opponent)}
-                    disabled={isDisabled}
-                    className="rounded-xl px-3 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50"
-                    style={{ background: isActiveOpponent ? 'var(--app-warning)' : 'var(--app-brand)' }}
-                  >
-                    {buttonLabel}
-                  </button>
-                </div>
-              </div>
+              <OpponentCard
+                key={opponent.id}
+                opponent={opponent}
+                isActive={isActiveOpponent}
+                isStarting={isStarting}
+                isDisabled={isDisabled}
+                onChallenge={handleChallenge}
+              />
             )
           })}
           {(battleHubQuery.data?.arenaOpponents.length ?? 0) === 0 ? (

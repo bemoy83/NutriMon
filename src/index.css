@@ -3,6 +3,7 @@
 :root {
   /* Backgrounds */
   --app-bg: #D8EDAA;
+  --app-bg-gradient: linear-gradient(160deg, #C8E080 0%, #D8EC9A 45%, #C5E07A 100%);
   --app-surface: #FFFFFF;
   --app-surface-muted: rgb(241 245 249 / 0.7);
   --app-surface-elevated: #F1F5F9;
@@ -108,7 +109,7 @@ body,
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  background: linear-gradient(160deg, #C8E080 0%, #D8EC9A 45%, #C5E07A 100%);
+  background: var(--app-bg-gradient);
   background-attachment: fixed;
   color: var(--app-text-primary);
   -webkit-font-smoothing: antialiased;
