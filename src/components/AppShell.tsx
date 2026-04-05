@@ -95,13 +95,12 @@ export default function AppShell() {
 
       {/* Bottom navigation */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-20 border-t backdrop-blur"
+        className="fixed inset-x-0 bottom-0 z-20 backdrop-blur pb-[env(safe-area-inset-bottom,0px)]"
         style={{
-          borderColor: 'var(--app-border)',
           background: 'var(--app-nav-bg)',
         }}
       >
-        <div className="flex max-w-lg mx-auto">
+        <div className="mx-auto flex max-w-lg">
           <NavItem item={navItems[0]} />
           <NavItem item={navItems[1]} />
           <NavItem item={navItems[2]} />
@@ -130,21 +129,26 @@ function NavItem({ item }: NavItemProps) {
     <NavLink
       to={item.href}
       end={item.end}
-      className="flex-1 flex flex-col items-center py-2.5 gap-0.5 transition-colors"
-      style={({ isActive }) => {
-        const active = isActive || prefixActive
-        return {
-          color: active ? 'var(--app-brand)' : 'var(--app-text-muted)',
-          borderTop: active ? '2px solid var(--app-brand)' : '2px solid transparent',
-        }
-      }}
+      className="relative flex flex-1 flex-col items-center py-2.5 transition-[color,background-color] duration-[var(--app-transition-fast)] ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-focus)]"
     >
       {({ isActive }) => {
         const active = isActive || prefixActive
         return (
           <>
-            {item.icon(active)}
-            <span className="text-xs">{item.label}</span>
+            {active ? (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-1 top-0 bottom-0 rounded-b-2xl bg-[var(--app-brand)]"
+              />
+            ) : null}
+            <span
+              className={`relative z-[1] flex flex-col items-center gap-0.5 ${
+                active ? 'text-white' : 'text-[var(--app-text-muted)]'
+              }`}
+            >
+              {item.icon(active)}
+              <span className="text-xs font-medium">{item.label}</span>
+            </span>
           </>
         )
       }}
