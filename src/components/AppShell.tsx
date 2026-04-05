@@ -1,10 +1,12 @@
-import { Outlet, NavLink } from 'react-router-dom'
+import { Outlet, NavLink, useLocation } from 'react-router-dom'
 
 export default function AppShell() {
   const navItems = [
     {
       label: 'Log',
       href: '/app',
+      /** Without end, NavLink treats every /app/* route as matching /app, so Log stayed selected on all tabs. */
+      end: true,
       matchPrefix: '/app/log/',
       icon: (active: boolean) => (
         <svg
@@ -115,20 +117,22 @@ type NavItemProps = {
     label: string
     href: string
     matchPrefix: string
+    end?: boolean
     icon: (active: boolean) => React.ReactNode
   }
 }
 
 function NavItem({ item }: NavItemProps) {
+  const { pathname } = useLocation()
+  const prefixActive = pathname.startsWith(item.matchPrefix)
+
   return (
     <NavLink
       to={item.href}
+      end={item.end}
       className="flex-1 flex flex-col items-center py-2.5 gap-0.5 transition-colors"
       style={({ isActive }) => {
-        const active =
-          isActive ||
-          (typeof window !== 'undefined' &&
-            window.location.pathname.startsWith(item.matchPrefix))
+        const active = isActive || prefixActive
         return {
           color: active ? 'var(--app-brand)' : 'var(--app-text-muted)',
           borderTop: active ? '2px solid var(--app-brand)' : '2px solid transparent',
@@ -136,10 +140,7 @@ function NavItem({ item }: NavItemProps) {
       }}
     >
       {({ isActive }) => {
-        const active =
-          isActive ||
-          (typeof window !== 'undefined' &&
-            window.location.pathname.startsWith(item.matchPrefix))
+        const active = isActive || prefixActive
         return (
           <>
             {item.icon(active)}

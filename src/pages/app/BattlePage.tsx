@@ -41,7 +41,7 @@ function HpBar({ current, max, color }: { current: number; max: number; color: '
         className="h-full rounded-full transition-all duration-300"
         style={{
           width: `${pct}%`,
-          background: color === 'danger' ? 'var(--app-danger)' : 'var(--app-brand)',
+          background: color === 'danger' ? 'var(--app-danger)' : 'var(--app-success)',
         }}
       />
     </div>
@@ -236,16 +236,16 @@ export default function BattlePage() {
         )}
 
         {/* Opponent HP panel — top-left, aligned with opponent sprite top (z-10) */}
-        <div className="absolute left-4 z-10 w-44 max-sm:min-w-[10.25rem] max-sm:w-auto max-sm:max-w-[calc(100vw-3.5rem-128px)] rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 shadow-sm max-sm:px-2.5" style={{ top: 'calc(28% - 8px)' }}>
+        <div className="absolute left-4 z-10 w-44 max-sm:min-w-[10.25rem] max-sm:w-auto max-sm:max-w-[calc(100vw-3.5rem-128px)] rounded-xl border border-white/10 bg-[rgba(15,23,42,0.85)] px-3 py-2 shadow-sm max-sm:px-2.5" style={{ top: 'calc(28% - 8px)' }}>
           <div className="flex min-w-0 items-baseline justify-between">
-            <p className="truncate text-sm font-bold text-[var(--app-text-primary)]">
+            <p className="truncate text-sm font-bold text-white">
               {session.opponent.name}
             </p>
-            <p className="ml-2 shrink-0 text-xs text-[var(--app-text-muted)]">
+            <p className="ml-2 shrink-0 text-xs text-white/60">
               Lv{session.opponent.recommendedLevel}
             </p>
           </div>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-[var(--app-text-muted)]">
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-white/60">
             HP
           </p>
           <HpBar current={opponentHp} max={session.opponentMaxHp} color="danger" />
@@ -282,33 +282,33 @@ export default function BattlePage() {
         </div>
 
         {/* Player HP panel — bottom-right, vertically centred on player sprite (z-10) */}
-        <div className="absolute right-4 bottom-10 z-10 w-44 max-sm:min-w-[10.25rem] max-sm:w-auto max-sm:max-w-[min(11rem,calc(100vw-3.5rem-128px))] rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 shadow-sm max-sm:px-2.5">
+        <div className="absolute right-4 bottom-10 z-10 w-44 max-sm:min-w-[10.25rem] max-sm:w-auto max-sm:max-w-[min(11rem,calc(100vw-3.5rem-128px))] rounded-xl border border-white/10 bg-[rgba(15,23,42,0.85)] px-3 py-2 shadow-sm max-sm:px-2.5">
           <div className="flex min-w-0 items-baseline justify-between">
-            <p className="truncate text-sm font-bold text-[var(--app-text-primary)]">
+            <p className="truncate text-sm font-bold text-white">
               {session.companion.name}
             </p>
-            <p className="ml-2 shrink-0 text-xs text-[var(--app-text-muted)]">
+            <p className="ml-2 shrink-0 text-xs text-white/60">
               Lv{session.companion.level}
             </p>
           </div>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-[var(--app-text-muted)]">
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-white/60">
             HP
           </p>
           <HpBar current={playerHp} max={session.playerMaxHp} color="brand" />
-          <p className="mt-1 text-right text-xs tabular-nums text-[var(--app-text-secondary)]">
+          <p className="mt-1 text-right text-xs tabular-nums text-white/70">
             {playerHp} / {session.playerMaxHp}
           </p>
         </div>
       </div>
 
       {/* ── Divider ───────────────────────────────────────────────── */}
-      <div className="h-px shrink-0 bg-[var(--app-border)]" />
+      <div className="h-px shrink-0 bg-white/10" />
 
       {/* ── Bottom UI ─────────────────────────────────────────────── */}
-      <div className="flex shrink-0 bg-[var(--app-surface)]" style={{ height: '11rem' }}>
+      <div className="flex shrink-0 bg-[#0F172A]" style={{ height: '11rem' }}>
         {/* Text box — left */}
-        <div className="flex flex-1 items-center border-r border-[var(--app-border)] px-5 py-4">
-          <p className="text-sm leading-relaxed text-[var(--app-text-primary)]">
+        <div className="flex flex-1 items-center border-r border-white/10 px-5 py-4">
+          <p className="text-sm leading-relaxed text-white/90">
             {lastEntry
               ? lastEntry.message
               : isActive
@@ -329,10 +329,10 @@ export default function BattlePage() {
                 type="button"
                 disabled={!isEnabled}
                 onClick={() => handleAction(label)}
-                className={`rounded-lg px-3 py-1.5 text-left text-sm font-semibold transition-colors ${
+                className={`rounded-lg px-3 py-3 text-left text-sm font-semibold transition-colors ${
                   isEnabled
                     ? 'bg-[var(--app-brand)] text-white hover:bg-[var(--app-brand-hover)]'
-                    : 'bg-[var(--app-surface-muted)] text-[var(--app-text-muted)] opacity-50'
+                    : 'bg-white/5 text-white/30 opacity-50'
                 }`}
               >
                 {isThisPending ? `${label}…` : label}
@@ -344,8 +344,8 @@ export default function BattlePage() {
 
       {/* ── Victory / Defeat modal ────────────────────────────────── */}
       {isCompleted && allEntriesShown ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6">
-          <div className="w-full max-w-sm rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 text-center shadow-xl">
+        <div className={`fixed inset-0 z-50 flex items-center justify-center px-6 ${isWin ? 'bg-[rgba(5,150,105,0.2)]' : 'bg-black/50'}`}>
+          <div className="animate-modal-pop w-full max-w-sm rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 text-center shadow-xl">
             <p
               className={`text-4xl font-extrabold ${isWin ? 'text-[var(--app-success)]' : 'text-[var(--app-danger)]'}`}
             >

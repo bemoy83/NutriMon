@@ -156,6 +156,13 @@ select {
   100% { transform: translate(-50%, -50%) scale(1.6) rotate(10deg);  opacity: 0; }
 }
 
+@keyframes modal-pop {
+  0%   { transform: scale(0.85); opacity: 0; }
+  60%  { transform: scale(1.02); opacity: 1; }
+  100% { transform: scale(1.0);  opacity: 1; }
+}
+.animate-modal-pop { animation: modal-pop 300ms ease-out both; }
+
 /* ── App utilities ───────────────────────────────────────────────────────── */
 
 .app-page {
