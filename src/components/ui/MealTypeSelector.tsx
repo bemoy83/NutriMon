@@ -8,7 +8,7 @@ interface Props {
 
 export default function MealTypeSelector({ value, onChange }: Props) {
   return (
-    <div className="flex gap-2 overflow-x-auto px-4 py-3 border-b border-[var(--app-border)] scrollbar-hide">
+    <div className="flex gap-2 overflow-x-auto px-4 py-3 scrollbar-hide">
       {MEAL_TYPES.map((type) => {
         const isActive = value === type
         const theme = getMealTypeTheme(type)

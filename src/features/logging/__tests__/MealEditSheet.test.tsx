@@ -68,9 +68,10 @@ describe('MealEditSheet', () => {
 
     render(<MealEditSheet meal={meal} logDate="2026-01-05" onClose={onClose} onSaved={onSaved} />)
 
-    fireEvent.click(screen.getByRole('button', { name: '1g' }))
-    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '2' } })
-    fireEvent.keyDown(screen.getByRole('spinbutton'), { key: 'Enter' })
+    const gramsInput = screen.getByRole('textbox', { name: 'Grams' })
+    fireEvent.focus(gramsInput)
+    fireEvent.change(gramsInput, { target: { value: '2' } })
+    fireEvent.keyDown(gramsInput, { key: 'Enter' })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => {

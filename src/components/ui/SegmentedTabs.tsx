@@ -17,21 +17,34 @@ export default function SegmentedTabs<T extends string>({
   className = '',
 }: SegmentedTabsProps<T>) {
   return (
-    <div className={`flex border-b border-[var(--app-border)] ${className}`.trim()}>
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          onClick={() => onChange(option.value)}
-          className={`flex-1 py-2.5 text-xs font-medium transition-colors ${
-            value === option.value
-              ? 'border-b-2 border-[var(--app-focus)] text-[var(--app-brand)]'
-              : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
-          }`}
-        >
-          {option.label}
-        </button>
-      ))}
+    <div
+      className={`relative z-[1] bg-[var(--app-surface)] px-4 py-3 shadow-[0_4px_14px_-4px_rgb(15_23_42_/_0.1)] ${className}`.trim()}
+    >
+      <div
+        className="flex gap-0.5 rounded-full bg-[var(--app-surface-elevated)] p-0.5"
+        role="tablist"
+      >
+        {options.map((option) => {
+          const selected = value === option.value
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              onClick={() => onChange(option.value)}
+              title={option.label}
+              className={`min-w-0 flex-1 truncate rounded-full px-1 py-2 text-xs font-medium transition-[color,background-color] duration-[var(--app-transition-fast)] ease-out ${
+                selected
+                  ? 'bg-[var(--app-brand)] font-semibold text-white hover:bg-[var(--app-brand-hover)] active:bg-[var(--app-brand-hover)]'
+                  : 'text-[var(--app-text-muted)] hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text-secondary)]'
+              }`}
+            >
+              {option.label}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

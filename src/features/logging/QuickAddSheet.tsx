@@ -13,7 +13,7 @@ import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import GramInput from '@/components/ui/GramInput'
 import MealTypeSelector from '@/components/ui/MealTypeSelector'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
-import { getDefaultMealType } from '@/lib/mealType'
+import { getDefaultMealType, getMealTypeTheme } from '@/lib/mealType'
 
 interface PendingItem {
   foodSource: FoodSource
@@ -153,6 +153,8 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
   const activeProducts: FoodSource[] =
     tab === 'recent' ? recentQuery.data ?? [] : tab === 'search' ? searchQuery_.data ?? [] : []
 
+  const mealTheme = getMealTypeTheme(mealType)
+
   return (
     <BottomSheet
       onClose={onClose}
@@ -184,12 +186,21 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
 
       {/* Pending items tray */}
       {pendingItems.length > 0 && (
-        <div className="border-b border-[var(--app-border)] bg-[var(--app-brand-soft)] px-4 py-2">
+        <div
+          className="px-4 py-2"
+          style={{ background: mealTheme ? mealTheme.bg : 'var(--app-brand-soft)' }}
+        >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-[var(--app-brand)]">
+            <span
+              className="text-sm font-medium"
+              style={{ color: mealTheme ? mealTheme.text : 'var(--app-brand)' }}
+            >
               {pendingItems.length} item{pendingItems.length !== 1 ? 's' : ''} selected
             </span>
-            <span className="text-sm font-semibold text-[var(--app-text-primary)]">
+            <span
+              className="text-sm font-semibold"
+              style={{ color: mealTheme ? mealTheme.text : 'var(--app-text-primary)' }}
+            >
               {pendingItems.reduce(
                 (sum, i) =>
                   sum + Math.round((i.grams / (i.foodSource.defaultServingAmount ?? 100)) * i.foodSource.calories),
@@ -314,6 +325,7 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
                 foodSource={foodSource}
                 isAdded={isAdded}
                 onAdd={() => addPendingItem(foodSource)}
+                onRemove={() => updateGrams(getFoodSourceKey(foodSource), 0)}
               />
             )
           })}
@@ -371,10 +383,12 @@ function ProductRow({
   foodSource,
   isAdded,
   onAdd,
+  onRemove,
 }: {
   foodSource: FoodSource
   isAdded: boolean
   onAdd: () => void
+  onRemove: () => void
 }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--app-surface-elevated)] active:bg-[var(--app-surface-elevated)] transition-colors">
@@ -392,9 +406,15 @@ function ProductRow({
       </div>
 
       {isAdded ? (
-        <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[var(--app-brand)]">
+        <button
+          type="button"
+          onClick={onRemove}
+          className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[var(--app-brand)] text-white transition-colors hover:bg-[var(--app-brand-hover)] active:bg-[var(--app-brand-hover)]"
+          aria-label={`Remove ${foodSource.name} from meal`}
+          title="Remove from meal"
+        >
           <svg
-            className="h-5 w-5 text-white"
+            className="h-5 w-5"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -402,7 +422,7 @@ function ProductRow({
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
-        </div>
+        </button>
       ) : (
         <button
           onClick={onAdd}
