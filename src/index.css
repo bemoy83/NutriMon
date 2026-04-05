@@ -174,11 +174,26 @@ select {
   color: var(--app-text-primary);
 }
 
+/* Default card: frosted glass on app backgrounds. Use .app-card-solid for opaque panels (e.g. battle UI). */
 .app-card {
+  border-radius: var(--app-radius-lg);
+  border: 1px solid rgb(255 255 255 / 0.72);
+  box-shadow: var(--app-shadow-sm);
+  background: rgb(255 255 255 / 0.52);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.app-card-solid {
   border: 1px solid var(--app-border-muted);
   border-radius: var(--app-radius-lg);
   background: var(--app-surface);
   box-shadow: var(--app-shadow-sm);
+}
+
+/* Meal list rows: no light rim — global .app-card border reads as a white frame on tinted glass. */
+.app-card.app-card--meal-sheet {
+  border: none;
 }
 
 .app-input {

@@ -118,12 +118,20 @@ function MealCard({
 
   return (
     <div
-      className="app-card overflow-hidden"
-      style={theme ? { background: theme.bg, borderLeft: `3px solid ${theme.accent}` } : undefined}
+      className="app-card app-card--meal-sheet overflow-hidden"
+      style={
+        theme
+          ? {
+              background: `color-mix(in srgb, ${theme.bg} 46%, rgb(255 255 255 / 0.48))`,
+              /* Inset strip replaces border-left so the outer edge stays borderless (sheet of glass). */
+              boxShadow: `inset 3px 0 0 ${theme.accent}, var(--app-shadow-sm)`,
+            }
+          : undefined
+      }
     >
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors hover:bg-black/5"
+        className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors hover:bg-slate-900/[0.05]"
       >
         <div>
           <p className="text-[var(--app-text-primary)] text-sm font-medium">
@@ -179,7 +187,7 @@ function MealCard({
               <div className="flex border-t" style={{ borderColor: theme ? theme.divider : 'var(--app-border)' }}>
                 <button
                   onClick={onEdit}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm text-[var(--app-brand)] transition-colors hover:bg-black/5"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm text-[var(--app-brand)] transition-colors hover:bg-slate-900/[0.05]"
                 >
                   <svg className="w-3.5 h-3.5 flex-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -192,7 +200,7 @@ function MealCard({
                     setShowSavePrompt(true)
                   }}
                   disabled={savingTemplate}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm text-[var(--app-text-secondary)] transition-colors hover:bg-black/5 disabled:opacity-40"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm text-[var(--app-text-secondary)] transition-colors hover:bg-slate-900/[0.05] disabled:opacity-40"
                 >
                   <svg className="w-3.5 h-3.5 flex-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
@@ -202,7 +210,7 @@ function MealCard({
                 <button
                   onClick={onDelete}
                   disabled={deleting}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm text-[var(--app-danger)] transition-colors hover:bg-black/5 disabled:opacity-40"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm text-[var(--app-danger)] transition-colors hover:bg-slate-900/[0.05] disabled:opacity-40"
                 >
                   <svg className="w-3.5 h-3.5 flex-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
