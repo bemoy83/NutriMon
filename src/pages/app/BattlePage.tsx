@@ -1,5 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ArenaPlatformImage } from '@/components/battle/ArenaPlatformImage'
+import {
+  type BattleActionLabel,
+  battleActionToPayload,
+} from '@/components/battle/battleActionConfig'
+import { BattleCommandBar } from '@/components/battle/BattleCommandBar'
+import { BattleHudCard, BattleHudHpBar } from '@/components/battle/BattleHudCard'
+import { battleArenaCmdBarVars, battleGameplayBandClass } from '@/components/battle/battleLayout'
+import { BattleOutcomeModal } from '@/components/battle/BattleOutcomeModal'
 import LoadingState from '@/components/ui/LoadingState'
 import CreatureSprite from '@/components/ui/CreatureSprite'
 import type { CreatureSpriteHandle } from '@/components/ui/CreatureSprite'
@@ -7,75 +16,30 @@ import SpriteStage from '@/components/ui/SpriteStage'
 import EffectsLayer from '@/components/ui/EffectsLayer'
 import type { EffectsLayerHandle } from '@/components/ui/EffectsLayer'
 import { useBattleRun, useSubmitBattleAction } from '@/features/creature/useBattleRun'
-import { getPlayerBattleSpriteDescriptor, getOpponentSpriteDescriptor, getOpponentRecoverySpriteDescriptor, getArenaTerrain, getHitImpactUrl } from '@/lib/sprites'
+import { useBattleLogReveal } from '@/hooks/useBattleLogReveal'
 import { useTerrainBackground } from '@/hooks/useTerrainBackground'
-import type { BattleAction, BattleLogEntry } from '@/types/domain'
+import {
+  getArenaTerrain,
+  getHitImpactUrl,
+  getOpponentRecoverySpriteDescriptor,
+  getOpponentSpriteDescriptor,
+  getPlayerBattleSpriteDescriptor,
+} from '@/lib/sprites'
 
-const ENTRY_DELAY_MS = 1200
-
-// Perspective depth scaling — player is always larger than opponent to sell the
-// "player is closer to camera" feel. Matches the Pokémon convention.
+// Perspective depth scaling — player is always larger than opponent (Pokémon-style).
 const STAGE_DISPLAY_SIZES: Record<string, { player: number; opponent: number }> = {
-  baby:     { player: 144, opponent: 128 },
-  adult:    { player: 176, opponent: 160 },
+  baby: { player: 144, opponent: 128 },
+  adult: { player: 176, opponent: 160 },
   champion: { player: 208, opponent: 184 },
 }
 function getStageSizes(stage: string) {
   return STAGE_DISPLAY_SIZES[stage] ?? STAGE_DISPLAY_SIZES.baby
 }
 
-const ACTION_LABELS = ['Attack', 'Defend', 'Focus'] as const
-type ActionLabel = (typeof ACTION_LABELS)[number]
-
-const ACTION_MAP: Record<ActionLabel, BattleAction> = {
-  Attack: 'attack',
-  Defend: 'defend',
-  Focus: 'focus',
-}
-
-// Button colors align with companion stat bars (CreaturePage) and battle RPC semantics:
-// • Attack — strength is the larger damage coeff; momentum also feeds damage/crit (submit_battle_action + battle_compute_damage).
-// • Defend — player resilience scales incoming damage when blocking (v_defend_mult from snapshot.resilience).
-// • Focus — sets momentum_boost consumed on the next attack; initiative rolls use momentum.
-const ACTION_BUTTON_CLASS: Record<
-  ActionLabel,
-  { enabled: string; hover: string }
-> = {
-  Attack: {
-    enabled: 'bg-[var(--app-coral)] text-white',
-    hover: 'hover:brightness-95 active:brightness-90',
-  },
-  Defend: {
-    enabled: 'bg-[var(--app-brand)] text-white',
-    hover: 'hover:bg-[var(--app-brand-hover)]',
-  },
-  Focus: {
-    enabled: 'bg-[var(--app-warning)] text-slate-900',
-    hover: 'hover:brightness-95 active:brightness-90',
-  },
-}
-
-function HpBar({ current, max, color }: { current: number; max: number; color: 'brand' | 'danger' }) {
-  const pct = max > 0 ? Math.round((current / max) * 100) : 0
-  return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--app-border)]">
-      <div
-        className="h-full rounded-full transition-all duration-300"
-        style={{
-          width: `${pct}%`,
-          background: color === 'danger' ? 'var(--app-danger)' : 'var(--app-success)',
-        }}
-      />
-    </div>
-  )
-}
-
 export default function BattlePage() {
   const { battleRunId } = useParams<{ battleRunId: string }>()
   const navigate = useNavigate()
-  const animTimers = useRef<ReturnType<typeof setTimeout>[]>([])
 
-  // Sprite refs
   const arenaRef = useRef<HTMLDivElement>(null)
   const playerSpriteRef = useRef<CreatureSpriteHandle>(null)
   const opponentSpriteRef = useRef<CreatureSpriteHandle>(null)
@@ -85,17 +49,27 @@ export default function BattlePage() {
   const { data: session, isLoading, error } = useBattleRun(battleRunId)
   const { mutate: submitAction, isPending } = useSubmitBattleAction()
 
-  // Terrain is derived from session but the hook must be called unconditionally
   const terrainPlatformUrl = session ? getArenaTerrain(session.opponent.arenaId).playerPlatformUrl : null
   const arenaBackground = useTerrainBackground(terrainPlatformUrl)
 
-  const [displayedLogOverride, setDisplayedLogOverride] = useState<{
-    sessionId: string
-    entries: BattleLogEntry[]
-  } | null>(null)
-  const [isAnimating, setIsAnimating] = useState(false)
-  const [pendingAction, setPendingAction] = useState<ActionLabel | null>(null)
-  const [showOpponentRecovery, setShowOpponentRecovery] = useState(false)
+  const triggerArenaShake = useCallback(() => {
+    const el = arenaRef.current
+    if (!el) return
+    el.classList.remove('animate-shake')
+    void el.offsetWidth
+    el.classList.add('animate-shake')
+    setTimeout(() => el.classList.remove('animate-shake'), 400)
+  }, [])
+
+  const { displayedLogOverride, isAnimating, showOpponentRecovery, revealEntries } = useBattleLogReveal({
+    playerSpriteRef,
+    opponentSpriteRef,
+    playerEffectsRef,
+    opponentEffectsRef,
+    triggerArenaShake,
+  })
+
+  const [pendingAction, setPendingAction] = useState<BattleActionLabel | null>(null)
 
   const displayedLog =
     session && displayedLogOverride?.sessionId === session.id
@@ -103,77 +77,6 @@ export default function BattlePage() {
         ? displayedLogOverride.entries
         : session.battleLog
       : session?.battleLog ?? []
-
-  function triggerArenaShake() {
-    const el = arenaRef.current
-    if (!el) return
-    el.classList.remove('animate-shake')
-    void el.offsetWidth
-    el.classList.add('animate-shake')
-    setTimeout(() => el.classList.remove('animate-shake'), 400)
-  }
-
-  const revealEntries = useCallback(
-    (sessionId: string, fullLog: BattleLogEntry[], base: BattleLogEntry[]) => {
-      animTimers.current.forEach(clearTimeout)
-      animTimers.current = []
-
-      const newEntries = fullLog.slice(base.length)
-      setDisplayedLogOverride({ sessionId, entries: base })
-
-      if (newEntries.length === 0) return
-
-      setIsAnimating(true)
-
-      newEntries.forEach((entry, i) => {
-        const t = setTimeout(() => {
-          setDisplayedLogOverride({
-            sessionId,
-            entries: [...base, ...newEntries.slice(0, i + 1)],
-          })
-
-          // Trigger sprite effects for this entry
-          if (entry.phase === 'action' && entry.damage > 0) {
-            if (entry.target === 'player') {
-              playerSpriteRef.current?.triggerAnimation('hurt', 500)
-              playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
-              playerEffectsRef.current?.showHitImpact()
-              if (entry.crit) playerEffectsRef.current?.showCritBadge()
-              triggerArenaShake()
-            } else if (entry.target === 'opponent') {
-              opponentSpriteRef.current?.triggerAnimation('hurt', 500)
-              opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
-              opponentEffectsRef.current?.showHitImpact()
-              if (entry.crit) opponentEffectsRef.current?.showCritBadge()
-              triggerArenaShake()
-            }
-          }
-
-          // Faint when HP reaches 0
-          if (entry.targetHpAfter === 0) {
-            if (entry.target === 'player') {
-              playerSpriteRef.current?.triggerAnimation('faint', 1200)
-            } else if (entry.target === 'opponent') {
-              opponentSpriteRef.current?.triggerAnimation('faint', 1200)
-              // Swap to recovery sprite once the faint animation completes
-              const rt = setTimeout(() => setShowOpponentRecovery(true), 1200)
-              animTimers.current.push(rt)
-            }
-          }
-
-          if (i === newEntries.length - 1) {
-            setIsAnimating(false)
-          }
-        }, i * ENTRY_DELAY_MS)
-        animTimers.current.push(t)
-      })
-    },
-    [],
-  )
-
-  useEffect(() => {
-    return () => animTimers.current.forEach(clearTimeout)
-  }, [])
 
   if (isLoading) return <LoadingState fullScreen />
 
@@ -198,7 +101,6 @@ export default function BattlePage() {
   const hitImpactUrl = getHitImpactUrl()
   const { player: playerDisplaySize, opponent: opponentDisplaySize } = getStageSizes(session.companion.stage)
 
-  // Derive current HP by replaying targetHpAfter from displayed log
   let opponentHp = session.opponentMaxHp
   let playerHp = session.playerMaxHp
   for (const entry of displayedLog) {
@@ -212,12 +114,16 @@ export default function BattlePage() {
   const allEntriesShown = displayedLog.length === session.battleLog.length
   const lastEntry = displayedLog[displayedLog.length - 1] ?? null
 
-  function handleAction(label: ActionLabel) {
+  const dialogue =
+    lastEntry?.message ??
+    (isActive ? `Round ${session.currentRound} — what will ${session.companion.name} do?` : null)
+
+  function handleAction(label: BattleActionLabel) {
     if (!session || !isActive || isPending || isAnimating) return
     const prevLog = [...displayedLog]
     setPendingAction(label)
     submitAction(
-      { battleRunId: session.id, action: ACTION_MAP[label] },
+      { battleRunId: session.id, action: battleActionToPayload[label] },
       {
         onSuccess: (updated) => {
           setPendingAction(null)
@@ -230,181 +136,110 @@ export default function BattlePage() {
     )
   }
 
+  const platformItems: { key: string; url: string; style: CSSProperties }[] = []
+  if (terrain.playerPlatformUrl && terrain.playerPlatformStyle) {
+    platformItems.push({
+      key: 'player',
+      url: terrain.playerPlatformUrl,
+      style: terrain.playerPlatformStyle,
+    })
+  }
+  if (terrain.opponentPlatformUrl && terrain.opponentPlatformStyle) {
+    platformItems.push({
+      key: 'opponent',
+      url: terrain.opponentPlatformUrl,
+      style: terrain.opponentPlatformStyle,
+    })
+  }
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[var(--app-bg)]">
-      {/* ── Arena ─────────────────────────────────────────────────── */}
-      <div ref={arenaRef} className="relative flex-1 overflow-hidden" style={{ background: arenaBackground }}>
-        {/* Gameplay fits above command bar (h-44 = 11rem); bar overlays arena so glass blurs terrain */}
-        <div className="absolute inset-x-0 top-0 bottom-44">
+      <div
+        ref={arenaRef}
+        className="relative flex-1 overflow-hidden"
+        style={{ background: arenaBackground, ...battleArenaCmdBarVars() }}
+      >
+        <div className={battleGameplayBandClass}>
+          {platformItems.map(({ key, url, style }) => (
+            <ArenaPlatformImage key={key} src={url} imgStyle={style} />
+          ))}
 
-        {/* ── Terrain layer (z-0) ─────────────────────────────────── */}
-        {/* Player platform — style from terrain registry centers oval under player sprite */}
-        {terrain.playerPlatformUrl && terrain.playerPlatformStyle && (
-          <img
-            src={terrain.playerPlatformUrl}
-            alt=""
-            draggable={false}
-            className="absolute z-0 object-contain"
-            style={terrain.playerPlatformStyle}
-          />
-        )}
-        {/* Opponent platform — style from terrain registry anchors at opponent sprite feet */}
-        {terrain.opponentPlatformUrl && terrain.opponentPlatformStyle && (
-          <img
-            src={terrain.opponentPlatformUrl}
-            alt=""
-            draggable={false}
-            className="absolute z-0 object-contain"
-            style={terrain.opponentPlatformStyle}
-          />
-        )}
+          <BattleHudCard
+            className="left-4 max-sm:max-w-[calc(100vw-3.5rem-128px)]"
+            style={{ top: 'calc(28% - 8px)' }}
+          >
+            <div className="flex min-w-0 items-baseline justify-between">
+              <p className="truncate text-sm font-bold text-white">{session.opponent.name}</p>
+              <p className="ml-2 shrink-0 text-xs text-white/60">Lv{session.opponent.recommendedLevel}</p>
+            </div>
+            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-white/60">HP</p>
+            <BattleHudHpBar current={opponentHp} max={session.opponentMaxHp} variant="danger" />
+          </BattleHudCard>
 
-        {/* Opponent HP panel — top-left, aligned with opponent sprite top (z-10) */}
-        <div className="absolute left-4 z-10 w-44 max-sm:min-w-[10.25rem] max-sm:w-auto max-sm:max-w-[calc(100vw-3.5rem-128px)] rounded-xl border border-white/10 bg-[rgba(15,23,42,0.85)] px-3 py-2 shadow-sm max-sm:px-2.5" style={{ top: 'calc(28% - 8px)' }}>
-          <div className="flex min-w-0 items-baseline justify-between">
-            <p className="truncate text-sm font-bold text-white">
-              {session.opponent.name}
-            </p>
-            <p className="ml-2 shrink-0 text-xs text-white/60">
-              Lv{session.opponent.recommendedLevel}
-            </p>
-          </div>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-white/60">
-            HP
-          </p>
-          <HpBar current={opponentHp} max={session.opponentMaxHp} color="danger" />
-        </div>
-
-        {/* Opponent sprite — right, 28% down — synced with OPP_SPRITE_TOP_PCT in sprites.ts (z-20) */}
-        <div className="absolute top-[28%] right-6 z-20">
-          <SpriteStage displaySize={opponentDisplaySize} contactShadow>
-            <CreatureSprite
-              ref={opponentSpriteRef}
-              descriptor={
-                showOpponentRecovery
-                  ? (getOpponentRecoverySpriteDescriptor(session.opponent.name) ?? getOpponentSpriteDescriptor(session.opponent.name))
-                  : getOpponentSpriteDescriptor(session.opponent.name)
-              }
-              displaySize={opponentDisplaySize}
-              flip={false}
-            />
-            <EffectsLayer ref={opponentEffectsRef} hitImpactUrl={hitImpactUrl ?? undefined} />
-          </SpriteStage>
-        </div>
-
-        {/* Player sprite — bottom-left, art faces right (z-20) */}
-        <div className="absolute bottom-4 left-6 z-20">
-          <SpriteStage displaySize={playerDisplaySize} contactShadow>
-            <CreatureSprite
-              ref={playerSpriteRef}
-              descriptor={getPlayerBattleSpriteDescriptor(session.companion.stage, session.companion.currentCondition)}
-              displaySize={playerDisplaySize}
-              flip={false}
-            />
-            <EffectsLayer ref={playerEffectsRef} hitImpactUrl={hitImpactUrl ?? undefined} />
-          </SpriteStage>
-        </div>
-
-        {/* Player HP panel — bottom-right, vertically centred on player sprite (z-10) */}
-        <div className="absolute right-4 bottom-10 z-10 w-44 max-sm:min-w-[10.25rem] max-sm:w-auto max-sm:max-w-[min(11rem,calc(100vw-3.5rem-128px))] rounded-xl border border-white/10 bg-[rgba(15,23,42,0.85)] px-3 py-2 shadow-sm max-sm:px-2.5">
-          <div className="flex min-w-0 items-baseline justify-between">
-            <p className="truncate text-sm font-bold text-white">
-              {session.companion.name}
-            </p>
-            <p className="ml-2 shrink-0 text-xs text-white/60">
-              Lv{session.companion.level}
-            </p>
-          </div>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-white/60">
-            HP
-          </p>
-          <HpBar current={playerHp} max={session.playerMaxHp} color="brand" />
-          <p className="mt-1 text-right text-xs tabular-nums text-white/70">
-            {playerHp} / {session.playerMaxHp}
-          </p>
-        </div>
-
-        </div>
-
-        {/* Command bar — stacked on arena; backdrop samples terrain + sprites below */}
-        <div className="absolute bottom-0 left-0 right-0 z-30 flex h-44 shrink-0 border-t border-white/10 bg-[rgb(15_23_42/0.72)] shadow-sm backdrop-blur-md backdrop-saturate-150">
-          {/* Text box — left */}
-          <div className="flex flex-1 items-center border-r border-white/10 px-5 py-4">
-            <p className="text-sm leading-relaxed text-white/90">
-              {lastEntry
-                ? lastEntry.message
-                : isActive
-                  ? `Round ${session.currentRound} — what will ${session.companion.name} do?`
-                  : null}
-            </p>
+          <div className="absolute top-[28%] right-6 z-20">
+            <SpriteStage displaySize={opponentDisplaySize} contactShadow>
+              <CreatureSprite
+                ref={opponentSpriteRef}
+                descriptor={
+                  showOpponentRecovery
+                    ? (getOpponentRecoverySpriteDescriptor(session.opponent.name) ??
+                        getOpponentSpriteDescriptor(session.opponent.name))
+                    : getOpponentSpriteDescriptor(session.opponent.name)
+                }
+                displaySize={opponentDisplaySize}
+                flip={false}
+              />
+              <EffectsLayer ref={opponentEffectsRef} hitImpactUrl={hitImpactUrl ?? undefined} />
+            </SpriteStage>
           </div>
 
-          {/* Action menu — right */}
-          <div className="flex w-44 shrink-0 flex-col justify-center gap-1 px-4 py-3">
-            {ACTION_LABELS.map((label) => {
-              const isEnabled = isActive && !isPending && !isAnimating
-              const isThisPending = pendingAction === label
-
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  disabled={!isEnabled}
-                  onClick={() => handleAction(label)}
-                  className={`rounded-lg px-3 py-3 text-left text-sm font-semibold transition-[filter,colors] ${
-                    isEnabled
-                      ? `${ACTION_BUTTON_CLASS[label].enabled} ${ACTION_BUTTON_CLASS[label].hover}`
-                      : 'bg-white/5 text-white/30 opacity-50'
-                  }`}
-                >
-                  {isThisPending ? `${label}…` : label}
-                </button>
-              )
-            })}
+          <div className="absolute bottom-4 left-6 z-20">
+            <SpriteStage displaySize={playerDisplaySize} contactShadow>
+              <CreatureSprite
+                ref={playerSpriteRef}
+                descriptor={getPlayerBattleSpriteDescriptor(
+                  session.companion.stage,
+                  session.companion.currentCondition,
+                )}
+                displaySize={playerDisplaySize}
+                flip={false}
+              />
+              <EffectsLayer ref={playerEffectsRef} hitImpactUrl={hitImpactUrl ?? undefined} />
+            </SpriteStage>
           </div>
+
+          <BattleHudCard className="right-4 bottom-10 max-sm:max-w-[min(11rem,calc(100vw-3.5rem-128px))]">
+            <div className="flex min-w-0 items-baseline justify-between">
+              <p className="truncate text-sm font-bold text-white">{session.companion.name}</p>
+              <p className="ml-2 shrink-0 text-xs text-white/60">Lv{session.companion.level}</p>
+            </div>
+            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-white/60">HP</p>
+            <BattleHudHpBar current={playerHp} max={session.playerMaxHp} variant="brand" />
+            <p className="mt-1 text-right text-xs tabular-nums text-white/70">
+              {playerHp} / {session.playerMaxHp}
+            </p>
+          </BattleHudCard>
         </div>
+
+        <BattleCommandBar
+          dialogue={dialogue}
+          isActive={isActive}
+          isPending={isPending}
+          isAnimating={isAnimating}
+          pendingAction={pendingAction}
+          onAction={handleAction}
+        />
       </div>
 
-      {/* ── Victory / Defeat modal ────────────────────────────────── */}
       {isCompleted && allEntriesShown ? (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center px-6 ${isWin ? 'bg-[rgba(5,150,105,0.2)]' : 'bg-black/50'}`}>
-          <div className="animate-modal-pop w-full max-w-sm rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 text-center shadow-xl">
-            <p
-              className={`text-4xl font-extrabold ${isWin ? 'text-[var(--app-success)]' : 'text-[var(--app-danger)]'}`}
-            >
-              {isWin ? 'Victory!' : 'Defeat...'}
-            </p>
-
-            <div className="mt-5 grid grid-cols-3 gap-2">
-              <div className="rounded-xl bg-[var(--app-surface-muted)] px-2 py-3">
-                <p className="text-xs text-[var(--app-text-muted)]">Rounds</p>
-                <p className="mt-1 font-semibold text-[var(--app-text-primary)]">
-                  {session.turnCount ?? '—'}
-                </p>
-              </div>
-              <div className="rounded-xl bg-[var(--app-surface-muted)] px-2 py-3">
-                <p className="text-xs text-[var(--app-text-muted)]">HP Left</p>
-                <p className="mt-1 font-semibold text-[var(--app-text-primary)]">
-                  {session.remainingHpPct ?? 0}%
-                </p>
-              </div>
-              <div className="rounded-xl bg-[var(--app-surface-muted)] px-2 py-3">
-                <p className="text-xs text-[var(--app-text-muted)]">XP</p>
-                <p className="mt-1 font-semibold text-[var(--app-text-primary)]">
-                  {session.rewardClaimed ? `+${session.xpAwarded}` : '—'}
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => navigate('/app/creature')}
-              className="mt-5 w-full rounded-xl bg-[var(--app-brand)] py-3 text-base font-semibold text-white transition-colors hover:bg-[var(--app-brand-hover)]"
-            >
-              Return to Companion
-            </button>
-          </div>
-        </div>
+        <BattleOutcomeModal
+          isWin={isWin}
+          turnCount={session.turnCount}
+          remainingHpPct={session.remainingHpPct}
+          rewardClaimed={session.rewardClaimed}
+          xpAwarded={session.xpAwarded}
+          onReturn={() => navigate('/app/creature')}
+        />
       ) : null}
     </div>
   )

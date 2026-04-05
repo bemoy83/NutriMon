@@ -8,6 +8,7 @@ import { startBattleRun } from '@/features/creature/api'
 import { useBattleHub } from '@/features/creature/useBattleHub'
 import { useProfileSummary } from '@/features/profile/useProfileSummary'
 import { getTodayInTimezone } from '@/lib/date'
+import { creatureStatBarFill } from '@/lib/creatureStatAccents'
 import { getPlayerSpriteDescriptor } from '@/lib/sprites'
 import type { BattleLikelyOutcome, BattleOpponent, CreatureCondition, ReadinessBand } from '@/types/domain'
 
@@ -182,9 +183,9 @@ export default function CreaturePage() {
               </p>
               <p className="mt-1 text-sm text-[var(--app-text-secondary)]">{getFormDescription(companion.currentCondition)}</p>
             </div>
-            <StatBar label="Strength Form" value={stats.strength} color="var(--app-coral)" />
-            <StatBar label="Resilience Form" value={stats.resilience} color="var(--app-brand)" />
-            <StatBar label="Momentum Form" value={stats.momentum} color="var(--app-warning)" />
+            <StatBar label="Strength Form" value={stats.strength} color={creatureStatBarFill.strength} />
+            <StatBar label="Resilience Form" value={stats.resilience} color={creatureStatBarFill.resilience} />
+            <StatBar label="Momentum Form" value={stats.momentum} color={creatureStatBarFill.momentum} />
             <div>
               <div className="mb-1 flex justify-between">
                 <span className="text-sm text-[var(--app-text-secondary)]">Vitality</span>
