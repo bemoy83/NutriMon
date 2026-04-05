@@ -96,10 +96,10 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
 // Platform PNGs are optional — null renders nothing for that slot.
 export interface PlatformStyle {
   width: number
-  left?: number
-  right?: number
-  top?: number
-  bottom?: number
+  left?: number | string
+  right?: number | string
+  top?: number | string
+  bottom?: number | string
 }
 
 export interface TerrainDescriptor {
@@ -131,13 +131,14 @@ const PLATFORM_SPEC = {
 } as const
 
 // Sprite layout constants — must stay in sync with BattlePage className values
-const PLAYER_LEFT         = 24  // left-6  (1.5 rem)
-const PLAYER_SIZE         = 128
-const PLAYER_FEET_FROM_BOT = 16  // bottom-4 (1 rem)
+const PLAYER_LEFT          = 24    // left-6  (1.5 rem)
+const PLAYER_SIZE          = 128
+const PLAYER_FEET_FROM_BOT = 16    // bottom-4 (1 rem)
 
-const OPP_RIGHT           = 24  // right-6
-const OPP_SIZE            = 128
-const OPP_FEET_FROM_TOP   = 16 + OPP_SIZE  // top-4 + sprite height = 144
+const OPP_RIGHT            = 24    // right-6
+const OPP_SIZE             = 128
+/** Opponent sprite top edge as a fraction of arena height. Synced with BattlePage top-[28%]. */
+export const OPP_SPRITE_TOP_PCT = 0.28
 
 /**
  * Computes the absolute CSS position for the player platform image so the oval
@@ -158,14 +159,25 @@ export function computePlayerPlatformStyle(renderedWidth: number): PlatformStyle
  * Computes the absolute CSS position for the opponent platform image so the oval
  * centre sits directly beneath the opponent sprite, regardless of rendered width.
  * Only valid for spec-conforming images (512×240, oval at x=297 y=97).
+ *
+ * `spriteTopPct` must match the `top-[X%]` class on the opponent sprite div in BattlePage.
+ * `spriteSize`   must match the displaySize passed to that sprite's SpriteStage.
  */
-export function computeOpponentPlatformStyle(renderedWidth: number): PlatformStyle {
+export function computeOpponentPlatformStyle(
+  renderedWidth: number,
+  spriteTopPct: number = OPP_SPRITE_TOP_PCT,
+  spriteSize: number   = OPP_SIZE,
+): PlatformStyle {
   const renderedH = Math.round(renderedWidth * PLATFORM_SPEC.nativeH / PLATFORM_SPEC.nativeW)
-  const spriteCenterFromRight = OPP_RIGHT + OPP_SIZE / 2
+  const spriteCenterFromRight = OPP_RIGHT + spriteSize / 2
+  // Platform top = sprite feet (% + spriteSizePx) minus the surface offset within the image.
+  // Expressed as calc() so it resolves correctly on any arena height.
+  const surfacePx = Math.round(PLATFORM_SPEC.ovalSurfaceY * renderedH)
+  const topOffset = spriteSize - surfacePx
   return {
     width: renderedWidth,
     right: Math.round(spriteCenterFromRight - (1 - PLATFORM_SPEC.ovalCenterX) * renderedWidth),
-    top:   Math.round(OPP_FEET_FROM_TOP - PLATFORM_SPEC.ovalSurfaceY * renderedH),
+    top:   `calc(${spriteTopPct * 100}% + ${topOffset}px)`,
   }
 }
 
@@ -181,7 +193,7 @@ const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
     playerPlatformUrl:     s('/terrain/arena_1_player_platform.png'),
     playerPlatformStyle:   computePlayerPlatformStyle(320),
     opponentPlatformUrl:   s('/terrain/arena_1_opponent_platform.png'),
-    opponentPlatformStyle: computeOpponentPlatformStyle(224),
+    opponentPlatformStyle: computeOpponentPlatformStyle(224, OPP_SPRITE_TOP_PCT),
   },
 }
 

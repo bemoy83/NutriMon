@@ -220,8 +220,8 @@ export default function BattlePage() {
           />
         )}
 
-        {/* Opponent HP panel — top-left, vertically centred on opponent sprite (z-10) */}
-        <div className="absolute top-10 left-4 z-10 w-44 max-sm:min-w-[10.25rem] max-sm:w-auto max-sm:max-w-[calc(100vw-3.5rem-128px)] rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 shadow-sm max-sm:px-2.5">
+        {/* Opponent HP panel — top-left, aligned with opponent sprite top (z-10) */}
+        <div className="absolute left-4 z-10 w-44 max-sm:min-w-[10.25rem] max-sm:w-auto max-sm:max-w-[calc(100vw-3.5rem-128px)] rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 shadow-sm max-sm:px-2.5" style={{ top: 'calc(28% - 8px)' }}>
           <div className="flex min-w-0 items-baseline justify-between">
             <p className="truncate text-sm font-bold text-[var(--app-text-primary)]">
               {session.opponent.name}
@@ -236,9 +236,9 @@ export default function BattlePage() {
           <HpBar current={opponentHp} max={session.opponentMaxHp} color="danger" />
         </div>
 
-        {/* Opponent sprite — top-right, art faces left (z-20) */}
-        <div className="absolute top-4 right-6 z-20">
-          <SpriteStage displaySize={128}>
+        {/* Opponent sprite — right, 28% down — synced with OPP_SPRITE_TOP_PCT in sprites.ts (z-20) */}
+        <div className="absolute top-[28%] right-6 z-20">
+          <SpriteStage displaySize={128} contactShadow>
             <CreatureSprite
               ref={opponentSpriteRef}
               descriptor={
@@ -255,7 +255,7 @@ export default function BattlePage() {
 
         {/* Player sprite — bottom-left, art faces right (z-20) */}
         <div className="absolute bottom-4 left-6 z-20">
-          <SpriteStage displaySize={128}>
+          <SpriteStage displaySize={128} contactShadow>
             <CreatureSprite
               ref={playerSpriteRef}
               descriptor={getPlayerBattleSpriteDescriptor(session.companion.stage, session.companion.currentCondition)}
