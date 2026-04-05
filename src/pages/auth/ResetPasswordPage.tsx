@@ -76,12 +76,12 @@ export default function ResetPasswordPage() {
               placeholder="you@example.com"
             />
             {errors.email && (
-              <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>
+              <p className="text-[var(--app-danger)] text-xs mt-1">{errors.email.message}</p>
             )}
           </div>
 
           {serverError && (
-            <p className="text-red-400 text-sm text-center">{serverError}</p>
+            <p className="text-[var(--app-danger)] text-sm text-center">{serverError}</p>
           )}
 
           <button

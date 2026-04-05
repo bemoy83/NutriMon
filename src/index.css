@@ -26,10 +26,16 @@
   /* Semantic */
   --app-success: #059669;
   --app-success-hover: #10B981;
+  --app-success-soft: #DCFCE7;
+  --app-success-soft-text: #14532D;
   --app-warning: #F59E0B;
+  --app-warning-soft: #FEF3C7;
+  --app-warning-soft-text: #92400E;
   --app-danger: #EF4444;
   --app-danger-soft: rgb(254 226 226 / 0.9);
   --app-danger-border: #FECACA;
+  --app-muted-soft: #F1F5F9;
+  --app-muted-soft-text: #64748B;
 
   /* Nav */
   --app-info-soft: rgb(255 255 255 / 0.95);
@@ -184,7 +190,7 @@ select {
 .app-input:focus {
   outline: none;
   border-color: var(--app-focus);
-  box-shadow: 0 0 0 2px rgb(99 102 241 / 0.3);
+  box-shadow: 0 0 0 2px rgb(6 182 212 / 0.3);
 }
 
 .app-button-primary,
@@ -201,7 +207,7 @@ select {
 
 .app-button-primary {
   background: var(--app-brand);
-  color: var(--app-text-primary);
+  color: #ffffff;
 }
 
 .app-button-primary:hover {

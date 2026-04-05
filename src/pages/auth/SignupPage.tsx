@@ -76,7 +76,7 @@ export default function SignupPage() {
               placeholder="you@example.com"
             />
             {errors.email && (
-              <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>
+              <p className="text-[var(--app-danger)] text-xs mt-1">{errors.email.message}</p>
             )}
           </div>
 
@@ -93,7 +93,7 @@ export default function SignupPage() {
               placeholder="••••••••"
             />
             {errors.password && (
-              <p className="text-red-400 text-xs mt-1">{errors.password.message}</p>
+              <p className="text-[var(--app-danger)] text-xs mt-1">{errors.password.message}</p>
             )}
           </div>
 
@@ -110,12 +110,12 @@ export default function SignupPage() {
               placeholder="••••••••"
             />
             {errors.confirmPassword && (
-              <p className="text-red-400 text-xs mt-1">{errors.confirmPassword.message}</p>
+              <p className="text-[var(--app-danger)] text-xs mt-1">{errors.confirmPassword.message}</p>
             )}
           </div>
 
           {serverError && (
-            <p className="text-red-400 text-sm text-center">{serverError}</p>
+            <p className="text-[var(--app-danger)] text-sm text-center">{serverError}</p>
           )}
 
           <button
