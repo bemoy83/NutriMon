@@ -33,6 +33,28 @@ const ACTION_MAP: Record<ActionLabel, BattleAction> = {
   Focus: 'focus',
 }
 
+// Button colors align with companion stat bars (CreaturePage) and battle RPC semantics:
+// • Attack — strength is the larger damage coeff; momentum also feeds damage/crit (submit_battle_action + battle_compute_damage).
+// • Defend — player resilience scales incoming damage when blocking (v_defend_mult from snapshot.resilience).
+// • Focus — sets momentum_boost consumed on the next attack; initiative rolls use momentum.
+const ACTION_BUTTON_CLASS: Record<
+  ActionLabel,
+  { enabled: string; hover: string }
+> = {
+  Attack: {
+    enabled: 'bg-[var(--app-coral)] text-white',
+    hover: 'hover:brightness-95 active:brightness-90',
+  },
+  Defend: {
+    enabled: 'bg-[var(--app-brand)] text-white',
+    hover: 'hover:bg-[var(--app-brand-hover)]',
+  },
+  Focus: {
+    enabled: 'bg-[var(--app-warning)] text-slate-900',
+    hover: 'hover:brightness-95 active:brightness-90',
+  },
+}
+
 function HpBar({ current, max, color }: { current: number; max: number; color: 'brand' | 'danger' }) {
   const pct = max > 0 ? Math.round((current / max) * 100) : 0
   return (
@@ -212,6 +234,8 @@ export default function BattlePage() {
     <div className="flex h-screen flex-col overflow-hidden bg-[var(--app-bg)]">
       {/* ── Arena ─────────────────────────────────────────────────── */}
       <div ref={arenaRef} className="relative flex-1 overflow-hidden" style={{ background: arenaBackground }}>
+        {/* Gameplay fits above command bar (h-44 = 11rem); bar overlays arena so glass blurs terrain */}
+        <div className="absolute inset-x-0 top-0 bottom-44">
 
         {/* ── Terrain layer (z-0) ─────────────────────────────────── */}
         {/* Player platform — style from terrain registry centers oval under player sprite */}
@@ -299,46 +323,45 @@ export default function BattlePage() {
             {playerHp} / {session.playerMaxHp}
           </p>
         </div>
-      </div>
 
-      {/* ── Divider ───────────────────────────────────────────────── */}
-      <div className="h-px shrink-0 bg-white/10" />
-
-      {/* ── Bottom UI ─────────────────────────────────────────────── */}
-      <div className="flex shrink-0 bg-[#0F172A]" style={{ height: '11rem' }}>
-        {/* Text box — left */}
-        <div className="flex flex-1 items-center border-r border-white/10 px-5 py-4">
-          <p className="text-sm leading-relaxed text-white/90">
-            {lastEntry
-              ? lastEntry.message
-              : isActive
-                ? `Round ${session.currentRound} — what will ${session.companion.name} do?`
-                : null}
-          </p>
         </div>
 
-        {/* Action menu — right */}
-        <div className="flex w-44 shrink-0 flex-col justify-center gap-1 px-4 py-3">
-          {ACTION_LABELS.map((label) => {
-            const isEnabled = isActive && !isPending && !isAnimating
-            const isThisPending = pendingAction === label
+        {/* Command bar — stacked on arena; backdrop samples terrain + sprites below */}
+        <div className="absolute bottom-0 left-0 right-0 z-30 flex h-44 shrink-0 border-t border-white/10 bg-[rgb(15_23_42/0.72)] shadow-sm backdrop-blur-md backdrop-saturate-150">
+          {/* Text box — left */}
+          <div className="flex flex-1 items-center border-r border-white/10 px-5 py-4">
+            <p className="text-sm leading-relaxed text-white/90">
+              {lastEntry
+                ? lastEntry.message
+                : isActive
+                  ? `Round ${session.currentRound} — what will ${session.companion.name} do?`
+                  : null}
+            </p>
+          </div>
 
-            return (
-              <button
-                key={label}
-                type="button"
-                disabled={!isEnabled}
-                onClick={() => handleAction(label)}
-                className={`rounded-lg px-3 py-3 text-left text-sm font-semibold transition-colors ${
-                  isEnabled
-                    ? 'bg-[var(--app-brand)] text-white hover:bg-[var(--app-brand-hover)]'
-                    : 'bg-white/5 text-white/30 opacity-50'
-                }`}
-              >
-                {isThisPending ? `${label}…` : label}
-              </button>
-            )
-          })}
+          {/* Action menu — right */}
+          <div className="flex w-44 shrink-0 flex-col justify-center gap-1 px-4 py-3">
+            {ACTION_LABELS.map((label) => {
+              const isEnabled = isActive && !isPending && !isAnimating
+              const isThisPending = pendingAction === label
+
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  disabled={!isEnabled}
+                  onClick={() => handleAction(label)}
+                  className={`rounded-lg px-3 py-3 text-left text-sm font-semibold transition-[filter,colors] ${
+                    isEnabled
+                      ? `${ACTION_BUTTON_CLASS[label].enabled} ${ACTION_BUTTON_CLASS[label].hover}`
+                      : 'bg-white/5 text-white/30 opacity-50'
+                  }`}
+                >
+                  {isThisPending ? `${label}…` : label}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 

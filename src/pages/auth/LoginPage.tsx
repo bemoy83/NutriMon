@@ -40,7 +40,6 @@ export default function LoginPage() {
     <AuthShell
       title="NutriMon"
       subtitle="Sign in to your account"
-      meta="Confirm your email first if you just created an account."
       footer={
         <div className="space-y-2">
           <p className="text-sm text-[var(--app-text-muted)]">

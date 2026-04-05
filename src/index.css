@@ -2,7 +2,7 @@
 
 :root {
   /* Backgrounds */
-  --app-bg: #F8FAFC;
+  --app-bg: #EDF2F7;
   --app-surface: #FFFFFF;
   --app-surface-muted: rgb(241 245 249 / 0.7);
   --app-surface-elevated: #F1F5F9;
@@ -14,8 +14,8 @@
   --app-text-subtle: #CBD5E1;
 
   /* Borders */
-  --app-border: #E2E8F0;
-  --app-border-muted: #F1F5F9;
+  --app-border: #CBD5E1;
+  --app-border-muted: #E2E8F0;
 
   /* Brand / accent (teal) */
   --app-focus: #06B6D4;
@@ -40,6 +40,9 @@
   /* Nav */
   --app-info-soft: rgb(255 255 255 / 0.95);
   --app-nav-bg: rgb(255 255 255 / 0.95);
+
+  /* Creature / accent (strength bar, etc.) */
+  --app-coral: #E86A5C;
 
   /* Macronutrient colors */
   --app-macro-protein: #8B5CF6;

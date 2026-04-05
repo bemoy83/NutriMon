@@ -182,7 +182,7 @@ export default function CreaturePage() {
               </p>
               <p className="mt-1 text-sm text-[var(--app-text-secondary)]">{getFormDescription(companion.currentCondition)}</p>
             </div>
-            <StatBar label="Strength Form" value={stats.strength} color="var(--app-warning)" />
+            <StatBar label="Strength Form" value={stats.strength} color="var(--app-coral)" />
             <StatBar label="Resilience Form" value={stats.resilience} color="var(--app-brand)" />
             <StatBar label="Momentum Form" value={stats.momentum} color="var(--app-warning)" />
             <div>
