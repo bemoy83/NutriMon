@@ -148,13 +148,19 @@ export default function DailyLogHeader({
           {/* Center text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span
+              className="text-[10px] font-medium leading-none mb-0.5"
+              style={{ color: progressPct >= 100 ? 'var(--app-danger)' : 'var(--app-text-muted)' }}
+            >
+              {remaining < 0 ? 'over' : 'left'}
+            </span>
+            <span
               className="text-xl font-bold leading-none"
               style={{ color: progressPct >= 100 ? 'var(--app-danger)' : 'var(--app-text-primary)' }}
             >
               {Math.abs(remaining)}
             </span>
-            <span className="text-xs mt-0.5" style={{ color: 'var(--app-text-muted)' }}>
-              {remaining < 0 ? 'over' : 'remaining'}
+            <span className="text-[10px] mt-0.5" style={{ color: 'var(--app-text-muted)' }}>
+              kcal
             </span>
           </div>
         </div>

@@ -167,6 +167,9 @@ export default function CreaturePage() {
                 style={{ width: `${Math.min((companion.xp % 100), 100)}%` }}
               />
             </div>
+            <p className="mt-1 text-right text-xs text-[var(--app-text-muted)]">
+              {companion.xp % 100} / 100 to next level
+            </p>
           </div>
         </div>
 
@@ -179,7 +182,7 @@ export default function CreaturePage() {
               </p>
               <p className="mt-1 text-sm text-[var(--app-text-secondary)]">{getFormDescription(companion.currentCondition)}</p>
             </div>
-            <StatBar label="Strength Form" value={stats.strength} color="var(--app-danger)" />
+            <StatBar label="Strength Form" value={stats.strength} color="var(--app-warning)" />
             <StatBar label="Resilience Form" value={stats.resilience} color="var(--app-brand)" />
             <StatBar label="Momentum Form" value={stats.momentum} color="var(--app-warning)" />
             <div>
@@ -208,11 +211,6 @@ export default function CreaturePage() {
             <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Battle Readiness</p>
             <p className="mt-1 text-sm text-[var(--app-text-secondary)]">Locked battle prep for {battleDate}</p>
           </div>
-          {battleHubQuery.data?.snapshot ? (
-            <div className="rounded-full bg-[var(--app-surface-muted)] px-3 py-1 text-sm font-semibold capitalize text-[var(--app-text-primary)]">
-              Readiness: {battleHubQuery.data.snapshot.readinessBand}
-            </div>
-          ) : null}
         </div>
 
         {battleHubQuery.isLoading ? (
@@ -226,16 +224,6 @@ export default function CreaturePage() {
           </div>
         ) : battleHubQuery.data?.snapshot ? (
           <>
-            <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-              <div className="rounded-xl bg-[var(--app-surface-muted)] px-3 py-2">
-                <p className="text-xs text-[var(--app-text-muted)]">Readiness</p>
-                <p className="font-semibold text-[var(--app-text-primary)]">{battleHubQuery.data.snapshot.readinessScore}</p>
-              </div>
-              <div className="rounded-xl bg-[var(--app-surface-muted)] px-3 py-2 capitalize">
-                <p className="text-xs text-[var(--app-text-muted)]">Current Form</p>
-                <p className="font-semibold text-[var(--app-text-primary)]">{battleHubQuery.data.snapshot.condition}</p>
-              </div>
-            </div>
             <div className="mt-4 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -313,17 +301,17 @@ export default function CreaturePage() {
                         </span>
                       ) : null}
                       {isActiveOpponent ? (
-                        <span className="rounded-full bg-[var(--app-warning-soft,var(--app-brand-soft))] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--app-warning,var(--app-brand))]">
+                        <span className="rounded-full bg-[var(--app-warning-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--app-warning-soft-text)]">
                           In progress
                         </span>
                       ) : null}
                       {opponent.isDefeated ? (
-                        <span className="rounded-full bg-[var(--app-success-soft,var(--app-brand-soft))] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--app-success,var(--app-brand))]">
+                        <span className="rounded-full bg-[var(--app-success-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--app-success-soft-text)]">
                           Defeated
                         </span>
                       ) : null}
                       {isLockedByProgression ? (
-                        <span className="rounded-full bg-[var(--app-surface)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--app-text-muted)]">
+                        <span className="rounded-full bg-[var(--app-muted-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--app-muted-soft-text)]">
                           Locked
                         </span>
                       ) : null}

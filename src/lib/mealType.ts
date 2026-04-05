@@ -7,6 +7,7 @@ export type MealTypeTheme = {
   divider: string
   pillActiveBg: string
   pillActiveText: string
+  accent: string
 }
 
 const MEAL_TYPE_THEMES: Record<MealType, MealTypeTheme | null> = {
@@ -16,6 +17,7 @@ const MEAL_TYPE_THEMES: Record<MealType, MealTypeTheme | null> = {
     divider: 'rgba(0,0,0,0.08)',
     pillActiveBg: 'var(--app-surface-amber)',
     pillActiveText: 'var(--app-surface-amber-text)',
+    accent: '#F59E0B',
   },
   Lunch: {
     bg: 'var(--app-surface-green)',
@@ -23,6 +25,7 @@ const MEAL_TYPE_THEMES: Record<MealType, MealTypeTheme | null> = {
     divider: 'rgba(0,0,0,0.08)',
     pillActiveBg: 'var(--app-surface-green)',
     pillActiveText: 'var(--app-surface-green-text)',
+    accent: '#16A34A',
   },
   Dinner: {
     bg: 'var(--app-surface-blue)',
@@ -30,6 +33,7 @@ const MEAL_TYPE_THEMES: Record<MealType, MealTypeTheme | null> = {
     divider: 'rgba(0,0,0,0.08)',
     pillActiveBg: 'var(--app-surface-blue)',
     pillActiveText: 'var(--app-surface-blue-text)',
+    accent: '#3B82F6',
   },
   Snack: {
     bg: 'var(--app-surface-purple)',
@@ -37,6 +41,7 @@ const MEAL_TYPE_THEMES: Record<MealType, MealTypeTheme | null> = {
     divider: 'rgba(0,0,0,0.08)',
     pillActiveBg: 'var(--app-surface-purple)',
     pillActiveText: 'var(--app-surface-purple-text)',
+    accent: '#9333EA',
   },
   Other: null,
 }
