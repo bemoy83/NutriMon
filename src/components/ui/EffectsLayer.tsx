@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 
 export interface EffectsLayerHandle {
   showDamageNumber(value: number, isCrit: boolean): void
@@ -38,6 +38,10 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
     const [crits, setCrits] = useState<CritBadge[]>([])
     const [impacts, setImpacts] = useState<HitImpact[]>([])
     const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+
+    useEffect(() => {
+      return () => timersRef.current.forEach(clearTimeout)
+    }, [])
 
     useImperativeHandle(ref, () => ({
       showDamageNumber(value, isCrit) {
