@@ -3,6 +3,7 @@ import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 export interface EffectsLayerHandle {
   showDamageNumber(value: number, isCrit: boolean): void
   showCritBadge(): void
+  showHitImpact(): void
 }
 
 interface FloatingNumber {
@@ -15,15 +16,27 @@ interface CritBadge {
   id: number
 }
 
+interface HitImpact {
+  id: number
+}
+
+interface EffectsLayerProps {
+  /** URL of the hit impact PNG. If omitted, showHitImpact() is a no-op. */
+  hitImpactUrl?: string
+}
+
 let _id = 0
 function nextId() {
   return ++_id
 }
 
-const EffectsLayer = forwardRef<EffectsLayerHandle>(
-  function EffectsLayer(_props, ref) {
+const IMPACT_DURATION_MS = 350
+
+const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
+  function EffectsLayer({ hitImpactUrl }, ref) {
     const [numbers, setNumbers] = useState<FloatingNumber[]>([])
     const [crits, setCrits] = useState<CritBadge[]>([])
+    const [impacts, setImpacts] = useState<HitImpact[]>([])
     const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
 
     useImperativeHandle(ref, () => ({
@@ -41,6 +54,15 @@ const EffectsLayer = forwardRef<EffectsLayerHandle>(
         const t = setTimeout(() => {
           setCrits((prev) => prev.filter((c) => c.id !== id))
         }, 900)
+        timersRef.current.push(t)
+      },
+      showHitImpact() {
+        if (!hitImpactUrl) return
+        const id = nextId()
+        setImpacts((prev) => [...prev, { id }])
+        const t = setTimeout(() => {
+          setImpacts((prev) => prev.filter((h) => h.id !== id))
+        }, IMPACT_DURATION_MS)
         timersRef.current.push(t)
       },
     }))
@@ -75,6 +97,26 @@ const EffectsLayer = forwardRef<EffectsLayerHandle>(
           >
             {n.value}
           </div>
+        ))}
+
+        {/* Hit impact PNG */}
+        {hitImpactUrl && impacts.map((h) => (
+          <img
+            key={h.id}
+            src={hitImpactUrl}
+            alt=""
+            draggable={false}
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              width: 96,
+              height: 96,
+              objectFit: 'contain',
+              animation: `hit-impact ${IMPACT_DURATION_MS}ms ease-out forwards`,
+              pointerEvents: 'none',
+            }}
+          />
         ))}
 
         {/* Crit badge */}

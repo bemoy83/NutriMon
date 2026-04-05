@@ -7,7 +7,7 @@ import SpriteStage from '@/components/ui/SpriteStage'
 import EffectsLayer from '@/components/ui/EffectsLayer'
 import type { EffectsLayerHandle } from '@/components/ui/EffectsLayer'
 import { useBattleRun, useSubmitBattleAction } from '@/features/creature/useBattleRun'
-import { getPlayerBattleSpriteDescriptor, getOpponentSpriteDescriptor, getOpponentRecoverySpriteDescriptor, getArenaTerrain } from '@/lib/sprites'
+import { getPlayerBattleSpriteDescriptor, getOpponentSpriteDescriptor, getOpponentRecoverySpriteDescriptor, getArenaTerrain, getHitImpactUrl } from '@/lib/sprites'
 import { useTerrainBackground } from '@/hooks/useTerrainBackground'
 import type { BattleAction, BattleLogEntry } from '@/types/domain'
 
@@ -104,11 +104,13 @@ export default function BattlePage() {
             if (entry.target === 'player') {
               playerSpriteRef.current?.triggerAnimation('hurt', 500)
               playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
+              playerEffectsRef.current?.showHitImpact()
               if (entry.crit) playerEffectsRef.current?.showCritBadge()
               triggerArenaShake()
             } else if (entry.target === 'opponent') {
               opponentSpriteRef.current?.triggerAnimation('hurt', 500)
               opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
+              opponentEffectsRef.current?.showHitImpact()
               if (entry.crit) opponentEffectsRef.current?.showCritBadge()
               triggerArenaShake()
             }
@@ -160,6 +162,7 @@ export default function BattlePage() {
   }
 
   const terrain = getArenaTerrain(session.opponent.arenaId)
+  const hitImpactUrl = getHitImpactUrl()
 
   // Derive current HP by replaying targetHpAfter from displayed log
   let opponentHp = session.opponentMaxHp
@@ -249,7 +252,7 @@ export default function BattlePage() {
               displaySize={128}
               flip={false}
             />
-            <EffectsLayer ref={opponentEffectsRef} />
+            <EffectsLayer ref={opponentEffectsRef} hitImpactUrl={hitImpactUrl ?? undefined} />
           </SpriteStage>
         </div>
 
@@ -262,7 +265,7 @@ export default function BattlePage() {
               displaySize={128}
               flip={false}
             />
-            <EffectsLayer ref={playerEffectsRef} />
+            <EffectsLayer ref={playerEffectsRef} hitImpactUrl={hitImpactUrl ?? undefined} />
           </SpriteStage>
         </div>
 

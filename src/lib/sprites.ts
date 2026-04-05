@@ -51,13 +51,23 @@ const PLAYER_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
 const PLAYER_BATTLE_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
   'baby_steady': { url: s('/sprites/player_battle/baby_steady.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // 'baby_thriving':       { url: s('/sprites/player_battle/baby_thriving.png'),       nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
-  // 'baby_recovering':     { url: s('/sprites/player_battle/baby_recovering.png'),     nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
+  'baby_recovering': { url: s('/sprites/player_battle/baby_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // 'adult_steady':        { url: s('/sprites/player_battle/adult_steady.png'),        nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
   // 'adult_thriving':      { url: s('/sprites/player_battle/adult_thriving.png'),      nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
   // 'adult_recovering':    { url: s('/sprites/player_battle/adult_recovering.png'),    nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
   // 'champion_steady':     { url: s('/sprites/player_battle/champion_steady.png'),     nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
   // 'champion_thriving':   { url: s('/sprites/player_battle/champion_thriving.png'),   nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
   // 'champion_recovering': { url: s('/sprites/player_battle/champion_recovering.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
+}
+
+// ── Hit impact registry ──────────────────────────────────────────────────────
+// Drop a PNG into public/sprites/effects/ and set the URL below.
+// null = no impact PNG registered yet (showHitImpact() becomes a no-op).
+const HIT_IMPACT_URL: string | null = s('/sprites/effects/hit_impact.png')
+
+/** Returns the hit impact PNG URL, or null if none is registered. */
+export function getHitImpactUrl(): string | null {
+  return HIT_IMPACT_URL
 }
 
 // ── Opponent sprite registry ─────────────────────────────────────────────────
