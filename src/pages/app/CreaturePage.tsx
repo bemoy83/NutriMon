@@ -9,8 +9,15 @@ import { useBattleHub } from '@/features/creature/useBattleHub'
 import { useProfileSummary } from '@/features/profile/useProfileSummary'
 import { getTodayInTimezone } from '@/lib/date'
 import { creatureStatBarFill } from '@/lib/creatureStatAccents'
-import { getPlayerSpriteDescriptor } from '@/lib/sprites'
+import { getPlayerSpriteDescriptor, getOpponentSpriteDescriptor } from '@/lib/sprites'
 import type { BattleLikelyOutcome, BattleOpponent, CreatureCondition, ReadinessBand } from '@/types/domain'
+
+function formatDefeatedVictorySummary(opponent: BattleOpponent): string | null {
+  if (opponent.rewardedWinTurnCount == null) return null
+  const hp = opponent.rewardedWinRemainingHpPct ?? 0
+  const xp = opponent.rewardedWinXpAwarded ?? 0
+  return `${opponent.rewardedWinTurnCount} turns | HP ${hp}% | XP ${xp}`
+}
 
 function StatBar({ label, value, color }: { label: string; value: number; color: string }) {
   return (
@@ -162,7 +169,7 @@ export default function CreaturePage() {
               <span className="text-[var(--app-text-secondary)]">XP</span>
               <span className="font-semibold text-[var(--app-text-primary)]">{companion.xp}</span>
             </div>
-            <div className="h-2.5 overflow-hidden rounded-full bg-white/70">
+            <div className="h-2.5 overflow-hidden rounded-full bg-[var(--app-border)]">
               <div
                 className="h-full rounded-full bg-[var(--app-brand)] transition-all duration-500"
                 style={{ width: `${Math.min((companion.xp % 100), 100)}%` }}
@@ -225,7 +232,7 @@ export default function CreaturePage() {
           </div>
         ) : battleHubQuery.data?.snapshot ? (
           <>
-            <div className="mt-4 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
+            <div className="mt-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Readiness</p>
@@ -245,7 +252,7 @@ export default function CreaturePage() {
               </p>
             </div>
             {battleHubQuery.data.recommendedOpponent ? (
-              <div className="mt-4 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
+              <div className="mt-5 border-t border-[var(--app-border-muted)] pt-4">
                 <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Recommended Opponent</p>
                 <p className="mt-2 text-base font-semibold text-[var(--app-text-primary)]">
                   {battleHubQuery.data.recommendedOpponent.name}
@@ -260,7 +267,7 @@ export default function CreaturePage() {
             ) : null}
           </>
         ) : (
-          <div className="mt-4 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
+          <div className="mt-4">
             <p className="text-sm text-[var(--app-text-primary)]">No battle snapshot is locked yet.</p>
             <p className="mt-1 text-xs text-[var(--app-text-muted)]">
               Finalize the previous day to prepare today&apos;s battle.
@@ -269,12 +276,12 @@ export default function CreaturePage() {
         )}
       </div>
 
-      <div className="app-card mt-4 p-5">
+      <div className="mt-4">
         <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Arena 1 Opponents</p>
         {battleActionError ? (
           <p className="mt-3 text-sm text-[var(--app-danger)]">{battleActionError}</p>
         ) : null}
-        <div className="mt-4 space-y-3">
+        <div className="mt-3 space-y-3">
           {(battleHubQuery.data?.arenaOpponents ?? []).map((opponent) => {
             const isRecommended = battleHubQuery.data?.recommendedOpponent?.opponentId === opponent.id
             const isActiveOpponent = activeBattleRun?.opponentId === opponent.id
@@ -282,35 +289,39 @@ export default function CreaturePage() {
             const isStarting = startingOpponentId === opponent.id
             const isLockedByProgression = !opponent.isChallengeable
             const isDisabled = !battleHubQuery.data?.snapshot || isStarting || hasOtherActive || isLockedByProgression
+            const victorySummary = opponent.isDefeated ? formatDefeatedVictorySummary(opponent) : null
             const buttonLabel = isActiveOpponent
-              ? 'Resume battle'
+              ? 'Resume'
               : isLockedByProgression
                 ? 'Locked'
                 : isStarting
                   ? 'Starting…'
                   : 'Challenge'
 
+            const oppSprite = getOpponentSpriteDescriptor(opponent.name)
+
             return (
-              <div key={opponent.id} className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
+              <div key={opponent.id} className="app-card p-4" style={isActiveOpponent ? { borderColor: 'var(--app-warning)', borderWidth: '2px' } : undefined}>
                 <div className="flex items-start justify-between gap-3">
-                  <div>
+                  {oppSprite ? (
+                    <img
+                      src={oppSprite.url}
+                      alt=""
+                      aria-hidden="true"
+                      className="sprite-pixel-art mt-0.5 flex-shrink-0"
+                      style={{
+                        width: 40, height: 40,
+                        filter: (opponent.isDefeated || isActiveOpponent)
+                          ? 'none'
+                          : isLockedByProgression
+                            ? 'brightness(0) opacity(0.12)'
+                            : 'brightness(0) opacity(0.35)',
+                      }}
+                    />
+                  ) : null}
+                  <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-semibold text-[var(--app-text-primary)]">{opponent.name}</p>
-                      {isRecommended ? (
-                        <span className="rounded-full bg-[var(--app-brand-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--app-brand)]">
-                          Recommended
-                        </span>
-                      ) : null}
-                      {isActiveOpponent ? (
-                        <span className="rounded-full bg-[var(--app-warning-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--app-warning-soft-text)]">
-                          In progress
-                        </span>
-                      ) : null}
-                      {opponent.isDefeated ? (
-                        <span className="rounded-full bg-[var(--app-success-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--app-success-soft-text)]">
-                          Defeated
-                        </span>
-                      ) : null}
                       {isLockedByProgression ? (
                         <span className="rounded-full bg-[var(--app-muted-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--app-muted-soft-text)]">
                           Locked
@@ -320,6 +331,9 @@ export default function CreaturePage() {
                     <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
                       {opponent.archetype} | Level {opponent.recommendedLevel}
                     </p>
+                    {victorySummary ? (
+                      <p className="mt-1 text-xs text-[var(--app-text-secondary)]">{victorySummary}</p>
+                    ) : null}
                     {opponent.lockReason ? (
                       <p className="mt-2 text-xs text-[var(--app-text-muted)]">{opponent.lockReason}</p>
                     ) : null}
@@ -328,7 +342,8 @@ export default function CreaturePage() {
                     type="button"
                     onClick={() => handleChallenge(opponent)}
                     disabled={isDisabled}
-                    className="rounded-xl bg-[var(--app-brand)] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--app-brand-hover)] disabled:opacity-50"
+                    className="rounded-xl px-3 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50"
+                    style={{ background: isActiveOpponent ? 'var(--app-warning)' : 'var(--app-brand)' }}
                   >
                     {buttonLabel}
                   </button>
@@ -338,32 +353,6 @@ export default function CreaturePage() {
           })}
           {(battleHubQuery.data?.arenaOpponents.length ?? 0) === 0 ? (
             <EmptyState title="No Arena 1 opponents available right now." className="py-2" />
-          ) : null}
-        </div>
-      </div>
-
-      <div className="app-card mt-4 p-5">
-        <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Today&apos;s Battle History</p>
-        <div className="mt-4 space-y-3">
-          {(battleHubQuery.data?.battleHistory ?? []).map((battleRun) => (
-            <div key={battleRun.id} className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold capitalize text-[var(--app-text-primary)]">
-                    {battleRun.opponent?.name ?? 'Opponent'} | {battleRun.outcome}
-                  </p>
-                  <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
-                    {battleRun.turnCount ? `${battleRun.turnCount} turns` : 'Pending'} | HP {battleRun.remainingHpPct ?? 0}% | XP {battleRun.xpAwarded}
-                  </p>
-                </div>
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[var(--app-text-secondary)]">
-                  {battleRun.rewardClaimed ? 'Rewarded' : battleRun.outcome === 'win' ? 'Practice' : 'No reward'}
-                </span>
-              </div>
-            </div>
-          ))}
-          {(battleHubQuery.data?.battleHistory.length ?? 0) === 0 ? (
-            <EmptyState title="No battles run for today yet." className="py-2" />
           ) : null}
         </div>
       </div>

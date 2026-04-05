@@ -288,6 +288,10 @@ export interface BattleOpponent {
   isActive: boolean
   isDefeated: boolean
   isChallengeable: boolean
+  /** First XP-rewarding win vs this opponent (for defeated-card summary; practice wins omitted). */
+  rewardedWinTurnCount: number | null
+  rewardedWinRemainingHpPct: number | null
+  rewardedWinXpAwarded: number | null
   requiredPreviousOpponentId: string | null
   requiredPreviousOpponentName: string | null
   lockReason: string | null

@@ -441,6 +441,9 @@ export interface BattleOpponentRow {
   is_active: boolean
   is_defeated?: boolean
   is_challengeable?: boolean
+  rewarded_win_turn_count?: number | null
+  rewarded_win_remaining_hp_pct?: number | null
+  rewarded_win_xp_awarded?: number | null
   required_previous_opponent_id?: string | null
   required_previous_opponent_name?: string | null
   lock_reason?: string | null
