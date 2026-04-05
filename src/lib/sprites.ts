@@ -141,12 +141,15 @@ const PLATFORM_SPEC = {
 } as const
 
 // Sprite layout constants — must stay in sync with BattlePage className values
+// PLAYER_SIZE / OPP_SIZE reflect the baby-stage display sizes (the base case used when
+// pre-computing ARENA_TERRAIN platform positions). Adult/Champion use larger sizes but
+// platform drift at those stages is acceptable until per-stage terrain assets are added.
 const PLAYER_LEFT          = 24    // left-6  (1.5 rem)
-const PLAYER_SIZE          = 128
+const PLAYER_SIZE          = 144   // baby player display size
 const PLAYER_FEET_FROM_BOT = 16    // bottom-4 (1 rem)
 
 const OPP_RIGHT            = 24    // right-6
-const OPP_SIZE             = 128
+const OPP_SIZE             = 128   // baby opponent display size
 /** Opponent sprite top edge as a fraction of arena height. Synced with BattlePage top-[28%]. */
 export const OPP_SPRITE_TOP_PCT = 0.28
 

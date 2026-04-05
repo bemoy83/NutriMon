@@ -13,6 +13,17 @@ import type { BattleAction, BattleLogEntry } from '@/types/domain'
 
 const ENTRY_DELAY_MS = 1200
 
+// Perspective depth scaling — player is always larger than opponent to sell the
+// "player is closer to camera" feel. Matches the Pokémon convention.
+const STAGE_DISPLAY_SIZES: Record<string, { player: number; opponent: number }> = {
+  baby:     { player: 144, opponent: 128 },
+  adult:    { player: 176, opponent: 160 },
+  champion: { player: 208, opponent: 184 },
+}
+function getStageSizes(stage: string) {
+  return STAGE_DISPLAY_SIZES[stage] ?? STAGE_DISPLAY_SIZES.baby
+}
+
 const ACTION_LABELS = ['Attack', 'Defend', 'Focus'] as const
 type ActionLabel = (typeof ACTION_LABELS)[number]
 
@@ -163,6 +174,7 @@ export default function BattlePage() {
 
   const terrain = getArenaTerrain(session.opponent.arenaId)
   const hitImpactUrl = getHitImpactUrl()
+  const { player: playerDisplaySize, opponent: opponentDisplaySize } = getStageSizes(session.companion.stage)
 
   // Derive current HP by replaying targetHpAfter from displayed log
   let opponentHp = session.opponentMaxHp
@@ -241,7 +253,7 @@ export default function BattlePage() {
 
         {/* Opponent sprite — right, 28% down — synced with OPP_SPRITE_TOP_PCT in sprites.ts (z-20) */}
         <div className="absolute top-[28%] right-6 z-20">
-          <SpriteStage displaySize={128} contactShadow>
+          <SpriteStage displaySize={opponentDisplaySize} contactShadow>
             <CreatureSprite
               ref={opponentSpriteRef}
               descriptor={
@@ -249,7 +261,7 @@ export default function BattlePage() {
                   ? (getOpponentRecoverySpriteDescriptor(session.opponent.name) ?? getOpponentSpriteDescriptor(session.opponent.name))
                   : getOpponentSpriteDescriptor(session.opponent.name)
               }
-              displaySize={128}
+              displaySize={opponentDisplaySize}
               flip={false}
             />
             <EffectsLayer ref={opponentEffectsRef} hitImpactUrl={hitImpactUrl ?? undefined} />
@@ -258,11 +270,11 @@ export default function BattlePage() {
 
         {/* Player sprite — bottom-left, art faces right (z-20) */}
         <div className="absolute bottom-4 left-6 z-20">
-          <SpriteStage displaySize={128} contactShadow>
+          <SpriteStage displaySize={playerDisplaySize} contactShadow>
             <CreatureSprite
               ref={playerSpriteRef}
               descriptor={getPlayerBattleSpriteDescriptor(session.companion.stage, session.companion.currentCondition)}
-              displaySize={128}
+              displaySize={playerDisplaySize}
               flip={false}
             />
             <EffectsLayer ref={playerEffectsRef} hitImpactUrl={hitImpactUrl ?? undefined} />
