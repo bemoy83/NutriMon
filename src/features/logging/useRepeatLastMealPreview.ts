@@ -42,7 +42,7 @@ export function useRepeatLastMealPreview(logDate: string) {
         meal_name: string | null
         meal_type: string | null
         total_calories: number | null
-        daily_logs: { log_date: string }
+        daily_logs: { log_date: string }[]
       }
 
       return {

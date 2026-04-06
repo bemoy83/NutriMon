@@ -2,6 +2,7 @@ import {
   BATTLE_ACTION_LABELS,
   type BattleActionLabel,
   battleActionButtonClass,
+  battleActionButtonHoverClass,
 } from '@/components/battle/battleActionConfig'
 import { battleCommandBarSurfaceClass } from '@/components/battle/battleLayout'
 
@@ -37,9 +38,9 @@ export function BattleCommandBar({
               type="button"
               disabled={!isEnabled}
               onClick={() => onAction(label)}
-              className={`rounded-lg px-3 py-3 text-left text-sm font-semibold transition-[filter,colors] ${
+              className={`rounded-lg px-3 py-3 text-left text-sm font-semibold transition-[filter] ${
                 isEnabled
-                  ? `${battleActionButtonClass[label].enabled} ${battleActionButtonClass[label].hover}`
+                  ? `${battleActionButtonClass[label]} ${battleActionButtonHoverClass}`
                   : 'bg-white/5 text-white/30 opacity-50'
               }`}
             >
