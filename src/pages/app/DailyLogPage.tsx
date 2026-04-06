@@ -10,7 +10,7 @@ import type { BattlePrepSummary, CreaturePreview, FinalizeDayResponse, Meal } fr
 import { buildMealSnapshotItems, buildMealUpdateItems } from '@/features/logging/mealPayloads'
 import { deleteMeal, restoreMealFromSnapshot, updateMealWithItems } from '@/features/logging/api'
 import type { DeleteMealResult, MealMutationResult } from '@/types/database'
-import { useCanRepeatLastMeal } from '@/features/logging/useCanRepeatLastMeal'
+import { useRepeatLastMealPreview } from '@/features/logging/useRepeatLastMealPreview'
 import { useProfileSummary } from '@/features/profile/useProfileSummary'
 import { useFinalizeDay } from '@/features/logging/useFinalizeDay'
 import { useRepeatLastMealAction } from '@/features/logging/useRepeatLastMealAction'
@@ -81,7 +81,7 @@ export default function DailyLogPage() {
       ),
   )
   const invalidateDailyLog = useInvalidateDailyLog()
-  const canRepeatLastMealQuery = useCanRepeatLastMeal(logDate)
+  const repeatLastMealPreviewQuery = useRepeatLastMealPreview(logDate)
 
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null)
@@ -127,7 +127,7 @@ export default function DailyLogPage() {
   })
   const { repeating, repeatError, handleRepeatLastMeal } = useRepeatLastMealAction({
     logDate,
-    onSuccess: (result) => handleMealCreated(result, 'Last meal repeated'),
+    onSuccess: (result) => handleMealCreated(result, 'Previous meal copied'),
   })
 
   function handleMealCreated(result: MealMutationResult, label = 'Meal added') {
@@ -267,8 +267,9 @@ export default function DailyLogPage() {
                 onFinalize={finalizeDay}
                 className="flex-1"
               />
-            ) : canRepeatLastMealQuery.data ? (
+            ) : repeatLastMealPreviewQuery.data ? (
               <DailyLogRepeatCta
+                preview={repeatLastMealPreviewQuery.data}
                 repeating={repeating}
                 repeatError={repeatError}
                 onRepeat={handleRepeatLastMeal}

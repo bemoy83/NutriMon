@@ -49,14 +49,7 @@ export default function DailyLogHeader({
         : 'var(--app-brand)'
 
   return (
-    <div
-      className="sticky top-0 z-10 px-4 pt-3 pb-4"
-      style={{
-        background: 'color-mix(in srgb, var(--app-bg) 78%, transparent)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-      }}
-    >
+    <div className="sticky top-0 z-10 px-4 pt-3 pb-4">
       <div className="app-card px-4 pt-3 pb-4">
       {/* Date navigation */}
       <div className="flex items-center justify-between mb-3">

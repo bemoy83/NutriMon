@@ -11,7 +11,7 @@ const useLatestFallbackMetricsMock = vi.fn()
 const useInvalidateDailyLogMock = vi.fn()
 const useAuthMock = vi.fn()
 const useProfileSummaryMock = vi.fn()
-const useCanRepeatLastMealMock = vi.fn()
+const useRepeatLastMealPreviewMock = vi.fn()
 const repeatLastMealMock = vi.fn()
 const deleteMealMock = vi.fn()
 const restoreMealFromSnapshotMock = vi.fn()
@@ -43,8 +43,8 @@ vi.mock('@/features/profile/useProfileSummary', () => ({
   useProfileSummary: () => useProfileSummaryMock(),
 }))
 
-vi.mock('@/features/logging/useCanRepeatLastMeal', () => ({
-  useCanRepeatLastMeal: (...args: unknown[]) => useCanRepeatLastMealMock(...args),
+vi.mock('@/features/logging/useRepeatLastMealPreview', () => ({
+  useRepeatLastMealPreview: (...args: unknown[]) => useRepeatLastMealPreviewMock(...args),
 }))
 
 vi.mock('@/lib/supabase', () => ({
@@ -279,7 +279,7 @@ describe('DailyLogPage', () => {
       },
       isLoading: false,
     })
-    useCanRepeatLastMealMock.mockReturnValue({ data: false, isLoading: false })
+    useRepeatLastMealPreviewMock.mockReturnValue({ data: null, isLoading: false })
     useDailyLogDerivedMock.mockReturnValue({
       data: {
         evaluation: null,
@@ -354,13 +354,16 @@ describe('DailyLogPage', () => {
       },
       isLoading: false,
     })
-    useCanRepeatLastMealMock.mockReturnValue({ data: true, isLoading: false })
+    useRepeatLastMealPreviewMock.mockReturnValue({
+      data: { mealName: 'Protein bowl', mealType: 'lunch', totalCalories: 520 },
+      isLoading: false,
+    })
     isTodayMock.mockReturnValue(false)
 
     renderPage()
 
     expect(screen.getByText('Finalize & Prep')).toBeInTheDocument()
-    expect(screen.queryByText('Repeat last meal')).not.toBeInTheDocument()
+    expect(screen.queryByText('Copy previous meal')).not.toBeInTheDocument()
   })
 
   it('restores a deleted meal from snapshots on undo', async () => {

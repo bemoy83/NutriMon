@@ -1,4 +1,22 @@
+import type { RepeatLastMealPreview } from './useRepeatLastMealPreview'
+
+function formatRepeatMealPreviewLine(p: RepeatLastMealPreview): string {
+  const name = p.mealName?.trim() || null
+  const rawType = p.mealType?.trim()
+  const typePart =
+    rawType && rawType.length > 0
+      ? rawType.charAt(0).toUpperCase() + rawType.slice(1).toLowerCase()
+      : null
+  const calPart = `${Math.round(p.totalCalories)} kcal`
+
+  if (name && typePart) return `${name} · ${typePart} · ${calPart}`
+  if (name) return `${name} · ${calPart}`
+  if (typePart) return `${typePart} · ${calPart}`
+  return calPart
+}
+
 interface DailyLogRepeatCtaProps {
+  preview: RepeatLastMealPreview
   repeating: boolean
   repeatError: string | null
   onRepeat: () => void
@@ -6,11 +24,14 @@ interface DailyLogRepeatCtaProps {
 }
 
 export default function DailyLogRepeatCta({
+  preview,
   repeating,
   repeatError,
   onRepeat,
   className = '',
 }: DailyLogRepeatCtaProps) {
+  const previewLine = formatRepeatMealPreviewLine(preview)
+
   return (
     <div className={`flex flex-col ${className}`}>
       {repeatError ? (
@@ -20,9 +41,15 @@ export default function DailyLogRepeatCta({
         type="button"
         onClick={onRepeat}
         disabled={repeating}
-        className="flex-1 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] py-3 text-sm font-medium text-[var(--app-text-primary)] shadow-sm transition-colors hover:bg-[var(--app-surface-elevated)] disabled:opacity-50"
+        aria-label={`Copy previous logged meal into today: ${previewLine}`}
+        className="flex flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-2.5 text-[var(--app-text-primary)] shadow-sm transition-colors hover:bg-[var(--app-surface-elevated)] disabled:opacity-50"
       >
-        {repeating ? 'Repeating…' : 'Repeat last meal'}
+        <span className="text-sm font-medium">{repeating ? 'Copying…' : 'Copy previous meal'}</span>
+        {!repeating ? (
+          <span className="max-w-full truncate text-center text-xs text-[var(--app-text-muted)]" title={previewLine}>
+            {previewLine}
+          </span>
+        ) : null}
       </button>
     </div>
   )
