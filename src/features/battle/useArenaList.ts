@@ -1,32 +1,31 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/app/providers/auth'
-import { getBattleHub } from './api'
+import { getArenaList } from './api'
 import { ensureBattlePrepSnapshot } from '@/lib/battlePrep'
 
-export const BATTLE_HUB_QUERY_KEY = 'battle-hub'
+export const ARENA_LIST_QUERY_KEY = 'arena-list'
 
-export function useBattleHub(battleDate: string | null, timezone: string | null) {
+export function useArenaList(battleDate: string | null, timezone: string | null) {
   const { user } = useAuth()
 
   return useQuery({
-    queryKey: [BATTLE_HUB_QUERY_KEY, user?.id, battleDate],
+    queryKey: [ARENA_LIST_QUERY_KEY, user?.id, battleDate],
     enabled: !!user && !!battleDate && !!timezone,
     queryFn: async () => {
       await ensureBattlePrepSnapshot(battleDate!, timezone!)
-      return getBattleHub(battleDate!)
+      return getArenaList(battleDate!)
     },
   })
 }
 
-export function useInvalidateBattleHub() {
+export function useInvalidateArenaList() {
   const queryClient = useQueryClient()
   const { user } = useAuth()
 
   return (battleDate?: string | null) => {
     const queryKey = battleDate
-      ? [BATTLE_HUB_QUERY_KEY, user?.id, battleDate]
-      : [BATTLE_HUB_QUERY_KEY, user?.id]
-
+      ? [ARENA_LIST_QUERY_KEY, user?.id, battleDate]
+      : [ARENA_LIST_QUERY_KEY, user?.id]
     queryClient.invalidateQueries({ queryKey })
   }
 }

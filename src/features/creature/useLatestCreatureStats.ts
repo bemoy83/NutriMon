@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/app/providers/auth'
 import { supabase } from '@/lib/supabase'
-import { mapCreatureStats, mapHabitMetrics } from '@/lib/domainMappers'
-import type { CreatureStats, HabitMetrics } from '@/types/domain'
+import { mapCreatureCompanion, mapCreatureStats, mapHabitMetrics } from '@/lib/domainMappers'
+import type { CreatureCompanion, CreatureStats, HabitMetrics } from '@/types/domain'
 
 interface LatestCreatureStatsResult {
+  companion: CreatureCompanion | null
   stats: CreatureStats | null
   metrics: HabitMetrics | null
 }
@@ -16,7 +17,12 @@ export function useLatestCreatureStats() {
     queryKey: ['creature-stats', 'latest', user?.id],
     enabled: !!user,
     queryFn: async (): Promise<LatestCreatureStatsResult> => {
-      const [statsRes, metricsRes] = await Promise.all([
+      const [companionRes, statsRes, metricsRes] = await Promise.all([
+        supabase
+          .from('creature_companions')
+          .select('*')
+          .eq('user_id', user!.id)
+          .maybeSingle(),
         supabase
           .from('creature_stats')
           .select('*')
@@ -33,10 +39,12 @@ export function useLatestCreatureStats() {
           .maybeSingle(),
       ])
 
+      if (companionRes.error) throw companionRes.error
       if (statsRes.error) throw statsRes.error
       if (metricsRes.error) throw metricsRes.error
 
       return {
+        companion: companionRes.data ? mapCreatureCompanion(companionRes.data) : null,
         stats: statsRes.data ? mapCreatureStats(statsRes.data) : null,
         metrics: metricsRes.data ? mapHabitMetrics(metricsRes.data) : null,
       }

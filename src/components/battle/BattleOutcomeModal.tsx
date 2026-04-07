@@ -46,7 +46,7 @@ export function BattleOutcomeModal({
           onClick={onReturn}
           className="mt-5 w-full rounded-xl bg-[var(--app-brand)] py-3 text-base font-semibold text-white transition-colors hover:bg-[var(--app-brand-hover)]"
         >
-          Return to Companion
+          Return to Hub
         </button>
       </div>
     </div>

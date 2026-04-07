@@ -1,5 +1,7 @@
 import type {
   BehaviorAttributes,
+  ArenaList,
+  ArenaListArena,
   BattleArena,
   BattleHub,
   BattleLogEntry,
@@ -25,6 +27,8 @@ import type {
   WeightEntry,
 } from '@/types/domain'
 import type {
+  ArenaListArenaRow,
+  ArenaListRow,
   BehaviorAttributesRow,
   BattleArenaRow,
   BattleHubRow,
@@ -322,7 +326,29 @@ export function mapBattleArena(row: BattleArenaRow): BattleArena {
     description: row.description,
     sortOrder: row.sort_order,
     isActive: row.is_active,
+    unlockRequiresBossOpponentId: row.unlock_requires_boss_opponent_id ?? null,
+    unlockBossName: row.unlock_boss_name ?? null,
+    mapX: row.map_x ?? null,
+    mapY: row.map_y ?? null,
     createdAt: row.created_at,
+  }
+}
+
+export function mapArenaListArena(row: ArenaListArenaRow): ArenaListArena {
+  return {
+    ...mapBattleArena(row),
+    opponentCount: row.opponent_count,
+    defeatedCount: row.defeated_count,
+    isUnlocked: row.is_unlocked,
+    hasActiveRun: row.has_active_run,
+  }
+}
+
+export function mapArenaList(row: ArenaListRow): ArenaList {
+  return {
+    companion: row.companion ? mapCreatureCompanion(row.companion) : null,
+    snapshot: row.snapshot ? mapCreatureBattleSnapshot(row.snapshot) : null,
+    arenas: (row.arenas ?? []).map(mapArenaListArena),
   }
 }
 
@@ -340,6 +366,7 @@ export function mapBattleOpponent(row: BattleOpponentRow): BattleOpponent {
     sortOrder: row.sort_order,
     unlockLevel: row.unlock_level,
     isActive: row.is_active,
+    isArenaBoss: row.is_arena_boss ?? false,
     isDefeated: row.is_defeated ?? false,
     isChallengeable: row.is_challengeable ?? true,
     rewardedWinTurnCount: row.rewarded_win_turn_count ?? null,

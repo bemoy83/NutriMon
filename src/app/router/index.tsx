@@ -1,4 +1,4 @@
-import { createBrowserRouter, createHashRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter, createHashRouter, Navigate, redirect } from 'react-router-dom'
 
 import DailyLogPage from '@/pages/app/DailyLogPage'
 import AppShell from '@/components/AppShell'
@@ -39,12 +39,20 @@ const routes = [
                   { path: '/app', element: <AppIndexRedirect /> },
                   { path: '/app/log/:date', element: <DailyLogPage /> },
                   { path: '/app/creature', lazy: () => import('@/app/router/route-modules/creature') },
+                  { path: '/app/battle', lazy: () => import('@/app/router/route-modules/battle-hub') },
+                  { path: '/app/battle/arenas/:arenaId', lazy: () => import('@/app/router/route-modules/battle-arena-detail') },
                   { path: '/app/weight', lazy: () => import('@/app/router/route-modules/weight') },
                   { path: '/app/profile', lazy: () => import('@/app/router/route-modules/profile') },
                 ],
               },
               // Battle screen: full-screen, no bottom nav
-              { path: '/app/creature/battle/:battleRunId', lazy: () => import('@/app/router/route-modules/battle') },
+              { path: '/app/battle/run/:battleRunId', lazy: () => import('@/app/router/route-modules/battle') },
+              // Backward-compat redirect for old battle URL
+              {
+                path: '/app/creature/battle/:battleRunId',
+                loader: ({ params }: { params: Record<string, string | undefined> }) =>
+                  redirect(`/app/battle/run/${params.battleRunId}`),
+              },
             ],
           },
         ],

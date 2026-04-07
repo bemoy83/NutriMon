@@ -88,10 +88,10 @@ export default function BattlePage() {
         </p>
         <button
           type="button"
-          onClick={() => navigate('/app/creature')}
+          onClick={() => navigate('/app/battle')}
           className="rounded-xl bg-[var(--app-brand)] px-5 py-3 text-sm font-semibold text-white"
         >
-          Return to Companion
+          Return to Hub
         </button>
       </div>
     )
@@ -238,7 +238,7 @@ export default function BattlePage() {
           remainingHpPct={session.remainingHpPct}
           rewardClaimed={session.rewardClaimed}
           xpAwarded={session.xpAwarded}
-          onReturn={() => navigate('/app/creature')}
+          onReturn={() => navigate('/app/battle')}
         />
       ) : null}
     </div>

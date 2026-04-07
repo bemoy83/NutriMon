@@ -45,6 +45,26 @@ export default function AppShell() {
       ),
     },
     {
+      label: 'Battle',
+      href: '/app/battle',
+      matchPrefix: '/app/battle',
+      icon: (active: boolean) => (
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={active ? 2 : 1.5}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z"
+          />
+        </svg>
+      ),
+    },
+    {
       label: 'Weight',
       href: '/app/weight',
       matchPrefix: '/app/weight',
@@ -106,6 +126,7 @@ export default function AppShell() {
           <NavItem item={navItems[1]} />
           <NavItem item={navItems[2]} />
           <NavItem item={navItems[3]} />
+          <NavItem item={navItems[4]} />
         </div>
       </nav>
     </div>

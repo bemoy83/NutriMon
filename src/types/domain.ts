@@ -270,7 +270,24 @@ export interface BattleArena {
   description: string | null
   sortOrder: number
   isActive: boolean
+  unlockRequiresBossOpponentId: string | null
+  unlockBossName: string | null
+  mapX: number | null
+  mapY: number | null
   createdAt: string
+}
+
+export interface ArenaListArena extends BattleArena {
+  opponentCount: number
+  defeatedCount: number
+  isUnlocked: boolean
+  hasActiveRun: boolean
+}
+
+export interface ArenaList {
+  companion: CreatureCompanion | null
+  snapshot: CreatureBattleSnapshot | null
+  arenas: ArenaListArena[]
 }
 
 export interface BattleOpponent {
@@ -286,6 +303,7 @@ export interface BattleOpponent {
   sortOrder: number
   unlockLevel: number
   isActive: boolean
+  isArenaBoss: boolean
   isDefeated: boolean
   isChallengeable: boolean
   /** First XP-rewarding win vs this opponent (for defeated-card summary; practice wins omitted). */

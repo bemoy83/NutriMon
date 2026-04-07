@@ -163,6 +163,14 @@ export interface Database {
         Args: { p_battle_date: string }
         Returns: BattleHubRow
       }
+      get_arena_list: {
+        Args: { p_battle_date: string }
+        Returns: ArenaListRow
+      }
+      get_arena_detail: {
+        Args: { p_arena_id: string; p_battle_date: string }
+        Returns: BattleHubRow
+      }
       start_battle_run: {
         Args: { p_snapshot_id: string; p_opponent_id: string }
         Returns: BattleRunSessionRow
@@ -423,6 +431,11 @@ export interface BattleArenaRow {
   description: string | null
   sort_order: number
   is_active: boolean
+  unlock_requires_boss_opponent_id: string | null
+  /** Denormalised name, present only in arena-list RPC response rows. */
+  unlock_boss_name?: string | null
+  map_x: number | null
+  map_y: number | null
   created_at: string
 }
 
@@ -439,6 +452,7 @@ export interface BattleOpponentRow {
   sort_order: number
   unlock_level: number
   is_active: boolean
+  is_arena_boss: boolean
   is_defeated?: boolean
   is_challengeable?: boolean
   rewarded_win_turn_count?: number | null
@@ -615,4 +629,17 @@ export interface BattleRunWithOpponentRow extends BattleRunRow {
 export interface BattleRunMutationResult {
   battle_run: BattleRunRow
   opponent?: BattleOpponentRow | null
+}
+
+export interface ArenaListArenaRow extends BattleArenaRow {
+  opponent_count: number
+  defeated_count: number
+  is_unlocked: boolean
+  has_active_run: boolean
+}
+
+export interface ArenaListRow {
+  companion: CreatureCompanionRow | null
+  snapshot: CreatureBattleSnapshotRow | null
+  arenas: ArenaListArenaRow[]
 }
