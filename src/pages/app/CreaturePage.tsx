@@ -150,8 +150,11 @@ function OpponentCard({ opponent, isActive, isStarting, isDisabled, onChallenge 
           type="button"
           onClick={() => onChallenge(opponent)}
           disabled={isDisabled}
-          className="rounded-xl px-3 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50"
-          style={{ background: isActive ? 'var(--app-warning)' : 'var(--app-brand)' }}
+          className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${
+            isActive
+              ? 'border border-[var(--app-warning)] text-[var(--app-warning)] hover:bg-[rgb(245_158_11/0.08)]'
+              : 'border border-[var(--app-brand)] text-[var(--app-brand)] hover:bg-[rgb(124_58_237/0.08)]'
+          }`}
         >
           {buttonLabel}
         </button>

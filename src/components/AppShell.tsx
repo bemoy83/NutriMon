@@ -150,8 +150,8 @@ function NavItem({ item }: NavItemProps) {
             <span
               className={`relative flex flex-col items-center gap-0.5 rounded-xl px-3.5 py-1 transition-colors duration-[var(--app-transition-fast)] ${
                 active
-                  ? 'text-[var(--app-brand)] bg-[var(--app-brand-soft)]'
-                  : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] hover:bg-[var(--app-surface-elevated)]'
+                  ? 'text-[var(--app-brand)] bg-[rgb(124_58_237/0.10)] shadow-[inset_0_1px_3px_rgb(0_0_0/0.10)]'
+                  : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] hover:bg-[rgb(0_0_0/0.07)]'
               }`}
             >
               {item.icon(active)}
