@@ -45,7 +45,7 @@ export default function BottomSheet({ children, onClose, title, footer, classNam
     <>
       <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} aria-hidden="true" />
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl border border-[var(--app-border)] bg-[var(--app-surface)] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl${className ? ` ${className}` : ' max-h-[85vh]'}`}
+        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl border border-[var(--app-border)] bg-[rgb(255_255_255/0.90)] backdrop-blur-2xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl${className ? ` ${className}` : ' max-h-[85vh]'}`}
         style={{
           transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
           transition: snapping ? 'transform 0.2s ease' : undefined,
@@ -74,7 +74,7 @@ export default function BottomSheet({ children, onClose, title, footer, classNam
         </div>
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
         {footer ? (
-          <div className="relative z-[1] bg-[var(--app-surface)] p-4 shadow-[0_-4px_14px_-4px_rgb(15_23_42_/_0.1)]">
+          <div className="relative z-[1] bg-[rgb(255_255_255/0.92)] p-4 shadow-[0_-4px_14px_-4px_rgb(15_23_42_/_0.1)]">
             {footer}
           </div>
         ) : null}

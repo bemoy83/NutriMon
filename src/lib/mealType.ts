@@ -17,7 +17,7 @@ const MEAL_TYPE_THEMES: Record<MealType, MealTypeTheme | null> = {
     divider: 'rgba(0,0,0,0.08)',
     pillActiveBg: 'var(--app-surface-amber)',
     pillActiveText: 'var(--app-surface-amber-text)',
-    accent: '#F59E0B',
+    accent: 'var(--app-surface-amber)',
   },
   Lunch: {
     bg: 'var(--app-surface-green)',
@@ -25,7 +25,7 @@ const MEAL_TYPE_THEMES: Record<MealType, MealTypeTheme | null> = {
     divider: 'rgba(0,0,0,0.08)',
     pillActiveBg: 'var(--app-surface-green)',
     pillActiveText: 'var(--app-surface-green-text)',
-    accent: '#16A34A',
+    accent: 'var(--app-surface-green)',
   },
   Dinner: {
     bg: 'var(--app-surface-blue)',
@@ -33,7 +33,7 @@ const MEAL_TYPE_THEMES: Record<MealType, MealTypeTheme | null> = {
     divider: 'rgba(0,0,0,0.08)',
     pillActiveBg: 'var(--app-surface-blue)',
     pillActiveText: 'var(--app-surface-blue-text)',
-    accent: '#3B82F6',
+    accent: 'var(--app-surface-blue)',
   },
   Snack: {
     bg: 'var(--app-surface-purple)',
@@ -41,7 +41,7 @@ const MEAL_TYPE_THEMES: Record<MealType, MealTypeTheme | null> = {
     divider: 'rgba(0,0,0,0.08)',
     pillActiveBg: 'var(--app-surface-purple)',
     pillActiveText: 'var(--app-surface-purple-text)',
-    accent: '#9333EA',
+    accent: 'var(--app-surface-purple)',
   },
   Other: null,
 }

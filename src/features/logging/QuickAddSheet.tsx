@@ -351,7 +351,7 @@ function TemplateRow({
     0,
   )
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--app-border-muted)] hover:bg-[var(--app-surface-elevated)] active:bg-[var(--app-surface-elevated)] transition-colors">
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--app-border-muted)] hover:bg-[var(--app-hover-overlay)] active:bg-[var(--app-hover-overlay)] transition-colors">
       <div className="flex-1 min-w-0">
         <p className="text-[var(--app-text-primary)] text-sm font-medium truncate">{template.name}</p>
         <p className="text-[var(--app-text-muted)] text-xs">
@@ -391,7 +391,7 @@ function ProductRow({
   onRemove: () => void
 }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--app-surface-elevated)] active:bg-[var(--app-surface-elevated)] transition-colors">
+    <div className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--app-hover-overlay)] active:bg-[var(--app-hover-overlay)] transition-colors">
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <FoodSourceBadge sourceType={foodSource.sourceType} />
         <div className="min-w-0">
@@ -426,7 +426,7 @@ function ProductRow({
       ) : (
         <button
           onClick={onAdd}
-          className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[var(--app-surface-elevated)] text-[var(--app-text-muted)] transition-colors hover:text-[var(--app-text-primary)] border border-[var(--app-border)]"
+          className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[rgb(0_0_0/0.06)] text-[var(--app-text-muted)] transition-colors hover:bg-[rgb(0_0_0/0.10)] hover:text-[var(--app-text-primary)] border border-[var(--app-border)]"
           aria-label={`Add ${foodSource.name}`}
         >
           +

@@ -202,31 +202,28 @@ export default function DailyLogPage() {
       )}
 
       {!isFinalized && creaturePreview && (
-        <div className="app-card mx-4 mt-4 p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--app-text-muted)]">
-                Creature Preview
-              </p>
-              <p className="mt-2 text-sm text-[var(--app-text-primary)]">{creaturePreview.mealFeedbackMessage}</p>
-            </div>
-            <div className="rounded-full bg-[var(--app-surface)] px-3 py-1 text-xs font-semibold capitalize text-[var(--app-brand)]">
-              {creaturePreview.mealRating}
-            </div>
+        <div className="app-card mx-4 mt-4 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-[var(--app-text-primary)]">Creature Preview</h2>
+            <span className="text-xs font-semibold capitalize text-[var(--app-brand)]">{creaturePreview.mealRating}</span>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-[var(--app-text-secondary)]">
-            <div className="rounded-xl bg-[var(--app-surface)] px-3 py-2">
-              Tomorrow readiness: <span className="font-semibold text-[var(--app-text-primary)]">{creaturePreview.tomorrowReadinessScore}</span>
-            </div>
-            <div className="rounded-xl bg-[var(--app-surface)] px-3 py-2 capitalize">
-              Readiness: <span className="font-semibold text-[var(--app-text-primary)]">{creaturePreview.tomorrowReadinessBand}</span>
-            </div>
-            <div className="rounded-xl bg-[var(--app-surface)] px-3 py-2">
-              Strength {creaturePreview.projectedStrength}
-            </div>
-            <div className="rounded-xl bg-[var(--app-surface)] px-3 py-2">
-              Momentum {creaturePreview.projectedMomentum}
-            </div>
+          <p className="text-sm text-[var(--app-text-muted)]">{creaturePreview.mealFeedbackMessage}</p>
+          <div className="h-px bg-[var(--app-border-muted)]" />
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-[var(--app-text-muted)]">Tomorrow readiness</span>
+            <span className="text-sm text-[var(--app-text-primary)]">{creaturePreview.tomorrowReadinessScore}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-[var(--app-text-muted)]">Readiness</span>
+            <span className="text-sm text-[var(--app-text-primary)] capitalize">{creaturePreview.tomorrowReadinessBand}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-[var(--app-text-muted)]">Strength</span>
+            <span className="text-sm text-[var(--app-text-primary)]">{creaturePreview.projectedStrength}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-[var(--app-text-muted)]">Momentum</span>
+            <span className="text-sm text-[var(--app-text-primary)]">{creaturePreview.projectedMomentum}</span>
           </div>
         </div>
       )}

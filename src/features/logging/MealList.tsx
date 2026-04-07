@@ -123,7 +123,7 @@ function MealCard({
         theme
           ? {
               /* Neutral frosted surface from .app-card; meal type only via inset accent strip. */
-              boxShadow: `inset 3px 0 0 ${theme.accent}, var(--app-shadow-sm)`,
+              boxShadow: `inset 5px 0 0 ${theme.accent}, var(--app-shadow-sm)`,
             }
           : undefined
       }
