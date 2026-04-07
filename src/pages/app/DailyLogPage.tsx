@@ -254,7 +254,7 @@ export default function DailyLogPage() {
 
       {/* Bottom action bar */}
       {!isFinalized && (
-        <div className="fixed inset-x-0 bottom-20 z-30 px-4">
+        <div className="fixed inset-x-0 bottom-0 z-[19] px-4 pt-10 pb-[5.5rem] bg-gradient-to-t from-[var(--app-bg)] via-[var(--app-bg)]/70 to-transparent">
           <div className="mx-auto max-w-lg flex items-end gap-2">
             {/* Left slot: Finalize (priority) or Repeat */}
             {mealCount > 0 ? (
@@ -279,7 +279,7 @@ export default function DailyLogPage() {
             {/* Add button — always anchored right */}
             <button
               onClick={() => setShowQuickAdd(true)}
-              className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-[var(--app-brand)] text-white shadow-md transition-colors hover:bg-[var(--app-brand-hover)]"
+              className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-[var(--app-brand)] text-white shadow-[0_4px_16px_rgb(124_58_237/0.35)] transition-colors hover:bg-[var(--app-brand-hover)]"
               aria-label="Add meal"
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -42,7 +42,7 @@ export default function DailyLogRepeatCta({
         onClick={onRepeat}
         disabled={repeating}
         aria-label={`Copy previous logged meal into today: ${previewLine}`}
-        className="flex flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-2.5 text-[var(--app-text-primary)] shadow-sm transition-colors hover:bg-[var(--app-surface-elevated)] disabled:opacity-50"
+        className="flex flex-1 flex-col items-center justify-center gap-0.5 rounded-full border border-[var(--app-border)] bg-[rgb(255_255_255/0.72)] backdrop-blur-sm px-2 py-2.5 text-[var(--app-text-primary)] shadow-[0_4px_16px_rgb(15_23_42/0.10)] transition-colors hover:bg-[rgb(255_255_255/0.88)] disabled:opacity-50"
       >
         <span className="text-sm font-medium">{repeating ? 'Copying…' : 'Copy previous meal'}</span>
         {!repeating ? (
