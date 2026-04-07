@@ -79,7 +79,7 @@ export default function InlineQuickAdd({ logDate, loggedAt, onCreated }: Props) 
   return (
     <div className="space-y-4 rounded-2xl border border-[var(--app-border-muted)] bg-[var(--app-surface-muted)] p-4">
       <div>
-        <h2 className="text-sm font-semibold text-[var(--app-text-primary)]">Quick add</h2>
+        <h2 className="text-base font-semibold text-[var(--app-text-primary)]">Quick add</h2>
         <p className="mt-1 text-xs text-[var(--app-text-muted)]">Tap a recent or frequent food to log it instantly.</p>
       </div>
 

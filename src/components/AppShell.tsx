@@ -97,8 +97,8 @@ export default function AppShell() {
       <nav
         className="fixed inset-x-0 bottom-0 z-20 backdrop-blur pb-[env(safe-area-inset-bottom,0px)]"
         style={{
-          background: 'rgb(255 255 255 / 0.92)',
-          borderTop: '1px solid rgb(203 213 225 / 0.5)',
+          background: 'var(--app-nav-bg)',
+          borderTop: '1px solid var(--app-border)',
         }}
       >
         <div className="mx-auto flex max-w-lg">

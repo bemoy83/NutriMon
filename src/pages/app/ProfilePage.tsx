@@ -162,7 +162,7 @@ export default function ProfilePage() {
 
       {/* Read-only profile info */}
       <div className="app-card mb-4 space-y-3 p-4">
-        <h2 className="text-[var(--app-text-primary)] font-medium text-sm">Your stats</h2>
+        <h2 className="text-[var(--app-text-primary)] text-base font-semibold">Your stats</h2>
         <ProfileRow label="Email" value={user?.email ?? '—'} />
         <ProfileRow label="Height" value={profile?.height_cm ? `${profile.height_cm} cm` : '—'} />
         <ProfileRow label="Starting weight" value={profile?.starting_weight_kg ? `${profile.starting_weight_kg} kg` : '—'} />
@@ -175,7 +175,7 @@ export default function ProfilePage() {
 
       {/* Editable settings */}
       <form onSubmit={handleSubmit(onSubmit)} className="app-card mb-4 space-y-4 p-4">
-        <h2 className="text-[var(--app-text-primary)] font-medium text-sm">Settings</h2>
+        <h2 className="text-[var(--app-text-primary)] text-base font-semibold">Settings</h2>
 
         <div>
           <label htmlFor="calorieTarget" className="mb-1 block text-sm text-[var(--app-text-secondary)]">
@@ -227,7 +227,7 @@ export default function ProfilePage() {
       <div className="app-card mb-4 space-y-4 p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-[var(--app-text-primary)] font-medium text-sm">Products</h2>
+            <h2 className="text-[var(--app-text-primary)] text-base font-semibold">Products</h2>
             <p className="text-[var(--app-text-muted)] text-xs mt-1">Manage reusable foods for quick logging.</p>
           </div>
           <button

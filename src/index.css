@@ -15,8 +15,8 @@
   --app-text-subtle: #94A3B8;
 
   /* Borders */
-  --app-border: #CBD5E1;
-  --app-border-muted: #E2E8F0;
+  --app-border: rgb(0 0 0 / 0.12);
+  --app-border-muted: rgb(0 0 0 / 0.07);
 
   /* Brand / accent (violet) */
     --app-focus: #7C3AED;
@@ -42,7 +42,7 @@
     --app-hover-overlay: rgb(15 23 42 / 0.05);
   /* Nav */
   --app-info-soft: rgb(255 255 255 / 0.95);
-  --app-nav-bg: rgb(255 255 255 / 0.88);
+  --app-nav-bg: rgb(255 255 255 / 0.78);
 
   /* Creature / accent (strength bar, etc.) */
   --app-coral: #E86A5C;
@@ -71,6 +71,14 @@
   --app-surface-amber-text: #78350F;
   --app-surface-blue: #DBEAFE;
   --app-surface-blue-text: #1E3A8A;
+
+  /* Inputs */
+  --app-input-bg: rgb(0 0 0 / 0.05);
+  --app-input-bg-focus: rgb(0 0 0 / 0.03);
+  --app-input-border: rgb(0 0 0 / 0.10);
+  --app-input-shadow: inset 0 2px 5px rgb(0 0 0 / 0.08), inset 0 1px 2px rgb(0 0 0 / 0.05);
+  --app-input-shadow-focus: inset 0 2px 5px rgb(0 0 0 / 0.06), inset 0 1px 2px rgb(0 0 0 / 0.04);
+  --app-brand-ring: rgb(124 58 237 / 0.25);
 
   /* Spacing */
   --app-radius-sm: 0.5rem;
@@ -228,9 +236,10 @@ select {
 
 .app-input {
   width: 100%;
-  border: 1px solid var(--app-border);
+  border: 1px solid var(--app-input-border);
   border-radius: var(--app-radius-sm);
-  background: var(--app-surface);
+  background: var(--app-input-bg);
+  box-shadow: var(--app-input-shadow);
   color: var(--app-text-primary);
   transition:
     border-color var(--app-transition-fast) ease,
@@ -244,8 +253,9 @@ select {
 
 .app-input:focus {
   outline: none;
+  background: var(--app-input-bg-focus);
   border-color: var(--app-focus);
-  box-shadow: 0 0 0 2px rgb(22 163 74 / 0.3);
+  box-shadow: var(--app-input-shadow-focus), 0 0 0 2px var(--app-brand-ring);
 }
 
 .app-button-primary,

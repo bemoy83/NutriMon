@@ -82,7 +82,7 @@ export default function WeightPage() {
 
       {/* Entry form */}
       <div className="app-card mb-6 p-4">
-        <h2 className="text-[var(--app-text-primary)] font-medium mb-4">Log weight</h2>
+        <h2 className="text-[var(--app-text-primary)] text-base font-semibold mb-4">Log weight</h2>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-3 items-end">
             <div>
@@ -162,7 +162,7 @@ export default function WeightPage() {
       {/* Chart */}
       <div className="app-card p-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[var(--app-text-primary)] font-medium">History</h2>
+          <h2 className="text-[var(--app-text-primary)] text-base font-semibold">History</h2>
           <div className="flex gap-2">
             {([30, 90] as const).map((d) => (
               <button

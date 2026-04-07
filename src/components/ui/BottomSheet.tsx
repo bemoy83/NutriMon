@@ -60,7 +60,7 @@ export default function BottomSheet({ children, onClose, title, footer, classNam
         </div>
 
         <div className="flex items-center justify-between px-4 py-3">
-          <h3 className="font-semibold text-[var(--app-text-primary)]">{title}</h3>
+          <h3 className="text-base font-semibold text-[var(--app-text-primary)]">{title}</h3>
           <button
             type="button"
             onClick={onClose}
