@@ -118,12 +118,11 @@ function MealCard({
 
   return (
     <div
-      className="app-card app-card--meal-sheet overflow-hidden"
+      className="app-card overflow-hidden"
       style={
         theme
           ? {
-              background: `color-mix(in srgb, ${theme.bg} 46%, rgb(255 255 255 / 0.48))`,
-              /* Inset strip replaces border-left so the outer edge stays borderless (sheet of glass). */
+              /* Neutral frosted surface from .app-card; meal type only via inset accent strip. */
               boxShadow: `inset 3px 0 0 ${theme.accent}, var(--app-shadow-sm)`,
             }
           : undefined
