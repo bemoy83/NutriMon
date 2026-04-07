@@ -56,16 +56,7 @@ export default function DailyLogHeader({
         <button
           type="button"
           onClick={() => onNavigate(addDays(logDate, -1))}
-          className="rounded-lg p-2 transition-colors"
-          style={{ color: 'var(--app-text-muted)' }}
-          onMouseOver={e => {
-            ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--app-surface-elevated)'
-            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--app-text-primary)'
-          }}
-          onMouseOut={e => {
-            ;(e.currentTarget as HTMLButtonElement).style.background = ''
-            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--app-text-muted)'
-          }}
+          className="rounded-lg p-2 transition-colors text-[var(--app-text-muted)] hover:bg-[var(--app-surface-elevated)] hover:text-[var(--app-text-primary)]"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -90,19 +81,7 @@ export default function DailyLogHeader({
           type="button"
           onClick={() => onNavigate(addDays(logDate, 1))}
           disabled={logDate >= todayDate}
-          className="rounded-lg p-2 transition-colors disabled:opacity-30"
-          style={{ color: 'var(--app-text-muted)' }}
-          onMouseOver={e => {
-            const btn = e.currentTarget as HTMLButtonElement
-            if (!btn.disabled) {
-              btn.style.background = 'var(--app-surface-elevated)'
-              btn.style.color = 'var(--app-text-primary)'
-            }
-          }}
-          onMouseOut={e => {
-            ;(e.currentTarget as HTMLButtonElement).style.background = ''
-            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--app-text-muted)'
-          }}
+          className="rounded-lg p-2 transition-colors text-[var(--app-text-muted)] hover:bg-[var(--app-surface-elevated)] hover:text-[var(--app-text-primary)] disabled:opacity-30"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -123,7 +102,7 @@ export default function DailyLogHeader({
                 r={RING_R}
                 fill="none"
                 stroke="var(--app-border)"
-                strokeWidth={10}
+                strokeWidth={11}
                 strokeLinecap="round"
                 strokeDasharray={`${ARC_LENGTH} ${GAP_LENGTH}`}
               />
@@ -134,7 +113,7 @@ export default function DailyLogHeader({
                 r={RING_R}
                 fill="none"
                 stroke={ringColor}
-                strokeWidth={10}
+                strokeWidth={11}
                 strokeLinecap="round"
                 strokeDasharray={`${fillLength} ${CIRCUMFERENCE}`}
                 style={{ transition: 'stroke-dasharray 0.5s ease, stroke 0.3s ease' }}
@@ -145,7 +124,7 @@ export default function DailyLogHeader({
           {/* Center text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span
-              className="text-[10px] font-medium leading-none mb-0.5"
+              className="text-xs font-medium leading-none mb-0.5"
               style={{ color: progressPct >= 100 ? 'var(--app-danger)' : 'var(--app-text-muted)' }}
             >
               {remaining < 0 ? 'over' : 'left'}
@@ -156,7 +135,7 @@ export default function DailyLogHeader({
             >
               {Math.abs(remaining)}
             </span>
-            <span className="text-[10px] mt-0.5" style={{ color: 'var(--app-text-muted)' }}>
+            <span className="text-xs mt-0.5" style={{ color: 'var(--app-text-muted)' }}>
               kcal
             </span>
           </div>
@@ -214,7 +193,7 @@ function MacroBar({
           <span style={{ color: 'var(--app-text-subtle)' }}>/{target}g</span>
         </span>
       </div>
-      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--app-border)' }}>
+      <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--app-border)' }}>
         <div
           className="h-full rounded-full"
           style={{

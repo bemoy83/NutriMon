@@ -97,7 +97,8 @@ export default function AppShell() {
       <nav
         className="fixed inset-x-0 bottom-0 z-20 backdrop-blur pb-[env(safe-area-inset-bottom,0px)]"
         style={{
-          background: 'var(--app-nav-bg)',
+          background: 'rgb(255 255 255 / 0.92)',
+          borderTop: '1px solid rgb(203 213 225 / 0.5)',
         }}
       >
         <div className="mx-auto flex max-w-lg">
@@ -129,21 +130,28 @@ function NavItem({ item }: NavItemProps) {
     <NavLink
       to={item.href}
       end={item.end}
-      className="relative flex flex-1 flex-col items-center py-2.5 transition-[color,background-color] duration-[var(--app-transition-fast)] ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-focus)]"
+      className="relative flex flex-1 flex-col items-center py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-focus)]"
     >
       {({ isActive }) => {
         const active = isActive || prefixActive
         return (
           <>
+            {/* Slim top-edge indicator */}
             {active ? (
               <span
                 aria-hidden
-                className="pointer-events-none absolute inset-x-1 top-0 bottom-0 rounded-b-2xl bg-[var(--app-brand)]"
-              />
+                className="pointer-events-none absolute inset-x-0 top-0 flex justify-center"
+              >
+                <span className="h-[3px] w-8 rounded-b-full bg-[var(--app-brand)]" />
+              </span>
             ) : null}
+
+            {/* Icon + label pill */}
             <span
-              className={`relative z-[1] flex flex-col items-center gap-0.5 ${
-                active ? 'text-white' : 'text-[var(--app-text-muted)]'
+              className={`relative flex flex-col items-center gap-0.5 rounded-xl px-3.5 py-1 transition-colors duration-[var(--app-transition-fast)] ${
+                active
+                  ? 'text-[var(--app-brand)] bg-[var(--app-brand-soft)]'
+                  : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] hover:bg-[var(--app-surface-elevated)]'
               }`}
             >
               {item.icon(active)}

@@ -172,7 +172,7 @@ export default function BattlePage() {
               <p className="truncate text-sm font-bold text-white">{session.opponent.name}</p>
               <p className="ml-2 shrink-0 text-xs text-white/60">Lv{session.opponent.recommendedLevel}</p>
             </div>
-            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-white/60">HP</p>
+            <p className="mt-0.5 text-xs font-semibold uppercase tracking-widest text-white/60">HP</p>
             <BattleHudHpBar current={opponentHp} max={session.opponentMaxHp} variant="danger" />
           </BattleHudCard>
 
@@ -213,7 +213,7 @@ export default function BattlePage() {
               <p className="truncate text-sm font-bold text-white">{session.companion.name}</p>
               <p className="ml-2 shrink-0 text-xs text-white/60">Lv{session.companion.level}</p>
             </div>
-            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-white/60">HP</p>
+            <p className="mt-0.5 text-xs font-semibold uppercase tracking-widest text-white/60">HP</p>
             <BattleHudHpBar current={playerHp} max={session.playerMaxHp} variant="brand" />
             <p className="mt-1 text-right text-xs tabular-nums text-white/70">
               {playerHp} / {session.playerMaxHp}

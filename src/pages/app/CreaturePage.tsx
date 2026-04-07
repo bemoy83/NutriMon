@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import LoadingState from '@/components/ui/LoadingState'
 import EmptyState from '@/components/ui/EmptyState'
@@ -106,13 +106,16 @@ function OpponentCard({ opponent, isActive, isStarting, isDisabled, onChallenge 
   const spriteFilter = (opponent.isDefeated || isActive)
     ? 'none'
     : isLockedByProgression
-      ? 'brightness(0) opacity(0.12)'
+      ? 'brightness(0) opacity(0.25)'
       : 'brightness(0) opacity(0.35)'
 
   return (
     <div
-      className="app-card p-4"
-      style={isActive ? { borderColor: 'var(--app-warning)', borderWidth: '2px' } : undefined}
+      className="px-4 py-3.5 transition-colors"
+      style={isActive ? {
+        boxShadow: 'inset 3px 0 0 var(--app-warning)',
+        background: 'var(--app-warning-soft)',
+      } : undefined}
     >
       <div className="flex items-start justify-between gap-3">
         {oppSprite ? (
@@ -128,7 +131,7 @@ function OpponentCard({ opponent, isActive, isStarting, isDisabled, onChallenge 
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-semibold text-[var(--app-text-primary)]">{opponent.name}</p>
             {isLockedByProgression ? (
-                        <span className="rounded-full bg-[var(--app-muted-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--app-muted-soft-text)]">
+                        <span className="rounded-full bg-[var(--app-muted-soft)] px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--app-muted-soft-text)]">
                           Locked
                         </span>
                       ) : null}
@@ -351,31 +354,37 @@ export default function CreaturePage() {
         )}
       </div>
 
-      <div className="mt-4">
-        <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Arena 1 Opponents</p>
-        {battleActionError ? (
-          <p className="mt-3 text-sm text-[var(--app-danger)]">{battleActionError}</p>
-        ) : null}
-        <div className="mt-3 space-y-3">
-          {(battleHubQuery.data?.arenaOpponents ?? []).map((opponent) => {
+      <div className="app-card mt-4 overflow-hidden">
+        <div className="px-4 py-3 border-b border-[var(--app-border-muted)]">
+          <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">Arena 1 Opponents</p>
+          {battleActionError ? (
+            <p className="mt-1 text-sm text-[var(--app-danger)]">{battleActionError}</p>
+          ) : null}
+        </div>
+        <div>
+          {(battleHubQuery.data?.arenaOpponents ?? []).map((opponent, index) => {
             const isActiveOpponent = activeBattleRun?.opponentId === opponent.id
             const hasOtherActive = !!activeBattleRun && !isActiveOpponent
             const isStarting = startingOpponentId === opponent.id
             const isDisabled = !battleHubQuery.data?.snapshot || isStarting || hasOtherActive || !opponent.isChallengeable
 
             return (
-              <OpponentCard
-                key={opponent.id}
-                opponent={opponent}
-                isActive={isActiveOpponent}
-                isStarting={isStarting}
-                isDisabled={isDisabled}
-                onChallenge={handleChallenge}
-              />
+              <Fragment key={opponent.id}>
+                {index > 0 && (
+                  <div aria-hidden className="mx-4 h-px bg-[var(--app-border-muted)]" />
+                )}
+                <OpponentCard
+                  opponent={opponent}
+                  isActive={isActiveOpponent}
+                  isStarting={isStarting}
+                  isDisabled={isDisabled}
+                  onChallenge={handleChallenge}
+                />
+              </Fragment>
             )
           })}
           {(battleHubQuery.data?.arenaOpponents.length ?? 0) === 0 ? (
-            <EmptyState title="No Arena 1 opponents available right now." className="py-2" />
+            <EmptyState title="No Arena 1 opponents available right now." className="py-4" />
           ) : null}
         </div>
       </div>

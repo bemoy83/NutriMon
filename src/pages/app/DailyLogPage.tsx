@@ -202,7 +202,7 @@ export default function DailyLogPage() {
       )}
 
       {!isFinalized && creaturePreview && (
-        <div className="mx-4 mt-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
+        <div className="app-card mx-4 mt-4 p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--app-text-muted)]">
