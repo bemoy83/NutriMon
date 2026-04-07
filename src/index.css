@@ -2,8 +2,8 @@
 
 :root {
   /* Backgrounds (solid / gradient tokens harmonize with public/app-bg.png) */
-    --app-bg: #e8d8ef;
-    --app-bg-gradient: linear-gradient(165deg, #ddd0f0 0%, #f0c8d8 50%, #f5b8a8 100%);
+  --app-bg: #e8d8ef;
+  --app-bg-gradient: linear-gradient(165deg, #ddd0f0 0%, #f0c8d8 50%, #f5b8a8 100%);
   --app-surface: #FFFFFF;
   --app-surface-muted: rgb(241 245 249 / 0.7);
   --app-surface-elevated: #F1F5F9;
@@ -100,24 +100,50 @@ a,
   touch-action: manipulation;
 }
 
-html,
-body,
-#root {
-  height: 100%;
+html {
   margin: 0;
+  height: 100%;
+  min-height: -webkit-fill-available;
+  background-color: var(--app-bg);
+}
+
+/*
+ * iOS Safari breaks background-attachment: fixed (background tracks / stretches with scroll).
+ * A fixed pseudo-layer keeps art pinned while content scrolls; same look as desktop.
+ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: var(--app-bg);
+  background-image: url('/app-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 body {
+  position: relative;
+  z-index: 0;
+  height: 100%;
+  min-height: 100%;
+  min-height: -webkit-fill-available;
+  margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  background-color: var(--app-bg);
-    background-image: url('/app-bg.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-  background-attachment: fixed;
+  background-color: transparent;
   color: var(--app-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+  height: 100%;
+  margin: 0;
 }
 
 button,
@@ -186,7 +212,7 @@ select {
   border-radius: var(--app-radius-lg);
   border: 1px solid rgb(255 255 255 / 0.72);
   box-shadow: var(--app-shadow-sm);
-  background: rgb(255 255 255 / 0.48);
+  background: rgb(255 255 255 / 0.30);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
