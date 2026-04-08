@@ -26,14 +26,25 @@ import {
   getPlayerBattleSpriteDescriptor,
 } from '@/lib/sprites'
 
-// Perspective depth scaling — player is always larger than opponent (Pokémon-style).
-const STAGE_DISPLAY_SIZES: Record<string, { player: number; opponent: number }> = {
-  baby: { player: 144, opponent: 128 },
-  adult: { player: 176, opponent: 160 },
-  champion: { player: 208, opponent: 184 },
+// Player display size scales with companion stage (closer perspective = larger).
+const PLAYER_DISPLAY_SIZE: Record<string, number> = {
+  baby: 144,
+  adult: 176,
+  champion: 208,
 }
-function getStageSizes(stage: string) {
-  return STAGE_DISPLAY_SIZES[stage] ?? STAGE_DISPLAY_SIZES.baby
+function getPlayerSize(stage: string): number {
+  return PLAYER_DISPLAY_SIZE[stage] ?? PLAYER_DISPLAY_SIZE.baby
+}
+
+// Opponent display size is driven by the opponent's size_class (creature type),
+// not by the player's stage — a Colossus is always large regardless of who fights it.
+const OPPONENT_SIZE_BY_CLASS: Record<string, number> = {
+  small: 96,
+  medium: 144,
+  large: 192,
+}
+function getOpponentSize(sizeClass: string): number {
+  return OPPONENT_SIZE_BY_CLASS[sizeClass] ?? OPPONENT_SIZE_BY_CLASS.medium
 }
 
 export default function BattlePage() {
@@ -99,7 +110,8 @@ export default function BattlePage() {
 
   const terrain = getArenaTerrain(session.opponent.arenaId)
   const hitImpactUrl = getHitImpactUrl()
-  const { player: playerDisplaySize, opponent: opponentDisplaySize } = getStageSizes(session.companion.stage)
+  const playerDisplaySize = getPlayerSize(session.companion.stage)
+  const opponentDisplaySize = getOpponentSize(session.opponent.sizeClass)
 
   let opponentHp = session.opponentMaxHp
   let playerHp = session.playerMaxHp

@@ -304,6 +304,7 @@ export interface BattleOpponent {
   unlockLevel: number
   isActive: boolean
   isArenaBoss: boolean
+  sizeClass: 'small' | 'medium' | 'large'
   isDefeated: boolean
   isChallengeable: boolean
   /** First XP-rewarding win vs this opponent (for defeated-card summary; practice wins omitted). */

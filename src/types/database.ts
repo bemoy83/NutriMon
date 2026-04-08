@@ -462,6 +462,7 @@ export interface BattleOpponentRow {
   required_previous_opponent_name?: string | null
   lock_reason?: string | null
   action_weights: Record<string, number>
+  size_class: string
   created_at: string
 }
 

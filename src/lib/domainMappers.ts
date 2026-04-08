@@ -367,6 +367,7 @@ export function mapBattleOpponent(row: BattleOpponentRow): BattleOpponent {
     unlockLevel: row.unlock_level,
     isActive: row.is_active,
     isArenaBoss: row.is_arena_boss ?? false,
+    sizeClass: (row.size_class ?? 'medium') as 'small' | 'medium' | 'large',
     isDefeated: row.is_defeated ?? false,
     isChallengeable: row.is_challengeable ?? true,
     rewardedWinTurnCount: row.rewarded_win_turn_count ?? null,
