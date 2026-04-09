@@ -118,7 +118,13 @@ export interface TerrainDescriptor {
   playerPlatformStyle: PlatformStyle | null
   /** Oval platform anchored at the opponent sprite's feet */
   opponentPlatformUrl: string | null
-  opponentPlatformStyle: PlatformStyle | null
+  /**
+   * Rendered width of the opponent platform image in CSS pixels.
+   * The actual CSS position is computed at render time using the opponent's
+   * live displaySize so the platform tracks correctly regardless of size_class.
+   * Use computeOpponentPlatformStyle(opponentPlatformWidth, OPP_SPRITE_TOP_PCT, displaySize).
+   */
+  opponentPlatformWidth: number | null
 }
 
 // ── Platform image spec ───────────────────────────────────────────────────────
@@ -198,7 +204,7 @@ const DEFAULT_TERRAIN: TerrainDescriptor = {
   playerPlatformUrl: null,
   playerPlatformStyle: null,
   opponentPlatformUrl: null,
-  opponentPlatformStyle: null,
+  opponentPlatformWidth: null,
 }
 
 const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
@@ -206,7 +212,7 @@ const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
     playerPlatformUrl:     s('/terrain/arena_1_player_platform.png'),
     playerPlatformStyle:   computePlayerPlatformStyle(320),
     opponentPlatformUrl:   s('/terrain/arena_1_opponent_platform.png'),
-    opponentPlatformStyle: computeOpponentPlatformStyle(224, OPP_SPRITE_TOP_PCT),
+    opponentPlatformWidth: 224,
   },
 }
 

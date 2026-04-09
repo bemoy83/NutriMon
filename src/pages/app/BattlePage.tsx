@@ -19,11 +19,13 @@ import { useBattleRun, useSubmitBattleAction } from '@/features/creature/useBatt
 import { useBattleLogReveal } from '@/hooks/useBattleLogReveal'
 import { useTerrainBackground } from '@/hooks/useTerrainBackground'
 import {
+  computeOpponentPlatformStyle,
   getArenaTerrain,
   getHitImpactUrl,
   getOpponentRecoverySpriteDescriptor,
   getOpponentSpriteDescriptor,
   getPlayerBattleSpriteDescriptor,
+  OPP_SPRITE_TOP_PCT,
 } from '@/lib/sprites'
 
 // Player display size scales with companion stage (closer perspective = larger).
@@ -156,11 +158,13 @@ export default function BattlePage() {
       style: terrain.playerPlatformStyle,
     })
   }
-  if (terrain.opponentPlatformUrl && terrain.opponentPlatformStyle) {
+  if (terrain.opponentPlatformUrl && terrain.opponentPlatformWidth) {
     platformItems.push({
       key: 'opponent',
       url: terrain.opponentPlatformUrl,
-      style: terrain.opponentPlatformStyle,
+      // Computed at render time so the platform tracks the sprite's feet
+      // correctly regardless of the opponent's size_class.
+      style: computeOpponentPlatformStyle(terrain.opponentPlatformWidth, OPP_SPRITE_TOP_PCT, opponentDisplaySize),
     })
   }
 
