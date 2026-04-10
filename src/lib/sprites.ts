@@ -73,9 +73,14 @@ export function getHitImpactUrl(): string | null {
 // ── Opponent sprite registry ─────────────────────────────────────────────────
 // Key format: slugified opponent name e.g. "Pebble Pup" → "pebble_pup"
 // `recovering` is optional — omit it and the sprite stays fainted after defeat.
+// `footOffsetX` — horizontal offset in NATIVE pixels (256px canvas) from the
+//   canvas centre to where the creature's feet actually stand. Positive = feet
+//   are to the right of canvas centre. The renderer converts to display pixels
+//   automatically. Set this when a creature's stance is off-centre in the PNG.
 interface OpponentSpriteEntry {
   battle: SpriteDescriptor
   recovering?: SpriteDescriptor
+  footOffsetX?: number
 }
 
 const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
@@ -99,6 +104,18 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
     battle: { url: s('/sprites/opponents/sunscale_drake.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     recovering: { url: s('/sprites/opponents/sunscale_drake_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
+  'ember_goat': {
+    battle: { url: s('/sprites/opponents/ember_goat.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    recovering: { url: s('/sprites/opponents/ember_goat_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  },
+  //'magma_crab': {
+  //  battle: { url: s('/sprites/opponents/magma_crab.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //  recovering: { url: s('/sprites/opponents/magma_crab_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //},
+  //'cindertail_fox': {
+  //  battle: { url: s('/sprites/opponents/cindertail_fox.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //  recovering: { url: s('/sprites/opponents/cindertail_fox_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //},
 }
 
 // ── Terrain registry ─────────────────────────────────────────────────────────
@@ -112,91 +129,93 @@ export interface PlatformStyle {
   bottom?: number | string
 }
 
+// ── Platform calibration ──────────────────────────────────────────────────────
+// Horizontal alignment: the platform image is centered under the sprite by
+// aligning their midpoints (platformWidth/2 under spriteSize/2). No measurement
+// needed — just design the platform with the walkable surface centred in the PNG.
+//
+// Vertical alignment: ovalSurfaceY controls how high up in the platform image
+// the walkable surface sits. Tune visually — increase to sink feet lower,
+// decrease to raise them.
+//
+// To add a new platform:
+//   1. Export PNG at 512 × any height with alpha, walkable surface centred horizontally.
+//   2. Add a PlatformCalibration with the correct nativeH and a starting ovalSurfaceY (~0.38).
+//   3. Tune ovalSurfaceY until the sprite's feet land on the surface.
+export interface PlatformCalibration {
+  /** Native PNG height in pixels. Width is always 512. */
+  nativeH: number
+  /** Vertical fraction (0–1) from top edge to the walkable surface. Tune visually. */
+  ovalSurfaceY: number
+}
+
+const ARENA_1_CALIBRATION: PlatformCalibration = {
+  nativeH: 240,
+  ovalSurfaceY: 97 / 240,
+}
+
 export interface TerrainDescriptor {
   /** Ground strip anchored bottom-left under the player sprite */
   playerPlatformUrl: string | null
   playerPlatformStyle: PlatformStyle | null
   /** Oval platform anchored at the opponent sprite's feet */
   opponentPlatformUrl: string | null
-  /**
-   * Rendered width of the opponent platform image in CSS pixels.
-   * The actual CSS position is computed at render time using the opponent's
-   * live displaySize so the platform tracks correctly regardless of size_class.
-   * Use computeOpponentPlatformStyle(opponentPlatformWidth, OPP_SPRITE_TOP_PCT, displaySize).
-   */
+  /** Rendered width of the opponent platform image in CSS pixels. */
   opponentPlatformWidth: number | null
+  /**
+   * Per-platform calibration for the opponent oval.
+   * Defaults to arena_1 values if omitted.
+   */
+  opponentCalibration?: PlatformCalibration
 }
 
-// ── Platform image spec ───────────────────────────────────────────────────────
-// All platform PNGs MUST conform to this spec for automatic positioning.
-//
-//   Canvas:               512 × 240 px with alpha channel
-//   Oval centre X:        297 px from left  (≈58% — calibrated from arena_1)
-//   Oval walkable surface:  97 px from top  (≈40% — calibrated from arena_1)
-//
-// To add a new arena platform:
-//   1. Export PNG at exactly 512 × 240 px with alpha
-//   2. Place the oval centre at x=297, walkable surface top at y=97
-//   3. Use computePlayerPlatformStyle(width) / computeOpponentPlatformStyle(width)
-//      in ARENA_TERRAIN — no manual pixel tuning needed
-const PLATFORM_SPEC = {
-  nativeW: 512,
-  nativeH: 240,
-  ovalCenterX:  297 / 512, // fraction from left edge
-  ovalSurfaceY:  97 / 240, // fraction from top edge (walkable surface, not oval centre)
-} as const
-
-// Sprite layout constants — must stay in sync with BattlePage className values
-// PLAYER_SIZE / OPP_SIZE reflect the baby-stage display sizes (the base case used when
-// pre-computing ARENA_TERRAIN platform positions). Adult/Champion use larger sizes but
-// platform drift at those stages is acceptable until per-stage terrain assets are added.
+// Sprite layout constants for the player platform (bottom-left anchor).
+// These must stay in sync with the player sprite className values in BattlePage.
 const PLAYER_LEFT          = 24    // left-6  (1.5 rem)
 const PLAYER_SIZE          = 144   // baby player display size
 const PLAYER_FEET_FROM_BOT = 16    // bottom-4 (1 rem)
 
-const OPP_RIGHT            = 24    // right-6
-const OPP_SIZE             = 128   // baby opponent display size
-/** Opponent sprite top edge as a fraction of arena height. Synced with BattlePage top-[28%]. */
-export const OPP_SPRITE_TOP_PCT = 0.28
-
 /**
- * Computes the absolute CSS position for the player platform image so the oval
- * centre sits directly beneath the player sprite, regardless of rendered width.
- * Only valid for spec-conforming images (512×240, oval at x=297 y=97).
+ * Computes the absolute CSS position for the player platform image.
+ * Horizontally: platform centre (renderedWidth/2) sits under the player sprite centre.
+ * Vertically:   platform surface (ovalSurfaceY) aligns with the sprite's feet.
  */
-export function computePlayerPlatformStyle(renderedWidth: number): PlatformStyle {
-  const renderedH = Math.round(renderedWidth * PLATFORM_SPEC.nativeH / PLATFORM_SPEC.nativeW)
+export function computePlayerPlatformStyle(
+  renderedWidth: number,
+  cal: PlatformCalibration = ARENA_1_CALIBRATION,
+): PlatformStyle {
+  const renderedH = Math.round(renderedWidth * cal.nativeH / 512)
   const spriteCenterX = PLAYER_LEFT + PLAYER_SIZE / 2
   return {
     width:  renderedWidth,
-    left:   Math.round(spriteCenterX - PLATFORM_SPEC.ovalCenterX * renderedWidth),
-    bottom: Math.round(PLAYER_FEET_FROM_BOT - renderedH * (1 - PLATFORM_SPEC.ovalSurfaceY)),
+    left: Math.round(spriteCenterX - renderedWidth / 2),
+    bottom: Math.round(PLAYER_FEET_FROM_BOT - renderedH * (1 - cal.ovalSurfaceY)),
   }
 }
 
 /**
- * Computes the absolute CSS position for the opponent platform image so the oval
- * centre sits directly beneath the opponent sprite, regardless of rendered width.
- * Only valid for spec-conforming images (512×240, oval at x=297 y=97).
- *
- * `spriteTopPct` must match the `top-[X%]` class on the opponent sprite div in BattlePage.
- * `spriteSize`   must match the displaySize passed to that sprite's SpriteStage.
+ * Returns inline CSS for the opponent platform image co-located inside the
+ * sprite's wrapper div.
+ * Horizontally: platform centre (platformWidth/2) aligns with sprite centre (spriteSize/2).
+ * Vertically:   platform surface (ovalSurfaceY) aligns with sprite feet (spriteSize).
  */
-export function computeOpponentPlatformStyle(
-  renderedWidth: number,
-  spriteTopPct: number = OPP_SPRITE_TOP_PCT,
-  spriteSize: number   = OPP_SIZE,
-): PlatformStyle {
-  const renderedH = Math.round(renderedWidth * PLATFORM_SPEC.nativeH / PLATFORM_SPEC.nativeW)
-  const spriteCenterFromRight = OPP_RIGHT + spriteSize / 2
-  // Platform top = sprite feet (% + spriteSizePx) minus the surface offset within the image.
-  // Expressed as calc() so it resolves correctly on any arena height.
-  const surfacePx = Math.round(PLATFORM_SPEC.ovalSurfaceY * renderedH)
-  const topOffset = spriteSize - surfacePx
+export function getCoLocatedPlatformStyle(
+  platformWidth: number,
+  spriteSize: number,
+  /** Foot offset in native pixels (256px canvas). From getOpponentFootOffsetX(). */
+  nativeFootOffsetX: number = 0,
+  cal: PlatformCalibration = ARENA_1_CALIBRATION,
+): { position: 'absolute'; width: number; maxWidth: string; left: number; top: number; zIndex: number; pointerEvents: 'none' } {
+  const platformH = Math.round(platformWidth * cal.nativeH / 512)
+  const displayFootOffsetX = Math.round(nativeFootOffsetX * (spriteSize / 256))
   return {
-    width: renderedWidth,
-    right: Math.round(spriteCenterFromRight - (1 - PLATFORM_SPEC.ovalCenterX) * renderedWidth),
-    top:   `calc(${spriteTopPct * 100}% + ${topOffset}px)`,
+    position: 'absolute',
+    width: platformWidth,
+    maxWidth: 'none',
+    left: Math.round((spriteSize - platformWidth) / 2 + displayFootOffsetX),
+    top: Math.round(spriteSize - cal.ovalSurfaceY * platformH),
+    zIndex: -1,
+    pointerEvents: 'none',
   }
 }
 
@@ -207,12 +226,25 @@ const DEFAULT_TERRAIN: TerrainDescriptor = {
   opponentPlatformWidth: null,
 }
 
+const ARENA_2_CALIBRATION: PlatformCalibration = {
+  nativeH: 350,
+  ovalSurfaceY: 0.38, // TODO: tune visually until sprite feet land on oval
+}
+
 const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
   '37543fca-9f22-41c7-83b5-2ded30d7b063': {
     playerPlatformUrl:     s('/terrain/arena_1_player_platform.png'),
     playerPlatformStyle:   computePlayerPlatformStyle(320),
     opponentPlatformUrl:   s('/terrain/arena_1_opponent_platform.png'),
     opponentPlatformWidth: 224,
+    // opponentCalibration omitted → falls back to ARENA_1_CALIBRATION
+  },
+  'ca277fd4-1dd0-4e6e-a50b-c95bbd878395': {
+    playerPlatformUrl: s('/terrain/arena_2_player_platform.png'),
+    playerPlatformStyle: computePlayerPlatformStyle(320, ARENA_2_CALIBRATION),
+    opponentPlatformUrl: s('/terrain/arena_2_opponent_platform.png'),
+    opponentPlatformWidth: 224,
+    opponentCalibration: ARENA_2_CALIBRATION,
   },
 }
 
@@ -254,6 +286,15 @@ export function getOpponentSpriteDescriptor(name: string): SpriteDescriptor | nu
 
 export function getOpponentRecoverySpriteDescriptor(name: string): SpriteDescriptor | null {
   return OPPONENT_SPRITES[slugify(name)]?.recovering ?? null
+}
+
+/**
+ * Returns the foot offset for an opponent in NATIVE pixels (256px canvas).
+ * Positive = feet are to the right of canvas centre.
+ * Returns 0 if no offset is registered.
+ */
+export function getOpponentFootOffsetX(name: string): number {
+  return OPPONENT_SPRITES[slugify(name)]?.footOffsetX ?? 0
 }
 
 export function getAnimationDescriptor(

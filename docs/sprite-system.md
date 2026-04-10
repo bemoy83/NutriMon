@@ -154,7 +154,7 @@ Add an entry to `ARENA_TERRAIN` in `sprites.ts` keyed by the arena UUID:
 
 ```ts
 const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
-  'your-arena-uuid-here': {
+  'ca277fd4-1dd0-4e6e-a50b-c95bbd878395': {
     playerPlatformUrl:     s('/terrain/arena_2_player_platform.png'),
     playerPlatformStyle:   computePlayerPlatformStyle(320),   // rendered width in px
 

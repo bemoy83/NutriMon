@@ -19,13 +19,13 @@ import { useBattleRun, useSubmitBattleAction } from '@/features/creature/useBatt
 import { useBattleLogReveal } from '@/hooks/useBattleLogReveal'
 import { useTerrainBackground } from '@/hooks/useTerrainBackground'
 import {
-  computeOpponentPlatformStyle,
   getArenaTerrain,
+  getCoLocatedPlatformStyle,
   getHitImpactUrl,
+  getOpponentFootOffsetX,
   getOpponentRecoverySpriteDescriptor,
   getOpponentSpriteDescriptor,
   getPlayerBattleSpriteDescriptor,
-  OPP_SPRITE_TOP_PCT,
 } from '@/lib/sprites'
 
 // Player display size scales with companion stage (closer perspective = larger).
@@ -150,21 +150,13 @@ export default function BattlePage() {
     )
   }
 
+  // Player platform only — opponent platform is co-located inside the opponent sprite div.
   const platformItems: { key: string; url: string; style: CSSProperties }[] = []
   if (terrain.playerPlatformUrl && terrain.playerPlatformStyle) {
     platformItems.push({
       key: 'player',
       url: terrain.playerPlatformUrl,
       style: terrain.playerPlatformStyle,
-    })
-  }
-  if (terrain.opponentPlatformUrl && terrain.opponentPlatformWidth) {
-    platformItems.push({
-      key: 'opponent',
-      url: terrain.opponentPlatformUrl,
-      // Computed at render time so the platform tracks the sprite's feet
-      // correctly regardless of the opponent's size_class.
-      style: computeOpponentPlatformStyle(terrain.opponentPlatformWidth, OPP_SPRITE_TOP_PCT, opponentDisplaySize),
     })
   }
 
@@ -192,7 +184,15 @@ export default function BattlePage() {
             <BattleHudHpBar current={opponentHp} max={session.opponentMaxHp} variant="danger" />
           </BattleHudCard>
 
-          <div className="absolute top-[28%] right-6 z-20">
+          <div className="absolute top-[28%] right-6 z-20" style={{ overflow: 'visible' }}>
+            {terrain.opponentPlatformUrl && terrain.opponentPlatformWidth && (
+              <img
+                src={terrain.opponentPlatformUrl}
+                alt=""
+                draggable={false}
+                style={getCoLocatedPlatformStyle(terrain.opponentPlatformWidth, opponentDisplaySize, getOpponentFootOffsetX(session.opponent.name), terrain.opponentCalibration)}
+              />
+            )}
             <SpriteStage displaySize={opponentDisplaySize} contactShadow>
               <CreatureSprite
                 ref={opponentSpriteRef}
