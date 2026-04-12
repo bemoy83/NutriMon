@@ -192,15 +192,30 @@ export default function BattlePage() {
             <BattleHudHpBar current={opponentHp} max={session.opponentMaxHp} variant="danger" />
           </BattleHudCard>
 
-          <div className="absolute top-[28%] right-6 z-20" style={{ overflow: 'visible' }}>
+          {/* z-stacking (low → high): opponent platform < companion platform < opponent sprite < player sprite < HUD (z-10) */}
+          <div
+            className="pointer-events-none absolute top-[28%] right-6 z-[1]"
+            style={{ width: opponentDisplaySize, height: opponentDisplaySize, overflow: 'visible' }}
+          >
             {terrain.opponentPlatformUrl && terrain.opponentPlatformWidth && (
               <img
                 src={terrain.opponentPlatformUrl}
                 alt=""
                 draggable={false}
-                style={getCoLocatedPlatformStyle(scaleOpponentPlatformWidth(terrain.opponentPlatformWidth, opponentDisplaySize), opponentDisplaySize, getOpponentFootOffsetX(session.opponent.name), terrain.opponentCalibration)}
+                style={{
+                  ...getCoLocatedPlatformStyle(
+                    scaleOpponentPlatformWidth(terrain.opponentPlatformWidth, opponentDisplaySize),
+                    opponentDisplaySize,
+                    getOpponentFootOffsetX(session.opponent.name),
+                    terrain.opponentCalibration,
+                  ),
+                  zIndex: 0,
+                }}
               />
             )}
+          </div>
+
+          <div className="absolute top-[28%] right-6 z-[3]" style={{ overflow: 'visible' }}>
             <SpriteStage displaySize={opponentDisplaySize} contactShadow>
               <CreatureSprite
                 ref={opponentSpriteRef}
@@ -212,7 +227,7 @@ export default function BattlePage() {
             </SpriteStage>
           </div>
 
-          <div className="absolute bottom-4 left-6 z-20">
+          <div className="absolute bottom-4 left-6 z-[4]">
             <SpriteStage displaySize={playerDisplaySize} contactShadow>
               <CreatureSprite
                 ref={playerSpriteRef}
