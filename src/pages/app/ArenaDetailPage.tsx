@@ -41,8 +41,8 @@ export default function ArenaDetailPage() {
   // Derive full accent palette from the pre-baked arena accent color
   const accentVars = deriveAccentVars(terrain?.accentColor)
 
-  // Override the fixed body::before background layer to match the arena gradient.
-  // terrainBg resolves async; the effect re-runs whenever it settles.
+  // Drive the fixed body::before layer (--page-bg-image). Do not paint the same gradient on
+  // this page root — that div grows with scroll height and would stretch the gradient.
   useEffect(() => {
     const root = document.documentElement
     root.style.setProperty('--page-bg-image', terrainBg)
@@ -100,10 +100,7 @@ export default function ArenaDetailPage() {
   }
 
   return (
-    <div
-      className="app-page min-h-screen pb-24"
-      style={{ ...accentVars, background: terrainBg } as React.CSSProperties}
-    >
+    <div className="app-page min-h-screen pb-24" style={accentVars as React.CSSProperties}>
       {/* Header scrim — dark-to-transparent overlay so white text stays legible
           over the lighter sky bands at the top of the terrain gradient */}
       <div
