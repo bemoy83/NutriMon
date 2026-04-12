@@ -23,7 +23,7 @@ import {
   getCoLocatedPlatformStyle,
   getHitImpactUrl,
   getOpponentFootOffsetX,
-  getOpponentRecoverySpriteDescriptor,
+  // getOpponentRecoverySpriteDescriptor,
   getOpponentSpriteDescriptor,
   getPlayerBattleSpriteDescriptor,
 } from '@/lib/sprites'
@@ -74,7 +74,7 @@ export default function BattlePage() {
     setTimeout(() => el.classList.remove('animate-shake'), 400)
   }, [])
 
-  const { displayedLogOverride, isAnimating, showOpponentRecovery, revealEntries } = useBattleLogReveal({
+  const { displayedLogOverride, isAnimating, revealEntries } = useBattleLogReveal({
     playerSpriteRef,
     opponentSpriteRef,
     playerEffectsRef,
@@ -196,12 +196,7 @@ export default function BattlePage() {
             <SpriteStage displaySize={opponentDisplaySize} contactShadow>
               <CreatureSprite
                 ref={opponentSpriteRef}
-                descriptor={
-                  showOpponentRecovery
-                    ? (getOpponentRecoverySpriteDescriptor(session.opponent.name) ??
-                        getOpponentSpriteDescriptor(session.opponent.name))
-                    : getOpponentSpriteDescriptor(session.opponent.name)
-                }
+                descriptor={getOpponentSpriteDescriptor(session.opponent.name)}
                 displaySize={opponentDisplaySize}
                 flip={false}
               />

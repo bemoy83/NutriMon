@@ -39,11 +39,20 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
   function CreatureSprite({ descriptor, displaySize, flip = false, idleAnimation, className }, ref) {
     const pixelArt = descriptor?.pixelArt ?? false
     const [activeAnimation, setActiveAnimation] = useState<'hurt' | 'faint' | 'attack' | null>(null)
+    const [hasFainted, setHasFainted] = useState(false)
     const descriptorKey = descriptor ? `${descriptor.url}:${descriptor.facing}` : 'placeholder'
     const [frameState, setFrameState] = useState({ descriptorKey, currentFrame: 0 })
     const animClearRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const frameIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const currentFrame = frameState.descriptorKey === descriptorKey ? frameState.currentFrame : 0
+    // Stable unique ID for the SVG dissolve filter — one per component instance
+    const filterIdRef = useRef(`dissolve-${Math.random().toString(36).slice(2, 8)}`)
+    const filterId = filterIdRef.current
+
+    // Reset fainted state when opponent changes (new battle)
+    useEffect(() => {
+      setHasFainted(false)
+    }, [descriptorKey])
 
     // Idle animation frame cycling
     useEffect(() => {
@@ -69,6 +78,7 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
         setActiveAnimation(type)
         animClearRef.current = setTimeout(() => {
           setActiveAnimation(null)
+          if (type === 'faint') setHasFainted(true)
           animClearRef.current = null
         }, durationMs)
       },
@@ -88,19 +98,13 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
 
     const transform = shouldFlip ? 'scaleX(-1)' : undefined
 
-    // Faint = fade + slide down
-    const faintStyle =
-      activeAnimation === 'faint'
-        ? { opacity: 0.2, transform: `${transform ?? ''} translateY(8px)`.trim(), transition: 'opacity 800ms ease, transform 800ms ease' }
-        : {}
-
     const containerStyle: React.CSSProperties = {
       position: 'relative',
       width: displaySize,
       height: displaySize,
       display: 'inline-block',
       flexShrink: 0,
-      ...faintStyle,
+      ...(hasFainted ? { visibility: 'hidden' } : {}),
     }
 
     const imgStyle: React.CSSProperties = {
@@ -130,6 +134,55 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
 
     return (
       <div style={containerStyle} className={className}>
+        {/* Inline SVG filter for the noise dissolve — only mounted during faint.
+            feTurbulence generates fractal noise; feColorMatrix thresholds it into
+            a binary mask; feComposite clips SourceGraphic to that mask.
+            SMIL <animate> shifts the threshold from mostly-opaque → fully-transparent
+            over 1 s, starting 0.4 s after mount (after the blink phase ends). */}
+        {activeAnimation === 'faint' && (
+          <svg
+            width={0}
+            height={0}
+            style={{ position: 'absolute', overflow: 'hidden' }}
+            aria-hidden="true"
+          >
+            <defs>
+              <filter
+                id={filterId}
+                x="0%"
+                y="0%"
+                width="100%"
+                height="100%"
+                colorInterpolationFilters="sRGB"
+              >
+                <feTurbulence
+                  type="fractalNoise"
+                  baseFrequency="0.035"
+                  numOctaves="2"
+                  seed="7"
+                  result="noise"
+                />
+                <feColorMatrix
+                  in="noise"
+                  type="matrix"
+                  result="mask"
+                  values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 40 -4"
+                >
+                  {/* Animate alpha threshold: -4 → -46 erases all pixels over 1 s */}
+                  <animate
+                    attributeName="values"
+                    values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 40 -4;0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 40 -46"
+                    dur="1s"
+                    begin="0.4s"
+                    fill="freeze"
+                  />
+                </feColorMatrix>
+                <feComposite in="SourceGraphic" in2="mask" operator="in" />
+              </filter>
+            </defs>
+          </svg>
+        )}
+
         {frameUrl ? (
           <img
             src={frameUrl}
@@ -138,7 +191,13 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
             draggable={false}
             alt=""
             className={pixelArt ? 'sprite-pixel-art block' : 'block'}
-            style={{ ...imgStyle, width: displaySize, height: displaySize, objectFit: 'contain' }}
+            style={{
+              ...imgStyle,
+              width: displaySize,
+              height: displaySize,
+              objectFit: 'contain',
+              ...(activeAnimation === 'faint' ? { filter: `url(#${filterId})` } : {}),
+            }}
           />
         ) : (
           <div style={{ transform }}>
@@ -146,8 +205,10 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
           </div>
         )}
 
-        {/* Hit flash: masked to sprite alpha so flash follows the creature silhouette */}
-        {activeAnimation === 'hurt' && (
+        {/* White flash overlay masked to sprite silhouette.
+            hurt  → single bright flash (hit-flash keyframes)
+            faint → 3 rapid blinks before the dissolve starts (faint-blink keyframes) */}
+        {(activeAnimation === 'hurt' || activeAnimation === 'faint') && (
           <div
             aria-hidden="true"
             style={{
@@ -155,7 +216,10 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
               inset: 0,
               transform,
               background: 'white',
-              animation: 'hit-flash 500ms ease-out forwards',
+              animation:
+                activeAnimation === 'hurt'
+                  ? 'hit-flash 500ms ease-out forwards'
+                  : 'faint-blink 400ms linear forwards',
               pointerEvents: 'none',
               ...hitFlashStyle,
             }}

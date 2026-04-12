@@ -79,34 +79,34 @@ export function getHitImpactUrl(): string | null {
 //   automatically. Set this when a creature's stance is off-centre in the PNG.
 interface OpponentSpriteEntry {
   battle: SpriteDescriptor
-  recovering?: SpriteDescriptor
+  // recovering?: SpriteDescriptor
   footOffsetX?: number
 }
 
 const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   'pebble_pup': {
     battle:     { url: s('/sprites/opponents/pebble_pup.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    recovering: { url: s('/sprites/opponents/pebble_pup_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // recovering: { url: s('/sprites/opponents/pebble_pup_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
   'cinder_finch': {
     battle: { url: s('/sprites/opponents/cinder_finch.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    recovering: { url: s('/sprites/opponents/cinder_finch_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // recovering: { url: s('/sprites/opponents/cinder_finch_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
   'mossback_ram': {
     battle: { url: s('/sprites/opponents/mossback_ram.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    recovering: { url: s('/sprites/opponents/mossback_ram_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // recovering: { url: s('/sprites/opponents/mossback_ram_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
   'tide_lynx': {
     battle: { url: s('/sprites/opponents/tide_lynx.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    recovering: { url: s('/sprites/opponents/tide_lynx_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // recovering: { url: s('/sprites/opponents/tide_lynx_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
   'sunscale_drake': {
     battle: { url: s('/sprites/opponents/sunscale_drake.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    recovering: { url: s('/sprites/opponents/sunscale_drake_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // recovering: { url: s('/sprites/opponents/sunscale_drake_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
   'ember_goat': {
     battle: { url: s('/sprites/opponents/ember_goat.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    recovering: { url: s('/sprites/opponents/ember_goat_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // recovering: { url: s('/sprites/opponents/ember_goat_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
   //'magma_crab': {
   //  battle: { url: s('/sprites/opponents/magma_crab.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
@@ -284,9 +284,9 @@ export function getOpponentSpriteDescriptor(name: string): SpriteDescriptor | nu
   return OPPONENT_SPRITES[slugify(name)]?.battle ?? null
 }
 
-export function getOpponentRecoverySpriteDescriptor(name: string): SpriteDescriptor | null {
-  return OPPONENT_SPRITES[slugify(name)]?.recovering ?? null
-}
+// export function getOpponentRecoverySpriteDescriptor(name: string): SpriteDescriptor | null {
+//   return OPPONENT_SPRITES[slugify(name)]?.recovering ?? null
+// }
 
 /**
  * Returns the foot offset for an opponent in NATIVE pixels (256px canvas).

@@ -114,7 +114,7 @@ create policy "battle_runs_select" on public.battle_runs
   for select using (auth.uid() = user_id);
 
 insert into public.battle_arenas (arena_key, name, description, sort_order, is_active)
-values ('arena_1', 'Arena 1', 'Starter arena for first companion battles.', 1, true)
+values ('arena_1', 'Mosshollow Glen', 'A mossy forest clearing where young companions take their first steps into battle.', 1, true)
 on conflict (arena_key) do update
 set name = excluded.name,
     description = excluded.description,
