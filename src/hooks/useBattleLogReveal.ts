@@ -26,7 +26,6 @@ export function useBattleLogReveal(opts: {
     entries: BattleLogEntry[]
   } | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
-  // const [showOpponentRecovery, setShowOpponentRecovery] = useState(false)
 
   const revealEntries = useCallback(
     (sessionId: string, fullLog: BattleLogEntry[], base: BattleLogEntry[]) => {
@@ -68,8 +67,6 @@ export function useBattleLogReveal(opts: {
               playerSpriteRef.current?.triggerAnimation('faint', 1400)
             } else if (entry.target === 'opponent') {
               opponentSpriteRef.current?.triggerAnimation('faint', 1400)
-              // const rt = setTimeout(() => setShowOpponentRecovery(true), 1200)
-              // animTimers.current.push(rt)
             }
           }
 
@@ -96,7 +93,6 @@ export function useBattleLogReveal(opts: {
   return {
     displayedLogOverride,
     isAnimating,
-    // showOpponentRecovery,
     revealEntries,
   }
 }

@@ -23,7 +23,6 @@ import {
   getCoLocatedPlatformStyle,
   getHitImpactUrl,
   getOpponentFootOffsetX,
-  // getOpponentRecoverySpriteDescriptor,
   getOpponentSpriteDescriptor,
   getPlayerBattleSpriteDescriptor,
 } from '@/lib/sprites'
