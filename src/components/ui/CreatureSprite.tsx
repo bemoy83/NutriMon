@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react'
 import type { AnimationDescriptor, SpriteDescriptor } from '@/lib/sprites'
 
 export interface CreatureSpriteHandle {
@@ -41,18 +41,17 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
     const [activeAnimation, setActiveAnimation] = useState<'hurt' | 'faint' | 'attack' | null>(null)
     const [hasFainted, setHasFainted] = useState(false)
     const descriptorKey = descriptor ? `${descriptor.url}:${descriptor.facing}` : 'placeholder'
+    const [prevDescriptorKey, setPrevDescriptorKey] = useState(descriptorKey)
+    if (descriptorKey !== prevDescriptorKey) {
+      setPrevDescriptorKey(descriptorKey)
+      setHasFainted(false)
+    }
     const [frameState, setFrameState] = useState({ descriptorKey, currentFrame: 0 })
     const animClearRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const frameIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const currentFrame = frameState.descriptorKey === descriptorKey ? frameState.currentFrame : 0
-    // Stable unique ID for the SVG dissolve filter — one per component instance
-    const filterIdRef = useRef(`dissolve-${Math.random().toString(36).slice(2, 8)}`)
-    const filterId = filterIdRef.current
-
-    // Reset fainted state when opponent changes (new battle)
-    useEffect(() => {
-      setHasFainted(false)
-    }, [descriptorKey])
+    // Stable unique ID for the SVG dissolve filter — useId is pure and SSR-safe; strip ':' for url(#...)
+    const filterId = `dissolve-${useId().replace(/:/g, '')}`
 
     // Idle animation frame cycling
     useEffect(() => {
