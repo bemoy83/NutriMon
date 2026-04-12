@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArenaCard } from '@/components/battle/ArenaCard'
 import LoadingState from '@/components/ui/LoadingState'
@@ -17,8 +18,23 @@ function getConditionTone(condition: CreatureCondition) {
   }
 }
 
+const HUB_BG = '#0c1a10'
+
 export default function BattleHubPage() {
   const navigate = useNavigate()
+
+  // Override the fixed body::before background layer for the hub's dark forest theme.
+  // Restored to defaults when navigating away.
+  useEffect(() => {
+    const root = document.documentElement
+    root.style.setProperty('--page-bg-color', HUB_BG)
+    root.style.setProperty('--page-bg-image', 'none')
+    return () => {
+      root.style.removeProperty('--page-bg-color')
+      root.style.removeProperty('--page-bg-image')
+    }
+  }, [])
+
   const profileQuery = useProfileSummary()
   const timezone = profileQuery.data?.timezone ?? 'UTC'
   const battleDate = getTodayInTimezone(timezone)
@@ -31,8 +47,11 @@ export default function BattleHubPage() {
   if (profileQuery.isLoading) return <LoadingState fullScreen />
 
   return (
-    <div className="app-page min-h-full px-4 py-6 pb-24">
-      <h1 className="mb-6 text-xl font-bold text-[var(--app-text-primary)]">Battle Hub</h1>
+    <div
+      className="app-page min-h-screen px-4 py-6 pb-24"
+      style={{ background: 'linear-gradient(165deg, #0c1a10 0%, #111c16 100%)' }}
+    >
+      <h1 className="mb-6 text-xl font-bold text-white">Battle Hub</h1>
 
       {/* Compact creature + readiness card */}
       {companion ? (

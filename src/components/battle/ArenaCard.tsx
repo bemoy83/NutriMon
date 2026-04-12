@@ -1,17 +1,6 @@
-import { ArenaProgressBar } from './ArenaProgressBar'
+import { getArenaTerrain } from '@/lib/sprites'
+import { deriveTerrainGradient } from '@/lib/arenaTheme'
 import type { ArenaListArena } from '@/types/domain'
-
-/** Hardcoded terrain colour per arena_key — used as the left accent strip.
- *  Replace with a sampled colour once proper terrain assets exist for arena_2/3. */
-const ARENA_ACCENT: Record<string, string> = {
-  arena_1: '#4ade80',
-  arena_2: '#f97316',
-  arena_3: '#a78bfa',
-}
-
-function getAccent(arenaKey: string): string {
-  return ARENA_ACCENT[arenaKey] ?? '#6b7280'
-}
 
 interface ArenaCardProps {
   arena: ArenaListArena
@@ -19,79 +8,98 @@ interface ArenaCardProps {
 }
 
 export function ArenaCard({ arena, onClick }: ArenaCardProps) {
-  const accent = getAccent(arena.arenaKey)
+  const terrain = getArenaTerrain(arena.id)
+  const accent = terrain.accentColor ?? '#6b7280'
+  const gradient = deriveTerrainGradient(accent)
   const isLocked = !arena.isUnlocked
-  const levelRange =
-    arena.opponentCount > 0
-      ? `${arena.opponentCount} opponent${arena.opponentCount !== 1 ? 's' : ''}`
-      : 'No opponents yet'
+  const progressPct = arena.opponentCount > 0
+    ? (arena.defeatedCount / arena.opponentCount) * 100
+    : 0
 
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={isLocked}
-      className={`app-card w-full overflow-hidden text-left transition-opacity ${
-        isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90 active:opacity-80'
+      style={{ '--arena-accent': accent } as React.CSSProperties}
+      className={`relative w-full overflow-hidden rounded-2xl border border-white/15 ${
+        isLocked
+          ? 'cursor-not-allowed'
+          : 'transition-transform active:scale-[0.985]'
       }`}
     >
-      <div className="flex items-stretch">
-        {/* Terrain colour strip */}
-        <div
-          className="relative w-12 flex-shrink-0 flex items-center justify-center"
-          style={{ background: accent }}
-        >
-          {isLocked ? (
-            <svg
-              className="w-5 h-5 text-white/80"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
-          ) : arena.hasActiveRun ? (
-            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[var(--app-warning)] animate-pulse" />
-          ) : null}
-        </div>
+      {/* Biome gradient fills the full card */}
+      <div className="absolute inset-0" style={{ background: gradient }} />
 
-        {/* Content */}
-        <div className="flex-1 min-w-0 px-4 py-4">
-          <div className="flex items-center justify-between gap-2">
-            <p className="font-semibold text-[var(--app-text-primary)] truncate">{arena.name}</p>
-            {isLocked ? null : (
-              <svg
-                className="w-4 h-4 text-[var(--app-text-muted)] flex-shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            )}
+      {/* Decorative platform PNG — floats bottom-right as atmosphere */}
+      {terrain.opponentPlatformUrl && (
+        <img
+          src={terrain.opponentPlatformUrl}
+          alt=""
+          aria-hidden
+          draggable={false}
+          className="absolute bottom-0 right-0 pointer-events-none select-none sprite-pixel-art"
+          style={{ width: '52%', opacity: 0.5 }}
+        />
+      )}
+
+      {/* Bottom scrim so text is always legible over the gradient */}
+      <div
+        className="absolute inset-0"
+        style={{ background: 'linear-gradient(transparent 20%, rgba(0,0,0,0.62) 100%)' }}
+      />
+
+      {/* Active run pulse — top-right corner */}
+      {arena.hasActiveRun && !isLocked && (
+        <span className="absolute top-3 right-3 z-10 h-2.5 w-2.5 rounded-full bg-[var(--app-warning)] animate-pulse" />
+      )}
+
+      {/* Card content — sits above scrim */}
+      <div className="relative h-40 flex flex-col justify-end px-4 pb-4">
+        <p className="text-white font-bold text-lg leading-tight drop-shadow-sm">
+          {arena.name}
+        </p>
+        <p className="mt-1 text-white/65 text-xs">
+          {arena.opponentCount} opponent{arena.opponentCount !== 1 ? 's' : ''}
+          {!isLocked && arena.defeatedCount > 0 && ` · ${arena.defeatedCount} defeated`}
+        </p>
+
+        {!isLocked && arena.opponentCount > 0 && (
+          <div
+            className="mt-2.5 h-0.5 w-full rounded-full overflow-hidden"
+            style={{ background: 'rgba(255,255,255,0.22)' }}
+          >
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${progressPct}%`, background: 'rgba(255,255,255,0.80)' }}
+            />
           </div>
-
-          <p className="mt-0.5 text-xs text-[var(--app-text-muted)]">{levelRange}</p>
-
-          <div className="mt-3">
-            {isLocked ? (
-              <p className="text-xs text-[var(--app-text-muted)]">
-                {arena.unlockBossName
-                  ? `Defeat ${arena.unlockBossName} to unlock`
-                  : 'Locked'}
-              </p>
-            ) : (
-              <ArenaProgressBar defeated={arena.defeatedCount} total={arena.opponentCount} />
-            )}
-          </div>
-        </div>
+        )}
       </div>
+
+      {/* Locked overlay */}
+      {isLocked && (
+        <div className="absolute inset-0 bg-black/55 flex flex-col items-center justify-center gap-2 px-6">
+          <svg
+            className="w-6 h-6 text-white/60"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            />
+          </svg>
+          {arena.unlockBossName && (
+            <p className="text-white/50 text-xs text-center">
+              Defeat {arena.unlockBossName} to unlock
+            </p>
+          )}
+        </div>
+      )}
     </button>
   )
 }

@@ -167,6 +167,11 @@ export interface TerrainDescriptor {
    * Defaults to arena_1 values if omitted.
    */
   opponentCalibration?: PlatformCalibration
+  /**
+   * Pre-baked accent hex for arena theming (e.g. '#6aaa30').
+   * Consumed by deriveAccentVars() — no runtime image sampling needed.
+   */
+  accentColor?: string
 }
 
 // Sprite layout constants for the player platform (bottom-left anchor).
@@ -227,7 +232,7 @@ const DEFAULT_TERRAIN: TerrainDescriptor = {
 }
 
 const ARENA_2_CALIBRATION: PlatformCalibration = {
-  nativeH: 350,
+  nativeH: 240,
   ovalSurfaceY: 0.38, // TODO: tune visually until sprite feet land on oval
 }
 
@@ -238,6 +243,7 @@ const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
     opponentPlatformUrl:   s('/terrain/arena_1_opponent_platform.png'),
     opponentPlatformWidth: 224,
     // opponentCalibration omitted → falls back to ARENA_1_CALIBRATION
+    accentColor: '#6aaa30', // Mosshollow Glen — moss green sampled from platform
   },
   'ca277fd4-1dd0-4e6e-a50b-c95bbd878395': {
     playerPlatformUrl: s('/terrain/arena_2_player_platform.png'),
@@ -245,6 +251,7 @@ const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
     opponentPlatformUrl: s('/terrain/arena_2_opponent_platform.png'),
     opponentPlatformWidth: 224,
     opponentCalibration: ARENA_2_CALIBRATION,
+    accentColor: '#f97316', // arena_2 — ember orange
   },
 }
 

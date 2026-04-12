@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { OpponentCard } from '@/components/battle/OpponentCard'
 import { ReadinessPanel } from '@/components/battle/ReadinessPanel'
@@ -10,6 +10,7 @@ import { startBattleRun } from '@/features/creature/api'
 import { useProfileSummary } from '@/features/profile/useProfileSummary'
 import { getTodayInTimezone } from '@/lib/date'
 import { getArenaTerrain } from '@/lib/sprites'
+import { deriveAccentVars } from '@/lib/arenaTheme'
 import { useTerrainBackground } from '@/hooks/useTerrainBackground'
 import type { BattleOpponent } from '@/types/domain'
 
@@ -37,6 +38,20 @@ export default function ArenaDetailPage() {
   // Derive terrain background from the arena's player platform image
   const terrain = arenaId ? getArenaTerrain(arenaId) : null
   const terrainBg = useTerrainBackground(terrain?.playerPlatformUrl ?? null)
+  // Derive full accent palette from the pre-baked arena accent color
+  const accentVars = deriveAccentVars(terrain?.accentColor)
+
+  // Override the fixed body::before background layer to match the arena gradient.
+  // terrainBg resolves async; the effect re-runs whenever it settles.
+  useEffect(() => {
+    const root = document.documentElement
+    root.style.setProperty('--page-bg-image', terrainBg)
+    root.style.setProperty('--page-bg-color', 'transparent')
+    return () => {
+      root.style.removeProperty('--page-bg-image')
+      root.style.removeProperty('--page-bg-color')
+    }
+  }, [terrainBg])
 
   async function handleChallenge(opponent: BattleOpponent) {
     if (activeBattleRun?.opponentId === opponent.id) {
@@ -85,11 +100,15 @@ export default function ArenaDetailPage() {
   }
 
   return (
-    <div className="app-page min-h-full pb-24">
-      {/* Arena header with terrain-derived colour */}
+    <div
+      className="app-page min-h-screen pb-24"
+      style={{ ...accentVars, background: terrainBg } as React.CSSProperties}
+    >
+      {/* Header scrim — dark-to-transparent overlay so white text stays legible
+          over the lighter sky bands at the top of the terrain gradient */}
       <div
         className="px-4 pt-10 pb-6"
-        style={{ background: terrainBg }}
+        style={{ background: 'linear-gradient(rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.32) 70%, transparent 100%)' }}
       >
         <button
           type="button"

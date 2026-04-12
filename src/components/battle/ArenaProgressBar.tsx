@@ -13,7 +13,8 @@ export function ArenaProgressBar({ defeated, total }: ArenaProgressBarProps) {
       </p>
       <div className="h-1.5 overflow-hidden rounded-full bg-[var(--app-border)]">
         <div
-          className="h-full rounded-full bg-[var(--app-brand)] transition-all duration-500"
+          className="h-full rounded-full transition-all duration-500"
+          style={{ background: 'var(--arena-accent, var(--app-brand))' }}
           style={{ width: `${pct}%` }}
         />
       </div>
