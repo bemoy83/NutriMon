@@ -180,6 +180,19 @@ select {
 }
 .animate-shake { animation: sprite-shake 350ms ease-out; }
 
+@keyframes arena-shake-heavy {
+  0%   { transform: translateX(0)     translateY(0);    }
+  12%  { transform: translateX(-9px)  translateY(-4px); }
+  25%  { transform: translateX(9px)   translateY(3px);  }
+  38%  { transform: translateX(-7px)  translateY(-2px); }
+  52%  { transform: translateX(6px)   translateY(1px);  }
+  65%  { transform: translateX(-4px); }
+  78%  { transform: translateX(3px);  }
+  90%  { transform: translateX(-1px); }
+  100% { transform: translateX(0);    }
+}
+.animate-shake-heavy { animation: arena-shake-heavy 500ms ease-out; }
+
 @keyframes float-up {
   0%   { transform: translateY(0);     opacity: 1; }
   100% { transform: translateY(-40px); opacity: 0; }
@@ -189,6 +202,13 @@ select {
   0%, 100% { opacity: 0; }
   30%       { opacity: 0.85; }
   60%       { opacity: 0.4; }
+}
+
+@keyframes hit-flash-crit {
+  0%, 100% { opacity: 0; }
+  15%       { opacity: 1; }
+  45%       { opacity: 0.7; }
+  75%       { opacity: 0.25; }
 }
 
 @keyframes faint-blink {

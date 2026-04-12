@@ -45,8 +45,15 @@ const OPPONENT_SIZE_BY_CLASS: Record<string, number> = {
   medium: 144,
   large: 192,
 }
+// Platform art is calibrated for the medium size. Scale proportionally for other sizes.
+const OPPONENT_PLATFORM_BASELINE = OPPONENT_SIZE_BY_CLASS.medium
+
 function getOpponentSize(sizeClass: string): number {
   return OPPONENT_SIZE_BY_CLASS[sizeClass] ?? OPPONENT_SIZE_BY_CLASS.medium
+}
+
+function scaleOpponentPlatformWidth(registeredWidth: number, displaySize: number): number {
+  return Math.round(registeredWidth * (displaySize / OPPONENT_PLATFORM_BASELINE))
 }
 
 export default function BattlePage() {
@@ -65,13 +72,14 @@ export default function BattlePage() {
   const terrainPlatformUrl = session ? getArenaTerrain(session.opponent.arenaId).playerPlatformUrl : null
   const arenaBackground = useTerrainBackground(terrainPlatformUrl)
 
-  const triggerArenaShake = useCallback(() => {
+  const triggerArenaShake = useCallback((heavy = false) => {
     const el = arenaRef.current
     if (!el) return
-    el.classList.remove('animate-shake')
+    const cls = heavy ? 'animate-shake-heavy' : 'animate-shake'
+    el.classList.remove('animate-shake', 'animate-shake-heavy')
     void el.offsetWidth
-    el.classList.add('animate-shake')
-    setTimeout(() => el.classList.remove('animate-shake'), 400)
+    el.classList.add(cls)
+    setTimeout(() => el.classList.remove(cls), heavy ? 500 : 400)
   }, [])
 
   const { displayedLogOverride, isAnimating, revealEntries } = useBattleLogReveal({
@@ -190,7 +198,7 @@ export default function BattlePage() {
                 src={terrain.opponentPlatformUrl}
                 alt=""
                 draggable={false}
-                style={getCoLocatedPlatformStyle(terrain.opponentPlatformWidth, opponentDisplaySize, getOpponentFootOffsetX(session.opponent.name), terrain.opponentCalibration)}
+                style={getCoLocatedPlatformStyle(scaleOpponentPlatformWidth(terrain.opponentPlatformWidth, opponentDisplaySize), opponentDisplaySize, getOpponentFootOffsetX(session.opponent.name), terrain.opponentCalibration)}
               />
             )}
             <SpriteStage displaySize={opponentDisplaySize} contactShadow>

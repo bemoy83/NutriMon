@@ -10,7 +10,7 @@ export function useBattleLogReveal(opts: {
   opponentSpriteRef: RefObject<CreatureSpriteHandle | null>
   playerEffectsRef: RefObject<EffectsLayerHandle | null>
   opponentEffectsRef: RefObject<EffectsLayerHandle | null>
-  triggerArenaShake: () => void
+  triggerArenaShake: (heavy?: boolean) => void
 }) {
   const {
     playerSpriteRef,
@@ -49,17 +49,17 @@ export function useBattleLogReveal(opts: {
 
           if (entry.phase === 'action' && entry.damage > 0) {
             if (entry.target === 'player') {
-              playerSpriteRef.current?.triggerAnimation('hurt', 500)
+              playerSpriteRef.current?.triggerAnimation('hurt', 500, entry.crit)
               playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
               playerEffectsRef.current?.showHitImpact()
               if (entry.crit) playerEffectsRef.current?.showCritBadge()
-              triggerArenaShake()
+              triggerArenaShake(entry.crit)
             } else if (entry.target === 'opponent') {
-              opponentSpriteRef.current?.triggerAnimation('hurt', 500)
+              opponentSpriteRef.current?.triggerAnimation('hurt', 500, entry.crit)
               opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
               opponentEffectsRef.current?.showHitImpact()
               if (entry.crit) opponentEffectsRef.current?.showCritBadge()
-              triggerArenaShake()
+              triggerArenaShake(entry.crit)
             }
           }
 

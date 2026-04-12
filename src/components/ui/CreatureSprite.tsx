@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } f
 import type { AnimationDescriptor, SpriteDescriptor } from '@/lib/sprites'
 
 export interface CreatureSpriteHandle {
-  triggerAnimation(type: 'hurt' | 'faint' | 'attack', durationMs: number): void
+  triggerAnimation(type: 'hurt' | 'faint' | 'attack', durationMs: number, isCrit?: boolean): void
 }
 
 interface CreatureSpriteProps {
@@ -38,7 +38,7 @@ function SpritePlaceholder({ size }: { size: number }) {
 const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
   function CreatureSprite({ descriptor, displaySize, flip = false, idleAnimation, className }, ref) {
     const pixelArt = descriptor?.pixelArt ?? false
-    const [activeAnimation, setActiveAnimation] = useState<'hurt' | 'faint' | 'attack' | null>(null)
+    const [activeAnimation, setActiveAnimation] = useState<{ type: 'hurt' | 'faint' | 'attack'; isCrit: boolean } | null>(null)
     const [hasFainted, setHasFainted] = useState(false)
     const descriptorKey = descriptor ? `${descriptor.url}:${descriptor.facing}` : 'placeholder'
     const [prevDescriptorKey, setPrevDescriptorKey] = useState(descriptorKey)
@@ -72,9 +72,9 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
     }, [descriptorKey, idleAnimation])
 
     useImperativeHandle(ref, () => ({
-      triggerAnimation(type, durationMs) {
+      triggerAnimation(type, durationMs, isCrit = false) {
         if (animClearRef.current) clearTimeout(animClearRef.current)
-        setActiveAnimation(type)
+        setActiveAnimation({ type, isCrit })
         animClearRef.current = setTimeout(() => {
           setActiveAnimation(null)
           if (type === 'faint') setHasFainted(true)
@@ -138,7 +138,7 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
             a binary mask; feComposite clips SourceGraphic to that mask.
             SMIL <animate> shifts the threshold from mostly-opaque → fully-transparent
             over 1 s, starting 0.4 s after mount (after the blink phase ends). */}
-        {activeAnimation === 'faint' && (
+        {activeAnimation?.type === 'faint' && (
           <svg
             width={0}
             height={0}
@@ -195,7 +195,7 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
               width: displaySize,
               height: displaySize,
               objectFit: 'contain',
-              ...(activeAnimation === 'faint' ? { filter: `url(#${filterId})` } : {}),
+              ...(activeAnimation?.type === 'faint' ? { filter: `url(#${filterId})` } : {}),
             }}
           />
         ) : (
@@ -207,17 +207,19 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
         {/* White flash overlay masked to sprite silhouette.
             hurt  → single bright flash (hit-flash keyframes)
             faint → 3 rapid blinks before the dissolve starts (faint-blink keyframes) */}
-        {(activeAnimation === 'hurt' || activeAnimation === 'faint') && (
+        {(activeAnimation?.type === 'hurt' || activeAnimation?.type === 'faint') && (
           <div
             aria-hidden="true"
             style={{
               position: 'absolute',
               inset: 0,
               transform,
-              background: 'white',
+              background: activeAnimation.isCrit ? '#fbbf24' : 'white',
               animation:
-                activeAnimation === 'hurt'
-                  ? 'hit-flash 500ms ease-out forwards'
+                activeAnimation.type === 'hurt'
+                  ? (activeAnimation.isCrit
+                      ? 'hit-flash-crit 550ms ease-out forwards'
+                      : 'hit-flash 500ms ease-out forwards')
                   : 'faint-blink 400ms linear forwards',
               pointerEvents: 'none',
               ...hitFlashStyle,
