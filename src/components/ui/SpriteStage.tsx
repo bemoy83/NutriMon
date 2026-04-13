@@ -9,11 +9,13 @@ interface SpriteStageProps {
   /** Renders a soft radial-gradient ellipse at the base of the stage.
    *  Stays fully opaque independently of any sprite faint/hurt animations. */
   contactShadow?: boolean
+  /** Merged onto the root stage div (e.g. z-index in stacked battle columns). */
+  className?: string
   children: React.ReactNode
 }
 
 const SpriteStage = forwardRef<SpriteStageHandle, SpriteStageProps>(
-  function SpriteStage({ displaySize, contactShadow = false, children }, ref) {
+  function SpriteStage({ displaySize, contactShadow = false, className, children }, ref) {
     const divRef = useRef<HTMLDivElement>(null)
 
     useImperativeHandle(ref, () => ({
@@ -31,6 +33,7 @@ const SpriteStage = forwardRef<SpriteStageHandle, SpriteStageProps>(
     return (
       <div
         ref={divRef}
+        className={className}
         style={{
           position: 'relative',
           width: displaySize,

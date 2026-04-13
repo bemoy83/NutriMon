@@ -146,7 +146,7 @@ positioning math works correctly.
 | Oval walkable surface Y | **97 px** from top (≈ 40%) |
 
 Export your platform PNG at exactly 512 × 240 px and place the walkable oval surface at those
-coordinates. The compute functions handle the rest.
+coordinates. `getCoLocatedPlatformStyle` handles placement inside the battle column.
 
 ### Registering a new arena
 
@@ -156,7 +156,7 @@ Add an entry to `ARENA_TERRAIN` in `sprites.ts` keyed by the arena UUID:
 const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
   'ca277fd4-1dd0-4e6e-a50b-c95bbd878395': {
     playerPlatformUrl: s('/terrain/arena_2_player_platform.png'),
-    playerPlatformRenderedWidth: 320, // CSS width; battle passes companion display size into `computePlayerPlatformStyle`
+    playerPlatformRenderedWidth: 320, // CSS width; centred under the player via `getCoLocatedPlatformStyle` in the player column
 
     opponentPlatformUrl: s('/terrain/arena_2_opponent_platform.png'),
     opponentPlatformWidth: 224, // baseline for medium; scaled by opponent size class in battle
@@ -164,12 +164,12 @@ const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
 }
 ```
 
-`computePlayerPlatformStyle(renderedWidth, spriteDisplaySize, calibration?)` derives
-`left`/`bottom` for the player platform from layout constants and the live sprite width (same
-idea as `getCoLocatedPlatformStyle`, which receives `opponentDisplaySize`).
+BattlePage places **both** player and opponent platforms with `getCoLocatedPlatformStyle`
+inside a fixed `displaySize × displaySize` region so `left`/`top` never duplicate Tailwind
+anchor values from `sprites.ts`.
 
-The `renderedWidth` values (e.g. 320 px player, 224 px opponent baseline) control how large the
-platform appears on screen; horizontal centering tracks the companion's `displaySize`.
+The `renderedWidth` values (e.g. 320 px player strip, 224 px opponent baseline) control how wide
+the asset draws; horizontal centreing follows the sprite stage width.
 
 ### Background gradient
 

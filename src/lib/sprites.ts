@@ -121,13 +121,6 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
 // ── Terrain registry ─────────────────────────────────────────────────────────
 // Keyed by arenaId UUID. Background is a CSS gradient string (no image needed).
 // Platform PNGs are optional — null renders nothing for that slot.
-export interface PlatformStyle {
-  width: number
-  left?: number | string
-  right?: number | string
-  top?: number | string
-  bottom?: number | string
-}
 
 // ── Platform calibration ──────────────────────────────────────────────────────
 // Horizontal alignment: the platform image is centered under the sprite by
@@ -155,9 +148,9 @@ const ARENA_1_CALIBRATION: PlatformCalibration = {
 }
 
 export interface TerrainDescriptor {
-  /** Ground strip anchored bottom-left under the player sprite */
+  /** Ground strip for the player — positioned with `getCoLocatedPlatformStyle` inside the player column on BattlePage. */
   playerPlatformUrl: string | null
-  /** Rendered CSS width of the player platform PNG; battle layout passes companion `displaySize` into `computePlayerPlatformStyle`. */
+  /** Rendered CSS width of the player platform PNG (centred under the sprite stage). */
   playerPlatformRenderedWidth: number | null
   /** When set, overrides default arena_1 calibration for the player platform oval (e.g. arena_2). */
   playerPlatformCalibration?: PlatformCalibration
@@ -177,36 +170,11 @@ export interface TerrainDescriptor {
   accentColor?: string
 }
 
-// Sprite layout constants for the player platform (bottom-left anchor).
-// Must stay in sync with BattlePage: `left-6` / `bottom-4` on the player SpriteStage wrapper.
-const PLAYER_LEFT = 24 // left-6 (1.5 rem)
-const PLAYER_FEET_FROM_BOT = 16 // bottom-4 (1 rem)
-
 /**
- * Computes the absolute CSS position for the player platform image.
- * Horizontally: platform centre (renderedWidth/2) sits under the player sprite centre
- * (`spriteDisplaySize` must match `SpriteStage` / `CreatureSprite` display width).
- * Vertically: platform surface (ovalSurfaceY) aligns with the sprite column feet line.
- */
-export function computePlayerPlatformStyle(
-  renderedWidth: number,
-  spriteDisplaySize: number,
-  cal: PlatformCalibration = ARENA_1_CALIBRATION,
-): PlatformStyle {
-  const renderedH = Math.round(renderedWidth * cal.nativeH / 512)
-  const spriteCenterX = PLAYER_LEFT + spriteDisplaySize / 2
-  return {
-    width: renderedWidth,
-    left: Math.round(spriteCenterX - renderedWidth / 2),
-    bottom: Math.round(PLAYER_FEET_FROM_BOT - renderedH * (1 - cal.ovalSurfaceY)),
-  }
-}
-
-/**
- * Returns inline CSS for the opponent platform image co-located inside the
- * sprite's wrapper div.
+ * Returns inline CSS for a platform image co-located inside a `spriteSize × spriteSize` column
+ * (opponent platform shell, or the player column on BattlePage).
  * Horizontally: platform centre (platformWidth/2) aligns with sprite centre (spriteSize/2).
- * Vertically:   platform surface (ovalSurfaceY) aligns with sprite feet (spriteSize).
+ * Vertically: platform surface (ovalSurfaceY) aligns with sprite feet (bottom of the column).
  */
 export function getCoLocatedPlatformStyle(
   platformWidth: number,

@@ -1,6 +1,5 @@
-import { useCallback, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArenaPlatformImage } from '@/components/battle/ArenaPlatformImage'
 import {
   type BattleActionLabel,
   battleActionToPayload,
@@ -19,7 +18,6 @@ import { useBattleRun, useSubmitBattleAction } from '@/features/creature/useBatt
 import { useBattleLogReveal } from '@/hooks/useBattleLogReveal'
 import { useTerrainBackground } from '@/hooks/useTerrainBackground'
 import {
-  computePlayerPlatformStyle,
   getArenaTerrain,
   getCoLocatedPlatformStyle,
   getHitImpactUrl,
@@ -158,20 +156,6 @@ export default function BattlePage() {
     )
   }
 
-  // Player platform only — opponent platform is co-located inside the opponent sprite div.
-  const platformItems: { key: string; url: string; style: CSSProperties }[] = []
-  if (terrain.playerPlatformUrl && terrain.playerPlatformRenderedWidth != null) {
-    platformItems.push({
-      key: 'player',
-      url: terrain.playerPlatformUrl,
-      style: computePlayerPlatformStyle(
-        terrain.playerPlatformRenderedWidth,
-        playerDisplaySize,
-        terrain.playerPlatformCalibration,
-      ),
-    })
-  }
-
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[var(--app-bg)]">
       <div
@@ -180,10 +164,6 @@ export default function BattlePage() {
         style={{ background: arenaBackground, ...battleArenaCmdBarVars() }}
       >
         <div className={battleGameplayBandClass}>
-          {platformItems.map(({ key, url, style }) => (
-            <ArenaPlatformImage key={key} src={url} imgStyle={style} />
-          ))}
-
           <BattleHudCard
             className="left-4 max-sm:max-w-[calc(100vw-3.5rem-128px)]"
             style={{ top: 'calc(28% - 8px)' }}
@@ -196,7 +176,7 @@ export default function BattlePage() {
             <BattleHudHpBar current={opponentHp} max={session.opponentMaxHp} variant="danger" />
           </BattleHudCard>
 
-          {/* z-stacking (low → high): opponent platform < companion platform < opponent sprite < player sprite < HUD (z-10) */}
+          {/* z-stacking (low → high): opponent platform < opponent sprite < player platform < player sprite < HUD (z-10) */}
           <div
             className="pointer-events-none absolute top-[28%] right-6 z-[1]"
             style={{ width: opponentDisplaySize, height: opponentDisplaySize, overflow: 'visible' }}
@@ -235,8 +215,28 @@ export default function BattlePage() {
             </SpriteStage>
           </div>
 
-          <div className="absolute bottom-4 left-6 z-[4]">
-            <SpriteStage displaySize={playerDisplaySize} contactShadow>
+          <div
+            className="absolute bottom-4 left-6 z-[4]"
+            style={{ width: playerDisplaySize, height: playerDisplaySize, overflow: 'visible' }}
+          >
+            {terrain.playerPlatformUrl && terrain.playerPlatformRenderedWidth != null && (
+              <img
+                src={terrain.playerPlatformUrl}
+                alt=""
+                draggable={false}
+                className="pointer-events-none absolute z-[2] object-contain"
+                style={{
+                  ...getCoLocatedPlatformStyle(
+                    terrain.playerPlatformRenderedWidth,
+                    playerDisplaySize,
+                    0,
+                    terrain.playerPlatformCalibration,
+                  ),
+                  zIndex: 2,
+                }}
+              />
+            )}
+            <SpriteStage className="z-[3]" displaySize={playerDisplaySize} contactShadow>
               <CreatureSprite
                 ref={playerSpriteRef}
                 descriptor={getPlayerBattleSpriteDescriptor(
