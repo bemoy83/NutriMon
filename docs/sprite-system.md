@@ -155,22 +155,21 @@ Add an entry to `ARENA_TERRAIN` in `sprites.ts` keyed by the arena UUID:
 ```ts
 const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
   'ca277fd4-1dd0-4e6e-a50b-c95bbd878395': {
-    playerPlatformUrl:     s('/terrain/arena_2_player_platform.png'),
-    playerPlatformStyle:   computePlayerPlatformStyle(320),   // rendered width in px
+    playerPlatformUrl: s('/terrain/arena_2_player_platform.png'),
+    playerPlatformRenderedWidth: 320, // CSS width; battle passes companion display size into `computePlayerPlatformStyle`
 
-    opponentPlatformUrl:   s('/terrain/arena_2_opponent_platform.png'),
-    opponentPlatformStyle: computeOpponentPlatformStyle(224), // rendered width in px
+    opponentPlatformUrl: s('/terrain/arena_2_opponent_platform.png'),
+    opponentPlatformWidth: 224, // baseline for medium; scaled by opponent size class in battle
   },
 }
 ```
 
-`computePlayerPlatformStyle(renderedWidth)` and `computeOpponentPlatformStyle(renderedWidth)`
-automatically derive `left`/`right`/`top`/`bottom` CSS values from the spec constants — no
-manual pixel tuning needed.
+`computePlayerPlatformStyle(renderedWidth, spriteDisplaySize, calibration?)` derives
+`left`/`bottom` for the player platform from layout constants and the live sprite width (same
+idea as `getCoLocatedPlatformStyle`, which receives `opponentDisplaySize`).
 
-The `renderedWidth` values (e.g. 320 px player, 224 px opponent) control how large the platform
-appears on screen. Adjust them to taste; the oval will stay centered under the corresponding
-sprite regardless of the value chosen.
+The `renderedWidth` values (e.g. 320 px player, 224 px opponent baseline) control how large the
+platform appears on screen; horizontal centering tracks the companion's `displaySize`.
 
 ### Background gradient
 

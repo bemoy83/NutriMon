@@ -19,6 +19,7 @@ import { useBattleRun, useSubmitBattleAction } from '@/features/creature/useBatt
 import { useBattleLogReveal } from '@/hooks/useBattleLogReveal'
 import { useTerrainBackground } from '@/hooks/useTerrainBackground'
 import {
+  computePlayerPlatformStyle,
   getArenaTerrain,
   getCoLocatedPlatformStyle,
   getHitImpactUrl,
@@ -29,9 +30,9 @@ import {
 
 // Player display size scales with companion stage (closer perspective = larger).
 const PLAYER_DISPLAY_SIZE: Record<string, number> = {
-  baby: 144,
-  adult: 176,
-  champion: 208,
+  baby: 256,
+  adult: 256,
+  champion: 256,
 }
 function getPlayerSize(stage: string): number {
   return PLAYER_DISPLAY_SIZE[stage] ?? PLAYER_DISPLAY_SIZE.baby
@@ -40,9 +41,9 @@ function getPlayerSize(stage: string): number {
 // Opponent display size is driven by the opponent's size_class (creature type),
 // not by the player's stage — a Colossus is always large regardless of who fights it.
 const OPPONENT_SIZE_BY_CLASS: Record<string, number> = {
-  small: 96,
-  medium: 144,
-  large: 192,
+  small: 144,
+  medium: 192,
+  large: 240,
 }
 // Platform art is calibrated for the medium size. Scale proportionally for other sizes.
 const OPPONENT_PLATFORM_BASELINE = OPPONENT_SIZE_BY_CLASS.medium
@@ -159,11 +160,15 @@ export default function BattlePage() {
 
   // Player platform only — opponent platform is co-located inside the opponent sprite div.
   const platformItems: { key: string; url: string; style: CSSProperties }[] = []
-  if (terrain.playerPlatformUrl && terrain.playerPlatformStyle) {
+  if (terrain.playerPlatformUrl && terrain.playerPlatformRenderedWidth != null) {
     platformItems.push({
       key: 'player',
       url: terrain.playerPlatformUrl,
-      style: terrain.playerPlatformStyle,
+      style: computePlayerPlatformStyle(
+        terrain.playerPlatformRenderedWidth,
+        playerDisplaySize,
+        terrain.playerPlatformCalibration,
+      ),
     })
   }
 

@@ -51,7 +51,7 @@ const PLAYER_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
 const PLAYER_BATTLE_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
   'baby_steady': { url: s('/sprites/player_battle/baby_steady.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // 'baby_thriving':       { url: s('/sprites/player_battle/baby_thriving.png'),       nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
-  'baby_recovering': { url: s('/sprites/player_battle/baby_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  // 'baby_recovering': { url: s('/sprites/player_battle/baby_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // 'adult_steady':        { url: s('/sprites/player_battle/adult_steady.png'),        nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
   // 'adult_thriving':      { url: s('/sprites/player_battle/adult_thriving.png'),      nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
   // 'adult_recovering':    { url: s('/sprites/player_battle/adult_recovering.png'),    nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
@@ -157,7 +157,10 @@ const ARENA_1_CALIBRATION: PlatformCalibration = {
 export interface TerrainDescriptor {
   /** Ground strip anchored bottom-left under the player sprite */
   playerPlatformUrl: string | null
-  playerPlatformStyle: PlatformStyle | null
+  /** Rendered CSS width of the player platform PNG; battle layout passes companion `displaySize` into `computePlayerPlatformStyle`. */
+  playerPlatformRenderedWidth: number | null
+  /** When set, overrides default arena_1 calibration for the player platform oval (e.g. arena_2). */
+  playerPlatformCalibration?: PlatformCalibration
   /** Oval platform anchored at the opponent sprite's feet */
   opponentPlatformUrl: string | null
   /** Rendered width of the opponent platform image in CSS pixels. */
@@ -175,24 +178,25 @@ export interface TerrainDescriptor {
 }
 
 // Sprite layout constants for the player platform (bottom-left anchor).
-// These must stay in sync with the player sprite className values in BattlePage.
-const PLAYER_LEFT          = 24    // left-6  (1.5 rem)
-const PLAYER_SIZE          = 144   // baby player display size
-const PLAYER_FEET_FROM_BOT = 16    // bottom-4 (1 rem)
+// Must stay in sync with BattlePage: `left-6` / `bottom-4` on the player SpriteStage wrapper.
+const PLAYER_LEFT = 24 // left-6 (1.5 rem)
+const PLAYER_FEET_FROM_BOT = 16 // bottom-4 (1 rem)
 
 /**
  * Computes the absolute CSS position for the player platform image.
- * Horizontally: platform centre (renderedWidth/2) sits under the player sprite centre.
- * Vertically:   platform surface (ovalSurfaceY) aligns with the sprite's feet.
+ * Horizontally: platform centre (renderedWidth/2) sits under the player sprite centre
+ * (`spriteDisplaySize` must match `SpriteStage` / `CreatureSprite` display width).
+ * Vertically: platform surface (ovalSurfaceY) aligns with the sprite column feet line.
  */
 export function computePlayerPlatformStyle(
   renderedWidth: number,
+  spriteDisplaySize: number,
   cal: PlatformCalibration = ARENA_1_CALIBRATION,
 ): PlatformStyle {
   const renderedH = Math.round(renderedWidth * cal.nativeH / 512)
-  const spriteCenterX = PLAYER_LEFT + PLAYER_SIZE / 2
+  const spriteCenterX = PLAYER_LEFT + spriteDisplaySize / 2
   return {
-    width:  renderedWidth,
+    width: renderedWidth,
     left: Math.round(spriteCenterX - renderedWidth / 2),
     bottom: Math.round(PLAYER_FEET_FROM_BOT - renderedH * (1 - cal.ovalSurfaceY)),
   }
@@ -226,7 +230,7 @@ export function getCoLocatedPlatformStyle(
 
 const DEFAULT_TERRAIN: TerrainDescriptor = {
   playerPlatformUrl: null,
-  playerPlatformStyle: null,
+  playerPlatformRenderedWidth: null,
   opponentPlatformUrl: null,
   opponentPlatformWidth: null,
 }
@@ -238,16 +242,17 @@ const ARENA_2_CALIBRATION: PlatformCalibration = {
 
 const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
   '37543fca-9f22-41c7-83b5-2ded30d7b063': {
-    playerPlatformUrl:     s('/terrain/arena_1_player_platform.png'),
-    playerPlatformStyle:   computePlayerPlatformStyle(320),
-    opponentPlatformUrl:   s('/terrain/arena_1_opponent_platform.png'),
+    playerPlatformUrl: s('/terrain/arena_1_player_platform.png'),
+    playerPlatformRenderedWidth: 320,
+    opponentPlatformUrl: s('/terrain/arena_1_opponent_platform.png'),
     opponentPlatformWidth: 224,
     // opponentCalibration omitted → falls back to ARENA_1_CALIBRATION
     accentColor: '#6aaa30', // Mosshollow Glen — moss green sampled from platform
   },
   'ca277fd4-1dd0-4e6e-a50b-c95bbd878395': {
     playerPlatformUrl: s('/terrain/arena_2_player_platform.png'),
-    playerPlatformStyle: computePlayerPlatformStyle(320, ARENA_2_CALIBRATION),
+    playerPlatformRenderedWidth: 320,
+    playerPlatformCalibration: ARENA_2_CALIBRATION,
     opponentPlatformUrl: s('/terrain/arena_2_opponent_platform.png'),
     opponentPlatformWidth: 224,
     opponentCalibration: ARENA_2_CALIBRATION,
