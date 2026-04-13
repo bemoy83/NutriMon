@@ -30,9 +30,9 @@ import {
 
 // Player display size scales with companion stage (closer perspective = larger).
 const PLAYER_DISPLAY_SIZE: Record<string, number> = {
-  baby: 256,
-  adult: 256,
-  champion: 256,
+  baby: 192,
+  adult: 240,
+  champion: 288,
 }
 function getPlayerSize(stage: string): number {
   return PLAYER_DISPLAY_SIZE[stage] ?? PLAYER_DISPLAY_SIZE.baby
@@ -41,9 +41,9 @@ function getPlayerSize(stage: string): number {
 // Opponent display size is driven by the opponent's size_class (creature type),
 // not by the player's stage — a Colossus is always large regardless of who fights it.
 const OPPONENT_SIZE_BY_CLASS: Record<string, number> = {
-  small: 144,
-  medium: 192,
-  large: 240,
+  small: 96,
+  medium: 144,
+  large: 192,
 }
 // Platform art is calibrated for the medium size. Scale proportionally for other sizes.
 const OPPONENT_PLATFORM_BASELINE = OPPONENT_SIZE_BY_CLASS.medium
@@ -227,7 +227,11 @@ export default function BattlePage() {
                 displaySize={opponentDisplaySize}
                 flip={false}
               />
-              <EffectsLayer ref={opponentEffectsRef} hitImpactUrl={hitImpactUrl ?? undefined} />
+              <EffectsLayer
+                ref={opponentEffectsRef}
+                hitImpactUrl={hitImpactUrl ?? undefined}
+                displaySize={opponentDisplaySize}
+              />
             </SpriteStage>
           </div>
 
@@ -242,7 +246,11 @@ export default function BattlePage() {
                 displaySize={playerDisplaySize}
                 flip={false}
               />
-              <EffectsLayer ref={playerEffectsRef} hitImpactUrl={hitImpactUrl ?? undefined} />
+              <EffectsLayer
+                ref={playerEffectsRef}
+                hitImpactUrl={hitImpactUrl ?? undefined}
+                displaySize={playerDisplaySize}
+              />
             </SpriteStage>
           </div>
 

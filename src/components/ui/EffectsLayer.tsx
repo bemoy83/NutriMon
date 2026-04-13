@@ -23,6 +23,8 @@ interface HitImpact {
 interface EffectsLayerProps {
   /** URL of the hit impact PNG. If omitted, showHitImpact() is a no-op. */
   hitImpactUrl?: string
+  /** Sprite stage box size (same as SpriteStage `displaySize`) — scales hit impact and keeps floated UI centred. */
+  displaySize?: number
 }
 
 let _id = 0
@@ -32,8 +34,14 @@ function nextId() {
 
 const IMPACT_DURATION_MS = 350
 
+function impactGraphicSize(displaySize: number | undefined): number {
+  if (displaySize == null) return 96
+  return Math.round(Math.min(120, Math.max(72, displaySize * 0.37)))
+}
+
 const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
-  function EffectsLayer({ hitImpactUrl }, ref) {
+  function EffectsLayer({ hitImpactUrl, displaySize }, ref) {
+    const impactPx = impactGraphicSize(displaySize)
     const [numbers, setNumbers] = useState<FloatingNumber[]>([])
     const [crits, setCrits] = useState<CritBadge[]>([])
     const [impacts, setImpacts] = useState<HitImpact[]>([])
@@ -94,37 +102,53 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
               bottom: '100%',
               left: '50%',
               transform: 'translateX(-50%)',
-              animation: 'float-up 1000ms ease-out forwards',
-              fontWeight: 700,
-              fontSize: n.isCrit ? 28 : 20,
-              lineHeight: 1,
-              color: n.isCrit ? 'var(--app-warning)' : 'var(--app-text-primary)',
-              textShadow: '0 2px 5px rgba(0,0,0,0.4)',
-              whiteSpace: 'nowrap',
+              pointerEvents: 'none',
             }}
           >
-            {n.value}
+            <div
+              style={{
+                animation: 'float-up 1000ms ease-out forwards',
+                fontWeight: 700,
+                fontSize: n.isCrit ? 28 : 20,
+                lineHeight: 1,
+                color: n.isCrit ? 'var(--app-warning)' : 'var(--app-text-primary)',
+                textShadow: '0 2px 5px rgba(0,0,0,0.4)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {n.value}
+            </div>
           </div>
         ))}
 
         {/* Hit impact PNG */}
         {hitImpactUrl && impacts.map((h) => (
-          <img
+          <div
             key={h.id}
-            src={hitImpactUrl}
-            alt=""
-            draggable={false}
             style={{
               position: 'absolute',
               top: '50%',
               left: '50%',
-              width: 96,
-              height: 96,
-              objectFit: 'contain',
-              animation: `hit-impact ${IMPACT_DURATION_MS}ms ease-out forwards`,
+              width: impactPx,
+              height: impactPx,
+              transform: 'translate(-50%, -50%)',
               pointerEvents: 'none',
             }}
-          />
+          >
+            <img
+              src={hitImpactUrl}
+              alt=""
+              draggable={false}
+              style={{
+                display: 'block',
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                animation: `hit-impact ${IMPACT_DURATION_MS}ms ease-out forwards`,
+                pointerEvents: 'none',
+              }}
+            />
+          </div>
         ))}
 
         {/* Crit badge */}
@@ -136,16 +160,22 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
               bottom: '110%',
               left: '50%',
               transform: 'translateX(-50%)',
-              animation: 'crit-pop 900ms ease-out forwards',
-              fontWeight: 800,
-              fontSize: 11,
-              letterSpacing: '0.08em',
-              color: 'var(--app-warning)',
-              textShadow: '0 1px 3px rgba(0,0,0,0.4)',
-              whiteSpace: 'nowrap',
+              pointerEvents: 'none',
             }}
           >
-            CRIT!
+            <div
+              style={{
+                animation: 'crit-pop 900ms ease-out forwards',
+                fontWeight: 800,
+                fontSize: 11,
+                letterSpacing: '0.08em',
+                color: 'var(--app-warning)',
+                textShadow: '0 1px 3px rgba(0,0,0,0.4)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              CRIT!
+            </div>
           </div>
         ))}
       </div>
