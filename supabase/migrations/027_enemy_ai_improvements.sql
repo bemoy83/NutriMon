@@ -1,8 +1,134 @@
--- 026_refactor_submit_battle_action.sql
--- Pure refactor of submit_battle_action: eliminates duplicated FIRST/SECOND ACTOR blocks
--- by replacing them with a single FOREACH loop over an initiative-ordered actor array.
+-- 027_enemy_ai_improvements.sql
+-- Extends battle_pick_enemy_action with three new reactive rules on top of
+-- the existing three from 023:
 --
--- No schema changes. No behavior changes. Log entry shapes and payload format are identical.
+--   Rule 4 — Caution Band      : enemy HP 25–50% → shift 20% attack to defend
+--                                (intermediate caution before full desperation kicks in)
+--
+--   Rule 5 — Anti-Focus        : player has a loaded next-attack bonus → shift 20% attack to defend
+--                                (brace for the incoming powered hit)
+--
+--   Rule 6 — Aggression Cooldown (secondary modifier, stacks):
+--             enemy focused last turn → redirect 40% of remaining focus weight to attack
+--             (prevents back-to-back Focus spam; fires after the primary rule)
+--
+-- Priority order (primary rules are mutually exclusive; highest wins):
+--   1. Desperation (HP ≤ 25%)      — always overrides
+--   2. Spend Buff (enemy_nab > 0)  — cash in loaded bonus
+--   3. NEW: Caution Band (HP ≤ 50%)
+--   4. NEW: Anti-Focus (player_nab > 0)
+--   5. Counter-Read (player defended last turn)
+--   + 6. NEW: Aggression Cooldown  — secondary modifier, stacks with 3–5
+--
+-- Also updates submit_battle_action to pass the two new inputs to the picker.
+
+
+-- ─── 1. Drop old signature ───────────────────────────────────────────────────
+-- Required because PostgreSQL cannot change the parameter list in-place.
+-- The new function adds p_enemy_last_action and p_player_nab at the end
+-- with defaults so legacy callers still work.
+
+drop function if exists public.battle_pick_enemy_action(uuid, integer, jsonb, integer, integer, numeric, text);
+
+
+-- ─── 2. Recreate with extended signature and new rules ───────────────────────
+
+create or replace function public.battle_pick_enemy_action(
+  p_battle_run_id      uuid,
+  p_current_round      integer,
+  p_action_weights     jsonb,
+  p_enemy_hp           integer,
+  p_enemy_max_hp       integer,
+  p_enemy_nab          numeric,
+  p_player_last_action text,
+  p_enemy_last_action  text    default null,  -- Rule 6: aggression cooldown
+  p_player_nab         numeric default 0      -- Rule 5: anti-focus
+)
+returns text
+language plpgsql
+immutable
+set search_path = public
+as $$
+declare
+  v_roll   integer;
+  v_atk    integer;
+  v_def    integer;
+  v_foc    integer;
+  v_shift  integer;
+  v_hp_pct numeric;
+begin
+  v_atk := coalesce((p_action_weights->>'attack')::integer, 100);
+  v_def := coalesce((p_action_weights->>'defend')::integer, 0);
+  v_foc := greatest(0, 100 - v_atk - v_def);
+  v_hp_pct := p_enemy_hp::numeric / greatest(p_enemy_max_hp, 1)::numeric;
+
+  -- ── Primary rules (mutually exclusive; first match wins) ──────────────────
+
+  -- Rule 1: Desperation — HP ≤ 25% → commit fully to attack.
+  -- Threshold 0.25: creates pressure at low HP without firing too early.
+  -- Tuning: lower to 0.20 for more predictable enemies; raise to 0.33 for earlier escalation.
+  if v_hp_pct <= 0.25 then
+    v_atk := 100; v_def := 0; v_foc := 0;
+
+  -- Rule 2: Spend Buff — next-attack bonus loaded → spend it immediately (95/5/0).
+  -- 5% defend residual prevents 100% telegraphing.
+  -- Tuning: 98/2/0 for more aggressive; 80/20/0 to bluff occasionally.
+  elsif p_enemy_nab > 0 then
+    v_atk := 95; v_def := 5; v_foc := 0;
+
+  -- Rule 4 (NEW): Caution Band — HP 25–50%, taking damage but not yet desperate.
+  -- Shift 20% of attack weight to defend; keeps pressure while reducing reckless aggression.
+  -- Tuning: 0.15–0.30 shift; raise HP ceiling to 0.60 for more defensive enemies.
+  elsif v_hp_pct <= 0.50 then
+    v_shift := greatest(0, round(v_atk * 0.20)::integer);
+    v_atk   := v_atk - v_shift;
+    v_def   := v_def + v_shift;
+
+  -- Rule 5 (NEW): Anti-Focus — player has a loaded next-attack bonus; incoming hit will hurt.
+  -- Shift 20% of attack weight to defend to absorb the powered blow.
+  -- Tuning: 0.15–0.35 shift; a larger shift makes the AI feel more reactive/adaptive.
+  elsif p_player_nab > 0 then
+    v_shift := greatest(0, round(v_atk * 0.20)::integer);
+    v_atk   := v_atk - v_shift;
+    v_def   := v_def + v_shift;
+
+  -- Rule 3: Counter-Read — player defended last turn → build power rather than attacking a wall.
+  -- Shift 35% of attack weight to focus.
+  -- Tuning: 0.25–0.50; higher values make the AI more "read"-dependent and less random.
+  elsif p_player_last_action = 'defend' then
+    v_shift := greatest(0, round(v_atk * 0.35)::integer);
+    v_atk   := v_atk - v_shift;
+    v_foc   := v_foc + v_shift;
+  end if;
+
+  -- ── Rule 6 (NEW): Aggression Cooldown — secondary modifier, stacks with rules 3–5 ──
+  -- If the enemy focused last turn and still has focus weight remaining, redirect 40% of
+  -- that focus weight to attack.  Prevents back-to-back Focus spam and creates a rhythm
+  -- where the AI naturally alternates between charging and spending.
+  -- Only fires when there is focus weight to reduce (won't affect desperation/spend-buff outcomes).
+  -- Tuning: 0.30–0.60 reduction factor; 0 to disable.
+  if p_enemy_last_action = 'focus' and v_foc > 0 then
+    v_shift := greatest(0, round(v_foc * 0.40)::integer);
+    v_foc   := v_foc - v_shift;
+    v_atk   := v_atk + v_shift;
+  end if;
+
+  -- ── Deterministic roll seeded by run + round ──────────────────────────────
+  v_roll := abs(hashtext(p_battle_run_id::text || p_current_round::text || 'enemy_action')) % 100;
+
+  if v_roll < v_atk then
+    return 'attack';
+  elsif v_roll < v_atk + v_def then
+    return 'defend';
+  else
+    return 'focus';
+  end if;
+end;
+$$;
+
+
+-- ─── 3. Update submit_battle_action to pass the two new params ───────────────
+-- Only the battle_pick_enemy_action call changes; everything else is identical to 026.
 
 create or replace function public.submit_battle_action(
   p_battle_run_id uuid,
@@ -115,7 +241,7 @@ begin
   v_player_next_attack_bonus := v_run.player_next_attack_bonus;
   v_enemy_next_attack_bonus  := v_run.enemy_next_attack_bonus;
 
-  -- ── Enemy action (state-aware) ─────────────────────────────────────────────
+  -- ── Enemy action (state-aware, now with 6 rules) ──────────────────────────
   v_enemy_action := public.battle_pick_enemy_action(
     p_battle_run_id      => p_battle_run_id,
     p_current_round      => v_current_round,
@@ -123,7 +249,9 @@ begin
     p_enemy_hp           => v_run.opponent_current_hp,
     p_enemy_max_hp       => v_run.opponent_max_hp,
     p_enemy_nab          => v_enemy_next_attack_bonus,
-    p_player_last_action => v_run.player_last_action
+    p_player_last_action => v_run.player_last_action,
+    p_enemy_last_action  => v_run.enemy_last_action,       -- Rule 6: aggression cooldown
+    p_player_nab         => v_player_next_attack_bonus     -- Rule 5: anti-focus
   );
 
   -- ── Initiative ─────────────────────────────────────────────────────────────

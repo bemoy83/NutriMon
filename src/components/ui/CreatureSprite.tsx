@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react'
 import type { AnimationDescriptor, SpriteDescriptor } from '@/lib/sprites'
+import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
 
 export interface CreatureSpriteHandle {
   triggerAnimation(type: 'hurt' | 'faint' | 'attack', durationMs: number, isCrit?: boolean): void
@@ -218,9 +219,9 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
               animation:
                 activeAnimation.type === 'hurt'
                   ? (activeAnimation.isCrit
-                      ? 'hit-flash-crit 550ms ease-out forwards'
-                      : 'hit-flash 500ms ease-out forwards')
-                  : 'faint-blink 400ms linear forwards',
+                      ? `hit-flash-crit ${BATTLE_ANIM.HURT_CRIT_MS}ms ease-out forwards`
+                      : `hit-flash ${BATTLE_ANIM.HURT_MS}ms ease-out forwards`)
+                  : `faint-blink ${BATTLE_ANIM.FAINT_BLINK_MS}ms linear forwards`,
               pointerEvents: 'none',
               ...hitFlashStyle,
             }}

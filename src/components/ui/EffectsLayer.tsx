@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
 
 export interface EffectsLayerHandle {
   showDamageNumber(value: number, isCrit: boolean): void
@@ -32,7 +33,7 @@ function nextId() {
   return ++_id
 }
 
-const IMPACT_DURATION_MS = 350
+const IMPACT_DURATION_MS = BATTLE_ANIM.HIT_IMPACT_MS
 
 function impactGraphicSize(displaySize: number | undefined): number {
   if (displaySize == null) return 96
@@ -61,7 +62,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         setNumbers((prev) => [...prev, { id, value, isCrit }])
         const t = setTimeout(() => {
           setNumbers((prev) => prev.filter((n) => n.id !== id))
-        }, 1000)
+        }, BATTLE_ANIM.DAMAGE_NUMBER_MS)
         timersRef.current.push(t)
       },
       showCritBadge() {
@@ -69,7 +70,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         setCrits((prev) => [...prev, { id }])
         const t = setTimeout(() => {
           setCrits((prev) => prev.filter((c) => c.id !== id))
-        }, 900)
+        }, BATTLE_ANIM.CRIT_BADGE_MS)
         timersRef.current.push(t)
       },
       showHitImpact() {
@@ -107,7 +108,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
           >
             <div
               style={{
-                animation: 'float-up 1000ms ease-out forwards',
+                animation: `float-up ${BATTLE_ANIM.DAMAGE_NUMBER_MS}ms ease-out forwards`,
                 fontWeight: 700,
                 fontSize: n.isCrit ? 28 : 20,
                 lineHeight: 1,
@@ -165,7 +166,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
           >
             <div
               style={{
-                animation: 'crit-pop 900ms ease-out forwards',
+                animation: `crit-pop ${BATTLE_ANIM.CRIT_BADGE_MS}ms ease-out forwards`,
                 fontWeight: 800,
                 fontSize: 11,
                 letterSpacing: '0.08em',

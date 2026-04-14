@@ -377,6 +377,7 @@ export function mapBattleOpponent(row: BattleOpponentRow): BattleOpponent {
     requiredPreviousOpponentName: row.required_previous_opponent_name ?? null,
     lockReason: row.lock_reason ?? null,
     actionWeights: row.action_weights ?? { attack: 100, defend: 0, focus: 0 },
+    specialAction: row.special_action ?? null,
     createdAt: row.created_at,
   }
 }

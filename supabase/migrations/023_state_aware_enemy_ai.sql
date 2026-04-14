@@ -36,15 +36,22 @@ begin
   v_def := coalesce((p_action_weights->>'defend')::integer, 0);
   v_foc := greatest(0, 100 - v_atk - v_def);
 
-  -- Rule 1: Desperation — HP at or below 25% → commit to attack only
+  -- Rule 1: Desperation — HP at or below 25% → commit fully to attack.
+  -- Threshold 0.25: low enough that the enemy has clearly lost the war of attrition;
+  -- forcing 100% attack makes it feel dangerous and creates comeback pressure.
+  -- Tuning: lower to 0.20 for more predictable enemies; raise to 0.33 for earlier escalation.
   if p_enemy_hp::numeric / greatest(p_enemy_max_hp, 1)::numeric <= 0.25 then
     v_atk := 100; v_def := 0; v_foc := 0;
 
-  -- Rule 2: Next-attack bonus is loaded → spend it immediately
+  -- Rule 2: Next-attack bonus is loaded → spend it on attack immediately (95/5/0).
+  -- 5% defend residual prevents 100% telegraphing; gives player a tiny bluff option.
+  -- Tuning: raise to 98/2/0 for more aggressive enemies; lower to 80/20/0 to bluff occasionally.
   elsif p_enemy_nab > 0 then
     v_atk := 95; v_def := 5; v_foc := 0;
 
-  -- Rule 3: Player defended last turn → shift 35% of attack weight to focus
+  -- Rule 3: Player defended last turn → shift 35% of attack weight to focus (don't waste attack on a wall).
+  -- 35% shift: meaningful without fully abandoning attack.
+  -- Tuning: 0.25–0.50; higher values make the enemy more "read"-dependent and less random.
   elsif p_player_last_action = 'defend' then
     v_shift := greatest(0, round(v_atk * 0.35)::integer);
     v_atk   := v_atk - v_shift;

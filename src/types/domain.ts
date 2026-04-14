@@ -315,6 +315,8 @@ export interface BattleOpponent {
   requiredPreviousOpponentName: string | null
   lockReason: string | null
   actionWeights: Record<string, number>
+  /** Optional 4th per-opponent special ability for Phase 3 boss encounters. Null for all current opponents. */
+  specialAction: import('@/types/database').SpecialActionDefinition | null
   createdAt: string
 }
 

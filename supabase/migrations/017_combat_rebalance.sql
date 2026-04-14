@@ -48,21 +48,41 @@ immutable
 set search_path = public
 as $$
   select greatest(1, round(
-    -- base: scaled coefficients + level bonus
+    -- BASE DAMAGE: str × 0.20 + mom × (1 + boost) × 0.13 + level × 0.5
+    -- strength coeff 0.20: tuning range 0.15–0.30 (raising this amplifies stat-based power creep)
+    -- momentum coeff 0.13: tuning range 0.08–0.20 (also gates crit chance, so raise carefully)
+    -- level coeff 0.5: flat bonus per level; keeps leveling meaningful without dominating stats
     (p_strength * 0.20 + p_momentum * (1.0 + p_momentum_boost) * 0.13 + p_level * 0.5)
-    -- deterministic variance 0.90–1.10
+
+    -- VARIANCE: ±10% per-round deterministic jitter (0.90–1.10)
+    -- Seeded by run + round + actor so the same battle always replays identically.
+    -- Range (% 21 → 0–20) / 100 + 0.9 = 0.90–1.10. Widen to % 31 for ±15%.
     * (0.9 + (abs(hashtext(p_battle_run_id::text || p_round::text || p_actor || 'var')) % 21) / 100.0)
-    -- crit
+
+    -- CRIT MULTIPLIER: 1.5× on a critical hit (1.0 otherwise).
+    -- Crit chance is computed upstream: (momentum × 15) / 10000
+    --   → momentum=80 → 12% crit chance; momentum=100 → 15% max.
+    -- Multiplier tuning range: 1.3–2.0 (above 2.0 feels swingy; below 1.3 crits feel pointless).
     * p_crit_multiplier
-    -- stage multiplier: adult=+15%, champion=+35%
+
+    -- STAGE MULTIPLIER: rewards creature evolution without making baby unplayable.
+    -- baby=1.0 (baseline), adult=+15%, champion=+35%.
+    -- Tuning: keep champion bonus ≤ 50% or it trivialises early arenas with an evolved creature.
     * case p_stage
         when 'adult'    then 1.15
         when 'champion' then 1.35
         else 1.0
       end
-    -- next-attack bonus from defend
+
+    -- NEXT-ATTACK BONUS: +60% multiplier banked by the Focus action (0 normally).
+    -- Set to 0.60 by focus handler; consumed and reset to 0 on the next attack or focus.
+    -- Tuning range: 0.40–0.80. Above 0.80, stacked Focus → Attack becomes a near-guaranteed KO.
     * (1.0 + p_next_attack_bonus)
-    -- resilience as % mitigation: 0% at res=0, 40% at res=100
+
+    -- RESILIENCE MITIGATION: each resilience point blocks 0.4% of incoming damage.
+    -- At resilience=100 → 40% blocked (multiplier floor: 0.60).
+    -- Floor of 0.60 ensures even glass-cannon opponents deal at least 60% of raw damage.
+    -- Tuning: 0.003–0.005 per point; don't let max mitigation exceed 50% (would reward turtling too hard).
     * greatest(0.60, 1.0 - p_resilience * 0.004)
   )::integer);
 $$;

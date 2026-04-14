@@ -14,6 +14,8 @@ import type { CreatureSpriteHandle } from '@/components/ui/CreatureSprite'
 import SpriteStage from '@/components/ui/SpriteStage'
 import EffectsLayer from '@/components/ui/EffectsLayer'
 import type { EffectsLayerHandle } from '@/components/ui/EffectsLayer'
+import SpecialActionFlash from '@/components/ui/SpecialActionFlash'
+import type { SpecialActionFlashHandle } from '@/components/ui/SpecialActionFlash'
 import { useBattleRun, useSubmitBattleAction } from '@/features/creature/useBattleRun'
 import { useBattleLogReveal } from '@/hooks/useBattleLogReveal'
 import { useTerrainBackground } from '@/hooks/useTerrainBackground'
@@ -63,6 +65,7 @@ export default function BattlePage() {
   const opponentSpriteRef = useRef<CreatureSpriteHandle>(null)
   const playerEffectsRef = useRef<EffectsLayerHandle>(null)
   const opponentEffectsRef = useRef<EffectsLayerHandle>(null)
+  const specialFlashRef = useRef<SpecialActionFlashHandle>(null)
 
   const { data: session, isLoading, error } = useBattleRun(battleRunId)
   const { mutate: submitAction, isPending } = useSubmitBattleAction()
@@ -86,6 +89,7 @@ export default function BattlePage() {
     playerEffectsRef,
     opponentEffectsRef,
     triggerArenaShake,
+    specialFlashRef,
   })
 
   const [pendingAction, setPendingAction] = useState<BattleActionLabel | null>(null)
@@ -275,6 +279,8 @@ export default function BattlePage() {
           pendingAction={pendingAction}
           onAction={handleAction}
         />
+
+        <SpecialActionFlash ref={specialFlashRef} />
       </div>
 
       {isCompleted && allEntriesShown ? (

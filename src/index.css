@@ -240,6 +240,16 @@ select {
 }
 .animate-modal-pop { animation: modal-pop 300ms ease-out both; }
 
+/* Full-viewport flash for special actions.
+   Quick burst (0 → 92% in 12%) → hold → fade out.
+   Duration driven by BATTLE_ANIM.SPECIAL_FLASH_MS (450ms). */
+@keyframes special-flash {
+  0%   { opacity: 0; }
+  12%  { opacity: 0.92; }
+  35%  { opacity: 0.80; }
+  100% { opacity: 0; }
+}
+
 /* ── App utilities ───────────────────────────────────────────────────────── */
 
 .app-page {

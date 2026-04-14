@@ -439,6 +439,23 @@ export interface BattleArenaRow {
   created_at: string
 }
 
+/**
+ * Optional 4th per-opponent ability definition for Phase 3 boss encounters.
+ * Stored as JSONB in battle_opponents.special_action.
+ */
+export interface SpecialActionDefinition {
+  /** Combat effect category. */
+  type: 'damage_boost' | 'status_apply' | 'multi_hit'
+  /** Display name shown in battle UI (e.g. "Magma Surge"). */
+  label: string
+  /** Tooltip / flavour description. */
+  description: string
+  /** Action selection weight 0–100, added on top of action_weights. */
+  weight: number
+  /** Type-specific effect parameters. */
+  params: Record<string, unknown>
+}
+
 export interface BattleOpponentRow {
   id: string
   arena_id: string
@@ -462,6 +479,8 @@ export interface BattleOpponentRow {
   required_previous_opponent_name?: string | null
   lock_reason?: string | null
   action_weights: Record<string, number>
+  /** Optional 4th per-opponent ability for Phase 3 boss encounters. Null for all current opponents. */
+  special_action: SpecialActionDefinition | null
   size_class: string
   created_at: string
 }

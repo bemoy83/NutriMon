@@ -1,8 +1,35 @@
--- 026_refactor_submit_battle_action.sql
--- Pure refactor of submit_battle_action: eliminates duplicated FIRST/SECOND ACTOR blocks
--- by replacing them with a single FOREACH loop over an initiative-ordered actor array.
+-- 029_special_action_handler.sql
+-- Wires up the special_action column (added in 028) into the combat loop.
 --
--- No schema changes. No behavior changes. Log entry shapes and payload format are identical.
+-- Changes:
+--   1. Add player_special_meter / enemy_special_meter columns to battle_runs
+--      (meter foundation — always 0 this pass; fill logic ships with the meter system)
+--
+--   2. Update submit_battle_action:
+--      a. Pre-empt check: if opponent.special_action is defined and
+--         hashtext roll < special_action.weight, enemy_action = 'special'
+--         (fires before battle_pick_enemy_action; desperate enemies prefer their special)
+--      b. New 'special' CASE branch in the actor loop:
+--         • damage_boost — base damage × params.multiplier
+--         • multi_hit    — N hits × damage_fraction each; each hit crits independently
+--      c. 'special' added to battle completion check
+--
+-- Enemy-only this pass. Player special action ships with the meter system.
+
+
+-- ─── 1. Meter foundation columns ─────────────────────────────────────────────
+
+alter table public.battle_runs
+  add column if not exists player_special_meter integer not null default 0,
+  add column if not exists enemy_special_meter  integer not null default 0;
+
+comment on column public.battle_runs.player_special_meter is
+  'Limit-break meter for the player (0–100). Always 0 until the meter system ships.';
+comment on column public.battle_runs.enemy_special_meter is
+  'Limit-break meter for the enemy (0–100). Always 0 until the meter system ships.';
+
+
+-- ─── 2. submit_battle_action — special action support ────────────────────────
 
 create or replace function public.submit_battle_action(
   p_battle_run_id uuid,
@@ -69,6 +96,21 @@ declare
   v_act_target_hp_after integer;
   v_act_win_outcome     text;
 
+  -- Special action vars
+  v_special_weight      integer;
+  v_preempt_roll        integer;
+  v_special_type        text;
+  v_boost_multiplier    numeric;
+  v_hit_count           integer;
+  v_hit_fraction        numeric;
+  v_single_hit_base     integer;
+  v_hit_i               integer;
+  v_hit_is_crit         boolean;
+  v_hit_crit_mult       numeric;
+  v_single_hit_damage   integer;
+  v_hit_messages        text;
+  v_any_hit_critted     boolean;
+
   v_battle_complete    boolean := false;
   v_status             text;
   v_outcome            text;
@@ -115,21 +157,37 @@ begin
   v_player_next_attack_bonus := v_run.player_next_attack_bonus;
   v_enemy_next_attack_bonus  := v_run.enemy_next_attack_bonus;
 
-  -- ── Enemy action (state-aware) ─────────────────────────────────────────────
-  v_enemy_action := public.battle_pick_enemy_action(
-    p_battle_run_id      => p_battle_run_id,
-    p_current_round      => v_current_round,
-    p_action_weights     => v_opponent.action_weights,
-    p_enemy_hp           => v_run.opponent_current_hp,
-    p_enemy_max_hp       => v_run.opponent_max_hp,
-    p_enemy_nab          => v_enemy_next_attack_bonus,
-    p_player_last_action => v_run.player_last_action
-  );
+  -- ── Special action pre-empt ───────────────────────────────────────────────
+  -- Check before normal AI rules so a desperate enemy can still use their special.
+  -- Pre-empt probability = special_action.weight (0–100 per-turn % chance).
+  -- Deterministic: seeded with 'special_preempt' suffix, independent of action roll.
+  v_enemy_action := null;
+  if v_opponent.special_action is not null then
+    v_special_weight := coalesce((v_opponent.special_action->>'weight')::integer, 0);
+    v_preempt_roll   := abs(hashtext(p_battle_run_id::text || v_current_round::text || 'special_preempt')) % 100;
+    if v_preempt_roll < v_special_weight then
+      v_enemy_action := 'special';
+    end if;
+  end if;
+
+  -- ── Enemy action (state-aware, 6 rules) — skipped if special pre-empted ──
+  if v_enemy_action is null then
+    v_enemy_action := public.battle_pick_enemy_action(
+      p_battle_run_id      => p_battle_run_id,
+      p_current_round      => v_current_round,
+      p_action_weights     => v_opponent.action_weights,
+      p_enemy_hp           => v_run.opponent_current_hp,
+      p_enemy_max_hp       => v_run.opponent_max_hp,
+      p_enemy_nab          => v_enemy_next_attack_bonus,
+      p_player_last_action => v_run.player_last_action,
+      p_enemy_last_action  => v_run.enemy_last_action,
+      p_player_nab         => v_player_next_attack_bonus
+    );
+  end if;
 
   -- ── Initiative ─────────────────────────────────────────────────────────────
   -- Base = momentum stat; jitter = deterministic ±5 (% 11 → 0–10, minus 5 → -5..+5).
   -- Higher momentum = faster on average but not guaranteed. Player wins ties.
-  -- Tuning: widen jitter (% 21 - 10) for more upsets; narrow (% 3 - 1) for stat-determinism.
   v_player_init := v_snapshot.momentum
     + (abs(hashtext(p_battle_run_id::text || v_current_round::text || 'pinit')) % 11) - 5;
   v_enemy_init  := v_opponent.momentum
@@ -150,8 +208,7 @@ begin
 
   -- ── Crits ──────────────────────────────────────────────────────────────────
   -- Crit chance = (momentum × 15) / 10000 → momentum=80 → 12%, momentum=100 → 15% max.
-  -- Multiplier of 15: tuning range 10–20 (lower = rarer crits; higher = momentum snowballs).
-  -- Multiplier 1.5×: see battle_compute_damage comment for tuning guidance.
+  -- For multi_hit: these pre-rolled values are not used; each hit rolls independently.
   v_player_is_crit   := (abs(hashtext(p_battle_run_id::text || v_current_round::text || 'player'   || 'crit')) % 10000) < (v_snapshot.momentum * 15);
   v_player_crit_mult := case when v_player_is_crit  then 1.5 else 1.0 end;
   v_enemy_is_crit    := (abs(hashtext(p_battle_run_id::text || v_current_round::text || 'opponent' || 'crit')) % 10000) < (v_opponent.momentum * 15);
@@ -269,24 +326,19 @@ begin
           p_strength => v_act_strength, p_momentum => v_act_momentum,
           p_resilience => v_act_resilience,
           p_momentum_boost => v_act_momentum_boost,
-          p_next_attack_bonus => 0,   -- bonus applies next turn, not this hit
+          p_next_attack_bonus => 0,
           p_crit_multiplier => v_act_crit_mult,
           p_level => v_act_level, p_stage => v_act_stage
         );
-        -- Focus deals 75% of a normal attack's damage up front (0.75 = tuning range 0.60–0.85).
-        -- Below 0.60 the immediate damage is too negligible; above 0.85 the charge payoff is too small.
+        -- Focus deals 75% of a normal attack's damage up front (tuning range 0.60–0.85).
         v_act_damage := greatest(1, round(v_act_damage * 0.75)::integer);
         if v_opponent_action = 'defend' then
-          -- Defend halves incoming damage (0.5). Tuning: same as the attack branch.
           v_act_damage := greatest(1, round(v_act_damage * 0.5)::integer);
         end if;
         if v_opponent_action = 'focus' then
-          -- Mutual Focus: both combatants are exposed — damage × 1.3 (mirrors attack branch).
-          -- This punishes greedy double-Focus and creates a risk/reward tension.
           v_act_damage := round(v_act_damage * 1.3)::integer;
         end if;
         -- Next-attack bonus: +60% multiplier banked for the following turn.
-        -- Tuning range: see battle_compute_damage comment. Stacks with stage multiplier.
         v_act_momentum_boost := 0; v_act_next_atk_bonus := 0.60;
         v_act_target_hp_after := greatest(0,
           case when v_actor = 'player' then v_new_opponent_hp else v_new_player_hp end
@@ -305,6 +357,109 @@ begin
             || case when v_opponent_action = 'defend' then ' (Absorbed!)'     else '' end
         );
 
+      when 'special' then
+        -- ── Special action (enemy-only this pass) ────────────────────────
+        -- Sub-dispatch on special_action.type from battle_opponents.
+        -- Consumes NAB + momentum boost the same way attack does.
+        v_act_consumed_mb  := v_act_momentum_boost > 0;
+        v_act_consumed_nab := v_act_next_atk_bonus > 0;
+        v_special_type     := coalesce(v_opponent.special_action->>'type', 'damage_boost');
+
+        case v_special_type
+
+          when 'damage_boost' then
+            -- Compute base damage (crit already baked via v_act_crit_mult), then apply multiplier.
+            -- params.multiplier: tuning range 1.3–3.0 (above 3.0 risks one-shot KOs)
+            v_boost_multiplier := coalesce((v_opponent.special_action->'params'->>'multiplier')::numeric, 1.5);
+            v_act_damage := public.battle_compute_damage(
+              p_battle_run_id => p_battle_run_id, p_round => v_current_round,
+              p_actor => v_act_actor_label,
+              p_strength => v_act_strength, p_momentum => v_act_momentum,
+              p_resilience => v_act_resilience,
+              p_momentum_boost => v_act_momentum_boost,
+              p_next_attack_bonus => v_act_next_atk_bonus,
+              p_crit_multiplier => v_act_crit_mult,
+              p_level => v_act_level, p_stage => v_act_stage
+            );
+            v_act_damage := greatest(1, round(v_act_damage * v_boost_multiplier)::integer);
+
+          when 'multi_hit' then
+            -- Strikes N times; each hit rolls crit independently.
+            -- params.hits: number of hits (2–5 recommended)
+            -- params.damage_fraction: per-hit fraction of base damage
+            --   e.g. hits=3, fraction=0.40 → total ~120% of a normal attack (before crits)
+            v_hit_count       := coalesce((v_opponent.special_action->'params'->>'hits')::integer, 3);
+            v_hit_fraction    := coalesce((v_opponent.special_action->'params'->>'damage_fraction')::numeric, 0.40);
+            v_any_hit_critted := false;
+            -- Base damage computed once: variance + NAB + stage applied; per-hit crits handled below.
+            v_single_hit_base := public.battle_compute_damage(
+              p_battle_run_id => p_battle_run_id, p_round => v_current_round,
+              p_actor => v_act_actor_label,
+              p_strength => v_act_strength, p_momentum => v_act_momentum,
+              p_resilience => v_act_resilience,
+              p_momentum_boost => v_act_momentum_boost,
+              p_next_attack_bonus => v_act_next_atk_bonus,
+              p_crit_multiplier => 1.0,   -- crits applied per-hit below
+              p_level => v_act_level, p_stage => v_act_stage
+            );
+            v_act_damage   := 0;
+            v_hit_messages := '';
+            for v_hit_i in 1..v_hit_count loop
+              -- Independent crit roll per hit, seeded by hit index.
+              v_hit_is_crit := (abs(hashtext(
+                p_battle_run_id::text || v_current_round::text
+                || v_act_actor_label || 'hit' || v_hit_i::text
+              )) % 10000) < (v_act_momentum * 15);
+              v_hit_crit_mult     := case when v_hit_is_crit then 1.5 else 1.0 end;
+              v_single_hit_damage := greatest(1, round(v_single_hit_base * v_hit_fraction * v_hit_crit_mult)::integer);
+              v_act_damage        := v_act_damage + v_single_hit_damage;
+              if v_hit_is_crit then v_any_hit_critted := true; end if;
+              v_hit_messages := v_hit_messages
+                || v_single_hit_damage::text
+                || case when v_hit_is_crit then ' (CRIT!)' else '' end
+                || case when v_hit_i < v_hit_count then ', ' else '' end;
+            end loop;
+
+        end case;
+
+        -- Action modifier interactions (same as attack).
+        if v_opponent_action = 'defend' then
+          v_act_damage := greatest(1, round(v_act_damage * 0.5)::integer);
+        end if;
+        if v_opponent_action = 'focus' then
+          v_act_damage := round(v_act_damage * 1.3)::integer;
+        end if;
+        v_act_momentum_boost := 0; v_act_next_atk_bonus := 0;
+        v_act_target_hp_after := greatest(0,
+          case when v_actor = 'player' then v_new_opponent_hp else v_new_player_hp end
+          - v_act_damage
+        );
+        v_log_entry := jsonb_build_object(
+          'id', gen_random_uuid(), 'round', v_current_round, 'phase', 'action',
+          'actor', v_act_actor_label, 'action', 'special',
+          'damage', v_act_damage, 'target', v_act_target_label,
+          'target_hp_after', v_act_target_hp_after,
+          'crit', case
+            when v_special_type = 'multi_hit' then v_any_hit_critted
+            else v_act_is_crit
+          end,
+          'defended', (v_opponent_action = 'defend'),
+          'consumed_momentum_boost', v_act_consumed_mb,
+          'consumed_next_attack_bonus', v_act_consumed_nab,
+          'message',
+            v_act_name || ' unleashes '
+            || coalesce(v_opponent.special_action->>'label', 'a special attack') || '!'
+            || case v_special_type
+                 when 'multi_hit' then
+                   ' ' || v_hit_count::text || ' hits: ' || v_hit_messages
+                   || ' = ' || v_act_damage::text || ' total!'
+                 else
+                   ' ' || v_act_damage::text || ' damage!'
+               end
+            || case when v_opponent_action = 'defend' then ' (Blocked!)' else '' end
+            || case when v_opponent_action = 'focus'  then ' (Exposed!)' else '' end
+        );
+
     end case;
 
     -- ── Write-back: push v_act_* into canonical vars + apply damage ────────
@@ -321,7 +476,7 @@ begin
     v_new_log := v_new_log || v_log_entry;
 
     -- ── Battle completion check ─────────────────────────────────────────────
-    if v_actor_action in ('attack', 'focus') then
+    if v_actor_action in ('attack', 'focus', 'special') then
       if v_actor = 'player' and v_new_opponent_hp <= 0 then
         v_battle_complete := true; v_outcome := v_act_win_outcome;
       elsif v_actor = 'opponent' and v_new_player_hp <= 0 then
