@@ -49,6 +49,13 @@ export function ArenaCard({ arena, onClick }: ArenaCardProps) {
         style={{ background: 'linear-gradient(transparent 20%, rgba(0,0,0,0.62) 100%)' }}
       />
 
+      {/* Complete badge — top-left corner */}
+      {!isLocked && arena.defeatedCount > 0 && arena.defeatedCount === arena.opponentCount && (
+        <span className="absolute top-3 left-3 z-10 rounded-full bg-[var(--app-success)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow">
+          Complete
+        </span>
+      )}
+
       {/* Active run pulse — top-right corner */}
       {arena.hasActiveRun && !isLocked && (
         <span className="absolute top-3 right-3 z-10 h-2.5 w-2.5 rounded-full bg-[var(--app-warning)] animate-pulse" />
@@ -61,12 +68,12 @@ export function ArenaCard({ arena, onClick }: ArenaCardProps) {
         </p>
         <p className="mt-1 text-white/65 text-xs">
           {arena.opponentCount} opponent{arena.opponentCount !== 1 ? 's' : ''}
-          {!isLocked && arena.defeatedCount > 0 && ` · ${arena.defeatedCount} defeated`}
+          {!isLocked && ` · ${arena.defeatedCount}/${arena.opponentCount} defeated`}
         </p>
 
         {!isLocked && arena.opponentCount > 0 && (
           <div
-            className="mt-2.5 h-0.5 w-full rounded-full overflow-hidden"
+            className="mt-2.5 h-1 w-full rounded-full overflow-hidden"
             style={{ background: 'rgba(255,255,255,0.22)' }}
           >
             <div

@@ -72,6 +72,11 @@ export function OpponentCard({
                 Boss
               </span>
             ) : null}
+            {opponent.isDefeated ? (
+              <span className="rounded-full bg-[var(--app-success-soft)] px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--app-success-soft-text)]">
+                Defeated ✓
+              </span>
+            ) : null}
             {isLockedByProgression ? (
               <span className="rounded-full bg-[var(--app-muted-soft)] px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--app-muted-soft-text)]">
                 Locked

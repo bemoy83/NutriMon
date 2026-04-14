@@ -145,9 +145,17 @@ export default function ArenaDetailPage() {
         {/* Opponent list */}
         <div className="app-card overflow-hidden">
           <div className="px-4 py-3 border-b border-[var(--app-border-muted)]">
-            <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">
-              Opponents
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">
+                Opponents
+              </p>
+              {data.arenaOpponents.length > 0 && (
+                <p className="text-xs tabular-nums text-[var(--app-text-muted)]">
+                  {data.arenaOpponents.filter((o) => o.isDefeated).length}
+                  <span className="text-[var(--app-text-subtle)]">/{data.arenaOpponents.length}</span>
+                </p>
+              )}
+            </div>
             {battleActionError ? (
               <p className="mt-1 text-sm text-[var(--app-danger)]">{battleActionError}</p>
             ) : null}
