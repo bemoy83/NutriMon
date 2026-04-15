@@ -84,38 +84,73 @@ interface OpponentSpriteEntry {
 }
 
 const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
+
+  // ── Arena 1 — Mosshollow Glen ──────────────────────────────────────────────
   'pebble_pup': {
     battle:     { url: s('/sprites/opponents/pebble_pup.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     // recovering: { url: s('/sprites/opponents/pebble_pup_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
   'cinder_finch': {
-    battle: { url: s('/sprites/opponents/cinder_finch.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    battle:     { url: s('/sprites/opponents/cinder_finch.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     // recovering: { url: s('/sprites/opponents/cinder_finch_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
   'mossback_ram': {
-    battle: { url: s('/sprites/opponents/mossback_ram.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    battle:     { url: s('/sprites/opponents/mossback_ram.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     // recovering: { url: s('/sprites/opponents/mossback_ram_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
   'tide_lynx': {
-    battle: { url: s('/sprites/opponents/tide_lynx.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    battle:     { url: s('/sprites/opponents/tide_lynx.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     // recovering: { url: s('/sprites/opponents/tide_lynx_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
   'sunscale_drake': {
-    battle: { url: s('/sprites/opponents/sunscale_drake.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    battle:     { url: s('/sprites/opponents/sunscale_drake.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     // recovering: { url: s('/sprites/opponents/sunscale_drake_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
+
+  // ── Arena 2 — Ashrock Peaks ────────────────────────────────────────────────
   'ember_goat': {
-    battle: { url: s('/sprites/opponents/ember_goat.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    battle:     { url: s('/sprites/opponents/ember_goat.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     // recovering: { url: s('/sprites/opponents/ember_goat_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
   //'magma_crab': {
-  //  battle: { url: s('/sprites/opponents/magma_crab.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //  recovering: { url: s('/sprites/opponents/magma_crab_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //  battle:     { url: s('/sprites/opponents/magma_crab.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //  // recovering: { url: s('/sprites/opponents/magma_crab_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   //},
   //'cindertail_fox': {
-  //  battle: { url: s('/sprites/opponents/cindertail_fox.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //  recovering: { url: s('/sprites/opponents/cindertail_fox_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //  battle:     { url: s('/sprites/opponents/cindertail_fox.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //  // recovering: { url: s('/sprites/opponents/cindertail_fox_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   //},
+  //'ashwing_hawk': {
+  //  battle:     { url: s('/sprites/opponents/ashwing_hawk.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //  // recovering: { url: s('/sprites/opponents/ashwing_hawk_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //},
+  //'pyrestone_colossus': {
+  //  battle:     { url: s('/sprites/opponents/pyrestone_colossus.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //  // recovering: { url: s('/sprites/opponents/pyrestone_colossus_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //},
+
+  // ── Arena 3 — Crystalspire Vault ──────────────────────────────────────────
+  //'frostclaw_wolf': {
+  //  battle:     { url: s('/sprites/opponents/frostclaw_wolf.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //  // recovering: { url: s('/sprites/opponents/frostclaw_wolf_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //},
+  //'void_wisp': {
+  //  battle:     { url: s('/sprites/opponents/void_wisp.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //  // recovering: { url: s('/sprites/opponents/void_wisp_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //},
+  //'prism_golem': {
+  //  battle:     { url: s('/sprites/opponents/prism_golem.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //  // recovering: { url: s('/sprites/opponents/prism_golem_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //},
+  //'shatterhorn_dragon': {
+  //  battle:     { url: s('/sprites/opponents/shatterhorn_dragon.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //  // recovering: { url: s('/sprites/opponents/shatterhorn_dragon_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //},
+  //'the_vault_guardian': {
+  //  battle:     { url: s('/sprites/opponents/the_vault_guardian.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //  // recovering: { url: s('/sprites/opponents/the_vault_guardian_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //},
+
 }
 
 // ── Terrain registry ─────────────────────────────────────────────────────────
