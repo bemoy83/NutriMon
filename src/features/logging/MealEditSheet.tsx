@@ -40,6 +40,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
   const invalidateDailyLog = useInvalidateDailyLog()
   const invalidateProducts = useInvalidateProductQueries()
   const [saving, setSaving] = useState(false)
+  const [itemsOpen, setItemsOpen] = useState(true)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [mealType, setMealType] = useState<MealType>(() => {
@@ -206,6 +207,8 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
     }
   }
 
+  const totalKcal = items.reduce((sum, item) => sum + Math.round(item.quantity * getCalories(item)), 0)
+
   const activeFoodSources: FoodSource[] =
     searchTab === 'recent' ? recentQuery.data ?? [] : searchQuery_.data ?? []
 
@@ -251,42 +254,65 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
       {/* Meal type */}
       <MealTypeSelector value={mealType} onChange={setMealType} />
 
-      {/* Items section */}
-      <div className="max-h-[30vh] overflow-y-auto">
-        {items.length === 0 ? (
-          <EmptyState title="No items yet" className="py-4" />
-        ) : (
-          <div className="px-4 py-1 space-y-0">
-            {items.map((item, idx) => {
-              const servingAmount = item.snapshotServingAmount ?? 100
-              const grams = Math.round(item.quantity * servingAmount)
-              const sourceType = getSourceType(item)
-              return (
-                <div key={idx} className="flex items-center gap-2 border-b border-[var(--app-border-muted)] last:border-0">
-                  <button
-                    type="button"
-                    onClick={() => updateGrams(idx, 0)}
-                    className="flex-none h-11 w-11 flex items-center justify-center text-[var(--app-text-subtle)] hover:text-[var(--app-danger)] transition-colors"
-                    aria-label={`Remove ${getLabel(item)}`}
-                  >
-                    ✕
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      {sourceType && <FoodSourceBadge sourceType={sourceType} />}
-                      <p className="text-[var(--app-text-primary)] text-sm truncate">{getLabel(item)}</p>
+      {/* Items section header — toggle */}
+      <button
+        type="button"
+        onClick={() => setItemsOpen((o) => !o)}
+        className="relative z-[1] flex min-h-[44px] w-full items-center justify-between bg-[rgb(255_255_255/0.85)] px-4 py-2 border-y border-[var(--app-border)] shadow-[0_4px_14px_-4px_rgb(15_23_42_/_0.07)] transition-colors hover:bg-[var(--app-hover-overlay)]"
+        aria-expanded={itemsOpen}
+      >
+        <span className="text-[10px] font-semibold tracking-widest uppercase text-[var(--app-text-subtle)]">
+          {items.length} item{items.length !== 1 ? 's' : ''}{items.length > 0 ? <> · <span className="font-bold">{totalKcal} kcal</span></> : ''}
+        </span>
+        <svg
+          className={`h-4 w-4 flex-none text-[var(--app-text-subtle)] transition-transform duration-200 ${itemsOpen ? '' : 'rotate-180'}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+        </svg>
+      </button>
+
+      {/* Items section — collapsible */}
+      {itemsOpen && (
+        <div className="max-h-[35vh] overflow-y-auto">
+          {items.length === 0 ? (
+            <EmptyState title="No items yet" className="py-4" />
+          ) : (
+            <div className="px-4 py-1 space-y-0">
+              {items.map((item, idx) => {
+                const servingAmount = item.snapshotServingAmount ?? 100
+                const grams = Math.round(item.quantity * servingAmount)
+                const sourceType = getSourceType(item)
+                return (
+                  <div key={idx} className="flex items-center gap-2 border-b border-[var(--app-border-muted)] last:border-0">
+                    <button
+                      type="button"
+                      onClick={() => updateGrams(idx, 0)}
+                      className="flex-none h-11 w-11 flex items-center justify-center text-[var(--app-text-subtle)] hover:text-[var(--app-danger)] transition-colors"
+                      aria-label={`Remove ${getLabel(item)}`}
+                    >
+                      ✕
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        {sourceType && <FoodSourceBadge sourceType={sourceType} />}
+                        <p className="text-[var(--app-text-primary)] text-sm truncate">{getLabel(item)}</p>
+                      </div>
+                      <p className="text-[var(--app-text-muted)] text-xs">
+                        {Math.round(item.quantity * getCalories(item))} kcal
+                      </p>
                     </div>
-                    <p className="text-[var(--app-text-muted)] text-xs">
-                      {Math.round(item.quantity * getCalories(item))} kcal
-                    </p>
+                    <GramInput grams={grams} onChange={(g) => updateGrams(idx, g)} showSteppers={false} />
                   </div>
-                  <GramInput grams={grams} onChange={(g) => updateGrams(idx, g)} showSteppers={false} />
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Add food section header */}
       <div className="relative z-[1] bg-[rgb(255_255_255/0.85)] px-4 py-2 border-y border-[var(--app-border)] shadow-[0_4px_14px_-4px_rgb(15_23_42_/_0.07)]">
