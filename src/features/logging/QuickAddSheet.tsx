@@ -1,4 +1,4 @@
-import { useState, useDeferredValue } from 'react'
+import { useState, useEffect, useDeferredValue } from 'react'
 import { useInvalidateDailyLog } from './useDailyLog'
 import { createMealWithItems, deleteMealTemplate } from './api'
 import type { FoodSource, MealTemplate, Product } from '@/types/domain'
@@ -34,9 +34,14 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
   const [adding, setAdding] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
   const [mealType, setMealType] = useState(() => getDefaultMealType(loggedAt))
+  const [cartOpen, setCartOpen] = useState(false)
   const invalidateDailyLog = useInvalidateDailyLog()
   const invalidateProducts = useInvalidateProductQueries()
   const invalidateTemplates = useInvalidateMealTemplates()
+
+  useEffect(() => {
+    if (pendingItems.length === 0) setCartOpen(false)
+  }, [pendingItems.length])
 
   const deferredSearchQuery = useDeferredValue(searchQuery)
 
@@ -155,13 +160,46 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
 
   const mealTheme = getMealTypeTheme(mealType)
 
+  const totalKcal = pendingItems.reduce(
+    (sum, i) =>
+      sum + Math.round((i.grams / (i.foodSource.defaultServingAmount ?? 100)) * i.foodSource.calories),
+    0,
+  )
+
   return (
+    <>
     <BottomSheet
       onClose={onClose}
       title="Add meal"
       className="h-[85vh] sm:h-[580px]"
       footer={
         <>
+          {pendingItems.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setCartOpen((o) => !o)}
+              className="flex w-full items-center justify-between rounded-lg px-3 py-2 mb-2 transition-colors"
+              style={{
+                background: mealTheme ? mealTheme.bg : 'var(--app-brand-soft)',
+                color: mealTheme ? mealTheme.text : 'var(--app-brand)',
+              }}
+              aria-expanded={cartOpen}
+              aria-label={`${pendingItems.length} item${pendingItems.length !== 1 ? 's' : ''} selected, ${totalKcal} kcal — ${cartOpen ? 'collapse' : 'expand'} cart`}
+            >
+              <span className="text-sm font-medium">
+                {pendingItems.length} item{pendingItems.length !== 1 ? 's' : ''} · {totalKcal} kcal
+              </span>
+              <svg
+                className={`h-4 w-4 flex-none transition-transform duration-200 ${cartOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
+            </button>
+          )}
           {pendingItems.length === 0 && (
             <p className="text-xs text-center text-[var(--app-text-subtle)] pb-2">Tap a food to add it</p>
           )}
@@ -183,57 +221,6 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
     >
       {/* Meal type selector */}
       <MealTypeSelector value={mealType} onChange={setMealType} />
-
-      {/* Pending items tray */}
-      {pendingItems.length > 0 && (
-        <div
-          className="px-4 py-2"
-          style={{ background: mealTheme ? mealTheme.bg : 'var(--app-brand-soft)' }}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span
-              className="text-sm font-medium"
-              style={{ color: mealTheme ? mealTheme.text : 'var(--app-brand)' }}
-            >
-              {pendingItems.length} item{pendingItems.length !== 1 ? 's' : ''} selected
-            </span>
-            <span
-              className="text-sm font-semibold"
-              style={{ color: mealTheme ? mealTheme.text : 'var(--app-text-primary)' }}
-            >
-              {pendingItems.reduce(
-                (sum, i) =>
-                  sum + Math.round((i.grams / (i.foodSource.defaultServingAmount ?? 100)) * i.foodSource.calories),
-                0,
-              )}{' '}
-              kcal
-            </span>
-          </div>
-          <div className="space-y-2">
-            {pendingItems.map((item) => (
-              <div key={getFoodSourceKey(item.foodSource)} className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => updateGrams(getFoodSourceKey(item.foodSource), 0)}
-                  className="text-[var(--app-text-subtle)] hover:text-[var(--app-danger)] text-sm px-1 flex-none"
-                  aria-label={`Remove ${item.foodSource.name}`}
-                >
-                  ✕
-                </button>
-                <span className="text-xs truncate flex-1 text-[var(--app-text-secondary)]">
-                  {item.foodSource.name}
-                </span>
-                <div className="flex-none">
-                  <GramInput
-                    grams={item.grams}
-                    onChange={(g) => updateGrams(getFoodSourceKey(item.foodSource), g)}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Tabs */}
       <SegmentedTabs
@@ -332,6 +319,35 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
         </div>
       )}
     </BottomSheet>
+
+    {cartOpen && pendingItems.length > 0 && (
+      <div className="fixed inset-x-0 bottom-28 z-[51] border-t border-[var(--app-border)] bg-[rgb(255_255_255/0.92)] backdrop-blur-xl sm:inset-x-auto sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2">
+        <div className="max-h-48 overflow-y-auto px-4 py-2 space-y-2">
+          {pendingItems.map((item) => (
+            <div key={getFoodSourceKey(item.foodSource)} className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => updateGrams(getFoodSourceKey(item.foodSource), 0)}
+                className="text-[var(--app-text-subtle)] hover:text-[var(--app-danger)] text-sm px-1 flex-none"
+                aria-label={`Remove ${item.foodSource.name}`}
+              >
+                ✕
+              </button>
+              <span className="text-xs truncate flex-1 text-[var(--app-text-secondary)]">
+                {item.foodSource.name}
+              </span>
+              <div className="flex-none">
+                <GramInput
+                  grams={item.grams}
+                  onChange={(g) => updateGrams(getFoodSourceKey(item.foodSource), g)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+    </>
   )
 }
 
