@@ -323,29 +323,37 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
 
     {cartOpen && pendingItems.length > 0 && (
       <div className="animate-slide-up-in fixed inset-x-0 bottom-36 z-[51] border-t border-[var(--app-border)] bg-[rgb(255_255_255/0.92)] backdrop-blur-xl sm:inset-x-auto sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2">
-        <div className="max-h-48 overflow-y-auto px-4 py-2 space-y-2">
-          {pendingItems.map((item) => (
-            <div key={getFoodSourceKey(item.foodSource)} className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => updateGrams(getFoodSourceKey(item.foodSource), 0)}
-                className="flex-none h-11 w-11 flex items-center justify-center text-[var(--app-text-subtle)] hover:text-[var(--app-danger)]"
-                aria-label={`Remove ${item.foodSource.name}`}
-              >
-                ✕
-              </button>
-              <span className="text-xs truncate flex-1 text-[var(--app-text-secondary)]">
-                {item.foodSource.name}
-              </span>
-              <div className="flex-none">
+        <div className="px-4 py-1.5 border-b border-[var(--app-border-muted)]">
+          <span className="text-[10px] font-semibold tracking-widest uppercase text-[var(--app-text-subtle)]">Selected items</span>
+        </div>
+        <div className="max-h-48 overflow-y-auto">
+          {pendingItems.map((item) => {
+            const kcal = Math.round((item.grams / (item.foodSource.defaultServingAmount ?? 100)) * item.foodSource.calories)
+            return (
+              <div key={getFoodSourceKey(item.foodSource)} className="flex items-center gap-2 px-4 border-b border-[var(--app-border-muted)] last:border-0">
+                <button
+                  type="button"
+                  onClick={() => updateGrams(getFoodSourceKey(item.foodSource), 0)}
+                  className="flex-none h-11 w-11 flex items-center justify-center text-[var(--app-text-subtle)] hover:text-[var(--app-danger)] transition-colors"
+                  aria-label={`Remove ${item.foodSource.name}`}
+                >
+                  ✕
+                </button>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <FoodSourceBadge sourceType={item.foodSource.sourceType} />
+                    <p className="text-sm truncate text-[var(--app-text-primary)]">{item.foodSource.name}</p>
+                  </div>
+                  <p className="text-xs text-[var(--app-text-muted)]">{kcal} kcal</p>
+                </div>
                 <GramInput
                   grams={item.grams}
                   onChange={(g) => updateGrams(getFoodSourceKey(item.foodSource), g)}
                   showSteppers={false}
                 />
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     )}
