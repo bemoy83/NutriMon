@@ -174,37 +174,10 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
       className="h-[85vh] sm:h-[580px]"
       footer={
         <>
-          {pendingItems.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setCartOpen((o) => !o)}
-              className="flex w-full items-center justify-between rounded-lg px-3 py-3 mb-2 transition-colors"
-              style={{
-                background: mealTheme ? mealTheme.bg : 'var(--app-brand-soft)',
-                color: mealTheme ? mealTheme.text : 'var(--app-brand)',
-              }}
-              aria-expanded={cartOpen}
-              aria-label={`${pendingItems.length} item${pendingItems.length !== 1 ? 's' : ''} selected, ${totalKcal} kcal — ${cartOpen ? 'collapse' : 'expand'} cart`}
-            >
-              <span className="text-sm font-medium">
-                {pendingItems.length} item{pendingItems.length !== 1 ? 's' : ''} · <span className="font-semibold">{totalKcal} kcal</span>
-              </span>
-              <svg
-                className={`h-4 w-4 flex-none transition-transform duration-200 ${cartOpen ? 'rotate-180' : ''}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-              </svg>
-            </button>
-          )}
           {pendingItems.length === 0 && (
             <p className="text-xs text-center text-[var(--app-text-subtle)] pb-2">Tap a food to add it</p>
           )}
-          {addError ? <p className="px-0 pb-2 text-xs text-[var(--app-danger)]">{addError}</p> : null}
-          {pendingItems.length > 0 && <div className="border-t border-[var(--app-border)] -mx-4 mb-2" />}
+          {addError ? <p className="pb-2 text-xs text-[var(--app-danger)]">{addError}</p> : null}
           <button
             type="button"
             onClick={handleConfirm}
@@ -321,39 +294,69 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
       )}
     </BottomSheet>
 
-    {cartOpen && pendingItems.length > 0 && (
-      <div className="animate-slide-up-in fixed inset-x-0 bottom-36 z-[51] border-t border-[var(--app-border)] bg-[rgb(255_255_255/0.92)] backdrop-blur-xl sm:inset-x-auto sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2">
-        <div className="px-4 py-1.5 border-b border-[var(--app-border-muted)]">
-          <span className="text-[10px] font-semibold tracking-widest uppercase text-[var(--app-text-subtle)]">Selected items</span>
-        </div>
-        <div className="max-h-48 overflow-y-auto">
+    {pendingItems.length > 0 && (
+      <div className="fixed inset-x-0 bottom-20 z-[51] border-t border-[var(--app-border)] bg-[rgb(255_255_255/0.92)] backdrop-blur-xl sm:inset-x-auto sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2">
+        {/* Cart bar — handle at top, rises as items expand below */}
+        <button
+          type="button"
+          onClick={() => setCartOpen((o) => !o)}
+          className={`flex w-full items-center justify-between px-4 py-3 transition-colors${cartOpen ? ' border-b border-[var(--app-border)]' : ''}`}
+          style={{
+            background: mealTheme ? mealTheme.bg : 'var(--app-brand-soft)',
+            color: mealTheme ? mealTheme.text : 'var(--app-brand)',
+          }}
+          aria-expanded={cartOpen}
+          aria-label={`${pendingItems.length} item${pendingItems.length !== 1 ? 's' : ''} selected, ${totalKcal} kcal — ${cartOpen ? 'collapse' : 'expand'} cart`}
+        >
+          <span className="text-sm font-medium">
+            {pendingItems.length} item{pendingItems.length !== 1 ? 's' : ''} · <span className="font-semibold">{totalKcal} kcal</span>
+          </span>
+          <svg
+            className={`h-4 w-4 flex-none transition-transform duration-200 ${cartOpen ? '' : 'rotate-180'}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+
+        {/* Items — revealed below cart bar when open */}
+        <div
+          className="overflow-y-auto"
+          style={{
+            maxHeight: cartOpen ? '12rem' : '0',
+            transition: 'max-height 300ms ease-in-out',
+          }}
+        >
           {pendingItems.map((item) => {
-            const kcal = Math.round((item.grams / (item.foodSource.defaultServingAmount ?? 100)) * item.foodSource.calories)
-            return (
-              <div key={getFoodSourceKey(item.foodSource)} className="flex items-center gap-2 px-4 border-b border-[var(--app-border-muted)] last:border-0">
-                <button
-                  type="button"
-                  onClick={() => updateGrams(getFoodSourceKey(item.foodSource), 0)}
-                  className="flex-none h-11 w-11 flex items-center justify-center text-[var(--app-text-subtle)] hover:text-[var(--app-danger)] transition-colors"
-                  aria-label={`Remove ${item.foodSource.name}`}
-                >
-                  ✕
-                </button>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <FoodSourceBadge sourceType={item.foodSource.sourceType} />
-                    <p className="text-sm truncate text-[var(--app-text-primary)]">{item.foodSource.name}</p>
+                const kcal = Math.round((item.grams / (item.foodSource.defaultServingAmount ?? 100)) * item.foodSource.calories)
+                return (
+                  <div key={getFoodSourceKey(item.foodSource)} className="flex items-center gap-2 px-4 border-b border-[var(--app-border-muted)] last:border-0">
+                    <button
+                      type="button"
+                      onClick={() => updateGrams(getFoodSourceKey(item.foodSource), 0)}
+                      className="flex-none h-11 w-11 flex items-center justify-center text-[var(--app-text-subtle)] hover:text-[var(--app-danger)] transition-colors"
+                      aria-label={`Remove ${item.foodSource.name}`}
+                    >
+                      ✕
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <FoodSourceBadge sourceType={item.foodSource.sourceType} />
+                        <p className="text-sm truncate text-[var(--app-text-primary)]">{item.foodSource.name}</p>
+                      </div>
+                      <p className="text-xs text-[var(--app-text-muted)]">{kcal} kcal</p>
+                    </div>
+                    <GramInput
+                      grams={item.grams}
+                      onChange={(g) => updateGrams(getFoodSourceKey(item.foodSource), g)}
+                      showSteppers={false}
+                    />
                   </div>
-                  <p className="text-xs text-[var(--app-text-muted)]">{kcal} kcal</p>
-                </div>
-                <GramInput
-                  grams={item.grams}
-                  onChange={(g) => updateGrams(getFoodSourceKey(item.foodSource), g)}
-                  showSteppers={false}
-                />
-              </div>
-            )
-          })}
+                )
+              })}
         </div>
       </div>
     )}
