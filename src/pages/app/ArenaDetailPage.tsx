@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { OpponentCard } from '@/components/battle/OpponentCard'
-import { ReadinessPanel } from '@/components/battle/ReadinessPanel'
+import { ReadinessSummaryBar } from '@/components/battle/ReadinessSummaryBar'
 import LoadingState from '@/components/ui/LoadingState'
 import EmptyState from '@/components/ui/EmptyState'
 import { useArenaDetail } from '@/features/battle/useArenaDetail'
@@ -121,23 +121,16 @@ export default function ArenaDetailPage() {
       </div>
 
       <div className="px-4 py-4 space-y-4">
-        {/* Readiness */}
+        {/* Readiness summary */}
         {snapshot ? (
-          <ReadinessPanel
+          <ReadinessSummaryBar
             snapshot={snapshot}
             recommendedOpponent={data.recommendedOpponent}
-            battleDate={battleDate}
           />
         ) : (
-          <div className="app-card p-5">
-            <p className="text-xs uppercase tracking-[0.12em] text-[var(--app-text-muted)]">
-              Battle Readiness
-            </p>
-            <p className="mt-2 text-sm text-[var(--app-text-primary)]">
-              No battle snapshot locked yet.
-            </p>
-            <p className="mt-1 text-xs text-[var(--app-text-muted)]">
-              Finalize the previous day to prepare today&apos;s battle.
+          <div className="app-card px-4 py-3">
+            <p className="text-xs text-[var(--app-text-muted)]">
+              No battle snapshot yet — finalize yesterday to prepare.
             </p>
           </div>
         )}

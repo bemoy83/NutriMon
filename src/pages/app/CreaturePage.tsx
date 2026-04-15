@@ -3,9 +3,12 @@ import LoadingState from '@/components/ui/LoadingState'
 import EmptyState from '@/components/ui/EmptyState'
 import { StatBar } from '@/components/ui/StatBar'
 import CreatureSprite from '@/components/ui/CreatureSprite'
+import { ReadinessPanel } from '@/components/battle/ReadinessPanel'
 import { useLatestCreatureStats } from '@/features/creature/useLatestCreatureStats'
+import { useBattleHub } from '@/features/creature/useBattleHub'
 import { useProfileSummary } from '@/features/profile/useProfileSummary'
 import { creatureStatBarFill } from '@/lib/creatureStatAccents'
+import { getTodayInTimezone } from '@/lib/date'
 import { getPlayerSpriteDescriptor } from '@/lib/sprites'
 import type { CreatureCondition } from '@/types/domain'
 
@@ -34,6 +37,10 @@ function getFormDescription(condition: CreatureCondition) {
 export default function CreaturePage() {
   const profileQuery = useProfileSummary()
   const statsQuery = useLatestCreatureStats()
+
+  const timezone = profileQuery.data?.timezone ?? null
+  const battleDate = timezone ? getTodayInTimezone(timezone) : null
+  const battleHubQuery = useBattleHub(battleDate, timezone)
 
   const stats = statsQuery.data?.stats ?? null
   const companion = statsQuery.data?.companion ?? {
@@ -131,6 +138,17 @@ export default function CreaturePage() {
           </div>
         )}
       </div>
+
+      {/* Battle Prep — shown once a snapshot is available for today */}
+      {battleHubQuery.data?.snapshot ? (
+        <div className="mt-4">
+          <ReadinessPanel
+            snapshot={battleHubQuery.data.snapshot}
+            recommendedOpponent={null}
+            battleDate={battleDate!}
+          />
+        </div>
+      ) : null}
 
       <Link
         to="/app/battle"
