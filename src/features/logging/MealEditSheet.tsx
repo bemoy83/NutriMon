@@ -121,6 +121,16 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
     }
   }
 
+  function removeFoodSource(foodSource: FoodSource) {
+    setItems((prev) =>
+      prev.filter((i) =>
+        foodSource.sourceType === 'user_product'
+          ? i.productId !== foodSource.sourceId
+          : i.catalogItemId !== foodSource.sourceId,
+      ),
+    )
+  }
+
   function addFoodSource(foodSource: FoodSource) {
     setItems((prev) => {
       const existing = prev.find((i) =>
@@ -208,7 +218,11 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
         <>
           {saveError ? <p className="px-0 pb-2 text-xs text-[var(--app-danger)]">{saveError}</p> : null}
           <div className="flex items-center gap-3">
-            <button type="button" onClick={onClose} className="text-sm text-[var(--app-text-muted)] px-4 py-2.5">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-none px-5 py-2.5 text-sm font-medium text-[var(--app-text-muted)] rounded-lg border border-[var(--app-border)] transition-colors hover:text-[var(--app-text-primary)] hover:border-[var(--app-text-subtle)]"
+            >
               Cancel
             </button>
             <button
@@ -238,21 +252,21 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
       <MealTypeSelector value={mealType} onChange={setMealType} />
 
       {/* Items section */}
-      <div className="max-h-[180px] overflow-y-auto border-b border-[var(--app-border)]">
+      <div className="max-h-[30vh] overflow-y-auto">
         {items.length === 0 ? (
           <EmptyState title="No items yet" className="py-4" />
         ) : (
-          <div className="px-4 py-2 space-y-2">
+          <div className="px-4 py-1 space-y-0">
             {items.map((item, idx) => {
               const servingAmount = item.snapshotServingAmount ?? 100
               const grams = Math.round(item.quantity * servingAmount)
               const sourceType = getSourceType(item)
               return (
-                <div key={idx} className="flex items-center gap-2">
+                <div key={idx} className="flex items-center gap-2 border-b border-[var(--app-border-muted)] last:border-0">
                   <button
                     type="button"
                     onClick={() => updateGrams(idx, 0)}
-                    className="text-[var(--app-text-subtle)] hover:text-[var(--app-danger)] text-sm px-1 flex-none"
+                    className="flex-none h-11 w-11 flex items-center justify-center text-[var(--app-text-subtle)] hover:text-[var(--app-danger)] transition-colors"
                     aria-label={`Remove ${getLabel(item)}`}
                   >
                     ✕
@@ -266,7 +280,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
                       {Math.round(item.quantity * getCalories(item))} kcal
                     </p>
                   </div>
-                  <GramInput grams={grams} onChange={(g) => updateGrams(idx, g)} />
+                  <GramInput grams={grams} onChange={(g) => updateGrams(idx, g)} showSteppers={false} />
                 </div>
               )
             })}
@@ -274,10 +288,10 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
         )}
       </div>
 
-      {/* Add food section */}
-      <p className="px-4 py-2 text-xs border-b border-[var(--app-border)]" style={{ color: 'var(--app-text-muted)' }}>
-        Add food
-      </p>
+      {/* Add food section header */}
+      <div className="relative z-[1] bg-[rgb(255_255_255/0.85)] px-4 py-2 border-y border-[var(--app-border)] shadow-[0_4px_14px_-4px_rgb(15_23_42_/_0.07)]">
+        <span className="text-[10px] font-semibold tracking-widest uppercase text-[var(--app-text-subtle)]">Add food</span>
+      </div>
 
       {/* Food browser tabs */}
       <SegmentedTabs
@@ -321,34 +335,39 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
               : i.catalogItemId === foodSource.sourceId,
           )
           return (
-            <button
+            <div
               key={getFoodSourceKey(foodSource)}
-              onClick={() => !isAdded && addFoodSource(foodSource)}
-              className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--app-surface-elevated)] active:bg-[var(--app-surface-elevated)] transition-colors text-left"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--app-hover-overlay)] active:bg-[var(--app-hover-overlay)] transition-colors"
             >
-              <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
                 <FoodSourceBadge sourceType={foodSource.sourceType} />
                 <div className="min-w-0">
                   <p className="text-[var(--app-text-primary)] text-sm truncate">{foodSource.name}</p>
-                  <p className="text-[var(--app-text-muted)] text-xs">{foodSource.calories} kcal</p>
+                  <p className="text-[var(--app-text-muted)] text-xs">{foodSource.calories} kcal / {foodSource.defaultServingAmount ?? 100}{foodSource.defaultServingUnit ?? 'g'}</p>
                 </div>
               </div>
               {isAdded ? (
-                <div className="flex h-8 w-8 flex-none ml-2 items-center justify-center rounded-full bg-[var(--app-brand)]">
-                  <svg
-                    className="h-4 w-4 text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                  >
+                <button
+                  type="button"
+                  onClick={() => removeFoodSource(foodSource)}
+                  className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[var(--app-brand)] text-white transition-colors hover:bg-[var(--app-brand-hover)] active:bg-[var(--app-brand-hover)]"
+                  aria-label={`Remove ${foodSource.name} from meal`}
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
-                </div>
+                </button>
               ) : (
-                <span className="text-[var(--app-brand)] text-lg ml-2">+</span>
+                <button
+                  type="button"
+                  onClick={() => addFoodSource(foodSource)}
+                  className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[rgb(0_0_0/0.06)] text-[var(--app-text-muted)] transition-colors hover:bg-[rgb(0_0_0/0.10)] hover:text-[var(--app-text-primary)] border border-[var(--app-border)]"
+                  aria-label={`Add ${foodSource.name}`}
+                >
+                  +
+                </button>
               )}
-            </button>
+            </div>
           )
         })}
       </div>

@@ -5,9 +5,10 @@ interface GramInputProps {
   grams: number
   onChange: (grams: number) => void
   step?: number
+  showSteppers?: boolean
 }
 
-export default function GramInput({ grams, onChange, step = 10 }: GramInputProps) {
+export default function GramInput({ grams, onChange, step = 10, showSteppers = true }: GramInputProps) {
   const [focused, setFocused] = useState(false)
   const [draft, setDraft] = useState('')
   const skipBlurCommitRef = useRef(false)
@@ -74,9 +75,11 @@ export default function GramInput({ grams, onChange, step = 10 }: GramInputProps
 
   return (
     <div className="flex items-center gap-1.5">
-      <button type="button" onClick={() => adjust(-step)} className={btnClass} aria-label="Decrease">
-        −
-      </button>
+      {showSteppers && (
+        <button type="button" onClick={() => adjust(-step)} className={btnClass} aria-label="Decrease">
+          −
+        </button>
+      )}
 
       <div className={shellClass(focused)}>
         <input
@@ -107,9 +110,11 @@ export default function GramInput({ grams, onChange, step = 10 }: GramInputProps
         <span className="pointer-events-none select-none text-sm font-medium tabular-nums text-[var(--app-text-muted)]">g</span>
       </div>
 
-      <button type="button" onClick={() => adjust(step)} className={btnClass} aria-label="Increase">
-        +
-      </button>
+      {showSteppers && (
+        <button type="button" onClick={() => adjust(step)} className={btnClass} aria-label="Increase">
+          +
+        </button>
+      )}
     </div>
   )
 }

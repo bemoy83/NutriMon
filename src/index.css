@@ -240,6 +240,12 @@ select {
 }
 .animate-modal-pop { animation: modal-pop 300ms ease-out both; }
 
+@keyframes slide-up-in {
+  from { transform: translateY(10px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.animate-slide-up-in { animation: slide-up-in 0.15s ease-out both; }
+
 /* Full-viewport flash for special actions.
    Quick burst (0 → 92% in 12%) → hold → fade out.
    Duration driven by BATTLE_ANIM.SPECIAL_FLASH_MS (450ms). */

@@ -178,7 +178,7 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
             <button
               type="button"
               onClick={() => setCartOpen((o) => !o)}
-              className="flex w-full items-center justify-between rounded-lg px-3 py-2 mb-2 transition-colors"
+              className="flex w-full items-center justify-between rounded-lg px-3 py-3 mb-2 transition-colors"
               style={{
                 background: mealTheme ? mealTheme.bg : 'var(--app-brand-soft)',
                 color: mealTheme ? mealTheme.text : 'var(--app-brand)',
@@ -187,7 +187,7 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
               aria-label={`${pendingItems.length} item${pendingItems.length !== 1 ? 's' : ''} selected, ${totalKcal} kcal — ${cartOpen ? 'collapse' : 'expand'} cart`}
             >
               <span className="text-sm font-medium">
-                {pendingItems.length} item{pendingItems.length !== 1 ? 's' : ''} · {totalKcal} kcal
+                {pendingItems.length} item{pendingItems.length !== 1 ? 's' : ''} · <span className="font-semibold">{totalKcal} kcal</span>
               </span>
               <svg
                 className={`h-4 w-4 flex-none transition-transform duration-200 ${cartOpen ? 'rotate-180' : ''}`}
@@ -204,6 +204,7 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
             <p className="text-xs text-center text-[var(--app-text-subtle)] pb-2">Tap a food to add it</p>
           )}
           {addError ? <p className="px-0 pb-2 text-xs text-[var(--app-danger)]">{addError}</p> : null}
+          {pendingItems.length > 0 && <div className="border-t border-[var(--app-border)] -mx-4 mb-2" />}
           <button
             type="button"
             onClick={handleConfirm}
@@ -321,14 +322,14 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
     </BottomSheet>
 
     {cartOpen && pendingItems.length > 0 && (
-      <div className="fixed inset-x-0 bottom-28 z-[51] border-t border-[var(--app-border)] bg-[rgb(255_255_255/0.92)] backdrop-blur-xl sm:inset-x-auto sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2">
+      <div className="animate-slide-up-in fixed inset-x-0 bottom-36 z-[51] border-t border-[var(--app-border)] bg-[rgb(255_255_255/0.92)] backdrop-blur-xl sm:inset-x-auto sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2">
         <div className="max-h-48 overflow-y-auto px-4 py-2 space-y-2">
           {pendingItems.map((item) => (
             <div key={getFoodSourceKey(item.foodSource)} className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => updateGrams(getFoodSourceKey(item.foodSource), 0)}
-                className="text-[var(--app-text-subtle)] hover:text-[var(--app-danger)] text-sm px-1 flex-none"
+                className="flex-none h-11 w-11 flex items-center justify-center text-[var(--app-text-subtle)] hover:text-[var(--app-danger)]"
                 aria-label={`Remove ${item.foodSource.name}`}
               >
                 ✕
@@ -340,6 +341,7 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
                 <GramInput
                   grams={item.grams}
                   onChange={(g) => updateGrams(getFoodSourceKey(item.foodSource), g)}
+                  showSteppers={false}
                 />
               </div>
             </div>

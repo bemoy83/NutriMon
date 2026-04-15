@@ -55,11 +55,11 @@ export default function BottomSheet({ children, onClose, title, footer, classNam
         onTouchEnd={handleTouchEnd}
       >
         {/* Drag handle — mobile only */}
-        <div className="flex justify-center pt-2 pb-1 sm:hidden">
+        <div className="flex justify-center pt-1.5 pb-1 sm:hidden">
           <div className="w-10 h-1 rounded-full bg-[var(--app-border)]" />
         </div>
 
-        <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center justify-between px-4 py-2">
           <h3 className="text-base font-semibold text-[var(--app-text-primary)]">{title}</h3>
           <button
             type="button"
@@ -74,7 +74,7 @@ export default function BottomSheet({ children, onClose, title, footer, classNam
         </div>
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
         {footer ? (
-          <div className="relative z-[1] bg-[rgb(255_255_255/0.92)] p-4 shadow-[0_-4px_14px_-4px_rgb(15_23_42_/_0.1)]">
+          <div className="relative z-[1] bg-[rgb(255_255_255/0.92)] px-4 py-5 shadow-[0_-4px_14px_-4px_rgb(15_23_42_/_0.1)]">
             {footer}
           </div>
         ) : null}
