@@ -54,7 +54,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
   const deferredSearchQuery = useDeferredValue(searchQuery)
 
   const recentQuery = useRecentFoodSources()
-  const searchQuery_ = useFoodSourceSearch(deferredSearchQuery)
+  const searchResults = useFoodSourceSearch(deferredSearchQuery)
   const [searchTab, setSearchTab] = useState<'recent' | 'search'>('recent')
 
   function getFoodSourceKey(foodSource: FoodSource): string {
@@ -211,7 +211,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
   const totalKcal = items.reduce((sum, item) => sum + Math.round(item.quantity * getCalories(item)), 0)
 
   const activeFoodSources: FoodSource[] =
-    searchTab === 'recent' ? recentQuery.data ?? [] : searchQuery_.data ?? []
+    searchTab === 'recent' ? recentQuery.data ?? [] : searchResults.data ?? []
 
   return (
     <BottomSheet
@@ -220,7 +220,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
       className="h-[85vh] sm:h-[580px]"
       footer={
         <>
-          {saveError ? <p className="px-0 pb-2 text-xs text-[var(--app-danger)]">{saveError}</p> : null}
+          {saveError && <p className="pb-2 text-xs text-[var(--app-danger)]">{saveError}</p>}
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -241,25 +241,25 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
         </>
       }
     >
-      {/* Meal name */}
-      <div className="px-4 py-3 border-b border-[var(--app-border)]">
-        <input
-          type="text"
-          value={mealName}
-          onChange={(e) => setMealName(e.target.value)}
-          placeholder="Meal name (optional)"
-          className="app-input px-3 py-2 text-sm"
-        />
+      {/* Meal name + meal type — shared chrome band */}
+      <div className="bg-[rgb(255_255_255/0.85)] border-b border-[var(--app-border-muted)]">
+        <div className="px-4 pt-3 pb-2">
+          <input
+            type="text"
+            value={mealName}
+            onChange={(e) => setMealName(e.target.value)}
+            placeholder="Meal name (optional)"
+            className="app-input px-3 py-2 text-sm"
+          />
+        </div>
+        <MealTypeSelector value={mealType} onChange={setMealType} />
       </div>
-
-      {/* Meal type */}
-      <MealTypeSelector value={mealType} onChange={setMealType} />
 
       {/* Items section header — toggle */}
       <button
         type="button"
         onClick={() => setItemsOpen((o) => !o)}
-        className="relative z-[1] flex min-h-[44px] w-full items-center justify-between px-4 py-2 border-y border-[var(--app-border)] shadow-[0_4px_14px_-4px_rgb(15_23_42_/_0.07)] transition-colors"
+        className="flex min-h-[44px] w-full items-center justify-between px-4 py-2 border-y border-[var(--app-border)] shadow-[0_4px_14px_-4px_rgb(15_23_42_/_0.07)] transition-colors"
         style={{
           background: mealTheme ? mealTheme.bg : 'var(--app-brand-soft)',
           color: mealTheme ? mealTheme.text : 'var(--app-brand)',
@@ -286,13 +286,13 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
           {items.length === 0 ? (
             <EmptyState title="No items yet" className="py-4" />
           ) : (
-            <div className="px-4 py-1 space-y-0">
+            <div className="px-4 py-1">
               {items.map((item, idx) => {
                 const servingAmount = item.snapshotServingAmount ?? 100
                 const grams = Math.round(item.quantity * servingAmount)
                 const sourceType = getSourceType(item)
                 return (
-                  <div key={idx} className="flex items-center gap-2 border-b border-[var(--app-border-muted)] last:border-0">
+                  <div key={item.mealItemId ?? item.productId ?? item.catalogItemId ?? idx} className="flex items-center gap-2 border-b border-[var(--app-border-muted)] last:border-0">
                     <button
                       type="button"
                       onClick={() => updateGrams(idx, 0)}
@@ -320,7 +320,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
       )}
 
       {/* Add food section header */}
-      <div className="relative z-[1] bg-[rgb(255_255_255/0.85)] px-4 py-2 border-y border-[var(--app-border)] shadow-[0_4px_14px_-4px_rgb(15_23_42_/_0.07)]">
+      <div className="bg-[rgb(255_255_255/0.85)] px-4 py-2 border-y border-[var(--app-border)] shadow-[0_4px_14px_-4px_rgb(15_23_42_/_0.07)]">
         <span className="text-[10px] font-semibold tracking-widest uppercase text-[var(--app-text-subtle)]">Add food</span>
       </div>
 
@@ -349,13 +349,13 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
           className="app-input px-3 py-2 text-sm"
         />
       </div>
-      {searchTab === 'search' && searchQuery_.isPending && deferredSearchQuery.trim().length > 0 && (
+      {searchTab === 'search' && searchResults.isPending && deferredSearchQuery.trim().length > 0 && (
         <div className="px-4 py-3 text-sm text-[var(--app-text-muted)]">Searching…</div>
       )}
       {searchTab === 'search' &&
-        !searchQuery_.isPending &&
+        !searchResults.isPending &&
         deferredSearchQuery.trim().length > 0 &&
-        (searchQuery_.data?.length ?? 0) === 0 && <EmptyState title="No foods found" className="py-4" />}
+        (searchResults.data?.length ?? 0) === 0 && <EmptyState title="No foods found" className="py-4" />}
 
       {/* Food source list */}
       <div className="flex-1 overflow-y-auto">
