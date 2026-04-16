@@ -10,7 +10,7 @@ import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import GramInput from '@/components/ui/GramInput'
 import MealTypeSelector from '@/components/ui/MealTypeSelector'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
-import { getDefaultMealType, MEAL_TYPES } from '@/lib/mealType'
+import { getDefaultMealType, getMealTypeTheme, MEAL_TYPES } from '@/lib/mealType'
 import type { MealType } from '@/lib/mealType'
 import type { MealMutationResult } from '@/types/database'
 
@@ -207,6 +207,7 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
     }
   }
 
+  const mealTheme = getMealTypeTheme(mealType)
   const totalKcal = items.reduce((sum, item) => sum + Math.round(item.quantity * getCalories(item)), 0)
 
   const activeFoodSources: FoodSource[] =
@@ -258,14 +259,18 @@ export default function MealEditSheet({ meal, logDate, onClose, onSaved }: Props
       <button
         type="button"
         onClick={() => setItemsOpen((o) => !o)}
-        className="relative z-[1] flex min-h-[44px] w-full items-center justify-between bg-[rgb(255_255_255/0.85)] px-4 py-2 border-y border-[var(--app-border)] shadow-[0_4px_14px_-4px_rgb(15_23_42_/_0.07)] transition-colors hover:bg-[var(--app-hover-overlay)]"
+        className="relative z-[1] flex min-h-[44px] w-full items-center justify-between px-4 py-2 border-y border-[var(--app-border)] shadow-[0_4px_14px_-4px_rgb(15_23_42_/_0.07)] transition-colors"
+        style={{
+          background: mealTheme ? mealTheme.bg : 'var(--app-brand-soft)',
+          color: mealTheme ? mealTheme.text : 'var(--app-brand)',
+        }}
         aria-expanded={itemsOpen}
       >
-        <span className="text-[10px] font-semibold tracking-widest uppercase text-[var(--app-text-subtle)]">
+        <span className="text-[10px] font-semibold tracking-widest uppercase">
           {items.length} item{items.length !== 1 ? 's' : ''}{items.length > 0 ? <> · <span className="font-bold">{totalKcal} kcal</span></> : ''}
         </span>
         <svg
-          className={`h-4 w-4 flex-none text-[var(--app-text-subtle)] transition-transform duration-200 ${itemsOpen ? '' : 'rotate-180'}`}
+          className={`h-4 w-4 flex-none transition-transform duration-200 ${itemsOpen ? '' : 'rotate-180'}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"

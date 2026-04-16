@@ -194,7 +194,9 @@ export default function QuickAddSheet({ logDate, loggedAt, onClose, onAdded }: P
       }
     >
       {/* Meal type selector */}
-      <MealTypeSelector value={mealType} onChange={setMealType} />
+      <div className="bg-[rgb(255_255_255/0.85)] border-b border-[var(--app-border-muted)]">
+        <MealTypeSelector value={mealType} onChange={setMealType} />
+      </div>
 
       {/* Tabs */}
       <SegmentedTabs

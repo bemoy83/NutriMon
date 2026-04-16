@@ -64,10 +64,10 @@ export default function GramInput({ grams, onChange, step = 10, showSteppers = t
     'min-w-0 flex-1 bg-transparent text-right text-sm font-medium tabular-nums text-[var(--app-text-primary)] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
 
   const shellClass = (active: boolean) =>
-    `flex h-[30px] w-16 flex-none items-center justify-center gap-0 rounded-md border py-0.5 pl-1 pr-1 transition-colors ${
+    `flex h-[30px] w-16 flex-none items-center rounded-md border py-0.5 pl-1 pr-1 transition-colors transition-shadow ${
       active
-        ? 'border-[var(--app-brand)] ring-1 ring-[var(--app-brand)]'
-        : 'border-[var(--app-border)] bg-[var(--app-surface)] hover:border-[var(--app-brand)] hover:text-[var(--app-brand)]'
+        ? 'border-[var(--app-focus)] bg-[var(--app-input-bg-focus)] shadow-[var(--app-input-shadow-focus),0_0_0_2px_var(--app-brand-ring)]'
+        : 'border-[var(--app-input-border)] bg-[var(--app-input-bg)] shadow-[var(--app-input-shadow)] hover:border-[var(--app-brand)]'
     }`
 
   const btnClass =
