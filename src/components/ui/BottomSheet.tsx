@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 
 interface BottomSheetProps {
@@ -16,7 +16,7 @@ export default function BottomSheet({ children, onClose, title, footer, classNam
   const [transitioning, setTransitioning] = useState(false)
   const startYRef = useRef(0)
   const onCloseRef = useRef(onClose)
-  onCloseRef.current = onClose
+  useLayoutEffect(() => { onCloseRef.current = onClose })
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
