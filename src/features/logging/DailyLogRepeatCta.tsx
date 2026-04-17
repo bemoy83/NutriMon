@@ -44,7 +44,9 @@ export default function DailyLogRepeatCta({
         aria-label={`Copy previous logged meal into today: ${previewLine}`}
         className="flex flex-1 flex-col items-center justify-center gap-0.5 rounded-full border border-[var(--app-border)] bg-[rgb(255_255_255/0.72)] backdrop-blur-sm px-2 py-2.5 text-[var(--app-text-primary)] shadow-[0_4px_16px_rgb(15_23_42/0.10)] transition-colors hover:bg-[rgb(255_255_255/0.88)] disabled:opacity-50"
       >
-        <span className="text-sm font-medium">{repeating ? 'Copying…' : 'Copy previous meal'}</span>
+        <span className="text-sm font-medium">
+          {repeating ? 'Copying…' : `Copy last ${preview.mealType ? preview.mealType.charAt(0).toUpperCase() + preview.mealType.slice(1).toLowerCase() : 'meal'}`}
+        </span>
         {!repeating ? (
           <span className="max-w-full truncate text-center text-xs text-[var(--app-text-muted)]" title={previewLine}>
             {previewLine}

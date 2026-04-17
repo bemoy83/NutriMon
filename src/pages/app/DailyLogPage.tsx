@@ -9,6 +9,8 @@ import { getTodayInTimezone } from '@/lib/date'
 import type { BattlePrepSummary, CreaturePreview, FinalizeDayResponse, Meal } from '@/types/domain'
 import { buildMealSnapshotItems, buildMealUpdateItems } from '@/features/logging/mealPayloads'
 import { deleteMeal, restoreMealFromSnapshot, updateMealWithItems } from '@/features/logging/api'
+import InlineQuickAdd from '@/features/logging/InlineQuickAdd'
+import { getDefaultMealType } from '@/lib/mealType'
 import type { DeleteMealResult, MealMutationResult } from '@/types/database'
 import { useRepeatLastMealPreview } from '@/features/logging/useRepeatLastMealPreview'
 import { useProfileSummary } from '@/features/profile/useProfileSummary'
@@ -80,7 +82,9 @@ export default function DailyLogPage() {
       ),
   )
   const invalidateDailyLog = useInvalidateDailyLog()
-  const repeatLastMealPreviewQuery = useRepeatLastMealPreview(logDate)
+  const loggedAt = new Date().toISOString()
+  const currentMealType = getDefaultMealType(loggedAt)
+  const repeatLastMealPreviewQuery = useRepeatLastMealPreview(logDate, currentMealType)
 
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null)
@@ -90,6 +94,7 @@ export default function DailyLogPage() {
 
   const dailyLog = coreQuery.data?.dailyLog ?? null
   const meals = coreQuery.data?.meals ?? []
+  const loggedMealTypes = new Set(meals.map((m) => m.mealType).filter(Boolean))
   const feedback = derivedQuery.data?.feedback ?? null
   const habitMetrics = derivedQuery.data?.habitMetrics ?? null
   const fallbackHabitMetrics = fallbackMetricsQuery.data?.habitMetrics ?? null
@@ -126,6 +131,8 @@ export default function DailyLogPage() {
   })
   const { repeating, repeatError, handleRepeatLastMeal } = useRepeatLastMealAction({
     logDate,
+    loggedAt,
+    mealType: currentMealType,
     onSuccess: (result) => handleMealCreated(result, 'Previous meal copied'),
   })
 
@@ -147,8 +154,6 @@ export default function DailyLogPage() {
   if (profileQuery.isLoading || coreQuery.isLoading) {
     return <LoadingState fullScreen />
   }
-
-  const loggedAt = new Date().toISOString()
 
   return (
     <div className="app-page flex min-h-full flex-col pb-40">
@@ -189,14 +194,11 @@ export default function DailyLogPage() {
       {/* Empty-day prompt for unfinalized days */}
       {!isFinalized && mealCount === 0 && (
         <div className="px-4 mt-4">
-          <div className="app-card p-4">
-            <h2 className="text-base font-semibold text-[var(--app-text-primary)]">
-              No meals logged yet.
-            </h2>
-            <p className="mt-1 text-sm text-[var(--app-text-muted)]">
-              Tap + to add your first meal.
-            </p>
-          </div>
+          <InlineQuickAdd
+            logDate={logDate}
+            loggedAt={loggedAt}
+            onCreated={(result) => handleMealCreated(result)}
+          />
         </div>
       )}
 
@@ -254,21 +256,21 @@ export default function DailyLogPage() {
       {/* Bottom action bar */}
       {!isFinalized && (
         <div className="fixed inset-x-0 bottom-0 z-[19] px-4 pt-10 pb-[5.5rem] bg-gradient-to-t from-[var(--app-bg)] via-[var(--app-bg)]/70 to-transparent">
-          <div className="mx-auto max-w-lg flex items-end gap-2">
-            {/* Left slot: Finalize (priority) or Repeat */}
-            {mealCount > 0 ? (
-              <DailyLogFinalizeCta
-                finalizing={finalizing}
-                finalizeError={finalizeError}
-                onFinalize={finalizeDay}
-                className="flex-1"
-              />
-            ) : repeatLastMealPreviewQuery.data ? (
+          <div className="mx-auto max-w-lg flex items-center gap-2">
+            {/* Left slot: Repeat (priority when slot unfilled) or Finalize */}
+            {repeatLastMealPreviewQuery.data && !loggedMealTypes.has(currentMealType) ? (
               <DailyLogRepeatCta
                 preview={repeatLastMealPreviewQuery.data}
                 repeating={repeating}
                 repeatError={repeatError}
                 onRepeat={handleRepeatLastMeal}
+                className="flex-1"
+              />
+            ) : mealCount > 0 ? (
+              <DailyLogFinalizeCta
+                finalizing={finalizing}
+                finalizeError={finalizeError}
+                onFinalize={finalizeDay}
                 className="flex-1"
               />
             ) : (

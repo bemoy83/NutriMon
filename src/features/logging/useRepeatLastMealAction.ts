@@ -1,22 +1,27 @@
 import { useState } from 'react'
-import { repeatLastMeal } from './api'
+import { repeatLastMealOfType } from './api'
+import { useAuth } from '@/app/providers/auth'
 import type { MealMutationResult } from '@/types/database'
 
 interface UseRepeatLastMealActionOptions {
   logDate: string
+  loggedAt: string
+  mealType: string
   onSuccess: (result: MealMutationResult) => void
 }
 
-export function useRepeatLastMealAction({ logDate, onSuccess }: UseRepeatLastMealActionOptions) {
+export function useRepeatLastMealAction({ logDate, loggedAt, mealType, onSuccess }: UseRepeatLastMealActionOptions) {
+  const { user } = useAuth()
   const [repeating, setRepeating] = useState(false)
   const [repeatError, setRepeatError] = useState<string | null>(null)
 
   async function handleRepeatLastMeal() {
+    if (!user) return
     setRepeating(true)
     setRepeatError(null)
 
     try {
-      const result = await repeatLastMeal(logDate)
+      const result = await repeatLastMealOfType(user.id, logDate, loggedAt, mealType)
       onSuccess(result)
     } catch (error) {
       setRepeatError(error instanceof Error ? error.message : 'Unable to repeat last meal')

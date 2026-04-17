@@ -83,6 +83,69 @@ export async function repeatLastMeal(logDate: string): Promise<MealMutationResul
   return data
 }
 
+export async function repeatLastMealOfType(
+  userId: string,
+  logDate: string,
+  loggedAt: string,
+  mealType: string,
+): Promise<MealMutationResult> {
+  const { data, error } = await supabase
+    .from('meals')
+    .select(`
+      meal_name,
+      meal_type,
+      meal_items (
+        quantity,
+        product_name_snapshot,
+        calories_per_serving_snapshot,
+        protein_g_snapshot,
+        carbs_g_snapshot,
+        fat_g_snapshot,
+        serving_amount_snapshot,
+        serving_unit_snapshot
+      ),
+      daily_logs!inner ( log_date )
+    `)
+    .eq('user_id', userId)
+    .lt('daily_logs.log_date', logDate)
+    .eq('meal_type', mealType)
+    .order('logged_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) throw new Error(`No previous ${mealType} found`)
+
+  const row = data as {
+    meal_name: string | null
+    meal_type: string | null
+    meal_items: {
+      quantity: number
+      product_name_snapshot: string
+      calories_per_serving_snapshot: number
+      protein_g_snapshot: number | null
+      carbs_g_snapshot: number | null
+      fat_g_snapshot: number | null
+      serving_amount_snapshot: number | null
+      serving_unit_snapshot: string | null
+    }[]
+    daily_logs: { log_date: string }[]
+  }
+
+  const items: RestoreMealSnapshotItemInput[] = row.meal_items.map((i) => ({
+    quantity: i.quantity,
+    product_name_snapshot: i.product_name_snapshot,
+    calories_per_serving_snapshot: i.calories_per_serving_snapshot,
+    protein_g_snapshot: i.protein_g_snapshot,
+    carbs_g_snapshot: i.carbs_g_snapshot,
+    fat_g_snapshot: i.fat_g_snapshot,
+    serving_amount_snapshot: i.serving_amount_snapshot,
+    serving_unit_snapshot: i.serving_unit_snapshot,
+  }))
+
+  return restoreMealFromSnapshot(logDate, loggedAt, items, mealType, row.meal_name)
+}
+
 export async function restoreMealFromSnapshot(
   logDate: string,
   loggedAt: string,

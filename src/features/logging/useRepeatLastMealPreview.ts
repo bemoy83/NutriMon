@@ -10,16 +10,16 @@ export interface RepeatLastMealPreview {
 
 export const REPEAT_LAST_MEAL_PREVIEW_QUERY_KEY = 'repeat-last-meal-preview'
 
-export function useRepeatLastMealPreview(logDate: string) {
+export function useRepeatLastMealPreview(logDate: string, mealType?: string | null) {
   const { user } = useAuth()
 
   return useQuery({
-    queryKey: [REPEAT_LAST_MEAL_PREVIEW_QUERY_KEY, user?.id, logDate],
+    queryKey: [REPEAT_LAST_MEAL_PREVIEW_QUERY_KEY, user?.id, logDate, mealType ?? null],
     enabled: !!user,
     queryFn: async (): Promise<RepeatLastMealPreview | null> => {
       const uid = user!.id
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('meals')
         .select(
           `
@@ -31,6 +31,12 @@ export function useRepeatLastMealPreview(logDate: string) {
         )
         .eq('user_id', uid)
         .lt('daily_logs.log_date', logDate)
+
+      if (mealType) {
+        query = query.eq('meal_type', mealType)
+      }
+
+      const { data, error } = await query
         .order('logged_at', { ascending: false })
         .limit(1)
         .maybeSingle()
