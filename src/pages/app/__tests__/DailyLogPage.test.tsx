@@ -69,8 +69,60 @@ vi.mock('@/features/logging/api', () => ({
   updateMealWithItems: (...args: unknown[]) => updateMealWithItemsMock(...args),
 }))
 
-vi.mock('@/features/logging/QuickAddSheet', () => ({
-  default: () => <div>quick-add-sheet</div>,
+vi.mock('@/features/logging/MealSheet', () => ({
+  default: ({
+    mode,
+    meal,
+    onSaved,
+  }: {
+    mode: 'add' | 'edit'
+    meal?: Meal
+    onSaved?: (meal: Meal, result: MealMutationResult) => void
+  }) => {
+    if (mode === 'add') return <div>quick-add-sheet</div>
+    return (
+      <button
+        type="button"
+        onClick={() =>
+          onSaved?.(meal!, {
+            meal: {
+              id: meal!.id,
+              daily_log_id: meal!.dailyLogId,
+              logged_at: meal!.loggedAt,
+              meal_type: meal!.mealType,
+              meal_name: meal!.mealName,
+              total_calories: meal!.totalCalories,
+              item_count: meal!.itemCount,
+            },
+            meal_items: [],
+            daily_log: {
+              id: 'log-1',
+              user_id: 'user-1',
+              log_date: '2026-01-05',
+              total_calories: 520,
+              meal_count: 1,
+              is_finalized: false,
+              finalized_at: null,
+              created_at: '2026-01-05T00:00:00.000Z',
+              updated_at: '2026-01-05T00:00:00.000Z',
+            },
+            creature_preview: {
+              tomorrow_readiness_score: 71,
+              tomorrow_readiness_band: 'ready',
+              projected_strength: 69,
+              projected_resilience: 68,
+              projected_momentum: 72,
+              projected_vitality: 94,
+              meal_rating: 'strong',
+              meal_feedback_message: 'Preview updated after edit.',
+            },
+          })
+        }
+      >
+        save-edit
+      </button>
+    )
+  },
 }))
 
 vi.mock('@/features/logging/MealList', () => ({
@@ -119,57 +171,6 @@ vi.mock('@/features/logging/MealList', () => ({
         trigger-edit
       </button>
     </div>
-  ),
-}))
-
-vi.mock('@/features/logging/MealEditSheet', () => ({
-  default: ({
-    meal,
-    onSaved,
-  }: {
-    meal: Meal
-    onSaved: (meal: Meal, result: MealMutationResult) => void
-  }) => (
-    <button
-      type="button"
-      onClick={() =>
-        onSaved(meal, {
-          meal: {
-            id: meal.id,
-            daily_log_id: meal.dailyLogId,
-            logged_at: meal.loggedAt,
-            meal_type: meal.mealType,
-            meal_name: meal.mealName,
-            total_calories: meal.totalCalories,
-            item_count: meal.itemCount,
-          },
-          meal_items: [],
-          daily_log: {
-            id: 'log-1',
-            user_id: 'user-1',
-            log_date: '2026-01-05',
-            total_calories: 520,
-            meal_count: 1,
-            is_finalized: false,
-            finalized_at: null,
-            created_at: '2026-01-05T00:00:00.000Z',
-            updated_at: '2026-01-05T00:00:00.000Z',
-          },
-          creature_preview: {
-            tomorrow_readiness_score: 71,
-            tomorrow_readiness_band: 'ready',
-            projected_strength: 69,
-            projected_resilience: 68,
-            projected_momentum: 72,
-            projected_vitality: 94,
-            meal_rating: 'strong',
-            meal_feedback_message: 'Preview updated after edit.',
-          },
-        })
-      }
-    >
-      save-edit
-    </button>
   ),
 }))
 
