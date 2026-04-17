@@ -21,8 +21,7 @@ import DailyLogRepeatCta from '@/features/logging/DailyLogRepeatCta'
 import UndoToast from '@/features/logging/UndoToast'
 import LoadingState from '@/components/ui/LoadingState'
 
-const QuickAddSheet = lazy(() => import('@/features/logging/QuickAddSheet'))
-const MealEditSheet = lazy(() => import('@/features/logging/MealEditSheet'))
+const MealSheet = lazy(() => import('@/features/logging/MealSheet'))
 
 function mapCreaturePreviewPayload(preview: MealMutationResult['creature_preview'] | DeleteMealResult['creature_preview']): CreaturePreview | null {
   if (!preview) return null
@@ -318,10 +317,11 @@ export default function DailyLogPage() {
         </div>
       )}
 
-      {/* Quick add sheet */}
+      {/* Add meal sheet */}
       {showQuickAdd && (
         <Suspense fallback={<SheetLoadingFallback />}>
-          <QuickAddSheet
+          <MealSheet
+            mode="add"
             logDate={logDate}
             loggedAt={loggedAt}
             onClose={() => setShowQuickAdd(false)}
@@ -330,12 +330,14 @@ export default function DailyLogPage() {
         </Suspense>
       )}
 
-      {/* Meal edit sheet */}
+      {/* Edit meal sheet */}
       {editingMeal && (
         <Suspense fallback={<SheetLoadingFallback />}>
-          <MealEditSheet
+          <MealSheet
+            mode="edit"
             meal={editingMeal}
             logDate={logDate}
+            loggedAt={loggedAt}
             onClose={() => setEditingMeal(null)}
             onSaved={(previousMeal, result) => {
               setCreaturePreviewState({ date: logDate, preview: mapCreaturePreviewPayload(result.creature_preview ?? null) })
