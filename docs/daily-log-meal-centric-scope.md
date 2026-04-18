@@ -2,7 +2,7 @@
 
 > **Purpose:** Baseline for a **gap analysis** (what NutriMon already does vs. what must be designed, built, or migrated).
 > **Status:** Draft product intent (not an implementation spec). **Implementation fork:** structural meal slots (**Option B**) — see §8 decision log. **Food model:** mass + piece/weight servings + composite foods — §4.4.
-> **Related context:** High-level product direction lives in [PRODUCT_PRD.md](./PRODUCT_PRD.md). Current Daily Log implementation map: [daily-log-current-implementation.md](./daily-log-current-implementation.md). Gap matrix (requirements vs. as-built): [daily-log-meal-centric-gap-matrix.md](./daily-log-meal-centric-gap-matrix.md).
+> **Related context:** High-level product direction lives in [PRODUCT_PRD.md](./PRODUCT_PRD.md). Current Daily Log implementation map: [daily-log-current-implementation.md](./daily-log-current-implementation.md). Gap matrix (requirements vs. as-built): [daily-log-meal-centric-gap-matrix.md](./daily-log-meal-centric-gap-matrix.md). **Technical spec (implementation):** [daily-log-meal-slots-technical-spec.md](./daily-log-meal-slots-technical-spec.md).
 
 ---
 
@@ -168,16 +168,28 @@ Use the sections below as **row headers** in a gap matrix: **Current behavior / 
 
 ---
 
-## 7. Open questions (intentionally deferred, but tracked for gap analysis)
+## 7. Product decisions (Q1–Q4) and remaining open items
 
-These should **not block** documenting gaps; they should become **rows marked “decision pending”** in the gap matrix.
+### 7.1 Resolved — logging, slots, and diary UX (2026-04-18)
 
-- Exact rules for **when duplicate lines merge** vs remain separate on the diary (still directional: merge compatible duplicates—§2.1, §4.1; **does not** apply to intentionally distinct composite foods).
-- Whether users can intentionally create **multiple instances** of the same meal type in a day (shift work), and how that appears in UI under **structural slots (B)**.
-- Whether meal subtotals appear **collapsed** headers only, **always expanded**, or user preference.
-- How aggressively to **auto-select meal context** vs require explicit selection.
+**Q1 — Duplicate lines vs. one summary (e.g. two glasses of milk at breakfast)**  
+**Decision:** When the user logs the **same food twice** into the **same meal slot** in a way that is **nutritionally identical** (same catalog or user product and **compatible snapshots** per [technical spec](./daily-log-meal-slots-technical-spec.md) §8), **merge into one line** by **summing quantity**. That yields a **single “milk consumed” summary** on the diary (one row, combined servings). Intentionally different lines (e.g. two different milks, or same product with meaningfully different snapshots) stay **separate**. Composite foods treated as distinct products are **not** “duplicates” of their ingredients.
 
-**Resolved elsewhere (do not treat as open):** mass-first and piece/weight logging for foods; composite edits → future only (**§4.4**). Implementation fork: **Option B** (**§8**).
+**Q2 — Multiple standard meals of the same type in one day (e.g. two lunches)**  
+**Decision:** **v1:** follow structural-slot default — **no second `Lunch` row** for the same day. Users who need a second occasion use **`Snack`**, **`Other`**, or a **later product iteration** (user-defined meals / `slot_instance`) — explicitly **out of v1**.
+
+**Q3 — Meal subtotals visibility**  
+**Decision:** **Always show** meal-level **calories** and **macros (carbs, fat, protein)** for each meal section — **not** hidden behind expand-only affordances. (Implementation: e.g. header or summary strip always visible; line detail may still expand/collapse.)
+
+**Q4 — How to choose which meal slot to log into**  
+**Decision for v1:** **Time-of-day default**, same idea as today’s `getDefaultMealType` — suggested slot follows clock. **Refinement** (stronger auto-targeting, “continue last slot,” explicit picker emphasis) deferred until **usage-informed** iteration.
+
+### 7.2 Remaining open (low blocking)
+
+- **Analytics:** whether and how to emit “meal created” vs “item added” after append-style logging (see gap matrix A1).
+- **Split line / un-merge:** if users need two visually separate milk lines with a roll-up summary, that is **not** v1 — v1 is **merge to one line** per Q1.
+
+**Resolved elsewhere:** mass-first and piece/weight logging (**§4.4**); composite edits → future only (**§4.4**); implementation fork **Option B** (**§8**).
 
 ---
 
@@ -185,7 +197,7 @@ These should **not block** documenting gaps; they should become **rows marked �
 
 When gap analysis findings land, add:
 
-- **Decision log** (below) and links to engineering specs or tickets that supersede ambiguity.
+- **Decision log** (below), [technical spec](./daily-log-meal-slots-technical-spec.md), and links to tickets that supersede ambiguity.
 
 ### 8.1 Decision log
 
@@ -193,6 +205,7 @@ When gap analysis findings land, add:
 | --- | --- | --- |
 | 2026-04-18 | **Structural meal slots (Option B)** | Canonical **one container per meal slot per day** (details, second-lunch policy, migration: gap matrix + engineering spec). Supports reuse, export/import, and clear “append line to this lunch” semantics vs. accidental parallel same-type cards. |
 | 2026-04-18 | **Food model: mass + servings + composites** | **§4.4**: all foods contribute mass; servings at create time (weight and/or pieces); log by count or by weigh; recipe edits update definition for **future logs only**; past lines stay on snapshots. |
+| 2026-04-18 | **Q1–Q4** | **§7.1:** merge duplicate identical-food lines in-slot for one summary; v1 no second standard slot; meal P/C/F + kcal always visible; meal target default = time-of-day. |
 
 ---
 
@@ -203,3 +216,5 @@ When gap analysis findings land, add:
 | 2026-04-18 | Product | Initial draft for gap analysis baseline |
 | 2026-04-18 | Product | §4.4: mass, piece/weight servings, log paths, composite edits → future only |
 | 2026-04-18 | Product | §4.2 clarified vs §4.4; §6 journeys/model bullets; §7 vs §4.4; §8.1 decision log (fork B) |
+| 2026-04-18 | Product | Link [daily-log-meal-slots-technical-spec.md](./daily-log-meal-slots-technical-spec.md); §8 maintenance |
+| 2026-04-18 | Product | §7: Q1–Q4 resolved (merge milk-style dupes; v1 slot policy; visible subtotals; time-of-day slot default) |

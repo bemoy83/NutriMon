@@ -2,6 +2,7 @@
 
 > **Purpose:** Baseline description of how the Daily Log works today, for **gap analysis** against [daily-log-meal-centric-scope.md](./daily-log-meal-centric-scope.md).  
 > **Gap matrix:** [daily-log-meal-centric-gap-matrix.md](./daily-log-meal-centric-gap-matrix.md) (**Option B** structural meal slots + §10 composite foods).  
+> **Technical spec (target build):** [daily-log-meal-slots-technical-spec.md](./daily-log-meal-slots-technical-spec.md).  
 > **Status:** As implemented in the codebase at authoring time; update when behavior changes.  
 > **Target product model (not yet built):** [scope](./daily-log-meal-centric-scope.md) **§4.4** (mass, piece/weight servings, composites) and **§8.1** decision log (structural meal slots, **Option B**).
 

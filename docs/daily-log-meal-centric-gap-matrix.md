@@ -1,6 +1,7 @@
 # Daily Log: Meal-Centric Gap Matrix
 
 > **Sources:** [daily-log-meal-centric-scope.md](./daily-log-meal-centric-scope.md) (goal, scope, **§4.4 food model**, **§8.1 decision log**), [daily-log-current-implementation.md](./daily-log-current-implementation.md) (as-built).  
+> **Technical spec:** [daily-log-meal-slots-technical-spec.md](./daily-log-meal-slots-technical-spec.md).  
 > **Purpose:** Trace each requirement to **current behavior**, **gap**, and **owning layer**.  
 > **Implementation fork:** **Option B — structural meal slots** (decided 2026-04-18, scope §8.1). Rows formerly tagged **Fork** are now **B** (expect schema/RPC + coordinated client work).
 
@@ -110,14 +111,14 @@
 
 ---
 
-## 8. Open product questions → matrix rows (scope §7)
+## 8. Product decisions Q1–Q4 (resolved 2026-04-18; scope §7.1)
 
-| ID | Question | Matrix treatment |
+| ID | Decision | Engineering notes |
 | --- | --- | --- |
-| Q1 | When do **duplicate lines** **merge** vs. stay separate? (Compatible same-food lines only — not distinct composite foods.) | **Pending** — affects G9, J4, D3, RPC design. |
-| Q2 | Can user intentionally have **two instances** of same meal type (e.g. shift work)? | **Pending** — affects G2, P2, J7, D2. |
-| Q3 | Subtotals: collapsed vs. expanded vs. preference? | **Pending** — mostly **Client** UX. |
-| Q4 | Auto-select meal context vs. explicit every time? | **Pending** — affects P3, P4, **Client**. |
+| Q1 | **Merge** compatible duplicate lines **in the same slot** (e.g. two glasses of **same** milk → **one line**, quantity summed) so the diary shows one **summary** row. Distinct products or incompatible snapshots → separate lines. | Implement merge-on-append per [technical spec](./daily-log-meal-slots-technical-spec.md) §8. Affects G9, J4, D3. |
+| Q2 | **v1:** No second **standard** slot (e.g. two `Lunch` rows). Second occasion → `Snack` / `Other` / **future** user-defined meals or `slot_instance`. | Matches technical spec §17; D2 unique index unchanged for v1. |
+| Q3 | **Meal subtotals always visible:** kcal **and** carbs, fat, protein for each meal section (not expand-only). | **Client:** e.g. `MealList` / `MealCard` header always shows macro strip + calories. |
+| Q4 | **v1 default:** target slot by **time of day** (same idea as `getDefaultMealType`). Stronger rules **later**, after usage. | **Client** + copy; optional future “continue last slot.” |
 
 ---
 
@@ -151,3 +152,4 @@ All **Owner** values **B** in §§1–6 assume this fork. **Next engineering ste
 | --- | --- |
 | 2026-04-18 | Initial gap matrix from scope + implementation docs |
 | 2026-04-18 | Fork **B** locked; **Fork** column → **B**; §9 decision table; §10 composite/mass/serving rows (scope §4.4); Q1 wording aligned with scope §7 |
+| 2026-04-18 | §8: Q1–Q4 **resolved** (merge in-slot; v1 no second standard slot; visible meal subtotals; time-of-day slot default) |
