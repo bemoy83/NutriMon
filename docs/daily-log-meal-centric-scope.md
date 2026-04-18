@@ -29,7 +29,6 @@ NutriMon should **mimic the established pattern** seen in apps like **MyFitnessP
 - **Multiple servings of the same food** are represented as **either**:
   - **one line with increased quantity / servings**, **or**
   - **multiple lines** (if we later decide that better fits edge cases),
-
   **but never** as **multiple parallel “Lunch” containers** created accidentally by normal logging.
 
 ### 2.1 User outcomes we optimize for
@@ -176,7 +175,7 @@ Use the sections below as **row headers** in a gap matrix: **Current behavior / 
 **Decision:** When the user logs the **same food twice** into the **same meal slot** in a way that is **nutritionally identical** (same catalog or user product and **compatible snapshots** per [technical spec](./daily-log-meal-slots-technical-spec.md) §8), **merge into one line** by **summing quantity**. That yields a **single “milk consumed” summary** on the diary (one row, combined servings). Intentionally different lines (e.g. two different milks, or same product with meaningfully different snapshots) stay **separate**. Composite foods treated as distinct products are **not** “duplicates” of their ingredients.
 
 **Q2 — Multiple standard meals of the same type in one day (e.g. two lunches)**  
-**Decision:** **v1:** follow structural-slot default — **no second `Lunch` row** for the same day. Users who need a second occasion use **`Snack`**, **`Other`**, or a **later product iteration** (user-defined meals / `slot_instance`) — explicitly **out of v1**.
+**Decision:** **v1:** follow structural-slot default — **no second `Lunch` row** for the same day. Users who need a second occasion use `**Snack`**, `**Other**`, or a **later product iteration** (user-defined meals / `slot_instance`) — explicitly **out of v1**.
 
 **Q3 — Meal subtotals visibility**  
 **Decision:** **Always show** meal-level **calories** and **macros (carbs, fat, protein)** for each meal section — **not** hidden behind expand-only affordances. (Implementation: e.g. header or summary strip always visible; line detail may still expand/collapse.)
@@ -201,21 +200,26 @@ When gap analysis findings land, add:
 
 ### 8.1 Decision log
 
-| Date | Decision | Notes |
-| --- | --- | --- |
-| 2026-04-18 | **Structural meal slots (Option B)** | Canonical **one container per meal slot per day** (details, second-lunch policy, migration: gap matrix + engineering spec). Supports reuse, export/import, and clear “append line to this lunch” semantics vs. accidental parallel same-type cards. |
-| 2026-04-18 | **Food model: mass + servings + composites** | **§4.4**: all foods contribute mass; servings at create time (weight and/or pieces); log by count or by weigh; recipe edits update definition for **future logs only**; past lines stay on snapshots. |
-| 2026-04-18 | **Q1–Q4** | **§7.1:** merge duplicate identical-food lines in-slot for one summary; v1 no second standard slot; meal P/C/F + kcal always visible; meal target default = time-of-day. |
+
+| Date       | Decision                                     | Notes                                                                                                                                                                                                                                               |
+| ---------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-04-18 | **Structural meal slots (Option B)**         | Canonical **one container per meal slot per day** (details, second-lunch policy, migration: gap matrix + engineering spec). Supports reuse, export/import, and clear “append line to this lunch” semantics vs. accidental parallel same-type cards. |
+| 2026-04-18 | **Food model: mass + servings + composites** | **§4.4**: all foods contribute mass; servings at create time (weight and/or pieces); log by count or by weigh; recipe edits update definition for **future logs only**; past lines stay on snapshots.                                               |
+| 2026-04-18 | **Q1–Q4**                                    | **§7.1:** merge duplicate identical-food lines in-slot for one summary; v1 no second standard slot; meal P/C/F + kcal always visible; meal target default = time-of-day.                                                                            |
+
 
 ---
 
 ## Revision history
 
-| Date | Author | Notes |
-| --- | --- | --- |
-| 2026-04-18 | Product | Initial draft for gap analysis baseline |
-| 2026-04-18 | Product | §4.4: mass, piece/weight servings, log paths, composite edits → future only |
-| 2026-04-18 | Product | §4.2 clarified vs §4.4; §6 journeys/model bullets; §7 vs §4.4; §8.1 decision log (fork B) |
-| 2026-04-18 | Product | Link [daily-log-meal-slots-technical-spec.md](./daily-log-meal-slots-technical-spec.md); §8 maintenance |
+
+| Date       | Author  | Notes                                                                                                    |
+| ---------- | ------- | -------------------------------------------------------------------------------------------------------- |
+| 2026-04-18 | Product | Initial draft for gap analysis baseline                                                                  |
+| 2026-04-18 | Product | §4.4: mass, piece/weight servings, log paths, composite edits → future only                              |
+| 2026-04-18 | Product | §4.2 clarified vs §4.4; §6 journeys/model bullets; §7 vs §4.4; §8.1 decision log (fork B)                |
+| 2026-04-18 | Product | Link [daily-log-meal-slots-technical-spec.md](./daily-log-meal-slots-technical-spec.md); §8 maintenance  |
 | 2026-04-18 | Product | §7: Q1–Q4 resolved (merge milk-style dupes; v1 slot policy; visible subtotals; time-of-day slot default) |
-| 2026-04-18 | Product | Link [agent-prompts-meal-slots.md](./agent-prompts-meal-slots.md); §8 maintenance |
+| 2026-04-18 | Product | Link [agent-prompts-meal-slots.md](./agent-prompts-meal-slots.md); §8 maintenance                        |
+
+
