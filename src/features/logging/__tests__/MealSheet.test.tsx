@@ -112,9 +112,9 @@ describe('MealSheet — add mode', () => {
     // Tap food → serving step
     fireEvent.click(screen.getByRole('button', { name: 'My oats' }))
     // Confirm serving (default 100g)
-    fireEvent.click(screen.getByRole('button', { name: 'Add to meal' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Breakfast' }))
     // Back in browse, submit the meal
-    fireEvent.click(screen.getByRole('button', { name: /Add 1 item/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Add to Breakfast · 1 item/ }))
 
     await waitFor(() => {
       expect(createMealWithItemsMock).toHaveBeenCalledWith(

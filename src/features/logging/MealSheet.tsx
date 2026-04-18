@@ -381,7 +381,9 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
         ) : (
           <>
             {items.length === 0 && (
-              <p className="pb-2 text-xs text-center text-[var(--app-text-subtle)]">Tap a food to add it</p>
+              <p className="pb-2 text-xs text-center text-[var(--app-text-subtle)]">
+                Tap a food to add it to {mealType}
+              </p>
             )}
             <button
               type="button"
@@ -392,8 +394,8 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
               {submitting
                 ? 'Adding…'
                 : items.length > 0
-                  ? `Add ${items.length} item${items.length !== 1 ? 's' : ''} · ${totalKcal} kcal`
-                  : 'Add to log'}
+                  ? `Add to ${mealType} · ${items.length} item${items.length !== 1 ? 's' : ''} · ${totalKcal} kcal`
+                  : `Add to ${mealType}`}
             </button>
           </>
         )}
@@ -405,7 +407,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
         disabled={pendingGrams <= 0}
         className="app-button-primary w-full py-2.5"
       >
-        {isEditingExisting ? 'Update' : 'Add to meal'}
+        {isEditingExisting ? 'Update' : `Add to ${mealType}`}
       </button>
     ) : null // 'create' view — ProductForm has its own buttons
 
@@ -414,7 +416,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
   return (
     <BottomSheet
       onClose={onClose}
-      title={mode === 'add' ? 'Add meal' : 'Edit meal'}
+      title={mode === 'add' ? `Add to ${mealType}` : 'Edit meal'}
       className="h-[85vh] sm:h-[600px]"
       footer={footer}
     >

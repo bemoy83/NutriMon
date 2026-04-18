@@ -8,7 +8,7 @@ import MealList from '@/features/logging/MealList'
 import { getTodayInTimezone } from '@/lib/date'
 import type { BattlePrepSummary, CreaturePreview, FinalizeDayResponse, Meal } from '@/types/domain'
 import { buildMealSnapshotItems, buildMealUpdateItems } from '@/features/logging/mealPayloads'
-import { deleteMeal, restoreMealFromSnapshot, updateMealWithItems } from '@/features/logging/api'
+import { deleteMeal, deleteMealItem, restoreMealFromSnapshot, updateMealWithItems } from '@/features/logging/api'
 import InlineQuickAdd from '@/features/logging/InlineQuickAdd'
 import { getDefaultMealType } from '@/lib/mealType'
 import type { DeleteMealResult, MealMutationResult } from '@/types/database'
@@ -139,14 +139,22 @@ export default function DailyLogPage() {
     onSuccess: (result) => handleMealCreated(result, 'Previous meal copied'),
   })
 
-  function handleMealCreated(result: MealMutationResult, label = 'Meal added') {
+  function handleMealCreated(result: MealMutationResult, label?: string) {
+    const defaultLabel = result.meal.meal_type ? `Added to ${result.meal.meal_type}` : 'Food added'
     setCreaturePreviewState({ date: logDate, preview: mapCreaturePreviewPayload(result.creature_preview ?? null) })
     setBattlePrepState({ date: logDate, summary: null })
     invalidateDailyLog(logDate)
     showUndo({
-      label,
+      label: label ?? defaultLabel,
       undo: async () => {
-        await deleteMeal(result.meal.id)
+        const inserted = result.inserted_meal_item_ids
+        if (inserted && inserted.length > 0) {
+          for (const mealItemId of inserted) {
+            await deleteMealItem(mealItemId)
+          }
+        } else {
+          await deleteMeal(result.meal.id)
+        }
         invalidateDailyLog(logDate)
       },
     })
@@ -200,7 +208,7 @@ export default function DailyLogPage() {
           {derivedQuery.isLoading ? (
             <EmptyState
               title="No meals logged yet."
-              description="Tap + to add your first meal."
+              description="Tap + to add food to a meal slot."
               className="py-12"
             />
           ) : (
@@ -299,7 +307,7 @@ export default function DailyLogPage() {
             <button
               onClick={() => setShowQuickAdd(true)}
               className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-[var(--app-brand)] text-white shadow-[0_4px_16px_rgb(124_58_237/0.35)] transition-colors hover:bg-[var(--app-brand-hover)]"
-              aria-label="Add meal"
+              aria-label="Add food to meal slot"
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />

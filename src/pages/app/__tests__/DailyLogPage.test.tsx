@@ -14,6 +14,7 @@ const useProfileSummaryMock = vi.fn()
 const useRepeatLastMealPreviewMock = vi.fn()
 const repeatLastMealMock = vi.fn()
 const deleteMealMock = vi.fn()
+const deleteMealItemMock = vi.fn()
 const restoreMealFromSnapshotMock = vi.fn()
 const updateMealWithItemsMock = vi.fn()
 const getTodayInTimezoneMock = vi.fn()
@@ -64,6 +65,7 @@ vi.mock('@/lib/date', () => ({
 
 vi.mock('@/features/logging/api', () => ({
   deleteMeal: (...args: unknown[]) => deleteMealMock(...args),
+  deleteMealItem: (...args: unknown[]) => deleteMealItemMock(...args),
   repeatLastMeal: (...args: unknown[]) => repeatLastMealMock(...args),
   restoreMealFromSnapshot: (...args: unknown[]) => restoreMealFromSnapshotMock(...args),
   updateMealWithItems: (...args: unknown[]) => updateMealWithItemsMock(...args),
@@ -123,6 +125,74 @@ vi.mock('@/features/logging/MealSheet', () => ({
       </button>
     )
   },
+}))
+
+vi.mock('@/features/logging/InlineQuickAdd', () => ({
+  default: ({ onCreated }: { onCreated: (result: MealMutationResult) => void }) => (
+    <div>
+      <button
+        type="button"
+        onClick={() =>
+          onCreated({
+            meal: {
+              id: 'meal-lunch',
+              daily_log_id: 'log-1',
+              logged_at: '2026-01-05T12:00:00.000Z',
+              meal_type: 'Lunch',
+              meal_name: null,
+              total_calories: 220,
+              item_count: 1,
+            },
+            meal_items: [],
+            inserted_meal_item_ids: ['appended-item-1', 'appended-item-2'],
+            daily_log: {
+              id: 'log-1',
+              user_id: 'user-1',
+              log_date: '2026-01-05',
+              total_calories: 220,
+              meal_count: 1,
+              is_finalized: false,
+              finalized_at: null,
+              created_at: '2026-01-05T00:00:00.000Z',
+              updated_at: '2026-01-05T00:00:00.000Z',
+            },
+          })
+        }
+      >
+        simulate-append-add
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          onCreated({
+            meal: {
+              id: 'meal-new',
+              daily_log_id: 'log-1',
+              logged_at: '2026-01-05T08:00:00.000Z',
+              meal_type: 'Breakfast',
+              meal_name: null,
+              total_calories: 100,
+              item_count: 1,
+            },
+            meal_items: [],
+            daily_log: {
+              id: 'log-1',
+              user_id: 'user-1',
+              log_date: '2026-01-05',
+              total_calories: 100,
+              meal_count: 1,
+              is_finalized: false,
+              finalized_at: null,
+              created_at: '2026-01-05T00:00:00.000Z',
+              updated_at: '2026-01-05T00:00:00.000Z',
+            },
+          })
+        }
+      >
+        simulate-new-meal-no-ids
+      </button>
+    </div>
+  ),
 }))
 
 vi.mock('@/features/logging/MealList', () => ({
@@ -239,6 +309,20 @@ describe('DailyLogPage', () => {
     getTodayInTimezoneMock.mockReturnValue('2026-01-05')
     isTodayMock.mockReturnValue(true)
     deleteMealMock.mockResolvedValue({})
+    deleteMealItemMock.mockResolvedValue({
+      daily_log: {
+        id: 'log-1',
+        user_id: 'user-1',
+        log_date: '2026-01-05',
+        total_calories: 0,
+        meal_count: 0,
+        is_finalized: false,
+        finalized_at: null,
+        created_at: '2026-01-05T00:00:00.000Z',
+        updated_at: '2026-01-05T00:00:00.000Z',
+      },
+      meal: null,
+    })
     repeatLastMealMock.mockResolvedValue({
       meal: {
         id: 'meal-repeated',
@@ -332,7 +416,7 @@ describe('DailyLogPage', () => {
     renderPage()
 
     expect(screen.getByText('No meals logged yet.')).toBeInTheDocument()
-    expect(screen.getByText('Tap + to add your first meal.')).toBeInTheDocument()
+    expect(screen.getByText('Tap + to add food to a meal slot.')).toBeInTheDocument()
     expect(screen.queryByText('inline-quick-add')).not.toBeInTheDocument()
     expect(screen.queryByText('Finalize & Prep')).not.toBeInTheDocument()
   })
@@ -473,5 +557,68 @@ describe('DailyLogPage', () => {
         ],
       )
     })
+  })
+
+  it('undo after append calls deleteMealItem for each inserted id, not deleteMeal', async () => {
+    useDailyLogCoreMock.mockReturnValue({
+      data: {
+        dailyLog: {
+          id: 'log-1',
+          userId: 'user-1',
+          logDate: '2026-01-05',
+          totalCalories: 0,
+          mealCount: 0,
+          isFinalized: false,
+          finalizedAt: null,
+          createdAt: '2026-01-05T00:00:00.000Z',
+          updatedAt: '2026-01-05T00:00:00.000Z',
+        },
+        meals: [],
+      },
+      isLoading: false,
+    })
+
+    renderPage()
+    fireEvent.click(screen.getByText('simulate-append-add'))
+
+    expect(screen.getByText('Added to Lunch')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Undo'))
+
+    await waitFor(() => {
+      expect(deleteMealItemMock).toHaveBeenCalledWith('appended-item-1')
+      expect(deleteMealItemMock).toHaveBeenCalledWith('appended-item-2')
+    })
+    expect(deleteMealMock).not.toHaveBeenCalled()
+  })
+
+  it('undo falls back to deleteMeal when inserted_meal_item_ids is absent', async () => {
+    useDailyLogCoreMock.mockReturnValue({
+      data: {
+        dailyLog: {
+          id: 'log-1',
+          userId: 'user-1',
+          logDate: '2026-01-05',
+          totalCalories: 0,
+          mealCount: 0,
+          isFinalized: false,
+          finalizedAt: null,
+          createdAt: '2026-01-05T00:00:00.000Z',
+          updatedAt: '2026-01-05T00:00:00.000Z',
+        },
+        meals: [],
+      },
+      isLoading: false,
+    })
+
+    renderPage()
+    fireEvent.click(screen.getByText('simulate-new-meal-no-ids'))
+
+    expect(screen.getByText('Added to Breakfast')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Undo'))
+
+    await waitFor(() => {
+      expect(deleteMealMock).toHaveBeenCalledWith('meal-new')
+    })
+    expect(deleteMealItemMock).not.toHaveBeenCalled()
   })
 })

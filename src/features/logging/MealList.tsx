@@ -58,7 +58,7 @@ export default function MealList({ meals, isFinalized, timezone, logDate, onEdit
 
   if (meals.length === 0) {
     return (
-      <EmptyState title="No meals logged yet." description="Tap + to add your first meal." className="py-12" />
+      <EmptyState title="No meals logged yet." description="Tap + to add food to a meal slot." className="py-12" />
     )
   }
 
@@ -113,7 +113,6 @@ function MealCard({
   const [showSavePrompt, setShowSavePrompt] = useState(false)
   const [templateName, setTemplateName] = useState('')
   const macros = getMealMacros(meal)
-  const hasMacros = macros.protein > 0 || macros.carbs > 0 || macros.fat > 0
   const theme = getMealTypeTheme(meal.mealType)
 
   return (
@@ -130,9 +129,9 @@ function MealCard({
     >
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors hover:bg-[var(--app-hover-overlay)]"
+        className="w-full flex items-start justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--app-hover-overlay)]"
       >
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="text-[var(--app-text-primary)] text-sm font-medium">
             {meal.mealName ?? meal.mealType ?? formatTime(meal.loggedAt, timezone)}
           </p>
@@ -145,14 +144,34 @@ function MealCard({
             )}
             {meal.itemCount} item{meal.itemCount !== 1 ? 's' : ''}
           </p>
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] tabular-nums">
+            <span className="font-semibold" style={{ color: 'var(--app-macro-protein)' }}>
+              P {Math.round(macros.protein)}g
+            </span>
+            <span className="text-[var(--app-text-subtle)]" aria-hidden="true">
+              ·
+            </span>
+            <span className="font-semibold" style={{ color: 'var(--app-macro-carbs)' }}>
+              C {Math.round(macros.carbs)}g
+            </span>
+            <span className="text-[var(--app-text-subtle)]" aria-hidden="true">
+              ·
+            </span>
+            <span className="font-semibold" style={{ color: 'var(--app-macro-fat)' }}>
+              F {Math.round(macros.fat)}g
+            </span>
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-[var(--app-text-primary)] font-semibold">{meal.totalCalories} kcal</span>
+        <div className="flex flex-none flex-col items-end gap-1 pt-0.5">
+          <span className="text-[var(--app-text-primary)] text-sm font-semibold tabular-nums">
+            {meal.totalCalories} kcal
+          </span>
           <svg
             className={`w-4 h-4 text-[var(--app-text-muted)] transition-transform ${expanded ? 'rotate-180' : ''}`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
+            aria-hidden="true"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
@@ -161,18 +180,6 @@ function MealCard({
 
       {expanded && (
         <div className="border-t" style={{ borderColor: theme ? theme.divider : 'var(--app-border)' }}>
-          {/* Macro summary strip */}
-          {hasMacros && (
-            <div
-              className="flex items-center justify-around px-4 py-2.5 border-b"
-              style={{ borderColor: theme ? theme.divider : 'var(--app-border-muted)' }}
-            >
-              <MacroStat label="Protein" value={macros.protein} color="var(--app-macro-protein)" />
-              <MacroStat label="Carbs" value={macros.carbs} color="var(--app-macro-carbs)" />
-              <MacroStat label="Fat" value={macros.fat} color="var(--app-macro-fat)" />
-            </div>
-          )}
-
           {/* Items */}
           <div className="px-4 py-2 space-y-1.5">
             {(meal.items ?? []).map((item) => (
@@ -251,19 +258,6 @@ function MealCard({
           )}
         </div>
       )}
-    </div>
-  )
-}
-
-function MacroStat({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className="flex flex-col items-center gap-0.5">
-      <span className="text-sm font-semibold" style={{ color }}>
-        {Math.round(value)}g
-      </span>
-      <span className="text-xs" style={{ color: 'var(--app-text-muted)' }}>
-        {label}
-      </span>
     </div>
   )
 }
