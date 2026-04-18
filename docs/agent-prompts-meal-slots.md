@@ -86,24 +86,24 @@ Verify:
 
 ---
 
-## Slice D — RPC + types: `delete_meal_item` + return `inserted_meal_item_ids` for undo
+## Slice D — RPC + types: `delete_meal_item` + `inserted_meal_item_ids` on `create_meal_with_items`
 
 ```text
 You are implementing Slice D only for NutriMon meal slots.
 
 Read first:
-- docs/daily-log-meal-slots-technical-spec.md — §7.4 delete_meal_item, §9 undo contract, §7.1 return shape for inserted ids
+- docs/daily-log-meal-slots-technical-spec.md — §7.4 delete_meal_item, §9 (undo + `inserted_meal_item_ids` semantics), §7.1 return shape
 
 Goal:
 1. Add RPC `delete_meal_item(p_meal_item_id uuid) returns json` (security definer, auth.uid()) that deletes one meal_item owned via meal→user, recomputes parent meal totals and daily_logs; if item_count becomes 0, DELETE parent meals row per §7.4 v1 policy.
-2. Extend create_meal_with_items (and update_meal_with_items if it inserts new lines without ids in return — only if needed) JSON response to include `inserted_meal_item_ids`: uuid[] of rows created in that call for undo (§9).
+2. Extend create_meal_with_items (and update_meal_with_items if it inserts new lines without ids in return — only if needed) JSON response to include `inserted_meal_item_ids`: uuid[] of **meal_items rows INSERTed** in that call only (merge UPDATEs excluded). Optional for client; not for toast undo on add (§9).
 3. Update src/types/database.ts (MealMutationResult or equivalent) and src/features/logging/api.ts typings to match.
 
 Constraints:
-- Client undo wiring can be Slice F; this slice may only add RPC + types. If compile requires minimal DailyLogPage change, keep it tiny.
+- Client wiring is separate; this slice is RPC + types. If compile requires minimal DailyLogPage change, keep it tiny.
 
 Verify:
-- RPC returns new ids array on append; delete_meal_item removes one line and fixes totals; deleting last item removes meal row.
+- RPC returns inserted ids on real inserts (including append with new lines); empty or partial when lines merged; delete_meal_item removes one line and fixes totals; deleting last item removes meal row.
 ```
 
 ---
@@ -132,20 +132,20 @@ Verify:
 
 ---
 
-## Slice F — Client: slot-aware UI, always-visible meal subtotals, undo append
+## Slice F — Client: slot-aware UI, always-visible meal subtotals, destructive-only undo
 
 ```text
 You are implementing Slice F only for NutriMon Daily Log client.
 
 Read first:
-- docs/daily-log-meal-slots-technical-spec.md — §10 (files), §10.4 (always-visible kcal + P/C/F per meal), §9 undo
+- docs/daily-log-meal-slots-technical-spec.md — §10 (files), §10.4 (always-visible kcal + P/C/F per meal), §9 undo (toast only for delete meal → restore snapshot)
 - docs/daily-log-meal-centric-scope.md — §7.1 Q3–Q4
 - src/features/logging/MealList.tsx, DailyLogPage.tsx, MealSheet.tsx, useDailyLogCore.ts, api.ts
 
 Goal:
 1. MealList / MealCard: show meal total calories AND protein/carbs/fat in the default (non-expanded) view per §10.4 (adjust layout; line list can still expand).
 2. useDailyLogCore: order meals predictably (e.g. Breakfast → Lunch → Dinner → Snack → then Other/null by logged_at).
-3. DailyLogPage undo: when last action was append, undo uses inserted_meal_item_ids from MealMutationResult — call delete_meal_item (or batch) instead of deleteMeal when appropriate (§9). Keep deleteMeal for true whole-meal delete UX where still valid.
+3. DailyLogPage: **no** toast undo after add/append/edit. **Do** offer toast undo after **delete entire meal** using `restore_meal_from_snapshot` + client-held meal snapshot (§9, §7.5).
 4. Copy/labels: FAB/sheet should read as adding to the meal slot (minimal string changes OK).
 
 Constraints:
@@ -153,7 +153,7 @@ Constraints:
 - No large unrelated refactors.
 
 Verify:
-- Manual: two adds to Lunch → one card, subtotals visible without expand; undo second add removes only new lines; finalized day unchanged.
+- Manual: two adds to Lunch → one card, subtotals visible without expand; corrections via per-line delete/edit, not toast undo on add; delete meal → undo restores meal; finalized day unchanged.
 - npm run lint && npm run test && npm run build
 ```
 
@@ -164,3 +164,4 @@ Verify:
 | Date | Notes |
 | --- | --- |
 | 2026-04-18 | Initial prompts (slices A–F) |
+| 2026-04-18 | Slice D/F: `inserted_meal_item_ids` = insert ledger only; Slice F destructive-only toast undo (align §9 v1.3) |

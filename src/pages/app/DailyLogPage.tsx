@@ -7,8 +7,8 @@ import { useLatestFallbackMetrics } from '@/features/logging/useLatestFallbackMe
 import MealList from '@/features/logging/MealList'
 import { getTodayInTimezone } from '@/lib/date'
 import type { BattlePrepSummary, CreaturePreview, FinalizeDayResponse, Meal } from '@/types/domain'
-import { buildMealSnapshotItems, buildMealUpdateItems } from '@/features/logging/mealPayloads'
-import { deleteMeal, deleteMealItem, restoreMealFromSnapshot, updateMealWithItems } from '@/features/logging/api'
+import { buildMealSnapshotItems } from '@/features/logging/mealPayloads'
+import { restoreMealFromSnapshot } from '@/features/logging/api'
 import InlineQuickAdd from '@/features/logging/InlineQuickAdd'
 import { getDefaultMealType } from '@/lib/mealType'
 import type { DeleteMealResult, MealMutationResult } from '@/types/database'
@@ -136,28 +136,13 @@ export default function DailyLogPage() {
     logDate,
     loggedAt,
     mealType: currentMealType,
-    onSuccess: (result) => handleMealCreated(result, 'Previous meal copied'),
+    onSuccess: (result) => handleMealCreated(result),
   })
 
-  function handleMealCreated(result: MealMutationResult, label?: string) {
-    const defaultLabel = result.meal.meal_type ? `Added to ${result.meal.meal_type}` : 'Food added'
+  function handleMealCreated(result: MealMutationResult) {
     setCreaturePreviewState({ date: logDate, preview: mapCreaturePreviewPayload(result.creature_preview ?? null) })
     setBattlePrepState({ date: logDate, summary: null })
     invalidateDailyLog(logDate)
-    showUndo({
-      label: label ?? defaultLabel,
-      undo: async () => {
-        const inserted = result.inserted_meal_item_ids
-        if (inserted && inserted.length > 0) {
-          for (const mealItemId of inserted) {
-            await deleteMealItem(mealItemId)
-          }
-        } else {
-          await deleteMeal(result.meal.id)
-        }
-        invalidateDailyLog(logDate)
-      },
-    })
   }
   const creaturePreview = creaturePreviewState?.date === logDate ? creaturePreviewState.preview : null
   const battlePrep = battlePrepState?.date === logDate ? battlePrepState.summary : null
@@ -367,16 +352,10 @@ export default function DailyLogPage() {
             logDate={logDate}
             loggedAt={loggedAt}
             onClose={() => setEditingMeal(null)}
-            onSaved={(previousMeal, result) => {
+            onSaved={(_previousMeal, result) => {
               setCreaturePreviewState({ date: logDate, preview: mapCreaturePreviewPayload(result.creature_preview ?? null) })
               setBattlePrepState({ date: logDate, summary: null })
-              showUndo({
-                label: 'Meal updated',
-                undo: async () => {
-                  await updateMealWithItems(previousMeal.id, previousMeal.loggedAt, buildMealUpdateItems(previousMeal))
-                  invalidateDailyLog(logDate)
-                },
-              })
+              invalidateDailyLog(logDate)
               setEditingMeal(null)
             }}
           />

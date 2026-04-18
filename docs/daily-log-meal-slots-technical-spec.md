@@ -1,6 +1,6 @@
 # Technical specification: structural meal slots (Option B)
 
-> **Status:** Engineering source of truth for implementation (v1.2).  
+> **Status:** Engineering source of truth for implementation (v1.3).  
 > **Product sources:** [daily-log-meal-centric-scope.md](./daily-log-meal-centric-scope.md) (§2–5, §4.4 food model, §8.1 decisions), [daily-log-meal-centric-gap-matrix.md](./daily-log-meal-centric-gap-matrix.md).  
 > **As-built reference:** [daily-log-current-implementation.md](./daily-log-current-implementation.md).  
 > **Implementation agent prompts (slices A–F):** [agent-prompts-meal-slots.md](./agent-prompts-meal-slots.md).  
@@ -15,6 +15,7 @@
 | 1.0 | 2026-04-18 | Engineering | Initial full spec from agreed Option B + gap matrix |
 | 1.1 | 2026-04-18 | Product + Eng | Q1–Q4 locked: merge-on-append v1, visible meal subtotals, slot defaults, no second standard slot v1 |
 | 1.2 | 2026-04-18 | Eng | Slice C: `033_create_meal_with_items_merge_on_append.sql` re-`CREATE OR REPLACE`s `create_meal_with_items` for envs that applied `032` before merge (do not edit recorded `032` in place on deployed DBs). |
+| 1.3 | 2026-04-18 | Eng | §9: toast undo **destructive-only** (delete meal → restore snapshot). `inserted_meal_item_ids` = insert ledger only, not append-undo. §10/§11/§13/§16 aligned. |
 
 ---
 
@@ -248,17 +249,16 @@ No change expected if `daily_logs.total_calories` remains correct.
 
 ## 9. Undo contract (client + server)
 
-**Today:** Undo after “add meal” calls `deleteMeal(result.meal.id)`.
+**Product decision (v1):** Toast **undo** is for **destructive** actions where reversal is unambiguous — primarily **delete entire meal** (`delete_meal`), reversed with **`restore_meal_from_snapshot`** using a client-held snapshot of the meal (§7.5). **Add, append, and edit** logging do **not** use toast undo; users correct mistakes with **per-line delete** (`delete_meal_item` / UI), **edit quantity**, or **delete meal**.
 
-**After B:**
+**`inserted_meal_item_ids` (RPC):** `create_meal_with_items` returns `inserted_meal_item_ids` — UUIDs of **`meal_items` rows inserted** in that call. Lines touched only by **merge** (§8) are **not** listed. This is an **optional insert ledger** for analytics, future UX (e.g. scroll-to-new-line), or tooling — **not** used for toast undo (merge would make id-only undo incomplete).
 
-| User action | Undo behavior |
+| User action | Undo / correction |
 | --- | --- |
-| First items added to **new** slot row | `deleteMeal` still valid if whole row new. |
-| **Append** to existing slot | **Cannot** `deleteMeal` without removing others’ items. **v1:** RPC `create_meal_with_items` returns **array of new `meal_item` ids**; undo calls `delete_meal_item` for each id (or new `delete_meal_items(uuid[])` batch RPC). |
-| **Delete entire slot** | Restore via `restore_meal_from_snapshot` (unchanged UX) with merged behavior §7.5. |
+| **Add or append** items | No toast undo. Edit or delete individual lines. |
+| **Delete entire meal** (slot or other) | Toast undo → `restore_meal_from_snapshot` with saved snapshot; §7.5 prevents duplicate standard-slot rows. |
 
-**Client:** extend `MealMutationResult` type to include `inserted_meal_item_ids?: string[]` (and keep `meal.id`).
+**Client:** `MealMutationResult` includes `inserted_meal_item_ids?: string[]` (JSON snake_case). Keep `meal.id` stable for the slot per append semantics.
 
 ---
 
@@ -270,12 +270,12 @@ No change expected if `daily_logs.total_calories` remains correct.
 | --- | --- |
 | Core fetch | `src/features/logging/useDailyLogCore.ts` — order: slot order then `Other`/NULL by `logged_at`. |
 | List UI | `src/features/logging/MealList.tsx` — optional: hide empty slot rows; section headers. |
-| Page | `src/pages/app/DailyLogPage.tsx` — undo handler uses new ids; `loggedMealTypes` / repeat CTA logic may assume multiple lunch rows — **audit**. |
+| Page | `src/pages/app/DailyLogPage.tsx` — toast **undo only after delete meal** (restore snapshot); no undo on add/append; `loggedMealTypes` / repeat CTA logic — **audit**. |
 | API | `src/features/logging/api.ts` — new `deleteMealItem`, response typing. |
 | Types | `src/types/database.ts` — `MealMutationResult` extended. |
 | Sheet | `src/features/logging/MealSheet.tsx` — add flow may call same RPC but expect append; title/copy “Add to [Lunch]”. |
 | Quick add | `src/features/logging/InlineQuickAdd.tsx` — after first day meal, may need to target slot (if shown beyond empty day). |
-| Tests | `src/pages/app/__tests__/DailyLogPage.test.tsx` + new integration tests for append/undo. |
+| Tests | `src/pages/app/__tests__/DailyLogPage.test.tsx` — delete-meal undo; no toast undo after quick add; slot ordering / subtotals as applicable. |
 
 ### 10.2 React Query
 
@@ -298,8 +298,8 @@ No change expected if `daily_logs.total_calories` remains correct.
 Extend `MealMutationResult` (or equivalent) returned by Supabase RPC JSON:
 
 ```ts
-// illustrative — align with actual generated types in codebase
-insertedMealItemIds?: string[]
+// illustrative — align with actual JSON from Supabase RPC (snake_case)
+inserted_meal_item_ids?: string[] // new meal_item row ids from INSERT only; not merge updates; optional; not for toast undo
 ```
 
 Ensure **Supabase RPC typings** in `src/types/database.ts` or inferred JSON stay in sync after migration.
@@ -318,7 +318,7 @@ Ensure **Supabase RPC typings** in `src/types/database.ts` or inferred JSON stay
 ### 13.1 Automated
 
 - Unit / integration: **two** `create_meal_with_items` with same `log_date` + `Lunch` → **one** `meals` row, **N** items.
-- **Undo** second append removes only appended lines.
+- After append, user can remove lines via **per-item delete** (or edit qty); no requirement for toast undo on add.
 - **Migration fixture:** duplicate Lunch rows → single row; sum line kcal invariant.
 - **Finalized day:** append rejected (existing exception).
 
@@ -358,7 +358,7 @@ Track in separate epic; unblock meal slots work without this schema.
 | Risk | Mitigation |
 | --- | --- |
 | Unique index fails on prod data | Staging dry-run; migration report listing conflicting rows. |
-| Client assumes new meal id each add | Search codebase for `createMealWithItems` + undo paths; update tests. |
+| Client assumes new meal id each add | Search codebase for `createMealWithItems` + append paths; toast undo is not used for add. |
 | `meal_count` semantics confuse users | Release notes; optional UI label change. |
 | `Other` duplicates still confuse | Phase 2 product; document limitation in v1. |
 
@@ -374,6 +374,7 @@ Track in separate epic; unblock meal slots work without this schema.
 | Which slot to log into | **Time-of-day** default (same idea as `getDefaultMealType`); iterate after usage data. |
 | Merge key edge cases | Exact snapshot match (**§8**); split-line UX **out of v1** (scope §7.2). |
 | `meal_name` on append | Keep keeper name unless NULL (**§7.1**). |
+| Toast undo after add/append | **Not supported** — use per-line delete/edit; toast undo for **delete meal** only (**§9**). |
 
 ---
 
@@ -383,3 +384,5 @@ Track in separate epic; unblock meal slots work without this schema.
 | --- | --- | --- |
 | 1.0 | 2026-04-18 | Initial publication |
 | 1.1 | 2026-04-18 | Q1 merge required v1; Q3 visible subtotals §10.4; Q2/Q4 §17; split-line deferred |
+| 1.2 | 2026-04-18 | Slice C / `033` note (see document control §1) |
+| 1.3 | 2026-04-18 | §9 destructive-only toast undo; `inserted_meal_item_ids` as insert-only ledger; §10/§11/§13/§16 + doc control v1.3 |

@@ -229,7 +229,7 @@ npm run build
 3. Open today’s Daily Log and verify an empty day shows quick-add content immediately.
 4. Create a product, edit it, hard-delete it, and confirm historical meals still render from snapshots.
 5. Search for a built-in catalog food, log it directly, and confirm no new row is created in `products`.
-6. Add a meal, edit a meal, delete a meal, and verify each action offers undo.
+6. Add a meal, edit a meal, delete a meal; verify **toast undo** appears for **delete meal** (restore), not for add/append (use per-line delete/edit to correct logging).
 7. Use `Repeat last meal` on the current day.
 8. Finalize the current day after logging at least one meal.
 9. Invoke `auto-finalize-day` with `x-cron-secret` and verify it finalizes eligible backfill dates oldest-first.

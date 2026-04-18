@@ -1332,11 +1332,11 @@ Quick-add behavior:
   - `My product`
   - `Built-in`
 
-Undo behavior:
+Undo behavior (align with meal-slots spec §9):
 
-- after add, edit, or delete meal, show toast with undo for 5 seconds
-- if undo is clicked, reverse the last mutation
-- if page reloads, undo state is lost
+- **Delete meal:** optional toast with undo (e.g. restore from snapshot) for a short window.
+- **Add / append / edit logging:** no toast undo; user corrects via per-line delete, quantity edit, or delete meal.
+- If undo is offered, reversing the action is explicit (e.g. restore RPC); if the page reloads, ephemeral undo state is lost.
 
 ### 13.4 Product Form
 

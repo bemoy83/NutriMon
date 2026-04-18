@@ -508,7 +508,10 @@ describe('DailyLogPage', () => {
     })
   })
 
-  it('offers undo after editing a meal', async () => {
+  it('does not offer undo after editing a meal', async () => {
+    const invalidate = vi.fn()
+    useInvalidateDailyLogMock.mockReturnValue(invalidate)
+
     useDailyLogCoreMock.mockReturnValue({
       data: {
         dailyLog: {
@@ -531,35 +534,16 @@ describe('DailyLogPage', () => {
     fireEvent.click(screen.getByText('trigger-edit'))
     fireEvent.click(await screen.findByText('save-edit'))
 
-    expect(screen.getByText('Meal updated')).toBeInTheDocument()
-    fireEvent.click(screen.getByText('Undo'))
-
-    await waitFor(() => {
-      expect(updateMealWithItemsMock).toHaveBeenCalledWith(
-        'meal-1',
-        '2026-01-05T08:30:00.000Z',
-        [
-          {
-            product_id: 'product-1',
-            quantity: 1,
-          },
-          {
-            meal_item_id: 'item-2',
-            quantity: 1.5,
-            product_name_snapshot: 'Deleted Toast',
-            calories_per_serving_snapshot: 80,
-            protein_g_snapshot: 3,
-            carbs_g_snapshot: 15,
-            fat_g_snapshot: 1,
-            serving_amount_snapshot: 1,
-            serving_unit_snapshot: 'slice',
-          },
-        ],
-      )
-    })
+    expect(screen.queryByText('Meal updated')).not.toBeInTheDocument()
+    expect(screen.queryByText('Undo')).not.toBeInTheDocument()
+    expect(updateMealWithItemsMock).not.toHaveBeenCalled()
+    expect(invalidate).toHaveBeenCalledWith('2026-01-05')
   })
 
-  it('undo after append calls deleteMealItem for each inserted id, not deleteMeal', async () => {
+  it('does not show undo after inline quick add (append)', () => {
+    const invalidate = vi.fn()
+    useInvalidateDailyLogMock.mockReturnValue(invalidate)
+
     useDailyLogCoreMock.mockReturnValue({
       data: {
         dailyLog: {
@@ -581,17 +565,16 @@ describe('DailyLogPage', () => {
     renderPage()
     fireEvent.click(screen.getByText('simulate-append-add'))
 
-    expect(screen.getByText('Added to Lunch')).toBeInTheDocument()
-    fireEvent.click(screen.getByText('Undo'))
-
-    await waitFor(() => {
-      expect(deleteMealItemMock).toHaveBeenCalledWith('appended-item-1')
-      expect(deleteMealItemMock).toHaveBeenCalledWith('appended-item-2')
-    })
+    expect(screen.queryByText('Undo')).not.toBeInTheDocument()
+    expect(deleteMealItemMock).not.toHaveBeenCalled()
     expect(deleteMealMock).not.toHaveBeenCalled()
+    expect(invalidate).toHaveBeenCalledWith('2026-01-05')
   })
 
-  it('undo falls back to deleteMeal when inserted_meal_item_ids is absent', async () => {
+  it('does not show undo after inline quick add (new meal, no inserted ids)', () => {
+    const invalidate = vi.fn()
+    useInvalidateDailyLogMock.mockReturnValue(invalidate)
+
     useDailyLogCoreMock.mockReturnValue({
       data: {
         dailyLog: {
@@ -613,12 +596,9 @@ describe('DailyLogPage', () => {
     renderPage()
     fireEvent.click(screen.getByText('simulate-new-meal-no-ids'))
 
-    expect(screen.getByText('Added to Breakfast')).toBeInTheDocument()
-    fireEvent.click(screen.getByText('Undo'))
-
-    await waitFor(() => {
-      expect(deleteMealMock).toHaveBeenCalledWith('meal-new')
-    })
+    expect(screen.queryByText('Undo')).not.toBeInTheDocument()
+    expect(deleteMealMock).not.toHaveBeenCalled()
     expect(deleteMealItemMock).not.toHaveBeenCalled()
+    expect(invalidate).toHaveBeenCalledWith('2026-01-05')
   })
 })

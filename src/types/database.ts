@@ -605,6 +605,7 @@ export interface MealMutationResult {
     calories_per_serving_snapshot: number
     line_total_calories: number
   }[]
+  /** meal_items row IDs inserted in this RPC call only (merge updates omitted). Optional; not used for toast undo on add. */
   inserted_meal_item_ids?: string[]
   daily_log: DailyLogRow
   creature_preview?: CreaturePreviewRow | null

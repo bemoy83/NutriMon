@@ -1,4 +1,4 @@
--- Slice D: delete_meal_item (§7.4) + inserted_meal_item_ids on create_meal_with_items for undo (§9).
+-- Slice D: delete_meal_item (§7.4) + inserted_meal_item_ids on create_meal_with_items (INSERT-only row ids; optional client/analytics; not toast-undo on add — see spec §9 v1.3).
 
 create or replace function public.create_meal_with_items(
   p_log_date    date,
