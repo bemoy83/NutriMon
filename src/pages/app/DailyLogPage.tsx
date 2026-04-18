@@ -22,6 +22,7 @@ import DailyLogFinalizeCta from '@/features/logging/DailyLogFinalizeCta'
 import DailyLogRepeatCta from '@/features/logging/DailyLogRepeatCta'
 import UndoToast from '@/features/logging/UndoToast'
 import LoadingState from '@/components/ui/LoadingState'
+import EmptyState from '@/components/ui/EmptyState'
 
 const MealSheet = lazy(() => import('@/features/logging/MealSheet'))
 
@@ -122,6 +123,7 @@ export default function DailyLogPage() {
   const fatTargetG = Math.round(calorieTarget * 0.30 / 9)
 
   const todayDate = getTodayInTimezone(timezone)
+  const isViewingPastDay = logDate < todayDate
   const { finalizing, finalizeError, finalizeDay } = useFinalizeDay({
     logDate,
     onSuccess: (result) => {
@@ -192,14 +194,22 @@ export default function DailyLogPage() {
         </div>
       )}
 
-      {/* Empty-day prompt for unfinalized days */}
+      {/* Empty-day prompt for unfinalized days — static copy while derived loads so the shell is not blocked */}
       {!isFinalized && mealCount === 0 && (
         <div className="px-4 mt-4">
-          <InlineQuickAdd
-            logDate={logDate}
-            loggedAt={loggedAt}
-            onCreated={(result) => handleMealCreated(result)}
-          />
+          {derivedQuery.isLoading ? (
+            <EmptyState
+              title="No meals logged yet."
+              description="Tap + to add your first meal."
+              className="py-12"
+            />
+          ) : (
+            <InlineQuickAdd
+              logDate={logDate}
+              loggedAt={loggedAt}
+              onCreated={(result) => handleMealCreated(result)}
+            />
+          )}
         </div>
       )}
 
@@ -258,8 +268,15 @@ export default function DailyLogPage() {
       {!isFinalized && (
         <div className="fixed inset-x-0 bottom-0 z-[19] px-4 pt-10 pb-[5.5rem] bg-gradient-to-t from-[var(--app-bg)] via-[var(--app-bg)]/70 to-transparent">
           <div className="mx-auto max-w-lg flex items-center gap-2">
-            {/* Left slot: Repeat (when current slot unfilled) or Finalize (evening only) */}
-            {repeatLastMealPreviewQuery.data && !loggedMealTypes.has(currentMealType) ? (
+            {/* Left slot: past days with meals → finalize; today → repeat (slot unfilled) or finalize (evening) */}
+            {isViewingPastDay && mealCount > 0 ? (
+              <DailyLogFinalizeCta
+                finalizing={finalizing}
+                finalizeError={finalizeError}
+                onFinalize={finalizeDay}
+                className="flex-1"
+              />
+            ) : repeatLastMealPreviewQuery.data && !loggedMealTypes.has(currentMealType) ? (
               <DailyLogRepeatCta
                 preview={repeatLastMealPreviewQuery.data}
                 repeating={repeating}

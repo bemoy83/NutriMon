@@ -197,7 +197,7 @@ Use the sections below as **row headers** in a gap matrix: **Current behavior / 
 
 When gap analysis findings land, add:
 
-- **Decision log** (below), [technical spec](./daily-log-meal-slots-technical-spec.md), and links to tickets that supersede ambiguity.
+- **Decision log** (below), [technical spec](./daily-log-meal-slots-technical-spec.md), [agent prompts (slices A–F)](./agent-prompts-meal-slots.md), and links to tickets that supersede ambiguity.
 
 ### 8.1 Decision log
 
@@ -218,3 +218,4 @@ When gap analysis findings land, add:
 | 2026-04-18 | Product | §4.2 clarified vs §4.4; §6 journeys/model bullets; §7 vs §4.4; §8.1 decision log (fork B) |
 | 2026-04-18 | Product | Link [daily-log-meal-slots-technical-spec.md](./daily-log-meal-slots-technical-spec.md); §8 maintenance |
 | 2026-04-18 | Product | §7: Q1–Q4 resolved (merge milk-style dupes; v1 slot policy; visible subtotals; time-of-day slot default) |
+| 2026-04-18 | Product | Link [agent-prompts-meal-slots.md](./agent-prompts-meal-slots.md); §8 maintenance |

@@ -3,6 +3,7 @@
 > **Status:** Engineering source of truth for implementation (v1.1).  
 > **Product sources:** [daily-log-meal-centric-scope.md](./daily-log-meal-centric-scope.md) (§2–5, §4.4 food model, §8.1 decisions), [daily-log-meal-centric-gap-matrix.md](./daily-log-meal-centric-gap-matrix.md).  
 > **As-built reference:** [daily-log-current-implementation.md](./daily-log-current-implementation.md).  
+> **Implementation agent prompts (slices A–F):** [agent-prompts-meal-slots.md](./agent-prompts-meal-slots.md).  
 > **Scope of this spec:** Meal **slot** invariants, persistence, migrations, RPC contracts, client integration, undo, repeat/restore, regression targets. **Composite / recipe foods** (scope §4.4) are **Phase 2** — summarized in §14 only.
 
 ---

@@ -359,7 +359,7 @@ describe('DailyLogPage', () => {
       data: { mealName: 'Protein bowl', mealType: 'lunch', totalCalories: 520 },
       isLoading: false,
     })
-    isTodayMock.mockReturnValue(false)
+    getTodayInTimezoneMock.mockReturnValue('2026-01-06')
 
     renderPage()
 
