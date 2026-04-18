@@ -162,11 +162,15 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
 
   const isSearching = deferredSearchQuery.trim().length > 0
 
-  const activeFoodSources: FoodSource[] = isSearching
-    ? (searchResults.data ?? [])
-    : tab === 'recent'
-      ? (recentQuery.data ?? [])
-      : []
+  const activeFoodSources: FoodSource[] = tab === 'recent'
+    ? isSearching
+      ? (searchResults.data ?? [])
+      : (recentQuery.data ?? [])
+    : []
+
+  const visibleTemplates = (templatesQuery.data ?? []).filter((t) =>
+    !isSearching || t.name.toLowerCase().includes(deferredSearchQuery.trim().toLowerCase()),
+  )
 
   function isItemInCart(fs: FoodSource): boolean {
     return items.some(i =>
@@ -523,36 +527,39 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
             </div>
           )}
 
-          {/* Tabs — hidden while searching */}
-          {!isSearching && (
-            <SegmentedTabs
-              value={tab}
-              options={[
-                { value: 'recent', label: 'Recent' },
-                { value: 'saved', label: 'Saved' },
-              ]}
-              onChange={(t) => setTab(t)}
-            />
-          )}
+          <SegmentedTabs
+            value={tab}
+            options={[
+              { value: 'recent', label: 'Recent' },
+              { value: 'saved', label: 'Saved' },
+            ]}
+            onChange={(t) => setTab(t)}
+          />
 
-          {/* Search pending indicator */}
-          {isSearching && searchResults.isPending && (
+          {/* Search pending indicator — only for food source search */}
+          {isSearching && tab === 'recent' && searchResults.isPending && (
             <div className="px-4 py-3 text-sm text-[var(--app-text-muted)]">Searching…</div>
           )}
 
           {/* Scrollable food/template list */}
           <div className="flex-1 overflow-y-auto">
-            {tab === 'saved' && !isSearching ? (
+            {tab === 'saved' ? (
               /* Saved templates */
-              (templatesQuery.data ?? []).length === 0 ? (
+              visibleTemplates.length === 0 ? (
                 <div className="px-4 py-8 text-center">
-                  <p className="text-sm text-[var(--app-text-muted)]">No saved meals yet.</p>
-                  <p className="mt-1 text-xs text-[var(--app-text-subtle)]">
-                    Save a meal from the meal card to reuse it here.
-                  </p>
+                  {isSearching ? (
+                    <p className="text-sm text-[var(--app-text-muted)]">No saved meals match &ldquo;{deferredSearchQuery.trim()}&rdquo;</p>
+                  ) : (
+                    <>
+                      <p className="text-sm text-[var(--app-text-muted)]">No saved meals yet.</p>
+                      <p className="mt-1 text-xs text-[var(--app-text-subtle)]">
+                        Save a meal from the meal card to reuse it here.
+                      </p>
+                    </>
+                  )}
                 </div>
               ) : (
-                (templatesQuery.data ?? []).map((template) => (
+                visibleTemplates.map((template) => (
                   <TemplateRow
                     key={template.id}
                     template={template}

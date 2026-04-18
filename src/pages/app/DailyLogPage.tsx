@@ -84,6 +84,7 @@ export default function DailyLogPage() {
   const invalidateDailyLog = useInvalidateDailyLog()
   const loggedAt = new Date().toISOString()
   const currentMealType = getDefaultMealType(loggedAt)
+  const isEveningOrLater = new Date().getHours() >= 17
   const repeatLastMealPreviewQuery = useRepeatLastMealPreview(logDate, currentMealType)
 
   const [showQuickAdd, setShowQuickAdd] = useState(false)
@@ -257,7 +258,7 @@ export default function DailyLogPage() {
       {!isFinalized && (
         <div className="fixed inset-x-0 bottom-0 z-[19] px-4 pt-10 pb-[5.5rem] bg-gradient-to-t from-[var(--app-bg)] via-[var(--app-bg)]/70 to-transparent">
           <div className="mx-auto max-w-lg flex items-center gap-2">
-            {/* Left slot: Repeat (priority when slot unfilled) or Finalize */}
+            {/* Left slot: Repeat (when current slot unfilled) or Finalize (evening only) */}
             {repeatLastMealPreviewQuery.data && !loggedMealTypes.has(currentMealType) ? (
               <DailyLogRepeatCta
                 preview={repeatLastMealPreviewQuery.data}
@@ -266,7 +267,7 @@ export default function DailyLogPage() {
                 onRepeat={handleRepeatLastMeal}
                 className="flex-1"
               />
-            ) : mealCount > 0 ? (
+            ) : mealCount > 0 && isEveningOrLater ? (
               <DailyLogFinalizeCta
                 finalizing={finalizing}
                 finalizeError={finalizeError}
