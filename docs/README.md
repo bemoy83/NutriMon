@@ -245,6 +245,8 @@ The release acceptance checklist lives at [docs/release-readiness-checklist.md](
 - Meal-centric gap matrix (Option B + composite rows): [daily-log-meal-centric-gap-matrix.md](/Users/bemoy/Developer/NutriMon/docs/daily-log-meal-centric-gap-matrix.md)
 - Structural meal slots — technical spec: [daily-log-meal-slots-technical-spec.md](/Users/bemoy/Developer/NutriMon/docs/daily-log-meal-slots-technical-spec.md)
 - Composite foods — **consolidated prep for build spec** (§4.4 rules, CF gaps, schema sketch, My food, Option B interactions): [composite-food-implementation-notes.md](/Users/bemoy/Developer/NutriMon/docs/composite-food-implementation-notes.md)
+- Composite foods — **build spec** (normative schema, math, RPCs): [composite-food-build-spec.md](/Users/bemoy/Developer/NutriMon/docs/composite-food-build-spec.md)
+- Composite foods — **implementation plan** (phased execution, file map, PR slices, QA matrix): [composite-foods-implementation-plan.md](/Users/bemoy/Developer/NutriMon/docs/composite-foods-implementation-plan.md)
 - Agent copy-paste prompts (slices A–F): [agent-prompts-meal-slots.md](/Users/bemoy/Developer/NutriMon/docs/agent-prompts-meal-slots.md)
 
 Archived historical PRDs live under [docs/archive/README.md](/Users/bemoy/Developer/NutriMon/docs/archive/README.md) and should not be used as implementation sources.

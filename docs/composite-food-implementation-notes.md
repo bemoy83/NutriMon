@@ -2,7 +2,7 @@
 
 **Purpose:** Single engineering document to evolve into a **build spec** for composite (“recipe”) foods. It merges product rules, gap analysis, Option B interactions, schema/API direction, UX, and acceptance material that was previously spread across scope, gap matrix, meal-slots spec §14, as-built notes, and this file.
 
-**Status:** Prep / handoff — not yet a versioned implementation spec.
+**Status:** Prep / handoff — superseded by **[composite-food-build-spec.md](./composite-food-build-spec.md)** (v1.3, 2026-04-18). Locked rules in §2 remain authoritative; open decisions in §11 are resolved in the build spec §2. For execution: prep → **[build spec](./composite-food-build-spec.md)** → **[implementation plan](./composite-foods-implementation-plan.md)**.
 
 **Still authoritative elsewhere:** High-level product intent remains in [daily-log-meal-centric-scope.md](./daily-log-meal-centric-scope.md) **§4.4** (locked decisions). Structural meal slots (Option B) remain in [daily-log-meal-slots-technical-spec.md](./daily-log-meal-slots-technical-spec.md). Traceability rows for composites also appear in [daily-log-meal-centric-gap-matrix.md](./daily-log-meal-centric-gap-matrix.md) **§10**.
 
