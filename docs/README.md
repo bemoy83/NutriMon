@@ -238,7 +238,10 @@ The release acceptance checklist lives at [docs/release-readiness-checklist.md](
 
 ## Source Documents
 
-- Product intent: [PRODUCT_PRD.md](/Users/bemoy/Developer/NutriMon/PRODUCT_PRD.md)
+- Product intent: [PRODUCT_PRD.md](/Users/bemoy/Developer/NutriMon/docs/PRODUCT_PRD.md)
 - Frozen implementation handoff: [IMPLEMENTATION_PLAN.md](/Users/bemoy/Developer/NutriMon/IMPLEMENTATION_PLAN.md)
+- Daily Log meal-centric goal & scope (incl. §4.4 food model, §8.1 decisions): [daily-log-meal-centric-scope.md](/Users/bemoy/Developer/NutriMon/docs/daily-log-meal-centric-scope.md)
+- Daily Log as-built map: [daily-log-current-implementation.md](/Users/bemoy/Developer/NutriMon/docs/daily-log-current-implementation.md)
+- Meal-centric gap matrix (Option B + composite rows): [daily-log-meal-centric-gap-matrix.md](/Users/bemoy/Developer/NutriMon/docs/daily-log-meal-centric-gap-matrix.md)
 
 Archived historical PRDs live under [docs/archive/README.md](/Users/bemoy/Developer/NutriMon/docs/archive/README.md) and should not be used as implementation sources.

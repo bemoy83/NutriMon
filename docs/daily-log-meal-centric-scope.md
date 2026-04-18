@@ -1,8 +1,8 @@
 # Daily Log: Meal-Centric Logging — Product Goal & Scope
 
 > **Purpose:** Baseline for a **gap analysis** (what NutriMon already does vs. what must be designed, built, or migrated).
-> **Status:** Draft product intent (not an implementation spec).
-> **Related context:** High-level product direction lives in [PRODUCT_PRD.md](./PRODUCT_PRD.md).
+> **Status:** Draft product intent (not an implementation spec). **Implementation fork:** structural meal slots (**Option B**) — see §8 decision log. **Food model:** mass + piece/weight servings + composite foods — §4.4.
+> **Related context:** High-level product direction lives in [PRODUCT_PRD.md](./PRODUCT_PRD.md). Current Daily Log implementation map: [daily-log-current-implementation.md](./daily-log-current-implementation.md). Gap matrix (requirements vs. as-built): [daily-log-meal-centric-gap-matrix.md](./daily-log-meal-centric-gap-matrix.md).
 
 ---
 
@@ -80,7 +80,7 @@ These are intended to be **testable in UX and QA**, independent of implementatio
 
 - **Net-new nutrition science**, new macro models, or new targets logic.
 - **Social / sharing** of meals.
-- **Recipe builders** or **meal planning** beyond what is required to support logging UX.
+- **Full recipe-builder / meal-planning product** (shopping lists, weekly plans, social recipe feeds)—**not** the same as **composite food definition** in §4.4, which **is in scope** where it supports logging, reuse, and export/import.
 - **Offline-first** architecture changes (unless required solely because current client assumptions block meal grouping).
 - **Brand-new meal taxonomy** beyond what NutriMon already supports—unless required to resolve collisions (for example, two legitimate lunches in one day for shift workers).
 
@@ -88,6 +88,29 @@ These are intended to be **testable in UX and QA**, independent of implementatio
 
 - **Re-skinning** the daily log without changing the underlying **meal container** model.
 - **Renaming buttons** alone (for example, “Add to log” → “Add”) if the data and UI still create parallel meal cards.
+
+### 4.4 Composite foods, mass, and servings (locked product decisions)
+
+These rules extend the meal-centric goal and apply to **simple and composite (“recipe”) foods**. They are intended to drive schema, logging UX, and export/import later.
+
+**Mass**
+
+- **Mass is the primary input** for ingredients and for calorie and nutrient derivation where the model ties nutrients to amount consumed.
+- **All foods contribute mass** to the food’s (and, when logged, the meal’s) total mass basis for aggregation and for **per-100g** (or density-style) math, unless a future edge case is explicitly excluded in implementation (e.g. pure volume-only entries should still resolve to a mass basis for consistency).
+
+**Servings at food creation**
+
+- Each food is created with a **defined serving model**: **by weight** (relationship to total recipe / product mass) and/or **by pieces** (e.g. this pizza is **8 slices**; one sandwich is **1 unit**).
+
+**Logging (two paths, both valid)**
+
+1. **Discrete serving count** — e.g. **1 sandwich** = **1/1** of that food’s reference; **1 slice of pizza** = **1/8** of that food when the food was defined as 8 slices.
+2. **Weigh an arbitrary portion** — e.g. a slice (if user weighs it), a plate, or a portion of spaghetti: **scale nutrition from that food’s totals using mass**, typically via **calories and nutrients per 100 g** (and the same basis for macros), derived from the food’s total nutrition and total mass at definition time.
+
+**Composite foods and recipes**
+
+- A composite food is built from **ingredients** (each ingredient has mass as primary input); rolled-up nutrition and total mass define the **single selectable food** (e.g. a specific pizza).
+- **Changing ingredients updates the composite food definition for future use only.** Past log lines keep **snapshot** nutrition (and mass basis as stored on the line) so history does not rewrite when the recipe changes.
 
 ---
 
@@ -115,6 +138,7 @@ Use the sections below as **row headers** in a gap matrix: **Current behavior / 
 - Change meal assignment for a line item (if supported)
 - Repeat meal / copy prior day patterns (if present)
 - Undo flows (if present)
+- **Composite food (§4.4):** create food from ingredients; log by **piece** (e.g. 1/8 slice) or by **weighed portion** (scale vs per-100g); edit recipe affects **future logs only** (snapshots on past lines)
 
 ### 6.2 Surfaces
 
@@ -127,8 +151,9 @@ Use the sections below as **row headers** in a gap matrix: **Current behavior / 
 ### 6.3 Data model & integrity
 
 - What constitutes a **meal record** vs a **log line** today
+- **Food / product** model: simple vs **composite** (ingredient list, total mass, per-100g and piece servings)—see §4.4
 - Keys used for **duplicate detection** (if any)
-- Snapshot behavior for historical rendering (if applicable)
+- Snapshot behavior for historical rendering (if applicable); **composite definition changes do not rewrite past `meal_items` snapshots** (§4.4)
 - Server contracts: inserts, updates, deletes, batching
 - RLS and RPC assumptions impacted by grouping or new tables (if any)
 
@@ -145,12 +170,14 @@ Use the sections below as **row headers** in a gap matrix: **Current behavior / 
 
 ## 7. Open questions (intentionally deferred, but tracked for gap analysis)
 
-These should **not block** documenting gaps; they should become **rows marked “decision pending.”**
+These should **not block** documenting gaps; they should become **rows marked “decision pending”** in the gap matrix.
 
-- Exact rules for **when duplicates merge** vs remain separate lines (brand, preparation, notes, time, serving unit mismatches).
-- Whether users can intentionally create **multiple instances** of the same meal type in a day (shift work), and how that appears in UI.
+- Exact rules for **when duplicate lines merge** vs remain separate on the diary (still directional: merge compatible duplicates—§2.1, §4.1; **does not** apply to intentionally distinct composite foods).
+- Whether users can intentionally create **multiple instances** of the same meal type in a day (shift work), and how that appears in UI under **structural slots (B)**.
 - Whether meal subtotals appear **collapsed** headers only, **always expanded**, or user preference.
 - How aggressively to **auto-select meal context** vs require explicit selection.
+
+**Resolved elsewhere (do not treat as open):** mass-first and piece/weight logging for foods; composite edits → future only (**§4.4**). Implementation fork: **Option B** (**§8**).
 
 ---
 
@@ -158,8 +185,14 @@ These should **not block** documenting gaps; they should become **rows marked �
 
 When gap analysis findings land, add:
 
-- **Decision log** (dated): merge rules, multi-lunch policy, migration approach
-- **Links** to engineering specs or tickets that supersede this document’s ambiguity
+- **Decision log** (below) and links to engineering specs or tickets that supersede ambiguity.
+
+### 8.1 Decision log
+
+| Date | Decision | Notes |
+| --- | --- | --- |
+| 2026-04-18 | **Structural meal slots (Option B)** | Canonical **one container per meal slot per day** (details, second-lunch policy, migration: gap matrix + engineering spec). Supports reuse, export/import, and clear “append line to this lunch” semantics vs. accidental parallel same-type cards. |
+| 2026-04-18 | **Food model: mass + servings + composites** | **§4.4**: all foods contribute mass; servings at create time (weight and/or pieces); log by count or by weigh; recipe edits update definition for **future logs only**; past lines stay on snapshots. |
 
 ---
 
@@ -168,3 +201,5 @@ When gap analysis findings land, add:
 | Date | Author | Notes |
 | --- | --- | --- |
 | 2026-04-18 | Product | Initial draft for gap analysis baseline |
+| 2026-04-18 | Product | §4.4: mass, piece/weight servings, log paths, composite edits → future only |
+| 2026-04-18 | Product | §4.2 clarified vs §4.4; §6 journeys/model bullets; §7 vs §4.4; §8.1 decision log (fork B) |
