@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type {
+  DeleteMealItemResult,
   DeleteMealResult,
   MealItemInput,
   MealItemUpdateInput,
@@ -73,6 +74,12 @@ export async function getMealTemplates(): Promise<MealTemplate[]> {
 
 export async function deleteMeal(mealId: string): Promise<DeleteMealResult> {
   const { data, error } = await supabase.rpc('delete_meal', { p_meal_id: mealId })
+  if (error) throw error
+  return data
+}
+
+export async function deleteMealItem(mealItemId: string): Promise<DeleteMealItemResult> {
+  const { data, error } = await supabase.rpc('delete_meal_item', { p_meal_item_id: mealItemId })
   if (error) throw error
   return data
 }

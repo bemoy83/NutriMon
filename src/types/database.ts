@@ -127,6 +127,10 @@ export interface Database {
         Args: { p_meal_id: string }
         Returns: DeleteMealResult
       }
+      delete_meal_item: {
+        Args: { p_meal_item_id: string }
+        Returns: DeleteMealItemResult
+      }
       repeat_last_meal: {
         Args: { p_log_date: string }
         Returns: MealMutationResult
@@ -601,6 +605,7 @@ export interface MealMutationResult {
     calories_per_serving_snapshot: number
     line_total_calories: number
   }[]
+  inserted_meal_item_ids?: string[]
   daily_log: DailyLogRow
   creature_preview?: CreaturePreviewRow | null
 }
@@ -622,6 +627,12 @@ export interface FoodSourceRow {
 export interface DeleteMealResult {
   deleted_meal_id: string
   daily_log: DailyLogRow
+  creature_preview?: CreaturePreviewRow | null
+}
+
+export interface DeleteMealItemResult {
+  daily_log: DailyLogRow
+  meal: MealMutationResult['meal'] | null
   creature_preview?: CreaturePreviewRow | null
 }
 
