@@ -1,6 +1,6 @@
 # Technical specification: structural meal slots (Option B)
 
-> **Status:** Engineering source of truth for implementation (v1.1).  
+> **Status:** Engineering source of truth for implementation (v1.2).  
 > **Product sources:** [daily-log-meal-centric-scope.md](./daily-log-meal-centric-scope.md) (§2–5, §4.4 food model, §8.1 decisions), [daily-log-meal-centric-gap-matrix.md](./daily-log-meal-centric-gap-matrix.md).  
 > **As-built reference:** [daily-log-current-implementation.md](./daily-log-current-implementation.md).  
 > **Implementation agent prompts (slices A–F):** [agent-prompts-meal-slots.md](./agent-prompts-meal-slots.md).  
@@ -14,6 +14,7 @@
 | --- | --- | --- | --- |
 | 1.0 | 2026-04-18 | Engineering | Initial full spec from agreed Option B + gap matrix |
 | 1.1 | 2026-04-18 | Product + Eng | Q1–Q4 locked: merge-on-append v1, visible meal subtotals, slot defaults, no second standard slot v1 |
+| 1.2 | 2026-04-18 | Eng | Slice C: `033_create_meal_with_items_merge_on_append.sql` re-`CREATE OR REPLACE`s `create_meal_with_items` for envs that applied `032` before merge (do not edit recorded `032` in place on deployed DBs). |
 
 ---
 

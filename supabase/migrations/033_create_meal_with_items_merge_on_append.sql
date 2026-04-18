@@ -1,8 +1,7 @@
--- Slice B: standard diary slots (Breakfast/Lunch/Dinner/Snack) — get-or-create meal row
--- and append items; Other/NULL/non-canonical meal_type keeps one new row per call (§4.3).
--- Slice C: line merge on append when §8 merge key matches (same meal_id, product XOR catalog,
--- identical snapshot fields); otherwise insert (daily-log-meal-slots-technical-spec.md §8).
--- Depends on partial unique index from 031_merge_duplicate_standard_meal_slots.sql.
+-- Slice C (deploy): merge-on-append per docs/daily-log-meal-slots-technical-spec.md §8.
+-- Re-applies the full create_meal_with_items body so environments that already ran an
+-- earlier 032 (append-only) pick up line merge without editing a recorded migration file.
+-- Fresh db reset: 032 then 033 both REPLACE the same function — idempotent end state.
 
 create or replace function public.create_meal_with_items(
   p_log_date    date,
