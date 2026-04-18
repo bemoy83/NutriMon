@@ -1,10 +1,10 @@
 # Technical specification: structural meal slots (Option B)
 
-> **Status:** Engineering source of truth for implementation (v1.3).  
+> **Status:** Engineering source of truth for implementation (v1.4).  
 > **Product sources:** [daily-log-meal-centric-scope.md](./daily-log-meal-centric-scope.md) (§2–5, §4.4 food model, §8.1 decisions), [daily-log-meal-centric-gap-matrix.md](./daily-log-meal-centric-gap-matrix.md).  
 > **As-built reference:** [daily-log-current-implementation.md](./daily-log-current-implementation.md).  
 > **Implementation agent prompts (slices A–F):** [agent-prompts-meal-slots.md](./agent-prompts-meal-slots.md).  
-> **Scope of this spec:** Meal **slot** invariants, persistence, migrations, RPC contracts, client integration, undo, repeat/restore, regression targets. **Composite / recipe foods** (scope §4.4) are **Phase 2** — summarized in §14 only.
+> **Scope of this spec:** Meal **slot** invariants, persistence, migrations, RPC contracts, client integration, undo, repeat/restore, regression targets. **Composite / recipe foods** (scope §4.4) are **Phase 2** — §14 links to [composite-food-implementation-notes.md](./composite-food-implementation-notes.md) (consolidated prep).
 
 ---
 
@@ -16,6 +16,7 @@
 | 1.1 | 2026-04-18 | Product + Eng | Q1–Q4 locked: merge-on-append v1, visible meal subtotals, slot defaults, no second standard slot v1 |
 | 1.2 | 2026-04-18 | Eng | Slice C: `033_create_meal_with_items_merge_on_append.sql` re-`CREATE OR REPLACE`s `create_meal_with_items` for envs that applied `032` before merge (do not edit recorded `032` in place on deployed DBs). |
 | 1.3 | 2026-04-18 | Eng | §9: toast undo **destructive-only** (delete meal → restore snapshot). `inserted_meal_item_ids` = insert ledger only, not append-undo. §10/§11/§13/§16 aligned. |
+| 1.4 | 2026-04-18 | Eng | §14: composite Phase 2 detail moved to [composite-food-implementation-notes.md](./composite-food-implementation-notes.md); §14 is link-only. |
 
 ---
 
@@ -32,7 +33,7 @@
 
 ### 2.2 Non-goals (this release)
 
-- Full **composite recipe product** schema and builder UI (Phase 2; see §14).
+- Full **composite recipe product** schema and builder UI (Phase 2; see §14 → [composite-food-implementation-notes.md](./composite-food-implementation-notes.md)).
 - Changing how **per-line** calories are computed from products (same formulas as today’s `create_meal_with_items`).
 - **Offline-first** sync.
 - Resolving **every** open UX preference (collapsed cards, etc.) — client may ship minimal UI if invariants hold.
@@ -330,15 +331,9 @@ Ensure **Supabase RPC typings** in `src/types/database.ts` or inferred JSON stay
 
 ---
 
-## 14. Phase 2: composite foods (scope §4.4) — pointer only
+## 14. Phase 2: composite foods (scope §4.4)
 
-Not implemented in v1 of this spec. Engineering will likely add:
-
-- `products` kind or child table `recipe_ingredients` with rolled-up **total mass** and **per-100g** nutrients.
-- Logging UX: quantity as **grams** or **fractional piece** (1/8 pizza).
-- **Versioning:** recipe edit bumps `product` version; `meal_items` keep historical snapshots (already match “future only” product rule).
-
-Track in separate epic; unblock meal slots work without this schema.
+**Not in meal-slots v1.** All consolidated prep for the composite **implementation / build spec** (product rules, gaps CF1–CF6, schema sketch, My food UX, acceptance, Option B interactions) lives in **[composite-food-implementation-notes.md](./composite-food-implementation-notes.md)**. Track composite work in a **separate epic** from slot migrations; meal slots do not depend on this schema.
 
 ---
 
@@ -386,3 +381,4 @@ Track in separate epic; unblock meal slots work without this schema.
 | 1.1 | 2026-04-18 | Q1 merge required v1; Q3 visible subtotals §10.4; Q2/Q4 §17; split-line deferred |
 | 1.2 | 2026-04-18 | Slice C / `033` note (see document control §1) |
 | 1.3 | 2026-04-18 | §9 destructive-only toast undo; `inserted_meal_item_ids` as insert-only ledger; §10/§11/§13/§16 + doc control v1.3 |
+| 1.4 | 2026-04-18 | §14 composite prep → [composite-food-implementation-notes.md](./composite-food-implementation-notes.md); doc control v1.4 |

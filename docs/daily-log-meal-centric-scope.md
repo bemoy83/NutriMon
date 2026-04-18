@@ -111,6 +111,8 @@ These rules extend the meal-centric goal and apply to **simple and composite (�
 - A composite food is built from **ingredients** (each ingredient has mass as primary input); rolled-up nutrition and total mass define the **single selectable food** (e.g. a specific pizza).
 - **Changing ingredients updates the composite food definition for future use only.** Past log lines keep **snapshot** nutrition (and mass basis as stored on the line) so history does not rewrite when the recipe changes.
 
+**Consolidated engineering prep** (gaps, Option B interactions, schema sketch, UX, acceptance — evolves into the build spec): [composite-food-implementation-notes.md](./composite-food-implementation-notes.md).
+
 ---
 
 ## 5. Competitive reference pattern (locked for this document)
@@ -146,6 +148,7 @@ Use the sections below as **row headers** in a gap matrix: **Current behavior / 
 - Any “add to log” affordances and their copy
 - Empty states and single-meal states
 - Finalized day presentation (if different from active day)
+- **My food** library page: list/search/create/edit **simple and composite** user foods; primary home for food definition (not Profile); see [composite-food-implementation-notes.md](./composite-food-implementation-notes.md) §6
 
 ### 6.3 Data model & integrity
 
@@ -221,5 +224,7 @@ When gap analysis findings land, add:
 | 2026-04-18 | Product | Link [daily-log-meal-slots-technical-spec.md](./daily-log-meal-slots-technical-spec.md); §8 maintenance  |
 | 2026-04-18 | Product | §7: Q1–Q4 resolved (merge milk-style dupes; v1 slot policy; visible subtotals; time-of-day slot default) |
 | 2026-04-18 | Product | Link [agent-prompts-meal-slots.md](./agent-prompts-meal-slots.md); §8 maintenance                        |
+| 2026-04-18 | Product | §6.2: **My food** library surface (simple + composite); link [composite-food-implementation-notes.md](./composite-food-implementation-notes.md) |
+| 2026-04-18 | Product | §4.4: pointer to **consolidated** composite prep doc (single handoff for build spec) |
 
 

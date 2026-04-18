@@ -135,6 +135,8 @@ All **Owner** values **B** in §§1–6 assume this fork. **Next engineering ste
 
 ## 10. Composite foods, mass, and servings (scope §4.4)
 
+**Single prep / build-spec handoff** (merged product rules, CF table, as-built snapshot, Option B notes, schema sketch): [composite-food-implementation-notes.md](./composite-food-implementation-notes.md). The **CF** table below stays for matrix navigation and diffs.
+
 | ID | Requirement | Current state | Status | Gap | Owner |
 | --- | --- | --- | --- | --- | --- |
 | CF1 | **Mass primary** — all foods contribute mass for aggregation and per-100g-style scaling. | `meal_items` store snapshots; products have serving fields; **no** unified “food total mass” or meal-level mass roll-up in logging UX. | **Gap** | Food schema: total mass + optional volume→mass rules; meal roll-up if product exposes it. | **Both** |
@@ -153,3 +155,4 @@ All **Owner** values **B** in §§1–6 assume this fork. **Next engineering ste
 | 2026-04-18 | Initial gap matrix from scope + implementation docs |
 | 2026-04-18 | Fork **B** locked; **Fork** column → **B**; §9 decision table; §10 composite/mass/serving rows (scope §4.4); Q1 wording aligned with scope §7 |
 | 2026-04-18 | §8: Q1–Q4 **resolved** (merge in-slot; v1 no second standard slot; visible meal subtotals; time-of-day slot default) |
+| 2026-04-18 | §10: intro link — composite prep merged into [composite-food-implementation-notes.md](./composite-food-implementation-notes.md) |

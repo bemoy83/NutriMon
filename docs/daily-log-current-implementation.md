@@ -217,7 +217,7 @@ export async function createMealWithItems(
 | Incremental “add to same lunch” | **No** — primary adds use **`create_meal_with_items`** → new `meals` row |
 | Duplicate foods merge to quantity | **Not** as a global rule |
 | **Structural meal slots (Option B)** | **Not implemented** — see gap matrix §9 |
-| **Composite foods** (ingredients → one food; piece or weigh log) | **Not implemented** — templates ≠ composite product; see gap matrix §10 |
+| **Composite foods** (ingredients → one food; piece or weigh log) | **Not implemented** — templates ≠ composite product; see gap matrix §10 and consolidated prep [composite-food-implementation-notes.md](./composite-food-implementation-notes.md) |
 | **Mass roll-up + per-100g log path** (scope §4.4) | **Partial** — snapshots and products exist; no full food/meal mass model in logging |
 
 ---
