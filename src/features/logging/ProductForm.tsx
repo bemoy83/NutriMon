@@ -137,8 +137,8 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
   return (
     <form className="space-y-4 p-4">
       <div>
-        <label htmlFor="name" className="block text-sm text-slate-300 mb-1">
-          Name <span className="text-red-400">*</span>
+        <label htmlFor="name" className="block text-sm text-[var(--app-text-secondary)] mb-1">
+          Name <span className="text-[var(--app-danger)]">*</span>
         </label>
         <input
           id="name"
@@ -149,13 +149,13 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
           placeholder="e.g. Chicken breast"
         />
         {errors.name && (
-          <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>
+          <p className="text-[var(--app-danger)] text-xs mt-1">{errors.name.message}</p>
         )}
       </div>
 
       <div>
-        <label htmlFor="caloriesPer100g" className="block text-sm text-slate-300 mb-1">
-          Energy (kcal per 100g) <span className="text-red-400">*</span>
+        <label htmlFor="caloriesPer100g" className="block text-sm text-[var(--app-text-secondary)] mb-1">
+          Energy (kcal per 100g) <span className="text-[var(--app-danger)]">*</span>
         </label>
         <input
           id="caloriesPer100g"
@@ -165,23 +165,23 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
           placeholder="e.g. 165"
         />
         {errors.caloriesPer100g && (
-          <p className="text-red-400 text-xs mt-1">{errors.caloriesPer100g.message}</p>
+          <p className="text-[var(--app-danger)] text-xs mt-1">{errors.caloriesPer100g.message}</p>
         )}
-        <p className="text-xs text-slate-500 mt-1">
-          Use the values from the “per 100g” column on the nutrition label.
+        <p className="text-xs text-[var(--app-text-muted)] mt-1">
+          Use the values from the "per 100g" column on the nutrition label.
         </p>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
         {(
           [
-            { id: 'proteinPer100g', label: 'Protein (g / 100g)', field: 'proteinPer100g' },
-            { id: 'carbsPer100g', label: 'Carbs (g / 100g)', field: 'carbsPer100g' },
             { id: 'fatPer100g', label: 'Fat (g / 100g)', field: 'fatPer100g' },
+            { id: 'carbsPer100g', label: 'Carbs (g / 100g)', field: 'carbsPer100g' },
+            { id: 'proteinPer100g', label: 'Protein (g / 100g)', field: 'proteinPer100g' },
           ] as const
         ).map(({ id, label, field }) => (
           <div key={id}>
-            <label htmlFor={id} className="block text-xs text-slate-400 mb-1">
+            <label htmlFor={id} className="block text-xs text-[var(--app-text-secondary)] mb-1">
               {label}
             </label>
             <input
@@ -197,7 +197,7 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
       </div>
 
       <div>
-        <label htmlFor="labelPortionGrams" className="block text-xs text-slate-400 mb-1">
+        <label htmlFor="labelPortionGrams" className="block text-xs text-[var(--app-text-secondary)] mb-1">
           Portion on label (g, optional)
         </label>
         <input
@@ -209,14 +209,14 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
           placeholder="e.g. 30 — if the label lists one serving size"
         />
         {portionKcalPreview != null && (
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-[var(--app-text-muted)] mt-1">
             ≈ {portionKcalPreview} kcal per that portion (derived from per 100g values).
           </p>
         )}
       </div>
 
       {serverError && (
-        <p className="text-red-400 text-sm">{serverError}</p>
+        <p className="text-[var(--app-danger)] text-sm">{serverError}</p>
       )}
 
       <div className="flex gap-3 pt-2">
@@ -234,7 +234,7 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
             const product = await save(data)
             if (product) onSave(product)
           })}
-          className="app-button-secondary flex-1 py-2.5"
+          className="app-button-primary flex-1 py-2.5"
         >
           {isEditMode ? 'Save changes' : 'Save'}
         </button>

@@ -249,8 +249,8 @@ export default function CompositeFoodSheet({
         <div className="overflow-y-auto p-4 space-y-4">
           {/* Name */}
           <div>
-            <label htmlFor="comp-name" className="block text-sm text-slate-300 mb-1">
-              Recipe name <span className="text-red-400">*</span>
+            <label htmlFor="comp-name" className="block text-sm text-[var(--app-text-secondary)] mb-1">
+              Recipe name <span className="text-[var(--app-danger)]">*</span>
             </label>
             <input
               id="comp-name"
@@ -265,8 +265,8 @@ export default function CompositeFoodSheet({
 
           {/* Total prepared weight */}
           <div>
-            <label htmlFor="comp-mass" className="block text-sm text-slate-300 mb-1">
-              Total weight after cooking (g) <span className="text-red-400">*</span>
+            <label htmlFor="comp-mass" className="block text-sm text-[var(--app-text-secondary)] mb-1">
+              Total weight after cooking (g) <span className="text-[var(--app-danger)]">*</span>
             </label>
             <input
               id="comp-mass"
@@ -286,7 +286,7 @@ export default function CompositeFoodSheet({
           {/* Piece count + label */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="comp-pieces" className="block text-xs text-slate-400 mb-1">
+              <label htmlFor="comp-pieces" className="block text-xs text-[var(--app-text-secondary)] mb-1">
                 Servings / pieces
               </label>
               <input
@@ -302,7 +302,7 @@ export default function CompositeFoodSheet({
             </div>
             {pieceCount != null && pieceCount > 0 && (
               <div>
-                <label htmlFor="comp-piece-label" className="block text-xs text-slate-400 mb-1">
+                <label htmlFor="comp-piece-label" className="block text-xs text-[var(--app-text-secondary)] mb-1">
                   Piece label
                 </label>
                 <input
@@ -321,7 +321,7 @@ export default function CompositeFoodSheet({
           <div>
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-[var(--app-text-primary)]">
-                Ingredients <span className="text-red-400">*</span>
+                Ingredients <span className="text-[var(--app-danger)]">*</span>
               </p>
               <button
                 type="button"
