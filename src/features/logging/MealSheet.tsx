@@ -524,7 +524,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
       footer={footer}
     >
       {/* Header band — always visible above the sliding views */}
-      <div className="flex-none bg-[rgb(255_255_255/0.85)]">
+      <div className="flex-none bg-white">
         {mode === 'edit' && (
           <div className="px-4 pt-3 pb-2">
             <input
@@ -552,7 +552,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
           style={{ transform: browseTranslate }}
         >
           {/* Search bar */}
-          <div className="flex-none px-4 py-2 bg-[rgb(255_255_255/0.85)]">
+          <div className="flex-none px-4 py-2 bg-white">
             <input
               type="text"
               value={searchQuery}
@@ -652,7 +652,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
               { value: 'saved', label: 'Saved' },
             ]}
             onChange={(t) => setTab(t)}
-            className="!bg-[rgb(255_255_255/0.85)] !shadow-none !pt-1.5 !pb-3"
+            className="!bg-white !shadow-none !pt-1.5 !pb-3"
           />
 
           {/* Search pending indicator — only for food source search */}

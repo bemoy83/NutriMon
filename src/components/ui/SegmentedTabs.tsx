@@ -18,7 +18,7 @@ export default function SegmentedTabs<T extends string>({
 }: SegmentedTabsProps<T>) {
   return (
     <div
-      className={`relative z-[1] bg-[rgb(255_255_255/0.85)] px-4 py-2 shadow-[0_4px_14px_-4px_rgb(15_23_42_/_0.1)] ${className}`.trim()}
+      className={`relative z-[1] bg-white px-4 py-2 ${className}`.trim()}
     >
       <div
         className="flex gap-0.5 rounded-full bg-[rgb(0_0_0/0.06)] shadow-[inset_0_1px_3px_rgb(0_0_0/0.10)] p-0.5"

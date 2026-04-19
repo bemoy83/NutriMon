@@ -52,7 +52,7 @@ export default function BottomSheet({ children, onClose, title, footer, classNam
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl border border-[var(--app-border)] bg-[rgb(255_255_255/0.90)] backdrop-blur-2xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl${className ? ` ${className}` : ' max-h-[85vh]'}`}
+        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl border border-[var(--app-border)] bg-white sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl${className ? ` ${className}` : ' max-h-[85vh]'}`}
         style={{
           transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
           transition: transitioning ? 'transform 0.2s ease' : undefined,
@@ -61,7 +61,7 @@ export default function BottomSheet({ children, onClose, title, footer, classNam
       >
         {/* Header — drag target on mobile */}
         <div
-          className="flex flex-col rounded-t-2xl bg-[rgb(255_255_255/0.85)] sm:rounded-t-xl"
+          className="flex flex-col rounded-t-2xl bg-white sm:rounded-t-xl"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -87,7 +87,7 @@ export default function BottomSheet({ children, onClose, title, footer, classNam
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
 
         {footer && (
-          <div className="bg-[rgb(255_255_255/0.85)] px-4 py-5 shadow-[0_-4px_14px_-4px_rgb(15_23_42_/_0.1)]">
+          <div className="bg-white px-4 py-5 border-t border-[var(--app-border-muted)]">
             {footer}
           </div>
         )}

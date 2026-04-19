@@ -117,15 +117,10 @@ function MealCard({
 
   return (
     <div
-      className="app-card overflow-hidden"
-      style={
-        theme
-          ? {
-              /* Neutral frosted surface from .app-card; meal type only via inset accent strip. */
-              boxShadow: `inset 5px 0 0 ${theme.accent}, var(--app-shadow-sm)`,
-            }
-          : undefined
-      }
+      className="overflow-hidden rounded-[var(--app-radius-lg)]"
+      style={{
+        background: theme ? theme.bg : 'var(--app-surface)',
+      }}
     >
       <button
         onClick={onToggle}

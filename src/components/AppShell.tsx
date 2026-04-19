@@ -119,7 +119,7 @@ export default function AppShell() {
 
       {/* Bottom navigation */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-20 backdrop-blur pb-[env(safe-area-inset-bottom,0px)]"
+        className="fixed inset-x-0 bottom-0 z-20 pb-[env(safe-area-inset-bottom,0px)]"
         style={{
           background: 'var(--app-nav-bg)',
           borderTop: '1px solid var(--app-border)',
