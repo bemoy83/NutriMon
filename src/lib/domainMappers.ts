@@ -86,6 +86,14 @@ export function mapProduct(row: ProductRow): Product {
     defaultServingUnit: row.default_serving_unit,
     useCount: row.use_count,
     lastUsedAt: row.last_used_at,
+    kind: row.kind,
+    totalMassG: row.total_mass_g,
+    caloriesPer100g: row.calories_per_100g,
+    proteinPer100g: row.protein_per_100g,
+    carbsPer100g: row.carbs_per_100g,
+    fatPer100g: row.fat_per_100g,
+    pieceCount: row.piece_count,
+    pieceLabel: row.piece_label,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -104,6 +112,10 @@ export function mapFoodSource(row: FoodSourceRow): FoodSource {
     defaultServingUnit: row.default_serving_unit,
     useCount: row.use_count,
     lastUsedAt: row.last_used_at,
+    kind: row.kind as 'simple' | 'composite',
+    pieceCount: row.piece_count,
+    pieceLabel: row.piece_label,
+    totalMassG: row.total_mass_g,
   }
 }
 

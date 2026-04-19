@@ -42,6 +42,7 @@ const routes = [
                   { path: '/app/battle', lazy: () => import('@/app/router/route-modules/battle-hub') },
                   { path: '/app/battle/arenas/:arenaId', lazy: () => import('@/app/router/route-modules/battle-arena-detail') },
                   { path: '/app/weight', lazy: () => import('@/app/router/route-modules/weight') },
+                  { path: '/app/my-food', lazy: () => import('@/app/router/route-modules/my-food') },
                   { path: '/app/profile', lazy: () => import('@/app/router/route-modules/profile') },
                 ],
               },

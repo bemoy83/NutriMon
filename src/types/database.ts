@@ -13,6 +13,12 @@ export interface Database {
         Update: Partial<Omit<ProductRow, 'id' | 'user_id' | 'created_at'>>
         Relationships: []
       }
+      product_recipe_ingredients: {
+        Row: ProductRecipeIngredientRow
+        Insert: Omit<ProductRecipeIngredientRow, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<ProductRecipeIngredientRow, 'id' | 'created_at'>>
+        Relationships: []
+      }
       food_catalog_items: {
         Row: FoodCatalogItemRow
         Insert: Omit<FoodCatalogItemRow, 'created_at' | 'updated_at'>
@@ -163,6 +169,21 @@ export interface Database {
         Args: { p_query: string; p_limit?: number }
         Returns: FoodSourceRow[]
       }
+      upsert_composite_product: {
+        Args: {
+          p_product_id: string | null
+          p_name: string
+          p_total_mass_g: number
+          p_piece_count: number | null
+          p_piece_label: string | null
+          p_ingredients: CompositeIngredientInput[]
+        }
+        Returns: CompositeProductResult
+      }
+      get_composite_product: {
+        Args: { p_product_id: string }
+        Returns: CompositeProductResult | null
+      }
       get_battle_hub: {
         Args: { p_battle_date: string }
         Returns: BattleHubRow
@@ -225,6 +246,25 @@ export interface ProductRow {
   default_serving_unit: string | null
   use_count: number
   last_used_at: string | null
+  kind: 'simple' | 'composite'
+  total_mass_g: number | null
+  calories_per_100g: number | null
+  protein_per_100g: number | null
+  carbs_per_100g: number | null
+  fat_per_100g: number | null
+  piece_count: number | null
+  piece_label: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ProductRecipeIngredientRow {
+  id: string
+  composite_product_id: string
+  ingredient_product_id: string | null
+  ingredient_catalog_item_id: string | null
+  mass_g: number
+  sort_order: number
   created_at: string
   updated_at: string
 }
@@ -544,6 +584,7 @@ export interface MealItemInput {
   product_id?: string
   catalog_item_id?: string
   quantity: number
+  composite_quantity_mode?: 'grams' | 'pieces'
 }
 
 export interface MealItemUpdateInput {
@@ -551,6 +592,7 @@ export interface MealItemUpdateInput {
   catalog_item_id?: string
   meal_item_id?: string
   quantity: number
+  composite_quantity_mode?: 'grams' | 'pieces'
   product_name_snapshot?: string
   calories_per_serving_snapshot?: number
   protein_g_snapshot?: number | null
@@ -623,6 +665,10 @@ export interface FoodSourceRow {
   default_serving_unit: string | null
   use_count: number
   last_used_at: string | null
+  kind: string
+  piece_count: number | null
+  piece_label: string | null
+  total_mass_g: number | null
 }
 
 export interface DeleteMealResult {
@@ -674,4 +720,26 @@ export interface ArenaListRow {
   companion: CreatureCompanionRow | null
   snapshot: CreatureBattleSnapshotRow | null
   arenas: ArenaListArenaRow[]
+}
+
+export interface CompositeIngredientInput {
+  product_id: string | null
+  catalog_item_id: string | null
+  mass_g: number
+  sort_order: number
+}
+
+export interface CompositeIngredientResult {
+  id: string
+  ingredient_product_id: string | null
+  ingredient_catalog_item_id: string | null
+  mass_g: number
+  sort_order: number
+  name: string
+  calories: number
+}
+
+export interface CompositeProductResult {
+  product: ProductRow
+  ingredients: CompositeIngredientResult[]
 }

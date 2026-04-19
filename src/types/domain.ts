@@ -27,6 +27,8 @@ export interface Profile {
   updatedAt: string
 }
 
+export type ProductKind = 'simple' | 'composite'
+
 export interface Product {
   id: string
   userId: string
@@ -39,8 +41,41 @@ export interface Product {
   defaultServingUnit: string | null
   useCount: number
   lastUsedAt: string | null
+  kind: ProductKind
+  totalMassG: number | null
+  caloriesPer100g: number | null
+  proteinPer100g: number | null
+  carbsPer100g: number | null
+  fatPer100g: number | null
+  pieceCount: number | null
+  pieceLabel: string | null
   createdAt: string
   updatedAt: string
+}
+
+export interface RecipeIngredient {
+  id: string
+  sourceType: 'product' | 'catalog'
+  sourceId: string
+  name: string
+  massG: number
+  sortOrder: number
+  caloriesPer100g: number
+  proteinPer100g: number | null
+  carbsPer100g: number | null
+  fatPer100g: number | null
+}
+
+export interface CompositeProduct extends Product {
+  kind: 'composite'
+  totalMassG: number
+  caloriesPer100g: number
+  proteinPer100g: number | null
+  carbsPer100g: number | null
+  fatPer100g: number | null
+  pieceCount: number | null
+  pieceLabel: string | null
+  ingredients: RecipeIngredient[]
 }
 
 export interface FoodSource {
@@ -55,6 +90,10 @@ export interface FoodSource {
   defaultServingUnit: string | null
   useCount: number
   lastUsedAt: string | null
+  kind: 'simple' | 'composite'
+  pieceCount: number | null
+  pieceLabel: string | null
+  totalMassG: number | null
 }
 
 export interface DailyLog {

@@ -30,6 +30,7 @@ interface Item {
   snapshotCarbsG?: number | null
   snapshotFatG?: number | null
   quantity: number
+  compositeQuantityMode?: 'grams' | 'pieces'
 }
 
 interface MealSheetProps {
@@ -76,8 +77,25 @@ function getItemSourceType(item: Item): 'user_product' | 'catalog_item' | null {
   return null
 }
 
+/** Compute kcal for a single cart item, accounting for composite piece mode. */
+function getItemKcal(item: Item): number {
+  if (item.compositeQuantityMode === 'pieces') {
+    // quantity is piece count; derive grams per piece from food source
+    const fs = item.foodSource
+    if (fs && fs.totalMassG && fs.pieceCount && fs.pieceCount > 0) {
+      const gramsPerPiece = fs.totalMassG / fs.pieceCount
+      return Math.round(item.quantity * (fs.calories / 100) * gramsPerPiece)
+    }
+  }
+  return Math.round(item.quantity * getItemCalories(item))
+}
+
 function initItemsFromMeal(meal: Meal): Item[] {
   return (meal.items ?? []).map((i): Item => {
+    // Detect piece mode from snapshot: if serving unit is not 'g' and not null, it was piece mode
+    const compositeQuantityMode: 'grams' | 'pieces' | undefined =
+      i.servingUnitSnapshot && i.servingUnitSnapshot !== 'g' ? 'pieces' : undefined
+
     if (i.productId || i.catalogItemId) {
       return {
         productId: i.productId ?? undefined,
@@ -90,6 +108,7 @@ function initItemsFromMeal(meal: Meal): Item[] {
         snapshotServingAmount: i.servingAmountSnapshot,
         snapshotServingUnit: i.servingUnitSnapshot,
         quantity: i.quantity,
+        compositeQuantityMode,
       }
     }
     return {
@@ -102,6 +121,7 @@ function initItemsFromMeal(meal: Meal): Item[] {
       snapshotServingAmount: i.servingAmountSnapshot,
       snapshotServingUnit: i.servingUnitSnapshot,
       quantity: i.quantity,
+      compositeQuantityMode,
     }
   })
 }
@@ -112,6 +132,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
   const [sheetView, setSheetView] = useState<SheetView>('browse')
   const [servingTarget, setServingTarget] = useState<FoodSource | null>(null)
   const [pendingGrams, setPendingGrams] = useState(100)
+  const [pendingMode, setPendingMode] = useState<'grams' | 'pieces'>('grams')
   const [items, setItems] = useState<Item[]>(() =>
     mode === 'edit' && meal ? initItemsFromMeal(meal) : [],
   )
@@ -138,7 +159,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
   const templatesQuery = useMealTemplates()
 
   const mealTheme = getMealTypeTheme(mealType)
-  const totalKcal = items.reduce((sum, i) => sum + Math.round(i.quantity * getItemCalories(i)), 0)
+  const totalKcal = items.reduce((sum, i) => sum + getItemKcal(i), 0)
 
   // Close cart when all items are removed
   useEffect(() => {
@@ -184,20 +205,46 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
         ? i.productId === foodSource.sourceId
         : i.catalogItemId === foodSource.sourceId,
     )
-    const currentGrams = existing
-      ? Math.round(existing.quantity * getItemServingAmount(existing))
-      : (foodSource.defaultServingAmount ?? 100)
-    setPendingGrams(currentGrams)
+
+    // Reset or restore composite mode
+    if (existing?.compositeQuantityMode === 'pieces') {
+      setPendingMode('pieces')
+      setPendingGrams(existing.quantity) // quantity IS piece count in piece mode
+    } else {
+      setPendingMode('grams')
+      const currentGrams = existing
+        ? Math.round(existing.quantity * getItemServingAmount(existing))
+        : (foodSource.defaultServingAmount ?? 100)
+      setPendingGrams(currentGrams)
+    }
+
     setServingTarget(foodSource)
     setSheetView('serving')
   }
+
+  // ─── Composite helpers ───────────────────────────────────────────────────
+
+  const isCompositeWithPieces = servingTarget?.kind === 'composite'
+    && (servingTarget.pieceCount ?? 0) > 0
+    && (servingTarget.totalMassG ?? 0) > 0
 
   // ─── Serving step ─────────────────────────────────────────────────────────
 
   function confirmServing() {
     if (!servingTarget || pendingGrams <= 0) return
-    const servingAmount = servingTarget.defaultServingAmount ?? 100
-    const quantity = pendingGrams / servingAmount
+
+    let quantity: number
+    let compositeQuantityMode: 'grams' | 'pieces' | undefined
+
+    if (pendingMode === 'pieces' && isCompositeWithPieces) {
+      // pendingGrams stores piece count in this mode
+      quantity = pendingGrams
+      compositeQuantityMode = 'pieces'
+    } else {
+      const servingAmount = servingTarget.defaultServingAmount ?? 100
+      quantity = pendingGrams / servingAmount
+      compositeQuantityMode = servingTarget.kind === 'composite' ? 'grams' : undefined
+    }
 
     setItems(prev => {
       const existingIdx = prev.findIndex(i =>
@@ -206,7 +253,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
           : i.catalogItemId === servingTarget.sourceId,
       )
       if (existingIdx >= 0) {
-        return prev.map((it, idx) => (idx === existingIdx ? { ...it, quantity } : it))
+        return prev.map((it, idx) => (idx === existingIdx ? { ...it, quantity, compositeQuantityMode } : it))
       }
       return [
         ...prev,
@@ -222,6 +269,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
           snapshotServingAmount: servingTarget.defaultServingAmount,
           snapshotServingUnit: servingTarget.defaultServingUnit,
           quantity,
+          compositeQuantityMode,
         },
       ]
     })
@@ -230,14 +278,21 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
 
   // ─── Cart ─────────────────────────────────────────────────────────────────
 
-  function updateItemGrams(idx: number, grams: number) {
+  function updateItemGrams(idx: number, value: number) {
     const item = items[idx]
-    const servingAmount = getItemServingAmount(item)
-    if (grams <= 0) {
+    if (value <= 0) {
       setItems(prev => prev.filter((_, i) => i !== idx))
-    } else {
+      return
+    }
+    if (item.compositeQuantityMode === 'pieces') {
+      // value is piece count directly
       setItems(prev =>
-        prev.map((it, i) => (i === idx ? { ...it, quantity: grams / servingAmount } : it)),
+        prev.map((it, i) => (i === idx ? { ...it, quantity: value } : it)),
+      )
+    } else {
+      const servingAmount = getItemServingAmount(item)
+      setItems(prev =>
+        prev.map((it, i) => (i === idx ? { ...it, quantity: value / servingAmount } : it)),
       )
     }
   }
@@ -297,6 +352,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
             ? { product_id: item.productId }
             : { catalog_item_id: item.catalogItemId! }),
           quantity: item.quantity,
+          ...(item.compositeQuantityMode && { composite_quantity_mode: item.compositeQuantityMode }),
         }))
         const result = await createMealWithItems(logDate, loggedAt, apiItems, mealType)
         invalidateDailyLog(logDate)
@@ -304,8 +360,16 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
         onAdded?.(result)
       } else if (mode === 'edit' && meal) {
         const apiItems = items.map(item => {
-          if (item.productId) return { product_id: item.productId, quantity: item.quantity }
-          if (item.catalogItemId) return { catalog_item_id: item.catalogItemId, quantity: item.quantity }
+          if (item.productId) return {
+            product_id: item.productId,
+            quantity: item.quantity,
+            ...(item.compositeQuantityMode && { composite_quantity_mode: item.compositeQuantityMode }),
+          }
+          if (item.catalogItemId) return {
+            catalog_item_id: item.catalogItemId,
+            quantity: item.quantity,
+            ...(item.compositeQuantityMode && { composite_quantity_mode: item.compositeQuantityMode }),
+          }
           return {
             meal_item_id: item.mealItemId,
             quantity: item.quantity,
@@ -342,9 +406,14 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
   const browseTranslate = sheetView === 'browse' ? 'translateX(0)' : 'translateX(-100%)'
   const detailTranslate = sheetView !== 'browse' ? 'translateX(0)' : 'translateX(100%)'
 
-  const servingLiveKcal = servingTarget
-    ? Math.round((pendingGrams / (servingTarget.defaultServingAmount ?? 100)) * servingTarget.calories)
-    : 0
+  const servingLiveKcal = (() => {
+    if (!servingTarget) return 0
+    if (pendingMode === 'pieces' && isCompositeWithPieces) {
+      const gramsPerPiece = servingTarget.totalMassG! / servingTarget.pieceCount!
+      return Math.round(pendingGrams * (servingTarget.calories / 100) * gramsPerPiece)
+    }
+    return Math.round((pendingGrams / (servingTarget.defaultServingAmount ?? 100)) * servingTarget.calories)
+  })()
 
   const isEditingExisting = servingTarget
     ? items.some(i =>
@@ -490,9 +559,11 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
               {cartOpen && (
                 <div className="max-h-40 overflow-y-auto">
                   {items.map((item, idx) => {
-                    const servingAmount = getItemServingAmount(item)
-                    const grams = Math.round(item.quantity * servingAmount)
-                    const kcal = Math.round(item.quantity * getItemCalories(item))
+                    const isPieceMode = item.compositeQuantityMode === 'pieces'
+                    const displayValue = isPieceMode
+                      ? item.quantity
+                      : Math.round(item.quantity * getItemServingAmount(item))
+                    const kcal = getItemKcal(item)
                     const sourceType = getItemSourceType(item)
                     return (
                       <div
@@ -514,10 +585,15 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
                               {getItemLabel(item)}
                             </p>
                           </div>
-                          <p className="text-xs text-[var(--app-text-muted)]">{kcal} kcal</p>
+                          <p className="text-xs text-[var(--app-text-muted)]">
+                            {kcal} kcal
+                            {isPieceMode && item.foodSource?.pieceLabel && (
+                              <span className="ml-1">· {item.quantity} {item.foodSource.pieceLabel}</span>
+                            )}
+                          </p>
                         </div>
                         <GramInput
-                          grams={grams}
+                          grams={displayValue}
                           onChange={(g) => updateItemGrams(idx, g)}
                           showSteppers={false}
                         />
@@ -628,6 +704,9 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
               onGramsChange={setPendingGrams}
               onBack={() => setSheetView('browse')}
               isUpdate={isEditingExisting}
+              compositeMode={pendingMode}
+              onModeChange={setPendingMode}
+              showModeToggle={isCompositeWithPieces}
             />
           )}
           {sheetView === 'create' && (
@@ -651,9 +730,14 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
                     defaultServingUnit: product.defaultServingUnit,
                     useCount: 0,
                     lastUsedAt: null,
+                    kind: 'simple' as const,
+                    pieceCount: null,
+                    pieceLabel: null,
+                    totalMassG: null,
                   }
                   invalidateProducts()
                   setPendingGrams(product.defaultServingAmount ?? 100)
+                  setPendingMode('grams')
                   setServingTarget(fs)
                   setSheetView('serving')
                 }}
@@ -676,6 +760,9 @@ function ServingStep({
   onGramsChange,
   onBack,
   isUpdate,
+  compositeMode,
+  onModeChange,
+  showModeToggle,
 }: {
   foodSource: FoodSource
   grams: number
@@ -683,9 +770,31 @@ function ServingStep({
   onGramsChange: (g: number) => void
   onBack: () => void
   isUpdate: boolean
+  compositeMode: 'grams' | 'pieces'
+  onModeChange: (mode: 'grams' | 'pieces') => void
+  showModeToggle: boolean
 }) {
   // isUpdate is used by the parent to label the footer button; shown here as context
   void isUpdate
+
+  const isPieceMode = compositeMode === 'pieces' && showModeToggle
+  const gramsPerPiece = foodSource.totalMassG && foodSource.pieceCount && foodSource.pieceCount > 0
+    ? foodSource.totalMassG / foodSource.pieceCount
+    : null
+
+  function handleModeSwitch(mode: 'grams' | 'pieces') {
+    if (mode === compositeMode) return
+    if (mode === 'pieces' && gramsPerPiece) {
+      // Convert grams to nearest piece count
+      const pieces = Math.max(1, Math.round(grams / gramsPerPiece))
+      onGramsChange(pieces)
+    } else if (mode === 'grams' && gramsPerPiece) {
+      // Convert pieces to grams
+      const g = Math.round(grams * gramsPerPiece)
+      onGramsChange(g)
+    }
+    onModeChange(mode)
+  }
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -707,7 +816,22 @@ function ServingStep({
         </div>
       </div>
 
-      {/* Kcal display + gram input — centred in remaining space */}
+      {/* Mode toggle for composite foods with pieces */}
+      {showModeToggle && (
+        <div className="flex-none px-6 pt-3">
+          <SegmentedTabs
+            value={compositeMode}
+            options={[
+              { value: 'grams' as const, label: 'Grams' },
+              { value: 'pieces' as const, label: 'Pieces' },
+            ]}
+            onChange={handleModeSwitch}
+            className="!bg-transparent !px-0 !py-0 !shadow-none"
+          />
+        </div>
+      )}
+
+      {/* Kcal display + gram/piece input — centred in remaining space */}
       <div className="flex flex-1 flex-col items-center justify-center gap-8 px-8 py-6">
         <div className="text-center">
           <p className="text-6xl font-bold tabular-nums text-[var(--app-text-primary)] leading-none">
@@ -717,14 +841,24 @@ function ServingStep({
         </div>
 
         <div className="flex flex-col items-center gap-2">
-          <GramInput grams={grams} onChange={onGramsChange} showSteppers step={10} />
-          {foodSource.defaultServingUnit &&
+          {isPieceMode ? (
+            <GramInput grams={grams} onChange={onGramsChange} showSteppers step={1} />
+          ) : (
+            <GramInput grams={grams} onChange={onGramsChange} showSteppers step={10} />
+          )}
+          {isPieceMode && gramsPerPiece && foodSource.pieceLabel ? (
+            <p className="text-xs text-[var(--app-text-subtle)]">
+              1 {foodSource.pieceLabel} = {Math.round(gramsPerPiece)}g
+            </p>
+          ) : (
+            foodSource.defaultServingUnit &&
             foodSource.defaultServingUnit !== 'g' &&
             foodSource.defaultServingAmount != null && (
               <p className="text-xs text-[var(--app-text-subtle)]">
                 1 {foodSource.defaultServingUnit} = {foodSource.defaultServingAmount}g
               </p>
-            )}
+            )
+          )}
         </div>
       </div>
     </div>
