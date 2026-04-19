@@ -153,7 +153,7 @@ function NavItem({ item }: NavItemProps) {
     <NavLink
       to={item.href}
       end={item.end}
-      className="relative flex flex-1 flex-col items-center py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-focus)]"
+      className="relative flex min-w-0 flex-1 flex-col items-center py-1.5 sm:py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-focus)]"
     >
       {({ isActive }) => {
         const active = isActive || prefixActive
@@ -171,14 +171,16 @@ function NavItem({ item }: NavItemProps) {
 
             {/* Icon + label pill */}
             <span
-              className={`relative flex flex-col items-center gap-0.5 rounded-xl px-3.5 py-1 transition-colors duration-[var(--app-transition-fast)] ${
+              className={`relative flex w-full min-w-0 max-w-full flex-col items-center gap-0.5 rounded-lg px-1 py-0.5 transition-colors duration-[var(--app-transition-fast)] sm:rounded-xl sm:px-2.5 sm:py-1 md:px-3.5 ${
                 active
                   ? 'text-[var(--app-brand)] bg-[rgb(124_58_237/0.10)] shadow-[inset_0_1px_3px_rgb(0_0_0/0.10)]'
                   : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] hover:bg-[rgb(0_0_0/0.07)]'
               }`}
             >
               {item.icon(active)}
-              <span className="text-xs font-medium">{item.label}</span>
+              <span className="text-center text-[0.6875rem] font-medium leading-tight whitespace-nowrap sm:text-xs">
+                {item.label}
+              </span>
             </span>
           </>
         )

@@ -3,8 +3,9 @@ import { useQuery } from '@tanstack/react-query'
 import BottomSheet from '@/components/ui/BottomSheet'
 import GramInput from '@/components/ui/GramInput'
 import LoadingState from '@/components/ui/LoadingState'
-import { getCompositeProduct, upsertCompositeProduct } from '@/features/foods/api'
+import { getCompositeProduct, upsertCompositeProduct, deleteProduct } from '@/features/foods/api'
 import { computeRollup } from '@/features/foods/compositeRollup'
+import { useInvalidateProductQueries } from '@/features/logging/queryInvalidation'
 import type { CompositeIngredientInput } from '@/types/database'
 import IngredientPickerSheet from './IngredientPickerSheet'
 
@@ -42,6 +43,7 @@ export default function CompositeFoodSheet({
   onSaved,
 }: CompositeFoodSheetProps) {
   const isEditMode = editProductId != null
+  const invalidateProducts = useInvalidateProductQueries()
 
   const [name, setName] = useState('')
   const [totalMassG, setTotalMassG] = useState(0)
@@ -50,6 +52,7 @@ export default function CompositeFoodSheet({
   const [ingredients, setIngredients] = useState<DraftIngredientRow[]>([])
   const [showPicker, setShowPicker] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
   const [initialized, setInitialized] = useState(!isEditMode)
 
@@ -116,6 +119,24 @@ export default function CompositeFoodSheet({
       ;[next[index], next[target]] = [next[target], next[index]]
       return next
     })
+  }
+
+  // ─── Delete ───────────────────────────────────────────────────────────────
+
+  async function handleDeleteRecipe() {
+    if (!editProductId) return
+    if (!window.confirm(`Delete "${name}"? Logged meals will keep their historical snapshots.`)) return
+
+    setIsDeleting(true)
+    try {
+      await deleteProduct(editProductId)
+      invalidateProducts()
+      onClose()
+    } catch (err) {
+      setServerError(err instanceof Error ? err.message : 'Failed to delete recipe')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   // ─── Save ─────────────────────────────────────────────────────────────────
@@ -194,22 +215,34 @@ export default function CompositeFoodSheet({
         title={isEditMode ? 'Edit recipe' : 'New recipe'}
         className="max-h-[92vh]"
         footer={
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="app-button-secondary flex-1 py-2.5"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={!canSave || saving}
-              onClick={handleSave}
-              className="app-button-primary flex-1 py-2.5"
-            >
-              {saving ? 'Saving\u2026' : isEditMode ? 'Save changes' : 'Save'}
-            </button>
+          <div className="space-y-2">
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="app-button-secondary flex-1 py-2.5"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!canSave || saving}
+                onClick={handleSave}
+                className="app-button-primary flex-1 py-2.5"
+              >
+                {saving ? 'Saving\u2026' : isEditMode ? 'Save changes' : 'Save'}
+              </button>
+            </div>
+            {isEditMode && (
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleDeleteRecipe}
+                className="app-button-danger w-full py-2.5 text-sm"
+              >
+                {isDeleting ? 'Deleting\u2026' : 'Delete recipe'}
+              </button>
+            )}
           </div>
         }
       >
