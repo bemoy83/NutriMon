@@ -65,8 +65,8 @@ function getItemCalories(item: Item): number {
   return item.snapshotCalories ?? 0
 }
 
-/** Stored quantity is multiples of 100 g (grams / 100); this is always the reference divisor. */
-function getItemServingAmount(_item: Item): number {
+/** Stored quantity is multiples of 100 g (grams / 100); reference divisor is always 100. */
+function getItemServingAmount(): number {
   return 100
 }
 
@@ -306,7 +306,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
         prev.map((it, i) => (i === idx ? { ...it, quantity: value } : it)),
       )
     } else {
-      const servingAmount = getItemServingAmount(item)
+      const servingAmount = getItemServingAmount()
       setItems(prev =>
         prev.map((it, i) => (i === idx ? { ...it, quantity: value / servingAmount } : it)),
       )
@@ -596,7 +596,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
                     const isPieceMode = item.compositeQuantityMode === 'pieces'
                     const displayValue = isPieceMode
                       ? item.quantity
-                      : Math.round(item.quantity * getItemServingAmount(item))
+                      : Math.round(item.quantity * getItemServingAmount())
                     const kcal = getItemKcal(item)
                     const sourceType = getItemSourceType(item)
                     return (

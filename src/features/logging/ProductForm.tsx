@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { supabase } from '@/lib/supabase'
@@ -53,18 +53,18 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
   const isEditMode = !!initialProduct
 
   const {
+    control,
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { caloriesPer100g: 0 },
   })
 
-  const calPer100 = watch('caloriesPer100g')
-  const portionG = watch('labelPortionGrams')
+  const calPer100 = useWatch({ control, name: 'caloriesPer100g' })
+  const portionG = useWatch({ control, name: 'labelPortionGrams' })
 
   useEffect(() => {
     if (!initialProduct) {
