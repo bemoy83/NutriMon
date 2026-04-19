@@ -70,9 +70,9 @@ export default function AppShell() {
       ),
     },
     {
-      label: 'Weight',
-      href: '/app/weight',
-      matchPrefix: '/app/weight',
+      label: 'My Food',
+      href: '/app/my-food',
+      matchPrefix: '/app/my-food',
       icon: (active: boolean) => (
         <svg
           className="w-6 h-6"
@@ -80,12 +80,11 @@ export default function AppShell() {
           viewBox="0 0 24 24"
           stroke="currentColor"
           strokeWidth={active ? 2 : 1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-          />
+          <path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z" />
+          <path d="M10 2c1 .5 2 2 2 5" />
         </svg>
       ),
     },
@@ -127,11 +126,9 @@ export default function AppShell() {
         }}
       >
         <div className="mx-auto flex max-w-lg">
-          <NavItem item={navItems[0]} />
-          <NavItem item={navItems[1]} />
-          <NavItem item={navItems[2]} />
-          <NavItem item={navItems[3]} />
-          <NavItem item={navItems[4]} />
+          {navItems.map((item) => (
+            <NavItem key={item.href} item={item} />
+          ))}
         </div>
       </nav>
     </div>

@@ -166,14 +166,13 @@ export default function ProfilePage() {
         </button>
       </form>
 
-      {/* My food link */}
       <Link
-        to="/app/my-food"
+        to="/app/weight"
         className="app-card mb-4 flex items-center justify-between p-4 transition-colors hover:bg-[var(--app-hover-overlay)]"
       >
         <div>
-          <h2 className="text-[var(--app-text-primary)] text-base font-semibold">My food</h2>
-          <p className="text-[var(--app-text-muted)] text-xs mt-1">Manage your saved foods and recipes.</p>
+          <h2 className="text-[var(--app-text-primary)] text-base font-semibold">Weight</h2>
+          <p className="text-[var(--app-text-muted)] text-xs mt-1">Log entries and view your trend over time.</p>
         </div>
         <svg
           className="h-5 w-5 flex-none text-[var(--app-text-muted)]"
