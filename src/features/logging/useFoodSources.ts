@@ -7,10 +7,11 @@ import {
 } from '@/lib/constants'
 import { useAuth } from '@/app/providers/auth'
 import { mapFoodSource } from '@/lib/domainMappers'
+import type { FoodSource } from '@/types/domain'
 
 export function useRecentFoodSources() {
   const { user } = useAuth()
-  return useQuery({
+  return useQuery<FoodSource[]>({
     queryKey: ['food-sources', 'recent', user?.id],
     enabled: !!user,
     queryFn: async () => {
@@ -25,7 +26,7 @@ export function useRecentFoodSources() {
 
 export function useFrequentFoodSources() {
   const { user } = useAuth()
-  return useQuery({
+  return useQuery<FoodSource[]>({
     queryKey: ['food-sources', 'frequent', user?.id],
     enabled: !!user,
     queryFn: async () => {
@@ -40,7 +41,7 @@ export function useFrequentFoodSources() {
 
 export function useFoodSourceSearch(query: string) {
   const { user } = useAuth()
-  return useQuery({
+  return useQuery<FoodSource[]>({
     queryKey: ['food-sources', 'search', user?.id, query],
     enabled: !!user && query.trim().length > 0,
     queryFn: async () => {
