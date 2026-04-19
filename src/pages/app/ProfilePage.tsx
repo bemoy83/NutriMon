@@ -4,16 +4,10 @@ import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/app/providers/auth'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { CALORIE_TARGET_MIN, CALORIE_TARGET_MAX } from '@/lib/constants'
-import type { Product } from '@/types/domain'
-import ProductForm from '@/features/logging/ProductForm'
-import { useInvalidateProductQueries } from '@/features/logging/queryInvalidation'
-import { mapProduct } from '@/lib/domainMappers'
 import LoadingState from '@/components/ui/LoadingState'
-import EmptyState from '@/components/ui/EmptyState'
-import BottomSheet from '@/components/ui/BottomSheet'
 
 const schema = z.object({
   calorieTarget: z
@@ -37,14 +31,8 @@ export default function ProfilePage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const invalidateProducts = useInvalidateProductQueries()
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
-  const [productSearch, setProductSearch] = useState('')
-  const [showCreateProduct, setShowCreateProduct] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-  const [productError, setProductError] = useState<string | null>(null)
-  const [deletingProductId, setDeletingProductId] = useState<string | null>(null)
 
   const profileQuery = useQuery({
     queryKey: ['profile-full', user?.id],
@@ -60,25 +48,6 @@ export default function ProfilePage() {
   })
 
   const profile = profileQuery.data
-  const productsQuery = useQuery({
-    queryKey: ['profile-products', user?.id],
-    enabled: !!user,
-    queryFn: async (): Promise<Product[]> => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('user_id', user!.id)
-        .order('updated_at', { ascending: false })
-
-      if (error) throw error
-
-      return (data ?? []).map(mapProduct)
-    },
-  })
-
-  const filteredProducts = (productsQuery.data ?? []).filter((product) =>
-    product.name.toLowerCase().includes(productSearch.trim().toLowerCase()),
-  )
 
   const {
     register,
@@ -124,32 +93,6 @@ export default function ProfilePage() {
   async function handleSignOut() {
     await supabase.auth.signOut()
     navigate('/login')
-  }
-
-  async function handleDeleteProduct(product: Product) {
-    if (!window.confirm(`Delete "${product.name}"? Logged meals will keep their historical snapshots.`)) {
-      return
-    }
-
-    setDeletingProductId(product.id)
-    setProductError(null)
-
-    const { error } = await supabase
-      .from('products')
-      .delete()
-      .eq('id', product.id)
-      .eq('user_id', user!.id)
-
-    setDeletingProductId(null)
-    if (error) {
-      setProductError(error.message)
-      return
-    }
-
-    invalidateProducts()
-    if (editingProduct?.id === product.id) {
-      setEditingProduct(null)
-    }
   }
 
   if (profileQuery.isLoading) {
@@ -223,81 +166,25 @@ export default function ProfilePage() {
         </button>
       </form>
 
-      {/* Product management */}
-      <div className="app-card mb-4 space-y-4 p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-[var(--app-text-primary)] text-base font-semibold">Products</h2>
-            <p className="text-[var(--app-text-muted)] text-xs mt-1">Manage reusable foods for quick logging.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              setEditingProduct(null)
-              setShowCreateProduct(true)
-            }}
-            className="app-button-primary px-3 py-2 text-sm"
-          >
-            New product
-          </button>
+      {/* My food link */}
+      <Link
+        to="/app/my-food"
+        className="app-card mb-4 flex items-center justify-between p-4 transition-colors hover:bg-[var(--app-hover-overlay)]"
+      >
+        <div>
+          <h2 className="text-[var(--app-text-primary)] text-base font-semibold">My food</h2>
+          <p className="text-[var(--app-text-muted)] text-xs mt-1">Manage your saved foods and recipes.</p>
         </div>
-
-        <input
-          type="text"
-          value={productSearch}
-          onChange={(event) => setProductSearch(event.target.value)}
-          placeholder="Search products"
-          className="app-input px-3 py-2 text-sm"
-        />
-
-        {productError && <p className="text-[var(--app-danger)] text-xs">{productError}</p>}
-
-        <div className="space-y-2">
-          {productsQuery.isLoading ? (
-            <p className="text-[var(--app-text-muted)] text-sm">Loading products…</p>
-          ) : filteredProducts.length === 0 ? (
-            <EmptyState title="No matching products." className="py-4" />
-          ) : (
-            filteredProducts.map((product) => (
-              <div
-                key={product.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-muted)] px-3 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="text-[var(--app-text-primary)] text-sm truncate">{product.name}</p>
-                  <p className="text-[var(--app-text-muted)] text-xs">
-                    {product.calories} kcal
-                    {product.defaultServingAmount && product.defaultServingUnit
-                      ? ` / ${product.defaultServingAmount}${product.defaultServingUnit}`
-                      : ' / serving'}
-                    {product.useCount > 0 ? ` · used ${product.useCount}x` : ''}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCreateProduct(false)
-                      setEditingProduct(product)
-                    }}
-                    className="app-button-secondary px-3 py-1.5 text-xs"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    disabled={deletingProductId === product.id}
-                    onClick={() => handleDeleteProduct(product)}
-                    className="app-button-danger px-3 py-1.5 text-xs"
-                  >
-                    {deletingProductId === product.id ? 'Deleting…' : 'Delete'}
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+        <svg
+          className="h-5 w-5 flex-none text-[var(--app-text-muted)]"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </Link>
 
       {/* Sign out */}
       <button
@@ -306,29 +193,6 @@ export default function ProfilePage() {
       >
         Sign out
       </button>
-
-      {(showCreateProduct || editingProduct) && (
-        <BottomSheet
-          onClose={() => {
-            setShowCreateProduct(false)
-            setEditingProduct(null)
-          }}
-          title={editingProduct ? 'Edit product' : 'New product'}
-        >
-          <ProductForm
-            initialProduct={editingProduct}
-            onSave={() => {
-              invalidateProducts()
-              setShowCreateProduct(false)
-              setEditingProduct(null)
-            }}
-            onCancel={() => {
-              setShowCreateProduct(false)
-              setEditingProduct(null)
-            }}
-          />
-        </BottomSheet>
-      )}
     </div>
   )
 }
