@@ -25,10 +25,10 @@ function mapCompositeResult(result: CompositeProductResult): CompositeProduct {
     name: ing.name,
     massG: ing.mass_g,
     sortOrder: ing.sort_order,
-    caloriesPer100g: 0, // Not returned by RPC — resolved client-side if needed
-    proteinPer100g: null,
-    carbsPer100g: null,
-    fatPer100g: null,
+    caloriesPer100g: ing.calories_per_100g,
+    proteinPer100g: ing.protein_per_100g,
+    carbsPer100g: ing.carbs_per_100g,
+    fatPer100g: ing.fat_per_100g,
   }))
 
   return {

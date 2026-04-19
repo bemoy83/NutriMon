@@ -737,6 +737,10 @@ export interface CompositeIngredientResult {
   sort_order: number
   name: string
   calories: number
+  calories_per_100g: number
+  protein_per_100g: number
+  carbs_per_100g: number
+  fat_per_100g: number
 }
 
 export interface CompositeProductResult {
