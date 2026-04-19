@@ -6,9 +6,20 @@ interface GramInputProps {
   onChange: (grams: number) => void
   step?: number
   showSteppers?: boolean
+  /** Suffix after the numeric field (default grams). */
+  unitSuffix?: string
+  /** Overrides the input’s accessible name (defaults from unitSuffix). */
+  quantityAriaLabel?: string
 }
 
-export default function GramInput({ grams, onChange, step = 10, showSteppers = true }: GramInputProps) {
+export default function GramInput({
+  grams,
+  onChange,
+  step = 10,
+  showSteppers = true,
+  unitSuffix = 'g',
+  quantityAriaLabel,
+}: GramInputProps) {
   const [focused, setFocused] = useState(false)
   const [draft, setDraft] = useState('')
   const skipBlurCommitRef = useRef(false)
@@ -60,11 +71,14 @@ export default function GramInput({ grams, onChange, step = 10, showSteppers = t
 
   const displayValue = focused ? draft : String(Math.round(grams))
 
+  const ariaLabel =
+    quantityAriaLabel ?? (unitSuffix === 'g' ? 'Grams' : `Amount (${unitSuffix})`)
+
   const fieldClass =
     'min-w-0 flex-1 bg-transparent text-right text-sm font-medium tabular-nums text-[var(--app-text-primary)] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
 
   const shellClass = (active: boolean) =>
-    `flex h-[30px] w-16 flex-none items-center rounded-md border py-0.5 pl-1 pr-1 transition-colors transition-shadow ${
+    `flex h-[30px] min-w-16 w-max max-w-[7rem] flex-none items-center gap-0.5 rounded-md border py-0.5 pl-1 pr-1 transition-colors transition-shadow ${
       active
         ? 'border-[var(--app-focus)] bg-[var(--app-input-bg-focus)] shadow-[var(--app-input-shadow-focus),0_0_0_2px_var(--app-brand-ring)]'
         : 'border-[var(--app-input-border)] bg-[var(--app-input-bg)] shadow-[var(--app-input-shadow)] hover:border-[var(--app-brand)]'
@@ -89,7 +103,7 @@ export default function GramInput({ grams, onChange, step = 10, showSteppers = t
           autoCorrect="off"
           spellCheck={false}
           enterKeyHint="done"
-          aria-label="Grams"
+          aria-label={ariaLabel}
           value={displayValue}
           onChange={(e) => {
             const next = e.target.value.replace(/\D/g, '')
@@ -107,7 +121,9 @@ export default function GramInput({ grams, onChange, step = 10, showSteppers = t
           onKeyDown={handleKeyDown}
           className={fieldClass}
         />
-        <span className="pointer-events-none select-none text-sm font-medium tabular-nums text-[var(--app-text-muted)]">g</span>
+        <span className="pointer-events-none select-none truncate text-sm font-medium tabular-nums text-[var(--app-text-muted)]">
+          {unitSuffix}
+        </span>
       </div>
 
       {showSteppers && (

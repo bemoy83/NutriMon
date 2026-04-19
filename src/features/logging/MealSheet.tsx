@@ -630,6 +630,12 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
                           grams={displayValue}
                           onChange={(g) => updateItemGrams(idx, g)}
                           showSteppers={false}
+                          {...(isPieceMode
+                            ? {
+                                unitSuffix: item.foodSource?.pieceLabel ?? 'pc',
+                                quantityAriaLabel: 'Pieces',
+                              }
+                            : {})}
                         />
                       </div>
                     )
@@ -841,6 +847,10 @@ function ServingStep({
 
   const labelPortionG = foodSource.labelPortionGrams
   const showLabelPortionTabs = Boolean(labelPortionG && labelPortionG > 0 && !showModeToggle)
+  const portionStepperSuffix =
+    foodSource.defaultServingUnit?.trim() && foodSource.defaultServingUnit !== 'g'
+      ? foodSource.defaultServingUnit
+      : 'portion'
 
   function handleCompositeModeSwitch(mode: 'grams' | 'pieces') {
     if (mode === compositeMode) return
@@ -911,9 +921,23 @@ function ServingStep({
 
         <div className="flex flex-col items-center gap-2">
           {isPieceMode ? (
-            <GramInput grams={grams} onChange={onGramsChange} showSteppers step={1} />
+            <GramInput
+              grams={grams}
+              onChange={onGramsChange}
+              showSteppers
+              step={1}
+              unitSuffix={foodSource.pieceLabel ?? 'pc'}
+              quantityAriaLabel="Pieces"
+            />
           ) : showLabelPortionTabs && massInputMode === 'portions' ? (
-            <GramInput grams={portions} onChange={onPortionsChange} showSteppers step={1} />
+            <GramInput
+              grams={portions}
+              onChange={onPortionsChange}
+              showSteppers
+              step={1}
+              unitSuffix={portionStepperSuffix}
+              quantityAriaLabel="Portions"
+            />
           ) : (
             <GramInput grams={grams} onChange={onGramsChange} showSteppers step={10} />
           )}
