@@ -460,7 +460,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
             <button
               type="button"
               onClick={onClose}
-              className="flex-none px-5 py-2.5 text-sm font-medium text-[var(--app-text-muted)] rounded-lg border border-[var(--app-border)] transition-colors hover:text-[var(--app-text-primary)] hover:border-[var(--app-text-subtle)]"
+              className="flex-none px-5 py-2.5 text-sm font-medium text-[var(--app-text-muted)] rounded-full border border-[var(--app-border)] transition-colors hover:text-[var(--app-text-primary)] hover:border-[var(--app-text-subtle)]"
             >
               Cancel
             </button>
@@ -468,7 +468,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
               type="button"
               onClick={handleSubmit}
               disabled={submitting || items.length === 0}
-              className="app-button-primary flex-1 py-2.5"
+              className="app-button-primary flex-1 py-3 !rounded-full"
             >
               {submitting ? 'Saving…' : 'Save'}
             </button>
@@ -484,7 +484,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
               type="button"
               onClick={handleSubmit}
               disabled={items.length === 0 || submitting}
-              className="app-button-primary w-full py-2.5"
+              className="app-button-primary w-full py-3 !rounded-full"
             >
               {submitting
                 ? 'Adding…'
@@ -508,7 +508,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
               ? pendingPortions <= 0
               : pendingGrams <= 0
         }
-        className="app-button-primary w-full py-2.5"
+        className="app-button-primary w-full py-3 !rounded-full"
       >
         {isEditingExisting ? 'Update' : `Add to ${mealType}`}
       </button>
@@ -524,7 +524,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
       footer={footer}
     >
       {/* Header band — always visible above the sliding views */}
-      <div className="flex-none bg-[rgb(255_255_255/0.85)] border-b border-[var(--app-border-muted)]">
+      <div className="flex-none bg-[rgb(255_255_255/0.85)]">
         {mode === 'edit' && (
           <div className="px-4 pt-3 pb-2">
             <input
@@ -536,7 +536,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
             />
           </div>
         )}
-        <div className="px-4 pt-2 pb-0.5">
+        <div className="px-4 pt-1.5 pb-0">
           <p className="text-[10px] font-semibold tracking-widest uppercase text-[var(--app-text-subtle)]">
             Meal type
           </p>
@@ -552,13 +552,13 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
           style={{ transform: browseTranslate }}
         >
           {/* Search bar */}
-          <div className="flex-none px-4 py-2 border-b border-[var(--app-border-muted)]">
+          <div className="flex-none px-4 py-2 bg-[rgb(255_255_255/0.85)]">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search foods…"
-              className="app-input px-3 py-2 text-sm"
+              className="app-input w-full px-4 py-1.5 text-sm !rounded-full"
             />
           </div>
 
@@ -652,6 +652,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
               { value: 'saved', label: 'Saved' },
             ]}
             onChange={(t) => setTab(t)}
+            className="!bg-[rgb(255_255_255/0.85)] !shadow-none !pt-1.5 !pb-3"
           />
 
           {/* Search pending indicator — only for food source search */}

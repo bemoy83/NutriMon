@@ -61,7 +61,7 @@ export default function BottomSheet({ children, onClose, title, footer, classNam
       >
         {/* Header — drag target on mobile */}
         <div
-          className="flex flex-col rounded-t-2xl bg-[rgb(255_255_255/0.85)] border-b border-[var(--app-border-muted)] sm:rounded-t-xl"
+          className="flex flex-col rounded-t-2xl bg-[rgb(255_255_255/0.85)] sm:rounded-t-xl"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
