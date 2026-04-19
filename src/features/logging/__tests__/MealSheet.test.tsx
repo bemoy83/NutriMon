@@ -189,12 +189,12 @@ describe('MealSheet — edit mode', () => {
       />,
     )
 
-    // Edit grams in the cart bar (expand first)
+    // Edit quantity in the cart bar (expand first). Non-`g` serving units use piece mode (aria-label "Pieces").
     fireEvent.click(screen.getByRole('button', { name: /1 item/ }))
-    const gramsInput = screen.getByRole('textbox', { name: 'Grams' })
-    fireEvent.focus(gramsInput)
-    fireEvent.change(gramsInput, { target: { value: '2' } })
-    fireEvent.keyDown(gramsInput, { key: 'Enter' })
+    const quantityInput = screen.getByRole('textbox', { name: 'Pieces' })
+    fireEvent.focus(quantityInput)
+    fireEvent.change(quantityInput, { target: { value: '2' } })
+    fireEvent.keyDown(quantityInput, { key: 'Enter' })
 
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
