@@ -82,6 +82,7 @@ export function mapProduct(row: ProductRow): Product {
     proteinG: row.protein_g,
     carbsG: row.carbs_g,
     fatG: row.fat_g,
+    labelPortionGrams: row.label_portion_grams,
     defaultServingAmount: row.default_serving_amount,
     defaultServingUnit: row.default_serving_unit,
     useCount: row.use_count,
@@ -100,16 +101,19 @@ export function mapProduct(row: ProductRow): Product {
 }
 
 export function mapFoodSource(row: FoodSourceRow): FoodSource {
+  const calPer100 = Number(row.calories_per_100g ?? row.calories)
   return {
     sourceType: row.source_type,
     sourceId: row.source_id,
     name: row.name,
     calories: row.calories,
+    caloriesPer100g: Number.isFinite(calPer100) ? calPer100 : row.calories,
     proteinG: row.protein_g,
     carbsG: row.carbs_g,
     fatG: row.fat_g,
     defaultServingAmount: row.default_serving_amount,
     defaultServingUnit: row.default_serving_unit,
+    labelPortionGrams: row.label_portion_grams,
     useCount: row.use_count,
     lastUsedAt: row.last_used_at,
     kind: row.kind as 'simple' | 'composite',

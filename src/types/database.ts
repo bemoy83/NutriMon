@@ -242,6 +242,7 @@ export interface ProductRow {
   protein_g: number | null
   carbs_g: number | null
   fat_g: number | null
+  label_portion_grams: number | null
   default_serving_amount: number | null
   default_serving_unit: string | null
   use_count: number
@@ -661,8 +662,10 @@ export interface FoodSourceRow {
   protein_g: number | null
   carbs_g: number | null
   fat_g: number | null
+  calories_per_100g: number
   default_serving_amount: number | null
   default_serving_unit: string | null
+  label_portion_grams: number | null
   use_count: number
   last_used_at: string | null
   kind: string

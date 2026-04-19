@@ -61,13 +61,13 @@ function getItemLabel(item: Item): string {
 }
 
 function getItemCalories(item: Item): number {
-  if (item.foodSource) return item.foodSource.calories
+  if (item.foodSource) return item.foodSource.caloriesPer100g ?? item.foodSource.calories
   return item.snapshotCalories ?? 0
 }
 
-function getItemServingAmount(item: Item): number {
-  if (item.foodSource) return item.foodSource.defaultServingAmount ?? 100
-  return item.snapshotServingAmount ?? 100
+/** Stored quantity is multiples of 100 g (grams / 100); this is always the reference divisor. */
+function getItemServingAmount(_item: Item): number {
+  return 100
 }
 
 function getItemSourceType(item: Item): 'user_product' | 'catalog_item' | null {
@@ -132,6 +132,9 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
   const [sheetView, setSheetView] = useState<SheetView>('browse')
   const [servingTarget, setServingTarget] = useState<FoodSource | null>(null)
   const [pendingGrams, setPendingGrams] = useState(100)
+  /** Integer count when logging by label portions (massInputMode === 'portions'). */
+  const [pendingPortions, setPendingPortions] = useState(1)
+  const [massInputMode, setMassInputMode] = useState<'grams' | 'portions'>('grams')
   const [pendingMode, setPendingMode] = useState<'grams' | 'pieces'>('grams')
   const [items, setItems] = useState<Item[]>(() =>
     mode === 'edit' && meal ? initItemsFromMeal(meal) : [],
@@ -207,15 +210,22 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
     )
 
     // Reset or restore composite mode
+    setMassInputMode('grams')
+
     if (existing?.compositeQuantityMode === 'pieces') {
       setPendingMode('pieces')
       setPendingGrams(existing.quantity) // quantity IS piece count in piece mode
     } else {
       setPendingMode('grams')
       const currentGrams = existing
-        ? Math.round(existing.quantity * getItemServingAmount(existing))
-        : (foodSource.defaultServingAmount ?? 100)
+        ? Math.round(existing.quantity * 100)
+        : (foodSource.labelPortionGrams ?? 100)
       setPendingGrams(currentGrams)
+      if (foodSource.labelPortionGrams && foodSource.labelPortionGrams > 0) {
+        setPendingPortions(Math.max(1, Math.round(currentGrams / foodSource.labelPortionGrams)))
+      } else {
+        setPendingPortions(1)
+      }
     }
 
     setServingTarget(foodSource)
@@ -231,18 +241,24 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
   // ─── Serving step ─────────────────────────────────────────────────────────
 
   function confirmServing() {
-    if (!servingTarget || pendingGrams <= 0) return
+    if (!servingTarget) return
 
     let quantity: number
     let compositeQuantityMode: 'grams' | 'pieces' | undefined
 
     if (pendingMode === 'pieces' && isCompositeWithPieces) {
-      // pendingGrams stores piece count in this mode
+      if (pendingGrams <= 0) return
       quantity = pendingGrams
       compositeQuantityMode = 'pieces'
     } else {
-      const servingAmount = servingTarget.defaultServingAmount ?? 100
-      quantity = pendingGrams / servingAmount
+      const gramsEq =
+        massInputMode === 'portions'
+        && servingTarget.labelPortionGrams
+        && servingTarget.labelPortionGrams > 0
+          ? pendingPortions * servingTarget.labelPortionGrams
+          : pendingGrams
+      if (gramsEq <= 0) return
+      quantity = gramsEq / 100
       compositeQuantityMode = servingTarget.kind === 'composite' ? 'grams' : undefined
     }
 
@@ -262,7 +278,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
           catalogItemId: servingTarget.sourceType === 'catalog_item' ? servingTarget.sourceId : undefined,
           foodSource: servingTarget,
           snapshotName: servingTarget.name,
-          snapshotCalories: servingTarget.calories,
+          snapshotCalories: Math.round(servingTarget.caloriesPer100g ?? servingTarget.calories),
           snapshotProteinG: servingTarget.proteinG,
           snapshotCarbsG: servingTarget.carbsG,
           snapshotFatG: servingTarget.fatG,
@@ -406,13 +422,23 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
   const browseTranslate = sheetView === 'browse' ? 'translateX(0)' : 'translateX(-100%)'
   const detailTranslate = sheetView !== 'browse' ? 'translateX(0)' : 'translateX(100%)'
 
+  const densityPer100 = servingTarget
+    ? (servingTarget.caloriesPer100g ?? servingTarget.calories)
+    : 0
+
   const servingLiveKcal = (() => {
     if (!servingTarget) return 0
     if (pendingMode === 'pieces' && isCompositeWithPieces) {
       const gramsPerPiece = servingTarget.totalMassG! / servingTarget.pieceCount!
-      return Math.round(pendingGrams * (servingTarget.calories / 100) * gramsPerPiece)
+      return Math.round(pendingGrams * (densityPer100 / 100) * gramsPerPiece)
     }
-    return Math.round((pendingGrams / (servingTarget.defaultServingAmount ?? 100)) * servingTarget.calories)
+    const gramsEq =
+      massInputMode === 'portions'
+      && servingTarget.labelPortionGrams
+      && servingTarget.labelPortionGrams > 0
+        ? pendingPortions * servingTarget.labelPortionGrams
+        : pendingGrams
+    return Math.round(gramsEq * (densityPer100 / 100))
   })()
 
   const isEditingExisting = servingTarget
@@ -473,7 +499,15 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
       <button
         type="button"
         onClick={confirmServing}
-        disabled={pendingGrams <= 0}
+        disabled={
+          pendingMode === 'pieces' && isCompositeWithPieces
+            ? pendingGrams <= 0
+            : massInputMode === 'portions'
+              && servingTarget?.labelPortionGrams
+              && servingTarget.labelPortionGrams > 0
+              ? pendingPortions <= 0
+              : pendingGrams <= 0
+        }
         className="app-button-primary w-full py-2.5"
       >
         {isEditingExisting ? 'Update' : `Add to ${mealType}`}
@@ -700,8 +734,20 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
             <ServingStep
               foodSource={servingTarget}
               grams={pendingGrams}
+              portions={pendingPortions}
               liveKcal={servingLiveKcal}
               onGramsChange={setPendingGrams}
+              onPortionsChange={setPendingPortions}
+              massInputMode={massInputMode}
+              onMassInputModeChange={(mode) => {
+                setMassInputMode(mode)
+                const lg = servingTarget.labelPortionGrams
+                if (mode === 'portions' && lg && lg > 0) {
+                  setPendingPortions(Math.max(1, Math.round(pendingGrams / lg)))
+                } else if (mode === 'grams' && lg && lg > 0) {
+                  setPendingGrams(Math.round(pendingPortions * lg))
+                }
+              }}
               onBack={() => setSheetView('browse')}
               isUpdate={isEditingExisting}
               compositeMode={pendingMode}
@@ -717,17 +763,19 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
                   setSheetView('browse')
                 }}
                 onSaveAndAdd={(product) => {
-                  // Transition directly to serving step for the new food
+                  const cal100 = product.caloriesPer100g ?? product.calories
                   const fs: FoodSource = {
                     sourceType: 'user_product',
                     sourceId: product.id,
                     name: product.name,
                     calories: product.calories,
+                    caloriesPer100g: cal100,
                     proteinG: product.proteinG,
                     carbsG: product.carbsG,
                     fatG: product.fatG,
                     defaultServingAmount: product.defaultServingAmount,
                     defaultServingUnit: product.defaultServingUnit,
+                    labelPortionGrams: product.labelPortionGrams,
                     useCount: 0,
                     lastUsedAt: null,
                     kind: 'simple' as const,
@@ -736,7 +784,9 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
                     totalMassG: null,
                   }
                   invalidateProducts()
-                  setPendingGrams(product.defaultServingAmount ?? 100)
+                  setMassInputMode('grams')
+                  setPendingPortions(1)
+                  setPendingGrams(product.labelPortionGrams ?? 100)
                   setPendingMode('grams')
                   setServingTarget(fs)
                   setSheetView('serving')
@@ -756,8 +806,12 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
 function ServingStep({
   foodSource,
   grams,
+  portions,
   liveKcal,
   onGramsChange,
+  onPortionsChange,
+  massInputMode,
+  onMassInputModeChange,
   onBack,
   isUpdate,
   compositeMode,
@@ -766,15 +820,18 @@ function ServingStep({
 }: {
   foodSource: FoodSource
   grams: number
+  portions: number
   liveKcal: number
   onGramsChange: (g: number) => void
+  onPortionsChange: (n: number) => void
+  massInputMode: 'grams' | 'portions'
+  onMassInputModeChange: (mode: 'grams' | 'portions') => void
   onBack: () => void
   isUpdate: boolean
   compositeMode: 'grams' | 'pieces'
   onModeChange: (mode: 'grams' | 'pieces') => void
   showModeToggle: boolean
 }) {
-  // isUpdate is used by the parent to label the footer button; shown here as context
   void isUpdate
 
   const isPieceMode = compositeMode === 'pieces' && showModeToggle
@@ -782,14 +839,15 @@ function ServingStep({
     ? foodSource.totalMassG / foodSource.pieceCount
     : null
 
-  function handleModeSwitch(mode: 'grams' | 'pieces') {
+  const labelPortionG = foodSource.labelPortionGrams
+  const showLabelPortionTabs = Boolean(labelPortionG && labelPortionG > 0 && !showModeToggle)
+
+  function handleCompositeModeSwitch(mode: 'grams' | 'pieces') {
     if (mode === compositeMode) return
     if (mode === 'pieces' && gramsPerPiece) {
-      // Convert grams to nearest piece count
       const pieces = Math.max(1, Math.round(grams / gramsPerPiece))
       onGramsChange(pieces)
     } else if (mode === 'grams' && gramsPerPiece) {
-      // Convert pieces to grams
       const g = Math.round(grams * gramsPerPiece)
       onGramsChange(g)
     }
@@ -798,7 +856,6 @@ function ServingStep({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      {/* Back nav + food name */}
       <div className="flex-none flex items-center gap-3 px-4 py-3 border-b border-[var(--app-border-muted)]">
         <button
           type="button"
@@ -816,7 +873,6 @@ function ServingStep({
         </div>
       </div>
 
-      {/* Mode toggle for composite foods with pieces */}
       {showModeToggle && (
         <div className="flex-none px-6 pt-3">
           <SegmentedTabs
@@ -825,13 +881,26 @@ function ServingStep({
               { value: 'grams' as const, label: 'Grams' },
               { value: 'pieces' as const, label: 'Pieces' },
             ]}
-            onChange={handleModeSwitch}
+            onChange={handleCompositeModeSwitch}
             className="!bg-transparent !px-0 !py-0 !shadow-none"
           />
         </div>
       )}
 
-      {/* Kcal display + gram/piece input — centred in remaining space */}
+      {showLabelPortionTabs && (
+        <div className="flex-none px-6 pt-3">
+          <SegmentedTabs
+            value={massInputMode}
+            options={[
+              { value: 'grams' as const, label: 'Grams' },
+              { value: 'portions' as const, label: 'Portions' },
+            ]}
+            onChange={onMassInputModeChange}
+            className="!bg-transparent !px-0 !py-0 !shadow-none"
+          />
+        </div>
+      )}
+
       <div className="flex flex-1 flex-col items-center justify-center gap-8 px-8 py-6">
         <div className="text-center">
           <p className="text-6xl font-bold tabular-nums text-[var(--app-text-primary)] leading-none">
@@ -843,12 +912,18 @@ function ServingStep({
         <div className="flex flex-col items-center gap-2">
           {isPieceMode ? (
             <GramInput grams={grams} onChange={onGramsChange} showSteppers step={1} />
+          ) : showLabelPortionTabs && massInputMode === 'portions' ? (
+            <GramInput grams={portions} onChange={onPortionsChange} showSteppers step={1} />
           ) : (
             <GramInput grams={grams} onChange={onGramsChange} showSteppers step={10} />
           )}
           {isPieceMode && gramsPerPiece && foodSource.pieceLabel ? (
             <p className="text-xs text-[var(--app-text-subtle)]">
               1 {foodSource.pieceLabel} = {Math.round(gramsPerPiece)}g
+            </p>
+          ) : showLabelPortionTabs && massInputMode === 'portions' && labelPortionG ? (
+            <p className="text-xs text-[var(--app-text-subtle)]">
+              1 portion = {Math.round(labelPortionG)}g (from label)
             </p>
           ) : (
             foodSource.defaultServingUnit &&
@@ -886,10 +961,10 @@ function FoodBrowserRow({
         <div className="min-w-0">
           <p className="text-[var(--app-text-primary)] text-sm truncate">{foodSource.name}</p>
           <p className="text-[var(--app-text-muted)] text-xs">
-            {foodSource.calories} kcal
-            {foodSource.defaultServingAmount && foodSource.defaultServingUnit
-              ? ` / ${foodSource.defaultServingAmount}${foodSource.defaultServingUnit}`
-              : ' / 100g'}
+            {Math.round(foodSource.caloriesPer100g)} kcal / 100g
+            {foodSource.labelPortionGrams
+              ? ` · label portion ${foodSource.labelPortionGrams}g`
+              : ''}
           </p>
         </div>
       </div>

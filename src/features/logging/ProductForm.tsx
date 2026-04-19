@@ -9,16 +9,15 @@ import { mapProduct } from '@/lib/domainMappers'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
-  calories: z
-    .number({ error: 'Enter calories' })
+  caloriesPer100g: z
+    .number({ error: 'Enter kcal per 100g' })
     .int()
     .min(0)
-    .max(5000),
-  proteinG: z.number().min(0).optional().nullable(),
-  carbsG: z.number().min(0).optional().nullable(),
-  fatG: z.number().min(0).optional().nullable(),
-  defaultServingAmount: z.number().positive().optional().nullable(),
-  defaultServingUnit: z.string().optional().nullable(),
+    .max(9000),
+  proteinPer100g: z.number().min(0).optional().nullable(),
+  carbsPer100g: z.number().min(0).optional().nullable(),
+  fatPer100g: z.number().min(0).optional().nullable(),
+  labelPortionGrams: z.number().positive().optional().nullable(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -30,6 +29,24 @@ interface Props {
   onCancel: () => void
 }
 
+function denormalizedPayload(data: FormData) {
+  const calRound = Math.round(data.caloriesPer100g)
+  const calNum = data.caloriesPer100g
+  return {
+    calories_per_100g: calNum,
+    protein_per_100g: data.proteinPer100g ?? null,
+    carbs_per_100g: data.carbsPer100g ?? null,
+    fat_per_100g: data.fatPer100g ?? null,
+    calories: calRound,
+    protein_g: data.proteinPer100g ?? null,
+    carbs_g: data.carbsPer100g ?? null,
+    fat_g: data.fatPer100g ?? null,
+    default_serving_amount: 100,
+    default_serving_unit: 'g',
+    label_portion_grams: data.labelPortionGrams ?? null,
+  }
+}
+
 export default function ProductForm({ initialProduct = null, onSave, onSaveAndAdd, onCancel }: Props) {
   const { user } = useAuth()
   const [serverError, setServerError] = useState<string | null>(null)
@@ -39,34 +56,39 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { calories: 0 },
+    defaultValues: { caloriesPer100g: 0 },
   })
+
+  const calPer100 = watch('caloriesPer100g')
+  const portionG = watch('labelPortionGrams')
 
   useEffect(() => {
     if (!initialProduct) {
       reset({
         name: '',
-        calories: 0,
-        proteinG: null,
-        carbsG: null,
-        fatG: null,
-        defaultServingAmount: null,
-        defaultServingUnit: null,
+        caloriesPer100g: 0,
+        proteinPer100g: null,
+        carbsPer100g: null,
+        fatPer100g: null,
+        labelPortionGrams: null,
       })
       return
     }
 
+    const cal100 =
+      initialProduct.caloriesPer100g ?? initialProduct.calories
+
     reset({
       name: initialProduct.name,
-      calories: initialProduct.calories,
-      proteinG: initialProduct.proteinG,
-      carbsG: initialProduct.carbsG,
-      fatG: initialProduct.fatG,
-      defaultServingAmount: initialProduct.defaultServingAmount,
-      defaultServingUnit: initialProduct.defaultServingUnit,
+      caloriesPer100g: Math.round(Number(cal100)),
+      proteinPer100g: initialProduct.proteinPer100g ?? initialProduct.proteinG ?? null,
+      carbsPer100g: initialProduct.carbsPer100g ?? initialProduct.carbsG ?? null,
+      fatPer100g: initialProduct.fatPer100g ?? initialProduct.fatG ?? null,
+      labelPortionGrams: initialProduct.labelPortionGrams,
     })
   }, [initialProduct, reset])
 
@@ -74,14 +96,11 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
     if (!user) return null
     setServerError(null)
 
+    const base = denormalizedPayload(data)
+
     const payload = {
       name: data.name,
-      calories: data.calories,
-      protein_g: data.proteinG ?? null,
-      carbs_g: data.carbsG ?? null,
-      fat_g: data.fatG ?? null,
-      default_serving_amount: data.defaultServingAmount ?? null,
-      default_serving_unit: data.defaultServingUnit ?? null,
+      ...base,
       updated_at: new Date().toISOString(),
     }
 
@@ -110,6 +129,11 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
     return mapProduct(product)
   }
 
+  const portionKcalPreview =
+    portionG && calPer100 != null && calPer100 >= 0
+      ? Math.round((portionG * calPer100) / 100)
+      : null
+
   return (
     <form className="space-y-4 p-4">
       <div>
@@ -130,28 +154,30 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
       </div>
 
       <div>
-        <label htmlFor="calories" className="block text-sm text-slate-300 mb-1">
-          Calories (per serving) <span className="text-red-400">*</span>
+        <label htmlFor="caloriesPer100g" className="block text-sm text-slate-300 mb-1">
+          Energy (kcal per 100g) <span className="text-red-400">*</span>
         </label>
         <input
-          id="calories"
+          id="caloriesPer100g"
           type="number"
-          {...register('calories', { valueAsNumber: true })}
+          {...register('caloriesPer100g', { valueAsNumber: true })}
           className="app-input px-3 py-2"
-          placeholder="350"
+          placeholder="e.g. 165"
         />
-        {errors.calories && (
-          <p className="text-red-400 text-xs mt-1">{errors.calories.message}</p>
+        {errors.caloriesPer100g && (
+          <p className="text-red-400 text-xs mt-1">{errors.caloriesPer100g.message}</p>
         )}
+        <p className="text-xs text-slate-500 mt-1">
+          Use the values from the “per 100g” column on the nutrition label.
+        </p>
       </div>
 
-      {/* Macros row */}
       <div className="grid grid-cols-3 gap-3">
         {(
           [
-            { id: 'proteinG', label: 'Protein (g)', field: 'proteinG' },
-            { id: 'carbsG', label: 'Carbs (g)', field: 'carbsG' },
-            { id: 'fatG', label: 'Fat (g)', field: 'fatG' },
+            { id: 'proteinPer100g', label: 'Protein (g / 100g)', field: 'proteinPer100g' },
+            { id: 'carbsPer100g', label: 'Carbs (g / 100g)', field: 'carbsPer100g' },
+            { id: 'fatPer100g', label: 'Fat (g / 100g)', field: 'fatPer100g' },
           ] as const
         ).map(({ id, label, field }) => (
           <div key={id}>
@@ -170,33 +196,23 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
         ))}
       </div>
 
-      {/* Serving info */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label htmlFor="servingAmount" className="block text-xs text-slate-400 mb-1">
-            Serving amount
-          </label>
-          <input
-            id="servingAmount"
-            type="number"
-            step="0.1"
-            {...register('defaultServingAmount', { valueAsNumber: true, setValueAs: v => v === '' ? null : Number(v) })}
-            className="app-input px-3 py-2 text-sm"
-            placeholder="100"
-          />
-        </div>
-        <div>
-          <label htmlFor="servingUnit" className="block text-xs text-slate-400 mb-1">
-            Unit
-          </label>
-          <input
-            id="servingUnit"
-            type="text"
-            {...register('defaultServingUnit')}
-            className="app-input px-3 py-2 text-sm"
-            placeholder="g / ml / oz"
-          />
-        </div>
+      <div>
+        <label htmlFor="labelPortionGrams" className="block text-xs text-slate-400 mb-1">
+          Portion on label (g, optional)
+        </label>
+        <input
+          id="labelPortionGrams"
+          type="number"
+          step="0.1"
+          {...register('labelPortionGrams', { valueAsNumber: true, setValueAs: v => v === '' ? null : Number(v) })}
+          className="app-input px-3 py-2 text-sm"
+          placeholder="e.g. 30 — if the label lists one serving size"
+        />
+        {portionKcalPreview != null && (
+          <p className="text-xs text-slate-500 mt-1">
+            ≈ {portionKcalPreview} kcal per that portion (derived from per 100g values).
+          </p>
+        )}
       </div>
 
       {serverError && (
