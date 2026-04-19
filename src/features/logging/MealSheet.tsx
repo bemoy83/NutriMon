@@ -982,7 +982,15 @@ function FoodBrowserRow({
       className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[var(--app-hover-overlay)] active:bg-[var(--app-hover-overlay)] transition-colors"
     >
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <FoodSourceBadge sourceType={foodSource.sourceType} />
+        <div className="w-4 h-4 flex-none flex items-center justify-center">
+          {foodSource.kind === 'composite' ? (
+            <svg className="w-4 h-4 text-[var(--app-brand)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 6h14M5 10h14M5 14h10" />
+            </svg>
+          ) : (
+            <FoodSourceBadge sourceType={foodSource.sourceType} />
+          )}
+        </div>
         <div className="min-w-0">
           <p className="text-[var(--app-text-primary)] text-sm truncate">{foodSource.name}</p>
           <p className="text-[var(--app-text-muted)] text-xs">
