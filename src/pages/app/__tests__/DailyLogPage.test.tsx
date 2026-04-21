@@ -465,7 +465,7 @@ describe('DailyLogPage', () => {
     expect(screen.queryByText('Copy previous meal')).not.toBeInTheDocument()
   })
 
-  it('renders a compact sticky summary without duplicating the page heading', () => {
+  it('keeps a single persistent page heading when the compact summary is shown', () => {
     useDailyLogHeaderCompactMock.mockReturnValue(true)
     useDailyLogCoreMock.mockReturnValue({
       data: {
@@ -488,7 +488,8 @@ describe('DailyLogPage', () => {
     renderPage()
 
     expect(screen.getByRole('heading', { name: '2026-01-05' })).toBeInTheDocument()
-    expect(screen.getAllByText('2026-01-05')).toHaveLength(2)
+    expect(screen.getAllByText('2026-01-05')).toHaveLength(1)
+    expect(screen.getByText('520 eaten · goal 2,000')).toBeInTheDocument()
   })
 
   it('restores a deleted meal from snapshots on undo', async () => {

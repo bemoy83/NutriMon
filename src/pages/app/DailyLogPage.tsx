@@ -172,14 +172,30 @@ export default function DailyLogPage() {
 
   return (
     <div ref={setScrollAnchor} className="app-page flex min-h-full flex-col pb-40">
-      {headerCompact ? (
-        <DailyLogHeader
-          {...headerProps}
-          mode="compactSticky"
-        />
-      ) : null}
+      <div
+        className="sticky top-0 z-[18] px-4 pt-2"
+        style={{
+          background: 'var(--app-bg)',
+          boxShadow: headerCompact ? '0 10px 24px rgba(15, 23, 42, 0.08)' : 'none',
+          transition: 'box-shadow 180ms ease',
+        }}
+      >
+        <DailyLogHeader {...headerProps} mode="dateSticky" />
+        <div
+          className={`overflow-hidden transition-[max-height,opacity,transform,margin,padding] duration-200 ease-out ${
+            headerCompact
+              ? 'mt-2 max-h-28 translate-y-0 opacity-100 pb-2'
+              : 'mt-0 max-h-0 -translate-y-2 opacity-0 pb-0'
+          }`}
+          aria-hidden={!headerCompact}
+        >
+          <DailyLogHeader {...headerProps} mode="compactCard" />
+        </div>
+      </div>
 
-      <DailyLogHeader {...headerProps} />
+      <div className="px-4 pt-3 pb-4">
+        <DailyLogHeader {...headerProps} mode="fullCard" />
+      </div>
 
       {/* Feedback card (finalized) */}
       {feedback && isFinalized && (
