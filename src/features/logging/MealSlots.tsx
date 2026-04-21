@@ -214,10 +214,11 @@ function LoggedMealRow({
 
   return (
     <div className={hasDivider ? 'border-b' : ''} style={{ borderColor: 'var(--app-border-muted)' }}>
+      {/* Row: tap anywhere to expand */}
       <button
         type="button"
         onClick={() => setExpanded(p => !p)}
-        className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-left hover:bg-[var(--app-hover-overlay)] transition-colors"
+        className="w-full flex items-center gap-2 pl-4 pr-3 py-2.5 text-left"
       >
         <div className="flex-1 min-w-0">
           <p className="text-xs truncate" style={{ color: 'var(--app-text-secondary)' }}>
@@ -229,20 +230,22 @@ function LoggedMealRow({
             {meal.mealName ? ` · ${meal.mealName}` : ''}
           </p>
         </div>
-        <div className="flex items-center gap-2 flex-none">
+
+        <div className="flex items-center gap-1.5 flex-none">
           <span className="text-xs font-semibold tabular-nums" style={{ color: 'var(--app-text-secondary)' }}>
             {meal.totalCalories} kcal
           </span>
           <svg
-            className={`w-3.5 h-3.5 flex-none transition-transform ${expanded ? 'rotate-180' : ''}`}
-            style={{ color: 'var(--app-text-muted)' }}
+            className={`w-3.5 h-3.5 transition-transform flex-none ${expanded ? 'rotate-180' : ''}`}
             fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            style={{ color: 'var(--app-text-muted)' }}
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </div>
       </button>
 
+      {/* Expanded: item breakdown + actions */}
       {expanded && (
         <div className="border-t" style={{ borderColor: 'var(--app-border-muted)' }}>
           <div className="px-4 py-2 space-y-1.5">
@@ -250,48 +253,16 @@ function LoggedMealRow({
           </div>
 
           {!isFinalized && (
-            <>
-              <div className="flex border-t" style={{ borderColor: 'var(--app-border-muted)' }}>
-                <button
-                  onClick={() => onEditMeal(meal)}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm text-[var(--app-brand)] hover:bg-[var(--app-hover-overlay)] transition-colors"
-                >
-                  <svg className="w-3.5 h-3.5 flex-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                  Edit
-                </button>
-                <button
-                  onClick={() => { setTemplateName(meal.mealName ?? meal.mealType ?? ''); setShowSavePrompt(true) }}
-                  disabled={savingTemplate}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-hover-overlay)] transition-colors disabled:opacity-40"
-                >
-                  <svg className="w-3.5 h-3.5 flex-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                  </svg>
-                  {savingTemplate ? 'Saving…' : 'Save'}
-                </button>
-                <button
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm text-[var(--app-danger)] hover:bg-[var(--app-hover-overlay)] transition-colors disabled:opacity-40"
-                >
-                  <svg className="w-3.5 h-3.5 flex-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  {deleting ? 'Deleting…' : 'Delete'}
-                </button>
-              </div>
-
-              {showSavePrompt && (
-                <div className="border-t px-4 py-3 flex gap-2" style={{ borderColor: 'var(--app-border-muted)' }}>
+            <div className="border-t px-4 py-2.5 space-y-2" style={{ borderColor: 'var(--app-border-muted)' }}>
+              {showSavePrompt ? (
+                <div className="flex gap-2">
                   <input
                     autoFocus
                     type="text"
                     value={templateName}
                     onChange={e => setTemplateName(e.target.value)}
                     placeholder="Name this meal…"
-                    className="app-input flex-1 px-3 py-2 text-sm"
+                    className="app-input flex-1 px-3 py-1.5 text-sm"
                   />
                   <button
                     onClick={() => {
@@ -301,19 +272,44 @@ function LoggedMealRow({
                       setTemplateName('')
                     }}
                     disabled={!templateName.trim()}
-                    className="app-button-primary px-3 py-2 text-sm disabled:opacity-40"
+                    className="app-button-primary px-3 py-1.5 text-sm disabled:opacity-40"
                   >
                     Save
                   </button>
-                  <button
-                    onClick={() => setShowSavePrompt(false)}
-                    className="app-button-secondary px-3 py-2 text-sm"
-                  >
+                  <button onClick={() => setShowSavePrompt(false)} className="app-button-secondary px-3 py-1.5 text-sm">
                     Cancel
                   </button>
                 </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onEditMeal(meal)}
+                    className="flex-1 app-button-secondary px-3 py-1.5 text-sm text-center"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="flex-1 app-button-danger px-3 py-1.5 text-sm text-center disabled:opacity-40"
+                  >
+                    {deleting ? 'Deleting…' : 'Delete'}
+                  </button>
+                  <button
+                    onClick={() => { setTemplateName(meal.mealName ?? meal.mealType ?? ''); setShowSavePrompt(true) }}
+                    disabled={savingTemplate}
+                    className="flex items-center gap-1 text-xs text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] transition-colors disabled:opacity-40 flex-none"
+                    title="Save as template"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                  </button>
+                </div>
               )}
-            </>
+            </div>
           )}
         </div>
       )}
@@ -324,7 +320,7 @@ function LoggedMealRow({
 function MealItemRow({ item }: { item: MealItem }) {
   const servingLabel =
     item.servingAmountSnapshot && item.servingUnitSnapshot
-      ? `${item.quantity * item.servingAmountSnapshot}${item.servingUnitSnapshot}`
+      ? `${parseFloat((item.quantity * item.servingAmountSnapshot).toPrecision(6))}${item.servingUnitSnapshot}`
       : `×${item.quantity}`
   return (
     <div className="flex items-center justify-between gap-3">

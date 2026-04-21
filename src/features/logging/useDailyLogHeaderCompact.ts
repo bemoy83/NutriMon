@@ -17,16 +17,10 @@ export function useDailyLogHeaderCompact(
   resetKey: string,
 ): boolean {
   const [compact, setCompact] = useState(false)
+  const scrollRoot = scrollAnchor ? resolveScrollRoot(scrollAnchor) : null
 
   useLayoutEffect(() => {
-    if (!scrollAnchor) {
-      setCompact(false)
-      return
-    }
-
-    const scrollRoot = resolveScrollRoot(scrollAnchor)
-    if (!scrollRoot) {
-      setCompact(false)
+    if (!scrollAnchor || !scrollRoot) {
       return
     }
 
@@ -53,7 +47,7 @@ export function useDailyLogHeaderCompact(
       cancelAnimationFrame(frame)
       scrollRoot.removeEventListener('scroll', onScroll)
     }
-  }, [resetKey, scrollAnchor])
+  }, [resetKey, scrollAnchor, scrollRoot])
 
-  return compact
+  return scrollRoot ? compact : false
 }
