@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useInvalidateDailyLog } from '@/features/logging/useDailyLog'
 import { useDailyLogCore } from '@/features/logging/useDailyLogCore'
@@ -93,8 +93,8 @@ export default function DailyLogPage() {
   const [creaturePreviewState, setCreaturePreviewState] = useState<{ date: string; preview: CreaturePreview | null } | null>(null)
   const [battlePrepState, setBattlePrepState] = useState<{ date: string; summary: BattlePrepSummary | null } | null>(null)
   const { undoAction, showUndo, clearUndo } = useUndoToast()
-  const logPageRef = useRef<HTMLDivElement>(null)
-  const headerCompact = useDailyLogHeaderCompact(logPageRef, logDate)
+  const [scrollAnchor, setScrollAnchor] = useState<HTMLDivElement | null>(null)
+  const headerCompact = useDailyLogHeaderCompact(scrollAnchor, logDate)
 
   const dailyLog = coreQuery.data?.dailyLog ?? null
   const meals = coreQuery.data?.meals ?? []
@@ -153,25 +153,33 @@ export default function DailyLogPage() {
     return <LoadingState fullScreen />
   }
 
+  const headerProps = {
+    logDate,
+    todayDate,
+    isFinalized,
+    remaining,
+    consumed: totalCalories,
+    progressPct,
+    currentStreak,
+    totalProteinG,
+    totalCarbsG,
+    totalFatG,
+    proteinTargetG,
+    carbsTargetG,
+    fatTargetG,
+    onNavigate: (nextDate: string) => navigate(`/app/log/${nextDate}`),
+  }
+
   return (
-    <div ref={logPageRef} className="app-page flex min-h-full flex-col pb-40">
-      <DailyLogHeader
-        logDate={logDate}
-        todayDate={todayDate}
-        isFinalized={isFinalized}
-        remaining={remaining}
-        consumed={totalCalories}
-        progressPct={progressPct}
-        currentStreak={currentStreak}
-        totalProteinG={totalProteinG}
-        totalCarbsG={totalCarbsG}
-        totalFatG={totalFatG}
-        proteinTargetG={proteinTargetG}
-        carbsTargetG={carbsTargetG}
-        fatTargetG={fatTargetG}
-        compact={headerCompact}
-        onNavigate={(nextDate) => navigate(`/app/log/${nextDate}`)}
-      />
+    <div ref={setScrollAnchor} className="app-page flex min-h-full flex-col pb-40">
+      {headerCompact ? (
+        <DailyLogHeader
+          {...headerProps}
+          mode="compactSticky"
+        />
+      ) : null}
+
+      <DailyLogHeader {...headerProps} />
 
       {/* Feedback card (finalized) */}
       {feedback && isFinalized && (

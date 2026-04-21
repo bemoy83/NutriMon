@@ -18,6 +18,8 @@ const MACRO_TRACK: Record<string, string> = {
   Fat: '#FEF3C7',
 }
 
+type DailyLogHeaderMode = 'full' | 'compactSticky'
+
 interface DailyLogHeaderProps {
   logDate: string
   todayDate: string
@@ -32,8 +34,7 @@ interface DailyLogHeaderProps {
   proteinTargetG: number
   carbsTargetG: number
   fatTargetG: number
-  /** Narrow viewport + user scrolled — dense summary bar */
-  compact?: boolean
+  mode?: DailyLogHeaderMode
   onNavigate: (date: string) => void
 }
 
@@ -51,9 +52,11 @@ export default function DailyLogHeader({
   proteinTargetG,
   carbsTargetG,
   fatTargetG,
-  compact = false,
+  mode = 'full',
   onNavigate,
 }: DailyLogHeaderProps) {
+  const compact = mode === 'compactSticky'
+  const sticky = mode === 'compactSticky'
   const safeConsumed = consumed ?? 0
   const fillLength = CIRCUMFERENCE * Math.min(progressPct / 100, 1)
   const compactFillLength = COMPACT_CIRCUMFERENCE * Math.min(progressPct / 100, 1)
@@ -67,11 +70,21 @@ export default function DailyLogHeader({
         ? 'var(--app-warning)'
         : 'var(--app-brand)'
 
+  const DateTag = sticky ? 'p' : 'h1'
+  const outerClassName = sticky ? 'sticky top-0 z-[18] h-0 pointer-events-none' : ''
+  const surfaceClassName = sticky
+    ? 'pointer-events-auto px-4 pt-2 pb-2'
+    : `px-4 ${compact ? 'pt-2 pb-2' : 'pt-3 pb-4'}`
+
   return (
-    <div
-      className={`sticky top-0 z-10 px-4 ${compact ? 'pt-2 pb-2' : 'pt-3 pb-4'}`}
-      style={{ background: 'var(--app-bg)' }}
-    >
+    <div className={outerClassName}>
+      <div
+        className={surfaceClassName}
+        style={{
+          background: 'var(--app-bg)',
+          boxShadow: sticky ? '0 10px 24px rgba(15, 23, 42, 0.08)' : 'none',
+        }}
+      >
         {/* Date navigation — outside card */}
         <div className={`flex items-center justify-between ${compact ? 'mb-2' : 'mb-3'}`}>
           <button
@@ -85,14 +98,14 @@ export default function DailyLogHeader({
           </button>
 
           <div className="text-center">
-            <h1 className="font-semibold" style={{ color: 'var(--app-text-primary)' }}>
+            <DateTag className="font-semibold" style={{ color: 'var(--app-text-primary)' }}>
               {formatDisplayDate(logDate)}
               {currentStreak > 0 && (
                 <span className="ml-1.5 text-xs font-medium" style={{ color: 'var(--app-warning)' }}>
                   🔥 {currentStreak}
                 </span>
               )}
-            </h1>
+            </DateTag>
             {isFinalized ? (
               <span className="text-xs" style={{ color: 'var(--app-success)' }}>Finalized</span>
             ) : null}
@@ -170,7 +183,7 @@ export default function DailyLogHeader({
               )}
             </div>
 
-            <div className="flex shrink-0 gap-2">
+            <div className="flex shrink-0 flex-col gap-1.5">
               <CompactMacroColumn
                 label="P"
                 consumed={totalProteinG}
@@ -312,6 +325,7 @@ export default function DailyLogHeader({
           </>
         )}
         </div>{/* end card */}
+      </div>
     </div>
   )
 }

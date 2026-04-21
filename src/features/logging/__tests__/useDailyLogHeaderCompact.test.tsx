@@ -1,17 +1,17 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { useRef } from 'react'
+import { useState } from 'react'
 import { useDailyLogHeaderCompact } from '../useDailyLogHeaderCompact'
 
 function HeaderCompactProbe({ showPage }: { showPage: boolean }) {
-  const anchorRef = useRef<HTMLDivElement>(null)
-  const compact = useDailyLogHeaderCompact(anchorRef, '2026-01-05')
+  const [anchor, setAnchor] = useState<HTMLDivElement | null>(null)
+  const compact = useDailyLogHeaderCompact(anchor, '2026-01-05')
 
   return (
     <main data-testid="scroll-root" style={{ overflowY: 'auto', maxHeight: '200px' }}>
       <div data-testid="mode">{compact ? 'compact' : 'full'}</div>
       {showPage ? (
-        <div ref={anchorRef}>
+        <div ref={setAnchor}>
           <div style={{ height: '1200px' }}>Daily log content</div>
         </div>
       ) : (

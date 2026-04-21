@@ -12,6 +12,7 @@ const useInvalidateDailyLogMock = vi.fn()
 const useAuthMock = vi.fn()
 const useProfileSummaryMock = vi.fn()
 const useRepeatLastMealPreviewMock = vi.fn()
+const useDailyLogHeaderCompactMock = vi.fn()
 const repeatLastMealMock = vi.fn()
 const deleteMealMock = vi.fn()
 const deleteMealItemMock = vi.fn()
@@ -46,6 +47,10 @@ vi.mock('@/features/profile/useProfileSummary', () => ({
 
 vi.mock('@/features/logging/useRepeatLastMealPreview', () => ({
   useRepeatLastMealPreview: (...args: unknown[]) => useRepeatLastMealPreviewMock(...args),
+}))
+
+vi.mock('@/features/logging/useDailyLogHeaderCompact', () => ({
+  useDailyLogHeaderCompact: (...args: unknown[]) => useDailyLogHeaderCompactMock(...args),
 }))
 
 vi.mock('@/lib/supabase', () => ({
@@ -372,6 +377,7 @@ describe('DailyLogPage', () => {
       isLoading: false,
     })
     useRepeatLastMealPreviewMock.mockReturnValue({ data: null, isLoading: false })
+    useDailyLogHeaderCompactMock.mockReturnValue(false)
     useDailyLogDerivedMock.mockReturnValue({
       data: {
         evaluation: null,
@@ -457,6 +463,32 @@ describe('DailyLogPage', () => {
 
     expect(screen.getByText('Finalize & Prep')).toBeInTheDocument()
     expect(screen.queryByText('Copy previous meal')).not.toBeInTheDocument()
+  })
+
+  it('renders a compact sticky summary without duplicating the page heading', () => {
+    useDailyLogHeaderCompactMock.mockReturnValue(true)
+    useDailyLogCoreMock.mockReturnValue({
+      data: {
+        dailyLog: {
+          id: 'log-1',
+          userId: 'user-1',
+          logDate: '2026-01-05',
+          totalCalories: 520,
+          mealCount: 1,
+          isFinalized: false,
+          finalizedAt: null,
+          createdAt: '2026-01-05T00:00:00.000Z',
+          updatedAt: '2026-01-05T00:00:00.000Z',
+        },
+        meals: [baseMeal],
+      },
+      isLoading: false,
+    })
+
+    renderPage()
+
+    expect(screen.getByRole('heading', { name: '2026-01-05' })).toBeInTheDocument()
+    expect(screen.getAllByText('2026-01-05')).toHaveLength(2)
   })
 
   it('restores a deleted meal from snapshots on undo', async () => {
