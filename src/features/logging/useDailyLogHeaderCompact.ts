@@ -2,7 +2,6 @@ import { useLayoutEffect, useState, type RefObject } from 'react'
 
 const SHRINK_AT = 48
 const EXPAND_AT = 20
-const NARROW_MAX_PX = 767
 
 function getScrollParent(el: HTMLElement | null): HTMLElement | null {
   let node: HTMLElement | null = el
@@ -16,82 +15,75 @@ function getScrollParent(el: HTMLElement | null): HTMLElement | null {
   return null
 }
 
-/** Prefer innerWidth: embedded / in-editor browsers often mis-implement matchMedia. */
-function readNarrowViewport(): boolean {
-  if (typeof window === 'undefined') return false
-  return window.innerWidth <= NARROW_MAX_PX
-}
-
-function useNarrowLogViewport(): boolean {
-  const [narrow, setNarrow] = useState(readNarrowViewport)
-
-  useLayoutEffect(() => {
-    const sync = () => setNarrow(readNarrowViewport())
-    sync()
-    window.addEventListener('resize', sync)
-    return () => window.removeEventListener('resize', sync)
-  }, [])
-
-  return narrow
-}
-
-/**
- * Pick the element that actually scrolls: flex `main` first, else document scrolling element.
- */
 function resolveScrollRoot(anchor: HTMLElement): HTMLElement | null {
-  const walked = getScrollParent(anchor)
-  if (walked && walked.scrollHeight > walked.clientHeight) {
-    return walked
+  const main = anchor.closest('main')
+  if (main instanceof HTMLElement) return main
+  return getScrollParent(anchor)
+}
+
+function readScrollY(
+  anchor: HTMLElement,
+  scrollRoot: HTMLElement | null,
+  e?: Event,
+): number {
+  let y = scrollRoot?.scrollTop ?? 0
+  if (e?.target instanceof HTMLElement) {
+    const t = e.target
+    const rel =
+      scrollRoot != null
+        ? t === scrollRoot || (scrollRoot.contains(t) && anchor.contains(t))
+        : anchor.contains(t) || t.contains(anchor)
+    if (rel) y = Math.max(y, t.scrollTop)
   }
-  const se = document.scrollingElement
-  if (se instanceof HTMLElement && se.scrollHeight > se.clientHeight) {
-    return se
-  }
-  return walked
+  return y
 }
 
 /**
- * On narrow viewports, collapse the daily log header after the app shell main scrolls down (hysteresis).
+ * Collapse the daily log header after the user scrolls the log (mobile-first layout).
+ *
+ * Listens in the **capture** phase on `window` as well as on `main`, because `scroll`
+ * does not bubble — a listener only on `main` can miss updates in some environments.
+ * Merges `scrollTop` from `main` and from any nested scroll region inside the log page.
  */
 export function useDailyLogHeaderCompact(
   scrollAnchorRef: RefObject<HTMLElement | null>,
   resetKey: string,
 ): boolean {
-  const narrow = useNarrowLogViewport()
-  const [scrollCompact, setScrollCompact] = useState(false)
+  const [compact, setCompact] = useState(false)
 
   useLayoutEffect(() => {
-    if (!narrow) {
-      setScrollCompact(false)
-      return
-    }
-
     const anchor = scrollAnchorRef.current
     if (!anchor) return
 
     const scrollRoot = resolveScrollRoot(anchor)
-    if (!scrollRoot) return
 
-    const y0 = scrollRoot.scrollTop
-    let isCompact = y0 >= SHRINK_AT
-    setScrollCompact(isCompact)
+    let isCompact = false
 
-    const update = () => {
-      const y = scrollRoot.scrollTop
+    const apply = (e?: Event) => {
+      const y = readScrollY(anchor, scrollRoot, e)
       if (!isCompact && y >= SHRINK_AT) {
         isCompact = true
-        setScrollCompact(true)
+        setCompact(true)
       } else if (isCompact && y <= EXPAND_AT) {
         isCompact = false
-        setScrollCompact(false)
+        setCompact(false)
       }
     }
 
-    scrollRoot.addEventListener('scroll', update, { passive: true })
-    return () => {
-      scrollRoot.removeEventListener('scroll', update)
-    }
-  }, [narrow, resetKey, scrollAnchorRef])
+    const y0 = readScrollY(anchor, scrollRoot)
+    isCompact = y0 >= SHRINK_AT
+    setCompact(isCompact)
 
-  return narrow && scrollCompact
+    const onScroll = (e: Event) => apply(e)
+
+    scrollRoot?.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('scroll', onScroll, { capture: true, passive: true })
+
+    return () => {
+      scrollRoot?.removeEventListener('scroll', onScroll)
+      window.removeEventListener('scroll', onScroll, { capture: true } as AddEventListenerOptions)
+    }
+  }, [resetKey, scrollAnchorRef])
+
+  return compact
 }
