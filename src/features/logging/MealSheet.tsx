@@ -42,6 +42,7 @@ interface MealSheetProps {
   onAdded?: (result: MealMutationResult) => void
   meal?: Meal
   onSaved?: (previousMeal: Meal, result: MealMutationResult) => void
+  defaultMealType?: MealType
 }
 
 type SheetView = 'browse' | 'serving' | 'create'
@@ -129,7 +130,7 @@ function initItemsFromMeal(meal: Meal): Item[] {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, meal, onSaved }: MealSheetProps) {
+export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, meal, onSaved, defaultMealType }: MealSheetProps) {
   const [sheetView, setSheetView] = useState<SheetView>('browse')
   const [servingTarget, setServingTarget] = useState<FoodSource | null>(null)
   const [pendingGrams, setPendingGrams] = useState(100)
@@ -147,7 +148,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
     if (mode === 'edit' && meal?.mealType && MEAL_TYPES.includes(meal.mealType as MealType)) {
       return meal.mealType as MealType
     }
-    return getDefaultMealType(loggedAt)
+    return defaultMealType ?? getDefaultMealType(loggedAt)
   })
   const [mealName, setMealName] = useState(mode === 'edit' ? (meal?.mealName ?? '') : '')
   const [submitting, setSubmitting] = useState(false)

@@ -6,6 +6,12 @@ const RING_CX = RING_SIZE / 2
 const RING_CY = RING_SIZE / 2
 const CIRCUMFERENCE = 2 * Math.PI * RING_R
 
+const COMPACT_RING_SIZE = 52
+const COMPACT_RING_R = 20
+const COMPACT_RING_CX = COMPACT_RING_SIZE / 2
+const COMPACT_RING_CY = COMPACT_RING_SIZE / 2
+const COMPACT_CIRCUMFERENCE = 2 * Math.PI * COMPACT_RING_R
+
 const MACRO_TRACK: Record<string, string> = {
   Protein: '#EDE9FE',
   Carbs: '#CFFAFE',
@@ -26,6 +32,8 @@ interface DailyLogHeaderProps {
   proteinTargetG: number
   carbsTargetG: number
   fatTargetG: number
+  /** Narrow viewport + user scrolled — dense summary bar */
+  compact?: boolean
   onNavigate: (date: string) => void
 }
 
@@ -43,10 +51,12 @@ export default function DailyLogHeader({
   proteinTargetG,
   carbsTargetG,
   fatTargetG,
+  compact = false,
   onNavigate,
 }: DailyLogHeaderProps) {
   const safeConsumed = consumed ?? 0
   const fillLength = CIRCUMFERENCE * Math.min(progressPct / 100, 1)
+  const compactFillLength = COMPACT_CIRCUMFERENCE * Math.min(progressPct / 100, 1)
   const over = remaining < 0
   const goalCalories = safeConsumed + remaining
 
@@ -58,9 +68,12 @@ export default function DailyLogHeader({
         : 'var(--app-brand)'
 
   return (
-    <div className="sticky top-0 z-10 px-4 pt-3 pb-4" style={{ background: 'var(--app-bg)' }}>
+    <div
+      className={`sticky top-0 z-10 px-4 ${compact ? 'pt-2 pb-2' : 'pt-3 pb-4'}`}
+      style={{ background: 'var(--app-bg)' }}
+    >
         {/* Date navigation — outside card */}
-        <div className="flex items-center justify-between mb-3">
+        <div className={`flex items-center justify-between ${compact ? 'mb-2' : 'mb-3'}`}>
           <button
             type="button"
             onClick={() => onNavigate(addDays(logDate, -1))}
@@ -98,8 +111,91 @@ export default function DailyLogHeader({
         </div>
 
         {/* Card wraps ring + stats + macros */}
-        <div className="app-card px-4 pt-5 pb-5" style={{ borderRadius: 'var(--app-radius-xl)' }}>
+        <div
+          className={`app-card ${compact ? 'px-3 py-3' : 'px-4 pt-5 pb-5'}`}
+          style={{ borderRadius: 'var(--app-radius-xl)' }}
+        >
+        {compact ? (
+          <div className="flex items-center gap-3">
+            <div className="relative shrink-0" style={{ width: COMPACT_RING_SIZE, height: COMPACT_RING_SIZE }}>
+              <svg
+                width={COMPACT_RING_SIZE}
+                height={COMPACT_RING_SIZE}
+                style={{ transform: 'rotate(-90deg)', display: 'block' }}
+              >
+                <circle
+                  cx={COMPACT_RING_CX}
+                  cy={COMPACT_RING_CY}
+                  r={COMPACT_RING_R}
+                  fill="none"
+                  stroke="var(--app-border)"
+                  strokeWidth={5}
+                  strokeLinecap="round"
+                />
+                <circle
+                  cx={COMPACT_RING_CX}
+                  cy={COMPACT_RING_CY}
+                  r={COMPACT_RING_R}
+                  fill="none"
+                  stroke={ringColor}
+                  strokeWidth={5}
+                  strokeLinecap="round"
+                  strokeDasharray={`${compactFillLength} ${COMPACT_CIRCUMFERENCE}`}
+                  style={{ transition: 'stroke-dasharray 0.8s cubic-bezier(0.4,0,0.2,1), stroke 0.3s ease' }}
+                />
+              </svg>
+            </div>
 
+            <div className="min-w-0 flex-1">
+              <p
+                className="text-xl font-extrabold leading-none tabular-nums tracking-tight"
+                style={{ color: over ? 'var(--app-danger)' : 'var(--app-text-primary)' }}
+              >
+                {Math.abs(remaining).toLocaleString()}
+              </p>
+              <p
+                className="mt-0.5 text-[9px] font-bold uppercase tracking-wide"
+                style={{ color: over ? 'var(--app-danger)' : 'var(--app-text-muted)' }}
+              >
+                {over ? 'Over goal' : 'Remaining'}
+              </p>
+              {safeConsumed > 0 ? (
+                <p className="mt-0.5 text-[11px] font-semibold tabular-nums" style={{ color: 'var(--app-text-muted)' }}>
+                  {safeConsumed.toLocaleString()} eaten · goal {goalCalories.toLocaleString()}
+                </p>
+              ) : (
+                <p className="mt-0.5 text-[11px] font-medium" style={{ color: 'var(--app-text-muted)' }}>
+                  Goal {goalCalories.toLocaleString()} kcal
+                </p>
+              )}
+            </div>
+
+            <div className="flex shrink-0 gap-2">
+              <CompactMacroColumn
+                label="P"
+                consumed={totalProteinG}
+                target={proteinTargetG}
+                color="var(--app-macro-protein)"
+                trackColor={MACRO_TRACK.Protein}
+              />
+              <CompactMacroColumn
+                label="C"
+                consumed={totalCarbsG}
+                target={carbsTargetG}
+                color="var(--app-macro-carbs)"
+                trackColor={MACRO_TRACK.Carbs}
+              />
+              <CompactMacroColumn
+                label="F"
+                consumed={totalFatG}
+                target={fatTargetG}
+                color="var(--app-macro-fat)"
+                trackColor={MACRO_TRACK.Fat}
+              />
+            </div>
+          </div>
+        ) : (
+          <>
         {/* Calorie ring — centered */}
         <div className="flex justify-center mb-5">
           <div className="relative" style={{ width: RING_SIZE, height: RING_SIZE }}>
@@ -213,7 +309,52 @@ export default function DailyLogHeader({
             trackColor={MACRO_TRACK.Fat}
           />
         </div>
+          </>
+        )}
         </div>{/* end card */}
+    </div>
+  )
+}
+
+function CompactMacroColumn({
+  label,
+  consumed,
+  target,
+  color,
+  trackColor,
+}: {
+  label: string
+  consumed: number
+  target: number
+  color: string
+  trackColor: string
+}) {
+  const pct = target > 0 ? Math.min((consumed / target) * 100, 100) : 0
+  const consumedRounded = Math.round(consumed)
+
+  return (
+    <div className="w-[46px] min-w-0">
+      <div className="flex items-baseline justify-between gap-0.5 mb-0.5">
+        <span className="text-[9px] font-bold uppercase" style={{ color: 'var(--app-text-muted)' }}>
+          {label}
+        </span>
+        <span className="text-[9px] font-extrabold tabular-nums truncate" style={{ color }}>
+          {consumedRounded}
+          <span className="font-semibold" style={{ color: 'var(--app-text-subtle)' }}>
+            /{target}
+          </span>
+        </span>
+      </div>
+      <div className="h-1 rounded-full overflow-hidden" style={{ background: trackColor }}>
+        <div
+          className="h-full rounded-full"
+          style={{
+            width: `${pct}%`,
+            background: color,
+            transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)',
+          }}
+        />
+      </div>
     </div>
   )
 }

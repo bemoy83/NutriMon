@@ -1,16 +1,16 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useInvalidateDailyLog } from '@/features/logging/useDailyLog'
 import { useDailyLogCore } from '@/features/logging/useDailyLogCore'
 import { useDailyLogDerived } from '@/features/logging/useDailyLogDerived'
 import { useLatestFallbackMetrics } from '@/features/logging/useLatestFallbackMetrics'
-import MealList from '@/features/logging/MealList'
+import MealSlots from '@/features/logging/MealSlots'
 import { getTodayInTimezone } from '@/lib/date'
 import type { BattlePrepSummary, CreaturePreview, FinalizeDayResponse, Meal } from '@/types/domain'
 import { buildMealSnapshotItems } from '@/features/logging/mealPayloads'
 import { restoreMealFromSnapshot } from '@/features/logging/api'
 import InlineQuickAdd from '@/features/logging/InlineQuickAdd'
-import { getDefaultMealType } from '@/lib/mealType'
+import { getDefaultMealType, type MealType } from '@/lib/mealType'
 import type { DeleteMealResult, MealMutationResult } from '@/types/database'
 import { useRepeatLastMealPreview } from '@/features/logging/useRepeatLastMealPreview'
 import { useProfileSummary } from '@/features/profile/useProfileSummary'
@@ -18,6 +18,7 @@ import { useFinalizeDay } from '@/features/logging/useFinalizeDay'
 import { useRepeatLastMealAction } from '@/features/logging/useRepeatLastMealAction'
 import { useUndoToast } from '@/features/logging/useUndoToast'
 import DailyLogHeader from '@/features/logging/DailyLogHeader'
+import { useDailyLogHeaderCompact } from '@/features/logging/useDailyLogHeaderCompact'
 import DailyLogFinalizeCta from '@/features/logging/DailyLogFinalizeCta'
 import DailyLogRepeatCta from '@/features/logging/DailyLogRepeatCta'
 import UndoToast from '@/features/logging/UndoToast'
@@ -89,10 +90,13 @@ export default function DailyLogPage() {
   const repeatLastMealPreviewQuery = useRepeatLastMealPreview(logDate, currentMealType)
 
   const [showQuickAdd, setShowQuickAdd] = useState(false)
+  const [addToSlotType, setAddToSlotType] = useState<MealType | null>(null)
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null)
   const [creaturePreviewState, setCreaturePreviewState] = useState<{ date: string; preview: CreaturePreview | null } | null>(null)
   const [battlePrepState, setBattlePrepState] = useState<{ date: string; summary: BattlePrepSummary | null } | null>(null)
   const { undoAction, showUndo, clearUndo } = useUndoToast()
+  const logPageRef = useRef<HTMLDivElement>(null)
+  const headerCompact = useDailyLogHeaderCompact(logPageRef, logDate)
 
   const dailyLog = coreQuery.data?.dailyLog ?? null
   const meals = coreQuery.data?.meals ?? []
@@ -152,7 +156,7 @@ export default function DailyLogPage() {
   }
 
   return (
-    <div className="app-page flex min-h-full flex-col pb-40">
+    <div ref={logPageRef} className="app-page flex min-h-full flex-col pb-40">
       <DailyLogHeader
         logDate={logDate}
         todayDate={todayDate}
@@ -167,6 +171,7 @@ export default function DailyLogPage() {
         proteinTargetG={proteinTargetG}
         carbsTargetG={carbsTargetG}
         fatTargetG={fatTargetG}
+        compact={headerCompact}
         onNavigate={(nextDate) => navigate(`/app/log/${nextDate}`)}
       />
 
@@ -188,24 +193,6 @@ export default function DailyLogPage() {
         </div>
       )}
 
-      {/* Empty-day prompt for unfinalized days — static copy while derived loads so the shell is not blocked */}
-      {!isFinalized && mealCount === 0 && (
-        <div className="px-4 mt-4">
-          {derivedQuery.isLoading ? (
-            <EmptyState
-              title="No meals logged yet."
-              description="Tap + to add food to a meal slot."
-              className="py-12"
-            />
-          ) : (
-            <InlineQuickAdd
-              logDate={logDate}
-              loggedAt={loggedAt}
-              onCreated={(result) => handleMealCreated(result)}
-            />
-          )}
-        </div>
-      )}
 
       {!isFinalized && creaturePreview && (
         <div className="app-card mx-4 mt-4 p-4 space-y-3">
@@ -235,32 +222,27 @@ export default function DailyLogPage() {
       )}
 
       {/* Meals */}
-      <div className="px-4 mt-4 space-y-3 flex-1">
-        {mealCount > 0 && (
-          <>
-            <h2 className="text-base font-bold" style={{ color: 'var(--app-text-primary)' }}>
-              Meals
-            </h2>
-          <MealList
-            meals={meals}
-            isFinalized={isFinalized}
-            timezone={timezone}
-            logDate={logDate}
-            onEditMeal={setEditingMeal}
-            onDeleteSuccess={(meal, result) => {
-              setCreaturePreviewState({ date: logDate, preview: mapCreaturePreviewPayload(result.creature_preview ?? null) })
-              setBattlePrepState({ date: logDate, summary: null })
-              showUndo({
-                label: 'Meal deleted',
-                undo: async () => {
-                  await restoreMealFromSnapshot(logDate, meal.loggedAt, buildMealSnapshotItems(meal), meal.mealType, meal.mealName)
-                  invalidateDailyLog(logDate)
-                },
-              })
-            }}
-          />
-          </>
-        )}
+      <div className="px-4 mt-4 flex-1">
+        <h2 className="text-base font-bold mb-3" style={{ color: 'var(--app-text-primary)' }}>Meals</h2>
+        <MealSlots
+          meals={meals}
+          isFinalized={isFinalized}
+          timezone={timezone}
+          logDate={logDate}
+          onAddToSlot={(type) => { setAddToSlotType(type); setShowQuickAdd(true) }}
+          onEditMeal={setEditingMeal}
+          onDeleteSuccess={(meal, result) => {
+            setCreaturePreviewState({ date: logDate, preview: mapCreaturePreviewPayload(result.creature_preview ?? null) })
+            setBattlePrepState({ date: logDate, summary: null })
+            showUndo({
+              label: 'Meal deleted',
+              undo: async () => {
+                await restoreMealFromSnapshot(logDate, meal.loggedAt, buildMealSnapshotItems(meal), meal.mealType, meal.mealName)
+                invalidateDailyLog(logDate)
+              },
+            })
+          }}
+        />
       </div>
 
       {/* Bottom action bar */}
@@ -343,7 +325,8 @@ export default function DailyLogPage() {
             mode="add"
             logDate={logDate}
             loggedAt={loggedAt}
-            onClose={() => setShowQuickAdd(false)}
+            defaultMealType={addToSlotType ?? undefined}
+            onClose={() => { setShowQuickAdd(false); setAddToSlotType(null) }}
             onAdded={(result) => handleMealCreated(result)}
           />
         </Suspense>
