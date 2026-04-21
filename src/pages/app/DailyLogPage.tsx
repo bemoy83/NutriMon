@@ -270,14 +270,13 @@ export default function DailyLogPage() {
       {/* Bottom action bar */}
       {!isFinalized && (
         <div className="fixed inset-x-0 bottom-0 z-[19] px-4 pt-10 pb-[5.5rem] bg-gradient-to-t from-[var(--app-bg)] via-[var(--app-bg)]/70 to-transparent">
-          <div className="mx-auto max-w-lg flex items-center gap-2">
-            {/* Left slot: past days with meals → finalize; today → repeat (slot unfilled) or finalize (evening) */}
+          <div className="mx-auto max-w-lg w-full">
             {isViewingPastDay && mealCount > 0 ? (
               <DailyLogFinalizeCta
                 finalizing={finalizing}
                 finalizeError={finalizeError}
                 onFinalize={finalizeDay}
-                className="flex-1"
+                className="w-full"
               />
             ) : repeatLastMealPreviewQuery.data && !loggedMealTypes.has(currentMealType) ? (
               <DailyLogRepeatCta
@@ -285,29 +284,16 @@ export default function DailyLogPage() {
                 repeating={repeating}
                 repeatError={repeatError}
                 onRepeat={handleRepeatLastMeal}
-                className="flex-1"
+                className="w-full"
               />
             ) : mealCount > 0 && isEveningOrLater ? (
               <DailyLogFinalizeCta
                 finalizing={finalizing}
                 finalizeError={finalizeError}
                 onFinalize={finalizeDay}
-                className="flex-1"
+                className="w-full"
               />
-            ) : (
-              <div className="flex-1" />
-            )}
-
-            {/* Add button — always anchored right */}
-            <button
-              onClick={() => setShowQuickAdd(true)}
-              className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-[var(--app-brand)] text-white shadow-[0_4px_16px_rgb(124_58_237/0.35)] transition-colors hover:bg-[var(--app-brand-hover)]"
-              aria-label="Add food to meal slot"
-            >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
+            ) : null}
           </div>
         </div>
       )}

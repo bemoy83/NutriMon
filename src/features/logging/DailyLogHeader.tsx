@@ -253,32 +253,6 @@ export default function DailyLogHeader({
           </div>
 
           <div
-            className="flex pt-4 mb-4"
-            style={{ borderTop: '1.5px solid var(--app-border-muted)' }}
-          >
-            {[
-              { label: 'Goal', val: goalCalories },
-              { label: 'Eaten', val: safeConsumed },
-              { label: over ? 'Over' : 'Remaining', val: Math.abs(remaining), danger: over },
-            ].map(({ label, val, danger }) => (
-              <div key={label} className="flex-1 text-center">
-                <p
-                  className="text-[10px] font-semibold uppercase tracking-wide mb-1"
-                  style={{ color: 'var(--app-text-muted)' }}
-                >
-                  {label}
-                </p>
-                <p
-                  className="text-[18px] font-extrabold leading-none tabular-nums"
-                  style={{ color: danger ? 'var(--app-danger)' : 'var(--app-text-primary)' }}
-                >
-                  {val.toLocaleString()}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div
             className="flex gap-3 pt-4"
             style={{ borderTop: '1.5px solid var(--app-border-muted)' }}
           >
@@ -385,7 +359,7 @@ function MacroColumn({
           </span>
         </span>
       </div>
-      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: trackColor }}>
+      <div className="h-2 rounded-full overflow-hidden" style={{ background: trackColor }}>
         <div
           className="h-full rounded-full"
           style={{
