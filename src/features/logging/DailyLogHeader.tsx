@@ -58,10 +58,9 @@ export default function DailyLogHeader({
         : 'var(--app-brand)'
 
   return (
-    <div className="sticky top-0 z-10 px-4 pt-3 pb-4">
-      <div className="app-card px-4 pt-3 pb-5">
-        {/* Date navigation */}
-        <div className="flex items-center justify-between mb-5">
+    <div className="sticky top-0 z-10 px-4 pt-3 pb-4" style={{ background: 'var(--app-bg)' }}>
+        {/* Date navigation — outside card */}
+        <div className="flex items-center justify-between mb-3">
           <button
             type="button"
             onClick={() => onNavigate(addDays(logDate, -1))}
@@ -97,6 +96,9 @@ export default function DailyLogHeader({
             </svg>
           </button>
         </div>
+
+        {/* Card wraps ring + stats + macros */}
+        <div className="app-card px-4 pt-5 pb-5" style={{ borderRadius: 'var(--app-radius-xl)' }}>
 
         {/* Calorie ring — centered */}
         <div className="flex justify-center mb-5">
@@ -211,7 +213,7 @@ export default function DailyLogHeader({
             trackColor={MACRO_TRACK.Fat}
           />
         </div>
-      </div>
+        </div>{/* end card */}
     </div>
   )
 }

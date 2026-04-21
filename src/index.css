@@ -82,8 +82,8 @@
   /* Spacing */
   --app-radius-sm: 0.5rem;
   --app-radius-md: 0.75rem;
-  --app-radius-lg: 1rem;
-  --app-radius-xl: 1.5rem;
+  --app-radius-lg: 1.25rem;
+  --app-radius-xl: 1.75rem;
   --app-shadow-sm: 0 1px 4px rgb(0 0 0 / 0.08);
   --app-shadow-lg: 0 8px 32px rgb(15 23 42 / 0.12);
   --app-shadow-sheet: 0 -4px 24px rgb(0 0 0 / 0.12);

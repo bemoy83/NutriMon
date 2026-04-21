@@ -237,6 +237,10 @@ export default function DailyLogPage() {
       {/* Meals */}
       <div className="px-4 mt-4 space-y-3 flex-1">
         {mealCount > 0 && (
+          <>
+            <h2 className="text-base font-bold" style={{ color: 'var(--app-text-primary)' }}>
+              Meals
+            </h2>
           <MealList
             meals={meals}
             isFinalized={isFinalized}
@@ -255,6 +259,7 @@ export default function DailyLogPage() {
               })
             }}
           />
+          </>
         )}
       </div>
 
