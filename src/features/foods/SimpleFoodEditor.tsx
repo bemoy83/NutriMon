@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/app/providers/auth'
-import { mapProduct } from '@/lib/domainMappers'
 import type { Product } from '@/types/domain'
 import type { SaveHandle } from './RecipeEditor'
 
