@@ -41,15 +41,15 @@ export default function MyFoodScreen() {
 
   return (
     <div className="app-page min-h-full pb-40">
-      {/* Page title */}
-      <div className="px-4 pt-6 pb-4">
-        <h1 className="text-[32px] font-bold tracking-tight" style={{ color: 'var(--app-text-primary)' }}>
-          My Food
-        </h1>
-      </div>
+      {/* Sticky header + filter */}
+      <div className="sticky top-0 z-10" style={{ background: 'var(--app-bg)' }}>
+        <div className="px-4 pt-6 pb-3">
+          <h1 className="text-[32px] font-bold tracking-tight" style={{ color: 'var(--app-text-primary)' }}>
+            My Food
+          </h1>
+        </div>
 
-      {/* Segmented filter */}
-      <SegmentedTabs
+        <SegmentedTabs
         options={[
           { label: 'All', value: 'all' },
           { label: 'Simple', value: 'simple' },
@@ -57,8 +57,12 @@ export default function MyFoodScreen() {
         ] as const}
         value={filter}
         onChange={setFilter}
-        className="!bg-transparent !px-4 !py-0 mb-4"
+        className="!bg-transparent !px-4 !py-0"
       />
+      <div className="pb-4" />
+      </div>
+
+      <div>
 
       {/* Empty state — no foods at all */}
       {allProducts.length === 0 ? (
@@ -132,6 +136,7 @@ export default function MyFoodScreen() {
           })}
         </div>
       )}
+      </div>
 
       {/* Bottom toolbar: search + new food — floats above nav bar */}
       <div
