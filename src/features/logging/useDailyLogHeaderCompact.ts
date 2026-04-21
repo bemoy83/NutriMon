@@ -2,6 +2,7 @@ import { useLayoutEffect, useState, type RefObject } from 'react'
 
 const SHRINK_AT = 48
 const EXPAND_AT = 20
+const NARROW_MAX_PX = 767
 
 function getScrollParent(el: HTMLElement | null): HTMLElement | null {
   let node: HTMLElement | null = el
@@ -15,31 +16,38 @@ function getScrollParent(el: HTMLElement | null): HTMLElement | null {
   return null
 }
 
+/** Prefer innerWidth: embedded / in-editor browsers often mis-implement matchMedia. */
 function readNarrowViewport(): boolean {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
-  try {
-    return window.matchMedia('(max-width: 767px)').matches
-  } catch {
-    return false
-  }
+  if (typeof window === 'undefined') return false
+  return window.innerWidth <= NARROW_MAX_PX
 }
 
 function useNarrowLogViewport(): boolean {
   const [narrow, setNarrow] = useState(readNarrowViewport)
 
   useLayoutEffect(() => {
-    if (typeof window.matchMedia !== 'function') {
-      setNarrow(false)
-      return
-    }
-    const mq = window.matchMedia('(max-width: 767px)')
-    const onChange = () => setNarrow(mq.matches)
-    onChange()
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
+    const sync = () => setNarrow(readNarrowViewport())
+    sync()
+    window.addEventListener('resize', sync)
+    return () => window.removeEventListener('resize', sync)
   }, [])
 
   return narrow
+}
+
+/**
+ * Pick the element that actually scrolls: flex `main` first, else document scrolling element.
+ */
+function resolveScrollRoot(anchor: HTMLElement): HTMLElement | null {
+  const walked = getScrollParent(anchor)
+  if (walked && walked.scrollHeight > walked.clientHeight) {
+    return walked
+  }
+  const se = document.scrollingElement
+  if (se instanceof HTMLElement && se.scrollHeight > se.clientHeight) {
+    return se
+  }
+  return walked
 }
 
 /**
@@ -61,7 +69,7 @@ export function useDailyLogHeaderCompact(
     const anchor = scrollAnchorRef.current
     if (!anchor) return
 
-    const scrollRoot = getScrollParent(anchor)
+    const scrollRoot = resolveScrollRoot(anchor)
     if (!scrollRoot) return
 
     const y0 = scrollRoot.scrollTop
