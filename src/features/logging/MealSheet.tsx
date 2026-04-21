@@ -721,6 +721,11 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
                         }
                         isChecked={isItemInCart(fs)}
                         onTap={() => handleFoodTap(fs)}
+                        macroChips={
+                          fs.proteinG != null || fs.carbsG != null || fs.fatG != null
+                            ? { p: fs.proteinG, c: fs.carbsG, f: fs.fatG }
+                            : undefined
+                        }
                       />
                     ))}
                     {/* Create food entry — bottom of recent list */}
