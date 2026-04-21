@@ -50,14 +50,10 @@ export function useDailyLogHeaderCompact(
   resetKey: string,
 ): boolean {
   const [compact, setCompact] = useState(false)
-  void resetKey
 
   useLayoutEffect(() => {
     const anchor = scrollAnchorRef.current
-    if (!anchor) {
-      setCompact(false)
-      return
-    }
+    if (!anchor) return
 
     const scrollRoot = resolveScrollRoot(anchor)
 
@@ -74,20 +70,26 @@ export function useDailyLogHeaderCompact(
       }
     }
 
-    const y0 = readScrollY(anchor, scrollRoot)
-    isCompact = y0 >= SHRINK_AT
-    setCompact(isCompact)
-
     const onScroll = (e: Event) => apply(e)
 
     scrollRoot?.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('scroll', onScroll, { capture: true, passive: true })
 
+    let cancelled = false
+    const syncInitial = () => {
+      if (cancelled) return
+      const y0 = readScrollY(anchor, scrollRoot)
+      isCompact = y0 >= SHRINK_AT
+      setCompact(isCompact)
+    }
+    queueMicrotask(syncInitial)
+
     return () => {
+      cancelled = true
       scrollRoot?.removeEventListener('scroll', onScroll)
       window.removeEventListener('scroll', onScroll, { capture: true } as AddEventListenerOptions)
     }
-  })
+  }, [resetKey, scrollAnchorRef])
 
   return compact
 }
