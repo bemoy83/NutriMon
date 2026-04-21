@@ -158,10 +158,10 @@ export default function MyFoodScreen() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search foods…"
-              className="w-full pl-10 pr-9 py-3 text-sm rounded-full"
+              className="w-full pl-10 pr-9 py-3 text-sm rounded-full border outline-none transition-[border-color,box-shadow] focus:border-[var(--app-focus)] focus:ring-2 focus:ring-[var(--app-brand-ring)]"
               style={{
                 background: 'var(--app-surface)',
-                border: '1px solid var(--app-border)',
+                borderColor: 'var(--app-input-border)',
                 boxShadow: '0 2px 12px rgb(0 0 0 / 0.08)',
                 color: 'var(--app-text-primary)',
               }}
@@ -189,7 +189,7 @@ export default function MyFoodScreen() {
             className="w-12 h-12 flex-none flex items-center justify-center rounded-full text-white transition-colors hover:bg-[var(--app-brand-hover)]"
             style={{
               background: 'var(--app-brand)',
-              boxShadow: '0 4px_16px rgb(124 58 237 / 0.35)',
+              boxShadow: '0 4px 16px rgb(124 58 237 / 0.35)',
             }}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

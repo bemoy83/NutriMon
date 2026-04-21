@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import DailyLogPage from '../DailyLogPage'
 import type { Meal } from '@/types/domain'
+import type { MealType } from '@/lib/mealType'
 import type { DeleteMealResult, MealMutationResult } from '@/types/database'
 
 const useDailyLogCoreMock = vi.fn()
@@ -204,14 +205,27 @@ vi.mock('@/features/logging/MealSheet', () => ({
 vi.mock('@/features/logging/MealSlots', () => ({
   default: ({
     meals,
+    isFinalized,
+    onAddToSlot,
     onDeleteSuccess,
     onEditMeal,
   }: {
     meals: Meal[]
+    isFinalized: boolean
+    onAddToSlot: (type: MealType) => void
     onDeleteSuccess: (meal: Meal, result: DeleteMealResult) => void
     onEditMeal: (meal: Meal) => void
   }) => (
     <div data-testid="meal-slots-mock">
+      {!isFinalized && (
+        <button
+          type="button"
+          aria-label="Add food to Lunch"
+          onClick={() => onAddToSlot('Lunch')}
+        >
+          add-to-slot
+        </button>
+      )}
       {meals.length === 0 ? (
         <p>Nothing logged yet</p>
       ) : (
@@ -604,7 +618,7 @@ describe('DailyLogPage', () => {
     })
 
     renderPage()
-    fireEvent.click(screen.getByRole('button', { name: 'Add food to meal slot' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add food to Lunch' }))
     fireEvent.click(await screen.findByText('simulate-append-add'))
 
     expect(screen.queryByText('Undo')).not.toBeInTheDocument()
@@ -636,7 +650,7 @@ describe('DailyLogPage', () => {
     })
 
     renderPage()
-    fireEvent.click(screen.getByRole('button', { name: 'Add food to meal slot' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add food to Lunch' }))
     fireEvent.click(await screen.findByText('simulate-new-meal-no-ids'))
 
     expect(screen.queryByText('Undo')).not.toBeInTheDocument()
