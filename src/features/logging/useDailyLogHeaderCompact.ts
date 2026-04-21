@@ -50,10 +50,14 @@ export function useDailyLogHeaderCompact(
   resetKey: string,
 ): boolean {
   const [compact, setCompact] = useState(false)
+  void resetKey
 
   useLayoutEffect(() => {
     const anchor = scrollAnchorRef.current
-    if (!anchor) return
+    if (!anchor) {
+      setCompact(false)
+      return
+    }
 
     const scrollRoot = resolveScrollRoot(anchor)
 
@@ -83,7 +87,7 @@ export function useDailyLogHeaderCompact(
       scrollRoot?.removeEventListener('scroll', onScroll)
       window.removeEventListener('scroll', onScroll, { capture: true } as AddEventListenerOptions)
     }
-  }, [resetKey, scrollAnchorRef])
+  })
 
   return compact
 }

@@ -76,12 +76,81 @@ vi.mock('@/features/logging/MealSheet', () => ({
     mode,
     meal,
     onSaved,
+    onAdded,
   }: {
     mode: 'add' | 'edit'
     meal?: Meal
     onSaved?: (meal: Meal, result: MealMutationResult) => void
+    onAdded?: (result: MealMutationResult) => void
   }) => {
-    if (mode === 'add') return <div>quick-add-sheet</div>
+    if (mode === 'add') {
+      return (
+        <div>
+          <div>quick-add-sheet</div>
+          <button
+            type="button"
+            onClick={() =>
+              onAdded?.({
+                meal: {
+                  id: 'meal-lunch',
+                  daily_log_id: 'log-1',
+                  logged_at: '2026-01-05T12:00:00.000Z',
+                  meal_type: 'Lunch',
+                  meal_name: null,
+                  total_calories: 220,
+                  item_count: 1,
+                },
+                meal_items: [],
+                inserted_meal_item_ids: ['appended-item-1', 'appended-item-2'],
+                daily_log: {
+                  id: 'log-1',
+                  user_id: 'user-1',
+                  log_date: '2026-01-05',
+                  total_calories: 220,
+                  meal_count: 1,
+                  is_finalized: false,
+                  finalized_at: null,
+                  created_at: '2026-01-05T00:00:00.000Z',
+                  updated_at: '2026-01-05T00:00:00.000Z',
+                },
+              })
+            }
+          >
+            simulate-append-add
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              onAdded?.({
+                meal: {
+                  id: 'meal-new',
+                  daily_log_id: 'log-1',
+                  logged_at: '2026-01-05T08:00:00.000Z',
+                  meal_type: 'Breakfast',
+                  meal_name: null,
+                  total_calories: 100,
+                  item_count: 1,
+                },
+                meal_items: [],
+                daily_log: {
+                  id: 'log-1',
+                  user_id: 'user-1',
+                  log_date: '2026-01-05',
+                  total_calories: 100,
+                  meal_count: 1,
+                  is_finalized: false,
+                  finalized_at: null,
+                  created_at: '2026-01-05T00:00:00.000Z',
+                  updated_at: '2026-01-05T00:00:00.000Z',
+                },
+              })
+            }
+          >
+            simulate-new-meal-no-ids
+          </button>
+        </div>
+      )
+    }
     return (
       <button
         type="button"
@@ -127,75 +196,7 @@ vi.mock('@/features/logging/MealSheet', () => ({
   },
 }))
 
-vi.mock('@/features/logging/InlineQuickAdd', () => ({
-  default: ({ onCreated }: { onCreated: (result: MealMutationResult) => void }) => (
-    <div>
-      <button
-        type="button"
-        onClick={() =>
-          onCreated({
-            meal: {
-              id: 'meal-lunch',
-              daily_log_id: 'log-1',
-              logged_at: '2026-01-05T12:00:00.000Z',
-              meal_type: 'Lunch',
-              meal_name: null,
-              total_calories: 220,
-              item_count: 1,
-            },
-            meal_items: [],
-            inserted_meal_item_ids: ['appended-item-1', 'appended-item-2'],
-            daily_log: {
-              id: 'log-1',
-              user_id: 'user-1',
-              log_date: '2026-01-05',
-              total_calories: 220,
-              meal_count: 1,
-              is_finalized: false,
-              finalized_at: null,
-              created_at: '2026-01-05T00:00:00.000Z',
-              updated_at: '2026-01-05T00:00:00.000Z',
-            },
-          })
-        }
-      >
-        simulate-append-add
-      </button>
-      <button
-        type="button"
-        onClick={() =>
-          onCreated({
-            meal: {
-              id: 'meal-new',
-              daily_log_id: 'log-1',
-              logged_at: '2026-01-05T08:00:00.000Z',
-              meal_type: 'Breakfast',
-              meal_name: null,
-              total_calories: 100,
-              item_count: 1,
-            },
-            meal_items: [],
-            daily_log: {
-              id: 'log-1',
-              user_id: 'user-1',
-              log_date: '2026-01-05',
-              total_calories: 100,
-              meal_count: 1,
-              is_finalized: false,
-              finalized_at: null,
-              created_at: '2026-01-05T00:00:00.000Z',
-              updated_at: '2026-01-05T00:00:00.000Z',
-            },
-          })
-        }
-      >
-        simulate-new-meal-no-ids
-      </button>
-    </div>
-  ),
-}))
-
-vi.mock('@/features/logging/MealList', () => ({
+vi.mock('@/features/logging/MealSlots', () => ({
   default: ({
     meals,
     onDeleteSuccess,
@@ -205,41 +206,47 @@ vi.mock('@/features/logging/MealList', () => ({
     onDeleteSuccess: (meal: Meal, result: DeleteMealResult) => void
     onEditMeal: (meal: Meal) => void
   }) => (
-    <div>
-      <button
-        type="button"
-        onClick={() =>
-          onDeleteSuccess(meals[0], {
-            deleted_meal_id: meals[0].id,
-            daily_log: {
-              id: 'log-1',
-              user_id: 'user-1',
-              log_date: '2026-01-05',
-              total_calories: 0,
-              meal_count: 0,
-              is_finalized: false,
-              finalized_at: null,
-              created_at: '2026-01-05T00:00:00.000Z',
-              updated_at: '2026-01-05T00:00:00.000Z',
-            },
-            creature_preview: {
-              tomorrow_readiness_score: 58,
-              tomorrow_readiness_band: 'building',
-              projected_strength: 56,
-              projected_resilience: 55,
-              projected_momentum: 59,
-              projected_vitality: 82,
-              meal_rating: 'solid',
-              meal_feedback_message: 'Preview updated after delete.',
-            },
-          })
-        }
-      >
-        trigger-delete
-      </button>
-      <button type="button" onClick={() => onEditMeal(meals[0])}>
-        trigger-edit
-      </button>
+    <div data-testid="meal-slots-mock">
+      {meals.length === 0 ? (
+        <p>Nothing logged yet</p>
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={() =>
+              onDeleteSuccess(meals[0], {
+                deleted_meal_id: meals[0].id,
+                daily_log: {
+                  id: 'log-1',
+                  user_id: 'user-1',
+                  log_date: '2026-01-05',
+                  total_calories: 0,
+                  meal_count: 0,
+                  is_finalized: false,
+                  finalized_at: null,
+                  created_at: '2026-01-05T00:00:00.000Z',
+                  updated_at: '2026-01-05T00:00:00.000Z',
+                },
+                creature_preview: {
+                  tomorrow_readiness_score: 58,
+                  tomorrow_readiness_band: 'building',
+                  projected_strength: 56,
+                  projected_resilience: 55,
+                  projected_momentum: 59,
+                  projected_vitality: 82,
+                  meal_rating: 'solid',
+                  meal_feedback_message: 'Preview updated after delete.',
+                },
+              })
+            }
+          >
+            trigger-delete
+          </button>
+          <button type="button" onClick={() => onEditMeal(meals[0])}>
+            trigger-edit
+          </button>
+        </>
+      )}
     </div>
   ),
 }))
@@ -249,7 +256,7 @@ const baseMeal: Meal = {
   userId: 'user-1',
   dailyLogId: 'log-1',
   loggedAt: '2026-01-05T08:30:00.000Z',
-  mealType: null,
+  mealType: 'Breakfast',
   mealName: null,
   totalCalories: 520,
   itemCount: 2,
@@ -415,9 +422,10 @@ describe('DailyLogPage', () => {
 
     renderPage()
 
-    expect(screen.getByText('No meals logged yet.')).toBeInTheDocument()
-    expect(screen.getByText('Tap + to add food to a meal slot.')).toBeInTheDocument()
-    expect(screen.queryByText('inline-quick-add')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Meals' })).toBeInTheDocument()
+    expect(screen.getByTestId('meal-slots-mock')).toBeInTheDocument()
+    expect(screen.getByText('Nothing logged yet')).toBeInTheDocument()
+    expect(screen.queryByText('quick-add-sheet')).not.toBeInTheDocument()
     expect(screen.queryByText('Finalize & Prep')).not.toBeInTheDocument()
   })
 
@@ -502,7 +510,7 @@ describe('DailyLogPage', () => {
             serving_unit_snapshot: 'slice',
           },
         ],
-        null,
+        'Breakfast',
         null,
       )
     })
@@ -540,7 +548,7 @@ describe('DailyLogPage', () => {
     expect(invalidate).toHaveBeenCalledWith('2026-01-05')
   })
 
-  it('does not show undo after inline quick add (append)', () => {
+  it('does not show undo after inline quick add (append)', async () => {
     const invalidate = vi.fn()
     useInvalidateDailyLogMock.mockReturnValue(invalidate)
 
@@ -563,7 +571,8 @@ describe('DailyLogPage', () => {
     })
 
     renderPage()
-    fireEvent.click(screen.getByText('simulate-append-add'))
+    fireEvent.click(screen.getByRole('button', { name: 'Add food to meal slot' }))
+    fireEvent.click(await screen.findByText('simulate-append-add'))
 
     expect(screen.queryByText('Undo')).not.toBeInTheDocument()
     expect(deleteMealItemMock).not.toHaveBeenCalled()
@@ -571,7 +580,7 @@ describe('DailyLogPage', () => {
     expect(invalidate).toHaveBeenCalledWith('2026-01-05')
   })
 
-  it('does not show undo after inline quick add (new meal, no inserted ids)', () => {
+  it('does not show undo after inline quick add (new meal, no inserted ids)', async () => {
     const invalidate = vi.fn()
     useInvalidateDailyLogMock.mockReturnValue(invalidate)
 
@@ -594,7 +603,8 @@ describe('DailyLogPage', () => {
     })
 
     renderPage()
-    fireEvent.click(screen.getByText('simulate-new-meal-no-ids'))
+    fireEvent.click(screen.getByRole('button', { name: 'Add food to meal slot' }))
+    fireEvent.click(await screen.findByText('simulate-new-meal-no-ids'))
 
     expect(screen.queryByText('Undo')).not.toBeInTheDocument()
     expect(deleteMealMock).not.toHaveBeenCalled()
