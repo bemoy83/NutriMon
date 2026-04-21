@@ -8,7 +8,7 @@ import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import { getUserProducts } from '@/features/foods/api'
 import { useFoodSourceSearch } from '@/features/logging/useFoodSources'
 import type { FoodSource, Product } from '@/types/domain'
-import type { DraftIngredientRow } from './CompositeFoodSheet'
+import type { DraftIngredientRow } from './RecipeEditor'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

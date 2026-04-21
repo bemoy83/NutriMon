@@ -111,7 +111,7 @@ export default function AppShell() {
   ]
 
   return (
-    <div className="app-page flex min-h-screen flex-col">
+    <div className="app-page flex h-dvh flex-col">
       {/* Main content */}
       <main className="flex-1 overflow-y-auto">
         <Outlet />

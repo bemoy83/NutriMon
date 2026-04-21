@@ -7,6 +7,7 @@ import { useFoodSourceSearch, useRecentFoodSources } from './useFoodSources'
 import { useInvalidateMealTemplates, useInvalidateProductQueries } from './queryInvalidation'
 import { useMealTemplates } from './useMealTemplates'
 import BottomSheet from '@/components/ui/BottomSheet'
+import FoodRow from '@/components/ui/FoodRow'
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import GramInput from '@/components/ui/GramInput'
 import MealTypeSelector from '@/components/ui/MealTypeSelector'
@@ -652,7 +653,7 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
               { value: 'saved', label: 'Saved' },
             ]}
             onChange={(t) => setTab(t)}
-            className="!bg-white !shadow-none !pt-1.5 !pb-3"
+            className="!bg-white !shadow-none !pt-1.5 !pb-3 !border-b !border-[var(--app-border-muted)]"
           />
 
           {/* Search pending indicator — only for food source search */}
@@ -705,10 +706,20 @@ export default function MealSheet({ mode, logDate, loggedAt, onClose, onAdded, m
                 ) : (
                   <>
                     {activeFoodSources.map((fs) => (
-                      <FoodBrowserRow
+                      <FoodRow
                         key={`${fs.sourceType}:${fs.sourceId}`}
-                        foodSource={fs}
-                        isInCart={isItemInCart(fs)}
+                        name={fs.name}
+                        subtitle={`${Math.round(fs.caloriesPer100g)} kcal / 100g${fs.labelPortionGrams ? ` · label portion ${fs.labelPortionGrams}g` : ''}`}
+                        leading={
+                          fs.kind === 'composite' ? (
+                            <svg className="w-4 h-4 text-[var(--app-brand)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 6h14M5 10h14M5 14h10" />
+                            </svg>
+                          ) : (
+                            <FoodSourceBadge sourceType={fs.sourceType} />
+                          )
+                        }
+                        isChecked={isItemInCart(fs)}
                         onTap={() => handleFoodTap(fs)}
                       />
                     ))}
@@ -965,70 +976,6 @@ function ServingStep({
   )
 }
 
-function FoodBrowserRow({
-  foodSource,
-  isInCart,
-  onTap,
-}: {
-  foodSource: FoodSource
-  isInCart: boolean
-  onTap: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onTap}
-      aria-label={foodSource.name}
-      className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[var(--app-hover-overlay)] active:bg-[var(--app-hover-overlay)] transition-colors"
-    >
-      <div className="flex items-center gap-2 flex-1 min-w-0">
-        <div className="w-4 h-4 flex-none flex items-center justify-center">
-          {foodSource.kind === 'composite' ? (
-            <svg className="w-4 h-4 text-[var(--app-brand)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 6h14M5 10h14M5 14h10" />
-            </svg>
-          ) : (
-            <FoodSourceBadge sourceType={foodSource.sourceType} />
-          )}
-        </div>
-        <div className="min-w-0">
-          <p className="text-[var(--app-text-primary)] text-sm truncate">{foodSource.name}</p>
-          <p className="text-[var(--app-text-muted)] text-xs">
-            {Math.round(foodSource.caloriesPer100g)} kcal / 100g
-            {foodSource.labelPortionGrams
-              ? ` · label portion ${foodSource.labelPortionGrams}g`
-              : ''}
-          </p>
-        </div>
-      </div>
-      {isInCart ? (
-        <div className="flex-none h-8 w-8 flex items-center justify-center rounded-full bg-[var(--app-brand)] text-white">
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2.5}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-      ) : (
-        <div className="flex-none h-8 w-8 flex items-center justify-center rounded-full bg-[rgb(0_0_0/0.06)] text-[var(--app-text-muted)] border border-[var(--app-border)]">
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </div>
-      )}
-    </button>
-  )
-}
 
 function TemplateRow({
   template,

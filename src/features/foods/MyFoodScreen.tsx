@@ -1,14 +1,10 @@
 import { Fragment, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/app/providers/auth'
-import { getUserProducts, deleteProduct } from '@/features/foods/api'
-import { useInvalidateProductQueries } from '@/features/logging/queryInvalidation'
-import type { Product } from '@/types/domain'
-import ProductForm from '@/features/logging/ProductForm'
-import FoodTypePickerSheet from '@/features/foods/FoodTypePickerSheet'
-import CompositeFoodSheet from '@/features/foods/CompositeFoodSheet'
+import { getUserProducts } from '@/features/foods/api'
 import LoadingState from '@/components/ui/LoadingState'
-import BottomSheet from '@/components/ui/BottomSheet'
+import type { Product } from '@/types/domain'
 
 function fmtMacro(n: number | null): string {
   if (n === null) return '—'
@@ -17,15 +13,9 @@ function fmtMacro(n: number | null): string {
 
 export default function MyFoodScreen() {
   const { user } = useAuth()
-  const invalidateProducts = useInvalidateProductQueries()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'simple' | 'recipe'>('all')
-  const [showTypePicker, setShowTypePicker] = useState(false)
-  const [showSimpleForm, setShowSimpleForm] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [compositeSheetProductId, setCompositeSheetProductId] = useState<string | null | undefined>(undefined)
-  const [error, setError] = useState<string | null>(null)
 
   const productsQuery = useQuery({
     queryKey: ['my-food-products', user?.id],
@@ -40,43 +30,8 @@ export default function MyFoodScreen() {
     return p.name.toLowerCase().includes(search.trim().toLowerCase())
   })
 
-  async function handleDelete(product: Product) {
-    if (!window.confirm(`Delete "${product.name}"? Logged meals will keep their historical snapshots.`)) {
-      return
-    }
-
-    setDeletingId(product.id)
-    setError(null)
-
-    try {
-      await deleteProduct(product.id)
-      invalidateProducts()
-      if (editingProduct?.id === product.id) setEditingProduct(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete product')
-    } finally {
-      setDeletingId(null)
-    }
-  }
-
-  function handlePickSimple() {
-    setShowTypePicker(false)
-    setEditingProduct(null)
-    setShowSimpleForm(true)
-  }
-
-  function handlePickComposite() {
-    setShowTypePicker(false)
-    setCompositeSheetProductId(null)
-  }
-
   function handleTapProduct(product: Product) {
-    if (product.kind === 'composite') {
-      setCompositeSheetProductId(product.id)
-      return
-    }
-    setShowSimpleForm(false)
-    setEditingProduct(product)
+    navigate(`/app/my-food/${product.id}`)
   }
 
   if (productsQuery.isLoading) {
@@ -99,7 +54,7 @@ export default function MyFoodScreen() {
         </div>
         <button
           type="button"
-          onClick={() => setShowTypePicker(true)}
+          onClick={() => navigate('/app/my-food/new')}
           className="app-button-primary px-3 py-2 text-sm"
         >
           + New food
@@ -166,8 +121,6 @@ export default function MyFoodScreen() {
         </div>
       )}
 
-      {error && <p className="text-[var(--app-danger)] text-xs mb-3">{error}</p>}
-
       {/* Empty state — no foods at all */}
       {allProducts.length === 0 ? (
         <div className="py-12 text-center">
@@ -177,7 +130,7 @@ export default function MyFoodScreen() {
           </p>
           <button
             type="button"
-            onClick={() => setShowTypePicker(true)}
+            onClick={() => navigate('/app/my-food/new')}
             className="app-button-primary px-4 py-2 text-sm"
           >
             Add your first food
@@ -269,63 +222,6 @@ export default function MyFoodScreen() {
             )
           })}
         </div>
-      )}
-
-      {/* Type picker sheet */}
-      {showTypePicker && (
-        <FoodTypePickerSheet
-          onClose={() => setShowTypePicker(false)}
-          onPickSimple={handlePickSimple}
-          onPickComposite={handlePickComposite}
-        />
-      )}
-
-      {/* Simple food create / edit sheet */}
-      {(showSimpleForm || editingProduct) && (
-        <BottomSheet
-          onClose={() => {
-            setShowSimpleForm(false)
-            setEditingProduct(null)
-          }}
-          title={editingProduct ? 'Edit food' : 'New simple food'}
-          footer={
-            editingProduct ? (
-              <button
-                type="button"
-                disabled={deletingId === editingProduct.id}
-                onClick={() => handleDelete(editingProduct)}
-                className="app-button-danger w-full py-2.5 text-sm"
-              >
-                {deletingId === editingProduct.id ? 'Deleting…' : 'Delete food'}
-              </button>
-            ) : undefined
-          }
-        >
-          <ProductForm
-            initialProduct={editingProduct}
-            onSave={() => {
-              invalidateProducts()
-              setShowSimpleForm(false)
-              setEditingProduct(null)
-            }}
-            onCancel={() => {
-              setShowSimpleForm(false)
-              setEditingProduct(null)
-            }}
-          />
-        </BottomSheet>
-      )}
-
-      {/* Composite / recipe sheet */}
-      {compositeSheetProductId !== undefined && (
-        <CompositeFoodSheet
-          editProductId={compositeSheetProductId}
-          onClose={() => setCompositeSheetProductId(undefined)}
-          onSaved={() => {
-            invalidateProducts()
-            setCompositeSheetProductId(undefined)
-          }}
-        />
       )}
     </div>
   )

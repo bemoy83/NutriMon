@@ -7,6 +7,7 @@ export function useInvalidateProductQueries() {
     queryClient.invalidateQueries({ queryKey: ['products'] })
     queryClient.invalidateQueries({ queryKey: ['profile-products'] })
     queryClient.invalidateQueries({ queryKey: ['food-sources'] })
+    queryClient.invalidateQueries({ queryKey: ['my-food-products'] })
   }
 }
 

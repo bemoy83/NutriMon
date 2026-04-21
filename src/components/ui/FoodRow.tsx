@@ -1,0 +1,88 @@
+import type { ReactNode } from 'react'
+
+interface FoodRowProps {
+  name: string
+  subtitle: string
+  leading?: ReactNode
+  isChecked: boolean
+  onTap: () => void
+  /** When provided, the checkmark becomes a dedicated remove button and onTap targets only the left content area. */
+  onRemove?: () => void
+  removeAriaLabel?: string
+}
+
+function CheckmarkCircle() {
+  return (
+    <div className="flex-none h-8 w-8 flex items-center justify-center rounded-full bg-[var(--app-brand)] text-white">
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+  )
+}
+
+function ChevronCircle() {
+  return (
+    <div className="flex-none h-8 w-8 flex items-center justify-center rounded-full bg-[rgb(0_0_0/0.06)] text-[var(--app-text-muted)] border border-[var(--app-border)]">
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
+    </div>
+  )
+}
+
+export default function FoodRow({
+  name,
+  subtitle,
+  leading,
+  isChecked,
+  onTap,
+  onRemove,
+  removeAriaLabel,
+}: FoodRowProps) {
+  const indicator = isChecked ? <CheckmarkCircle /> : <ChevronCircle />
+
+  if (onRemove) {
+    return (
+      <div className="flex items-center gap-3 px-4 py-3">
+        <button
+          type="button"
+          className="flex-1 min-w-0 text-left"
+          onClick={onTap}
+        >
+          {leading && <div className="mb-0.5">{leading}</div>}
+          <p className="text-sm text-[var(--app-text-primary)] truncate">{name}</p>
+          <p className="text-xs text-[var(--app-text-muted)]">{subtitle}</p>
+        </button>
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={removeAriaLabel ?? `Remove ${name}`}
+          className="transition-opacity hover:opacity-80"
+        >
+          {indicator}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onTap}
+      aria-label={name}
+      className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[var(--app-hover-overlay)] active:bg-[var(--app-hover-overlay)] transition-colors"
+    >
+      {leading && (
+        <div className="w-4 h-4 flex-none flex items-center justify-center">
+          {leading}
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-[var(--app-text-primary)] text-sm truncate">{name}</p>
+        <p className="text-[var(--app-text-muted)] text-xs">{subtitle}</p>
+      </div>
+      {indicator}
+    </button>
+  )
+}
