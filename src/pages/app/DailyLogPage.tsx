@@ -9,7 +9,6 @@ import { getTodayInTimezone } from '@/lib/date'
 import type { BattlePrepSummary, CreaturePreview, FinalizeDayResponse, Meal } from '@/types/domain'
 import { buildMealSnapshotItems } from '@/features/logging/mealPayloads'
 import { restoreMealFromSnapshot } from '@/features/logging/api'
-import InlineQuickAdd from '@/features/logging/InlineQuickAdd'
 import { getDefaultMealType, type MealType } from '@/lib/mealType'
 import type { DeleteMealResult, MealMutationResult } from '@/types/database'
 import { useRepeatLastMealPreview } from '@/features/logging/useRepeatLastMealPreview'
@@ -23,7 +22,6 @@ import DailyLogFinalizeCta from '@/features/logging/DailyLogFinalizeCta'
 import DailyLogRepeatCta from '@/features/logging/DailyLogRepeatCta'
 import UndoToast from '@/features/logging/UndoToast'
 import LoadingState from '@/components/ui/LoadingState'
-import EmptyState from '@/components/ui/EmptyState'
 
 const MealSheet = lazy(() => import('@/features/logging/MealSheet'))
 
