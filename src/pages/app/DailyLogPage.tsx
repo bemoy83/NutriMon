@@ -16,7 +16,13 @@ import { useProfileSummary } from '@/features/profile/useProfileSummary'
 import { useFinalizeDay } from '@/features/logging/useFinalizeDay'
 import { useRepeatLastMealAction } from '@/features/logging/useRepeatLastMealAction'
 import { useUndoToast } from '@/features/logging/useUndoToast'
-import DailyLogHeader from '@/features/logging/DailyLogHeader'
+import {
+  DailyLogCompactCard,
+  DailyLogDateHeader,
+  DailyLogFullCard,
+  type DailyLogDateHeaderProps,
+  type DailyLogSummaryCardProps,
+} from '@/features/logging/DailyLogHeader'
 import { useDailyLogHeaderCompact } from '@/features/logging/useDailyLogHeaderCompact'
 import DailyLogFinalizeCta from '@/features/logging/DailyLogFinalizeCta'
 import DailyLogRepeatCta from '@/features/logging/DailyLogRepeatCta'
@@ -160,21 +166,23 @@ export default function DailyLogPage() {
     return <LoadingState fullScreen />
   }
 
-  const headerProps = {
+  const dateHeaderProps: DailyLogDateHeaderProps = {
     logDate,
     todayDate,
     isFinalized,
+    currentStreak,
+    onNavigate: (nextDate: string) => navigate(`/app/log/${nextDate}`),
+  }
+  const summaryCardProps: DailyLogSummaryCardProps = {
     remaining,
     consumed: totalCalories,
     progressPct,
-    currentStreak,
     totalProteinG,
     totalCarbsG,
     totalFatG,
     proteinTargetG,
     carbsTargetG,
     fatTargetG,
-    onNavigate: (nextDate: string) => navigate(`/app/log/${nextDate}`),
   }
 
   return (
@@ -188,7 +196,7 @@ export default function DailyLogPage() {
         }}
       >
         <div ref={setDateSticky} className="relative z-[1]">
-          <DailyLogHeader {...headerProps} mode="dateSticky" />
+          <DailyLogDateHeader {...dateHeaderProps} />
         </div>
         <div
           className={`pointer-events-none absolute inset-x-0 top-full z-[1] transition-[opacity,height] duration-180 ease-out ${
@@ -208,13 +216,13 @@ export default function DailyLogPage() {
           aria-hidden={!headerCompact}
         >
           <div className="pointer-events-auto">
-            <DailyLogHeader {...headerProps} mode="compactCard" />
+            <DailyLogCompactCard {...summaryCardProps} />
           </div>
         </div>
       </div>
 
       <div ref={setFullHeader} className="px-4 pt-3 pb-4">
-        <DailyLogHeader {...headerProps} mode="fullCard" />
+        <DailyLogFullCard {...summaryCardProps} />
       </div>
 
       {/* Feedback card (finalized) */}
