@@ -77,12 +77,14 @@ function ItemLeading({ item }: { item: Item }) {
 export default function MealEditPage() {
   const { date, mealId } = useParams<{ date: string; mealId: string }>()
   if (!date || !mealId) throw new Error('Missing meal edit route params')
+  const logDate = date
+  const editMealId = mealId
 
   const navigate = useNavigate()
   const invalidateDailyLog = useInvalidateDailyLog()
   const invalidateProducts = useInvalidateProductQueries()
-  const coreQuery = useDailyLogCore(date)
-  const meal = (coreQuery.data?.meals ?? []).find((candidate) => candidate.id === mealId) ?? null
+  const coreQuery = useDailyLogCore(logDate)
+  const meal = (coreQuery.data?.meals ?? []).find((candidate) => candidate.id === editMealId) ?? null
 
   const [items, setItems] = useState<Item[]>([])
   const [mealName, setMealName] = useState('')
@@ -199,16 +201,16 @@ export default function MealEditPage() {
         mealType,
         mealName.trim() || null,
       )
-      invalidateDailyLog(date)
+      invalidateDailyLog(logDate)
       invalidateProducts()
       const state: DailyLogMealEditState = {
         mealEditAction: {
           kind: 'saved',
-          logDate: date,
+          logDate: logDate,
           result,
         },
       }
-      navigate(`/app/log/${date}`, { state })
+      navigate(`/app/log/${logDate}`, { state })
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to update meal')
     } finally {
@@ -225,17 +227,17 @@ export default function MealEditPage() {
     setSubmitError(null)
     try {
       const result = await deleteMeal(meal.id)
-      invalidateDailyLog(date)
+      invalidateDailyLog(logDate)
       invalidateProducts()
       const state: DailyLogMealEditState = {
         mealEditAction: {
           kind: 'deleted',
-          logDate: date,
+          logDate: logDate,
           result,
           deletedMeal: meal,
         },
       }
-      navigate(`/app/log/${date}`, { state })
+      navigate(`/app/log/${logDate}`, { state })
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to delete meal')
       setDeleting(false)
@@ -248,7 +250,7 @@ export default function MealEditPage() {
         <div className="flex items-center gap-2 px-4 pt-4 pb-3">
           <button
             type="button"
-            onClick={() => navigate(`/app/log/${date}`)}
+            onClick={() => navigate(`/app/log/${logDate}`)}
             className="flex-none h-10 w-10 flex items-center justify-center rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-hover-overlay)]"
             aria-label="Back to daily log"
           >
@@ -434,7 +436,7 @@ export default function MealEditPage() {
 
       {showAddSheet && (
         <MealSheet
-          logDate={date}
+          logDate={logDate}
           loggedAt={meal.loggedAt}
           defaultMealType={mealType}
           onClose={() => setShowAddSheet(false)}

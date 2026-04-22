@@ -129,14 +129,12 @@ export function useFoodSourceMap(productIds: string[], catalogItemIds: string[])
       if (catalogResult.error) throw catalogResult.error
 
       const entries: Array<[string, FoodSource]> = [
-        ...((productResult.data ?? []) as ProductRow[]).map((row) => [
-          `user_product:${row.id}`,
-          mapProductToFoodSource(row),
-        ] as const),
-        ...((catalogResult.data ?? []) as FoodCatalogItemRow[]).map((row) => [
-          `catalog_item:${row.id}`,
-          mapCatalogItemToFoodSource(row),
-        ] as const),
+        ...((productResult.data ?? []) as ProductRow[]).map(
+          (row): [string, FoodSource] => [`user_product:${row.id}`, mapProductToFoodSource(row)],
+        ),
+        ...((catalogResult.data ?? []) as FoodCatalogItemRow[]).map(
+          (row): [string, FoodSource] => [`catalog_item:${row.id}`, mapCatalogItemToFoodSource(row)],
+        ),
       ]
 
       return Object.fromEntries(entries)
