@@ -94,7 +94,14 @@ export default function DailyLogPage() {
   const [battlePrepState, setBattlePrepState] = useState<{ date: string; summary: BattlePrepSummary | null } | null>(null)
   const { undoAction, showUndo, clearUndo } = useUndoToast()
   const [scrollAnchor, setScrollAnchor] = useState<HTMLDivElement | null>(null)
-  const headerCompact = useDailyLogHeaderCompact(scrollAnchor, logDate)
+  const [dateSticky, setDateSticky] = useState<HTMLDivElement | null>(null)
+  const [fullHeader, setFullHeader] = useState<HTMLDivElement | null>(null)
+  const headerCompact = useDailyLogHeaderCompact({
+    scrollAnchor,
+    dateSticky,
+    fullHeader,
+    resetKey: logDate,
+  })
 
   const dailyLog = coreQuery.data?.dailyLog ?? null
   const meals = coreQuery.data?.meals ?? []
@@ -180,20 +187,33 @@ export default function DailyLogPage() {
           transition: 'box-shadow 180ms ease',
         }}
       >
-        <DailyLogHeader {...headerProps} mode="dateSticky" />
+        <div ref={setDateSticky} className="relative z-[1]">
+          <DailyLogHeader {...headerProps} mode="dateSticky" />
+        </div>
         <div
-          className={`overflow-hidden transition-[max-height,opacity,transform,margin,padding] duration-200 ease-out ${
+          className={`pointer-events-none absolute inset-x-0 top-full z-[1] transition-[opacity,height] duration-180 ease-out ${
+            headerCompact ? 'h-32 opacity-100' : 'h-0 opacity-0'
+          }`}
+          style={{
+            background: 'linear-gradient(to bottom, var(--app-bg) 0%, var(--app-bg) 72%, transparent 100%)',
+          }}
+          aria-hidden="true"
+        />
+        <div
+          className={`pointer-events-none absolute inset-x-4 top-full z-[2] origin-top transition-[opacity,transform] duration-180 ease-out ${
             headerCompact
-              ? 'mt-2 max-h-28 translate-y-0 opacity-100 pb-2'
-              : 'mt-0 max-h-0 -translate-y-2 opacity-0 pb-0'
+              ? 'translate-y-0 scale-y-100 opacity-100'
+              : '-translate-y-1 scale-y-[0.96] opacity-0'
           }`}
           aria-hidden={!headerCompact}
         >
-          <DailyLogHeader {...headerProps} mode="compactCard" />
+          <div className="pointer-events-auto">
+            <DailyLogHeader {...headerProps} mode="compactCard" />
+          </div>
         </div>
       </div>
 
-      <div className="px-4 pt-3 pb-4">
+      <div ref={setFullHeader} className="px-4 pt-3 pb-4">
         <DailyLogHeader {...headerProps} mode="fullCard" />
       </div>
 
