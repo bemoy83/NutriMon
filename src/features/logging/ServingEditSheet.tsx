@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react'
 import BottomSheet from '@/components/ui/BottomSheet'
-import GramInput from '@/components/ui/GramInput'
 import ServingStep from './ServingStep'
-import { getItemCalories, getItemLabel } from './itemHelpers'
+import { getItemCalories, getItemLabel, getItemSourceType } from './itemHelpers'
 import type { Item } from './types'
 
 interface ServingEditSheetProps {
@@ -10,10 +9,6 @@ interface ServingEditSheetProps {
   idx: number
   onConfirm: (idx: number, quantity: number, compositeMode?: 'grams' | 'pieces') => void
   onClose: () => void
-}
-
-function formatAmount(value: number): string {
-  return Number.isInteger(value) ? String(value) : parseFloat(value.toFixed(2)).toString()
 }
 
 export default function ServingEditSheet({ item, idx, onConfirm, onClose }: ServingEditSheetProps) {
@@ -31,6 +26,31 @@ export default function ServingEditSheet({ item, idx, onConfirm, onClose }: Serv
       ? Math.max(1, Math.round(currentGrams / labelGrams))
       : 1
   })
+
+  const servingTarget = item.foodSource
+    ? {
+        name: item.foodSource.name,
+        sourceType: item.foodSource.sourceType,
+        defaultServingAmount: item.foodSource.defaultServingAmount,
+        defaultServingUnit: item.foodSource.defaultServingUnit,
+        labelPortionGrams: item.foodSource.labelPortionGrams,
+        pieceCount: item.foodSource.pieceCount,
+        pieceLabel: item.foodSource.pieceLabel,
+        totalMassG: item.foodSource.totalMassG,
+      }
+    : {
+        name: getItemLabel(item),
+        sourceType: getItemSourceType(item) ?? undefined,
+        defaultServingAmount: item.snapshotServingAmount ?? null,
+        defaultServingUnit: item.snapshotServingUnit ?? null,
+        labelPortionGrams: null,
+        pieceCount: null,
+        pieceLabel:
+          item.snapshotServingUnit && item.snapshotServingUnit !== 'g'
+            ? item.snapshotServingUnit
+            : null,
+        totalMassG: null,
+      }
 
   const liveKcal = useMemo(() => {
     if (item.foodSource) {
@@ -90,20 +110,22 @@ export default function ServingEditSheet({ item, idx, onConfirm, onClose }: Serv
     onConfirm(idx, pendingGrams / 100, item.compositeQuantityMode)
   }
 
+  const isCompositeWithPieces = item.foodSource?.kind === 'composite'
+    && (item.foodSource.pieceCount ?? 0) > 0
+    && (item.foodSource.totalMassG ?? 0) > 0
+
   const footer = (
     <button
       type="button"
       onClick={handleUpdate}
       disabled={
-        item.foodSource
-          ? pendingMode === 'pieces'
-            ? pendingGrams <= 0
-            : massInputMode === 'portions'
-              && item.foodSource.labelPortionGrams
-              && item.foodSource.labelPortionGrams > 0
-              ? pendingPortions <= 0
-              : pendingGrams <= 0
-          : pendingGrams <= 0
+        pendingMode === 'pieces'
+          ? pendingGrams <= 0
+          : massInputMode === 'portions'
+            && servingTarget.labelPortionGrams
+            && servingTarget.labelPortionGrams > 0
+            ? pendingPortions <= 0
+            : pendingGrams <= 0
       }
       className="app-button-primary w-full py-3"
     >
@@ -111,88 +133,36 @@ export default function ServingEditSheet({ item, idx, onConfirm, onClose }: Serv
     </button>
   )
 
-  if (item.foodSource) {
-    const isCompositeWithPieces = item.foodSource.kind === 'composite'
-      && (item.foodSource.pieceCount ?? 0) > 0
-      && (item.foodSource.totalMassG ?? 0) > 0
-
-    return (
-      <BottomSheet
-        onClose={onClose}
-        title={getItemLabel(item)}
-        className="h-[85vh] sm:h-[600px]"
-        footer={footer}
-      >
-        <ServingStep
-          foodSource={item.foodSource}
-          grams={pendingGrams}
-          portions={pendingPortions}
-          liveKcal={liveKcal}
-          onGramsChange={setPendingGrams}
-          onPortionsChange={setPendingPortions}
-          massInputMode={massInputMode}
-          onMassInputModeChange={(mode) => {
-            setMassInputMode(mode)
-            const labelGrams = item.foodSource?.labelPortionGrams
-            if (mode === 'portions' && labelGrams && labelGrams > 0) {
-              setPendingPortions(Math.max(1, Math.round(pendingGrams / labelGrams)))
-            } else if (mode === 'grams' && labelGrams && labelGrams > 0) {
-              setPendingGrams(Math.round(pendingPortions * labelGrams))
-            }
-          }}
-          onBack={onClose}
-          isUpdate
-          compositeMode={pendingMode}
-          onModeChange={setPendingMode}
-          showModeToggle={isCompositeWithPieces}
-        />
-      </BottomSheet>
-    )
-  }
-
-  const pieceUnit = item.snapshotServingUnit && item.snapshotServingUnit !== 'g'
-    ? item.snapshotServingUnit
-    : 'pc'
-
   return (
     <BottomSheet
       onClose={onClose}
       title={getItemLabel(item)}
-      className="h-[480px] sm:h-[440px]"
+      className="h-[85vh] sm:h-[600px]"
       footer={footer}
     >
-      <div className="flex flex-1 flex-col items-center justify-center gap-8 px-8 py-6">
-        <div className="text-center">
-          <p className="text-6xl font-bold tabular-nums text-[var(--app-text-primary)] leading-none">
-            {liveKcal}
-          </p>
-          <p className="mt-2 text-sm text-[var(--app-text-muted)]">kcal</p>
-        </div>
-
-        <div className="flex flex-col items-center gap-2">
-          <GramInput
-            grams={pendingGrams}
-            onChange={setPendingGrams}
-            showSteppers
-            step={item.compositeQuantityMode === 'pieces' ? 1 : 10}
-            {...(item.compositeQuantityMode === 'pieces'
-              ? {
-                  unitSuffix: pieceUnit,
-                  quantityAriaLabel: 'Pieces',
-                }
-              : {})}
-          />
-          {item.compositeQuantityMode === 'pieces' ? (
-            <p className="text-xs text-[var(--app-text-subtle)]">
-              {formatAmount(pendingGrams)} {pieceUnit}
-            </p>
-          ) : (
-            <p className="text-xs text-[var(--app-text-subtle)]">
-              {formatAmount(pendingGrams)}g
-            </p>
-          )}
-        </div>
-      </div>
+      <ServingStep
+        target={servingTarget}
+        grams={pendingGrams}
+        portions={pendingPortions}
+        liveKcal={liveKcal}
+        onGramsChange={setPendingGrams}
+        onPortionsChange={setPendingPortions}
+        massInputMode={massInputMode}
+        onMassInputModeChange={(mode) => {
+          setMassInputMode(mode)
+          const labelGrams = servingTarget.labelPortionGrams
+          if (mode === 'portions' && labelGrams && labelGrams > 0) {
+            setPendingPortions(Math.max(1, Math.round(pendingGrams / labelGrams)))
+          } else if (mode === 'grams' && labelGrams && labelGrams > 0) {
+            setPendingGrams(Math.round(pendingPortions * labelGrams))
+          }
+        }}
+        onBack={onClose}
+        isUpdate
+        compositeMode={pendingMode}
+        onModeChange={setPendingMode}
+        showModeToggle={Boolean(isCompositeWithPieces)}
+      />
     </BottomSheet>
   )
 }

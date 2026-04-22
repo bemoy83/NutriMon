@@ -563,7 +563,16 @@ export default function MealSheet({
         >
           {sheetView === 'serving' && servingTarget && (
             <ServingStep
-              foodSource={servingTarget}
+              target={{
+                name: servingTarget.name,
+                sourceType: servingTarget.sourceType,
+                defaultServingAmount: servingTarget.defaultServingAmount,
+                defaultServingUnit: servingTarget.defaultServingUnit,
+                labelPortionGrams: servingTarget.labelPortionGrams,
+                pieceCount: servingTarget.pieceCount,
+                pieceLabel: servingTarget.pieceLabel,
+                totalMassG: servingTarget.totalMassG,
+              }}
               grams={pendingGrams}
               portions={pendingPortions}
               liveKcal={servingLiveKcal}

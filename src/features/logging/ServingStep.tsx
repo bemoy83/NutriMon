@@ -1,10 +1,20 @@
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import GramInput from '@/components/ui/GramInput'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
-import type { FoodSource } from '@/types/domain'
+
+export interface ServingStepTarget {
+  name: string
+  sourceType?: 'user_product' | 'catalog_item'
+  defaultServingAmount: number | null
+  defaultServingUnit: string | null
+  labelPortionGrams: number | null
+  pieceCount: number | null
+  pieceLabel: string | null
+  totalMassG: number | null
+}
 
 export interface ServingStepProps {
-  foodSource: FoodSource
+  target: ServingStepTarget
   grams: number
   portions: number
   liveKcal: number
@@ -20,7 +30,7 @@ export interface ServingStepProps {
 }
 
 export default function ServingStep({
-  foodSource,
+  target,
   grams,
   portions,
   liveKcal,
@@ -36,16 +46,16 @@ export default function ServingStep({
 }: ServingStepProps) {
   void isUpdate
 
-  const isPieceMode = compositeMode === 'pieces' && showModeToggle
-  const gramsPerPiece = foodSource.totalMassG && foodSource.pieceCount && foodSource.pieceCount > 0
-    ? foodSource.totalMassG / foodSource.pieceCount
+  const isPieceMode = compositeMode === 'pieces'
+  const gramsPerPiece = target.totalMassG && target.pieceCount && target.pieceCount > 0
+    ? target.totalMassG / target.pieceCount
     : null
 
-  const labelPortionG = foodSource.labelPortionGrams
-  const showLabelPortionTabs = Boolean(labelPortionG && labelPortionG > 0 && !showModeToggle)
+  const labelPortionG = target.labelPortionGrams
+  const showLabelPortionTabs = Boolean(labelPortionG && labelPortionG > 0 && !showModeToggle && !isPieceMode)
   const portionStepperSuffix =
-    foodSource.defaultServingUnit?.trim() && foodSource.defaultServingUnit !== 'g'
-      ? foodSource.defaultServingUnit
+    target.defaultServingUnit?.trim() && target.defaultServingUnit !== 'g'
+      ? target.defaultServingUnit
       : 'portion'
 
   function handleCompositeModeSwitch(mode: 'grams' | 'pieces') {
@@ -74,8 +84,12 @@ export default function ServingStep({
           </svg>
         </button>
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <FoodSourceBadge sourceType={foodSource.sourceType} />
-          <p className="text-sm font-semibold text-[var(--app-text-primary)] truncate">{foodSource.name}</p>
+          {target.sourceType ? (
+            <FoodSourceBadge sourceType={target.sourceType} />
+          ) : (
+            <span className="h-2 w-2 flex-none rounded-full bg-[var(--app-text-muted)] opacity-35" aria-hidden="true" />
+          )}
+          <p className="text-sm font-semibold text-[var(--app-text-primary)] truncate">{target.name}</p>
         </div>
       </div>
 
@@ -122,7 +136,7 @@ export default function ServingStep({
               onChange={onGramsChange}
               showSteppers
               step={1}
-              unitSuffix={foodSource.pieceLabel ?? 'pc'}
+              unitSuffix={target.pieceLabel ?? 'pc'}
               quantityAriaLabel="Pieces"
             />
           ) : showLabelPortionTabs && massInputMode === 'portions' ? (
@@ -137,20 +151,26 @@ export default function ServingStep({
           ) : (
             <GramInput grams={grams} onChange={onGramsChange} showSteppers step={10} />
           )}
-          {isPieceMode && gramsPerPiece && foodSource.pieceLabel ? (
-            <p className="text-xs text-[var(--app-text-subtle)]">
-              1 {foodSource.pieceLabel} = {Math.round(gramsPerPiece)}g
-            </p>
+          {isPieceMode ? (
+            gramsPerPiece && target.pieceLabel ? (
+              <p className="text-xs text-[var(--app-text-subtle)]">
+                1 {target.pieceLabel} = {Math.round(gramsPerPiece)}g
+              </p>
+            ) : target.pieceLabel ? (
+              <p className="text-xs text-[var(--app-text-subtle)]">
+                Unit: {target.pieceLabel}
+              </p>
+            ) : null
           ) : showLabelPortionTabs && massInputMode === 'portions' && labelPortionG ? (
             <p className="text-xs text-[var(--app-text-subtle)]">
               1 portion = {Math.round(labelPortionG)}g (from label)
             </p>
           ) : (
-            foodSource.defaultServingUnit &&
-            foodSource.defaultServingUnit !== 'g' &&
-            foodSource.defaultServingAmount != null && (
+            target.defaultServingUnit &&
+            target.defaultServingUnit !== 'g' &&
+            target.defaultServingAmount != null && (
               <p className="text-xs text-[var(--app-text-subtle)]">
-                1 {foodSource.defaultServingUnit} = {foodSource.defaultServingAmount}g
+                1 {target.defaultServingUnit} = {target.defaultServingAmount}g
               </p>
             )
           )}

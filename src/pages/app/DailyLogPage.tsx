@@ -6,7 +6,7 @@ import { useDailyLogDerived } from '@/features/logging/useDailyLogDerived'
 import { useLatestFallbackMetrics } from '@/features/logging/useLatestFallbackMetrics'
 import MealSlots from '@/features/logging/MealSlots'
 import { getTodayInTimezone } from '@/lib/date'
-import type { BattlePrepSummary, CreaturePreview, FinalizeDayResponse, Meal } from '@/types/domain'
+import type { BattlePrepSummary, CreaturePreview, FinalizeDayResponse } from '@/types/domain'
 import { buildMealSnapshotItems } from '@/features/logging/mealPayloads'
 import { restoreMealFromSnapshot } from '@/features/logging/api'
 import { getDefaultMealType, type MealType } from '@/lib/mealType'
@@ -169,8 +169,10 @@ export default function DailyLogPage() {
     if (handledMealEditLocationKeyRef.current === location.key) return
     handledMealEditLocationKeyRef.current = location.key
 
-    setCreaturePreviewState({ date: logDate, preview: mapCreaturePreviewPayload(action.result.creature_preview ?? null) })
-    setBattlePrepState({ date: logDate, summary: null })
+    queueMicrotask(() => {
+      setCreaturePreviewState({ date: logDate, preview: mapCreaturePreviewPayload(action.result.creature_preview ?? null) })
+      setBattlePrepState({ date: logDate, summary: null })
+    })
 
     if (action.kind === 'deleted') {
       showUndo({

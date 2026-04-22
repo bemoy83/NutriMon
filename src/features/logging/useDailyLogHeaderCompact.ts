@@ -69,6 +69,8 @@ export function useDailyLogHeaderCompact({
       scrollRoot.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onScroll)
     }
+    // `compact` is read for baseline re-seeding; listing it would re-bind listeners every toggle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional stale read for scroll geometry
   }, [dateSticky, fullHeader, resetKey, scrollAnchor, scrollRoot])
 
   return scrollRoot && dateSticky && fullHeader ? compact : false

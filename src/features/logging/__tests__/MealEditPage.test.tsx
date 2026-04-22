@@ -9,6 +9,7 @@ const updateMealWithItemsMock = vi.fn()
 const deleteMealMock = vi.fn()
 const invalidateDailyLogMock = vi.fn()
 const invalidateProductsMock = vi.fn()
+const useFoodSourceMapMock = vi.fn()
 
 vi.mock('@/features/logging/useDailyLogCore', () => ({
   useDailyLogCore: (...args: unknown[]) => useDailyLogCoreMock(...args),
@@ -25,6 +26,10 @@ vi.mock('@/features/logging/useDailyLog', () => ({
 
 vi.mock('@/features/logging/queryInvalidation', () => ({
   useInvalidateProductQueries: () => invalidateProductsMock,
+}))
+
+vi.mock('@/features/logging/useFoodSources', () => ({
+  useFoodSourceMap: (...args: unknown[]) => useFoodSourceMapMock(...args),
 }))
 
 vi.mock('@/features/logging/MealSheet', () => ({
@@ -151,6 +156,29 @@ describe('MealEditPage', () => {
     vi.clearAllMocks()
     invalidateDailyLogMock.mockReset()
     invalidateProductsMock.mockReset()
+    useFoodSourceMapMock.mockReturnValue({
+      data: {
+        'user_product:product-1': {
+          sourceType: 'user_product',
+          sourceId: 'product-1',
+          name: 'Oats',
+          calories: 100,
+          caloriesPer100g: 100,
+          proteinG: 10,
+          carbsG: 50,
+          fatG: 5,
+          defaultServingAmount: 40,
+          defaultServingUnit: 'portion',
+          labelPortionGrams: 40,
+          useCount: 0,
+          lastUsedAt: null,
+          kind: 'simple',
+          pieceCount: null,
+          pieceLabel: null,
+          totalMassG: null,
+        },
+      },
+    })
     updateMealWithItemsMock.mockResolvedValue({
       meal: {
         id: 'meal-1',
@@ -299,6 +327,43 @@ describe('MealEditPage', () => {
 
     expect(await screen.findByText('200g · 200 kcal')).toBeInTheDocument()
     expect(screen.getAllByText('Oats')).toHaveLength(1)
+  })
+
+  it('reuses the serving step UI for snapshot-only meal items', async () => {
+    useDailyLogCoreMock.mockReturnValue({
+      data: {
+        dailyLog: null,
+        meals: [meal],
+      },
+      isLoading: false,
+    })
+
+    renderEditor()
+
+    fireEvent.click(screen.getByText('Deleted Toast (deleted)').closest('button')!)
+
+    expect(screen.getByRole('dialog', { name: 'Deleted Toast (deleted)' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Back to food list' })).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Pieces' })).toBeInTheDocument()
+    expect(screen.getByText('Unit: slice')).toBeInTheDocument()
+  })
+
+  it('hydrates linked products so serving step shows the segmented picker', async () => {
+    useDailyLogCoreMock.mockReturnValue({
+      data: {
+        dailyLog: null,
+        meals: [meal],
+      },
+      isLoading: false,
+    })
+
+    renderEditor()
+
+    fireEvent.click(screen.getByText('Oats').closest('button')!)
+
+    expect(screen.getByRole('dialog', { name: 'Oats' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Grams' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Portions' })).toBeInTheDocument()
   })
 
   it('saves with the existing update payload shape and navigates back with state', async () => {

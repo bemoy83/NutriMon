@@ -16,6 +16,7 @@ import {
 import type { DailyLogMealEditState } from '@/features/logging/mealEditNavigation'
 import type { Item } from '@/features/logging/types'
 import { useInvalidateProductQueries } from '@/features/logging/queryInvalidation'
+import { useFoodSourceMap } from '@/features/logging/useFoodSources'
 import { useInvalidateDailyLog } from '@/features/logging/useDailyLog'
 import { useDailyLogCore } from '@/features/logging/useDailyLogCore'
 import { getDefaultMealType, getMealTypeTheme, MEAL_TYPES, type MealType } from '@/lib/mealType'
@@ -94,6 +95,17 @@ export default function MealEditPage() {
   const hydratedMealIdRef = useRef<string | null>(null)
   const mealTheme = getMealTypeTheme(mealType)
   const totalKcal = items.reduce((sum, item) => sum + getItemKcal(item), 0)
+  const missingProductIds = [...new Set(
+    items
+      .filter((item) => !item.foodSource && item.productId)
+      .map((item) => item.productId!),
+  )]
+  const missingCatalogIds = [...new Set(
+    items
+      .filter((item) => !item.foodSource && item.catalogItemId)
+      .map((item) => item.catalogItemId!),
+  )]
+  const sourceMapQuery = useFoodSourceMap(missingProductIds, missingCatalogIds)
 
   useEffect(() => {
     if (!meal) return
@@ -104,6 +116,28 @@ export default function MealEditPage() {
     setSubmitError(null)
     hydratedMealIdRef.current = meal.id
   }, [meal])
+
+  useEffect(() => {
+    const sourceMap = sourceMapQuery.data
+    if (!sourceMap) return
+    setItems((prev) => {
+      let changed = false
+      const next = prev.map((item) => {
+        if (item.foodSource) return item
+        const sourceKey = item.productId
+          ? `user_product:${item.productId}`
+          : item.catalogItemId
+            ? `catalog_item:${item.catalogItemId}`
+            : null
+        if (!sourceKey) return item
+        const foodSource = sourceMap[sourceKey]
+        if (!foodSource) return item
+        changed = true
+        return { ...item, foodSource }
+      })
+      return changed ? next : prev
+    })
+  }, [sourceMapQuery.data])
 
   if (coreQuery.isLoading) return <LoadingState fullScreen />
   if (!meal) return <Navigate to={`/app/log/${date}`} replace />
