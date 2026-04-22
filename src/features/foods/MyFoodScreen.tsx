@@ -4,12 +4,12 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/app/providers/auth'
 import { getUserProducts } from '@/features/foods/api'
 import LoadingState from '@/components/ui/LoadingState'
+import { MacroPills } from '@/components/ui/MacroPills'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
 import type { Product } from '@/types/domain'
 
-function fmtMacro(n: number | null): string {
-  if (n === null) return '—'
-  return n < 10 ? n.toFixed(1) : Math.round(n).toString()
+function formatPer100Grams(n: number): string {
+  return n < 10 ? n.toFixed(1) : String(Math.round(n))
 }
 
 export default function MyFoodScreen() {
@@ -111,13 +111,12 @@ export default function MyFoodScreen() {
                       {product.name}
                     </p>
                     {hasMacros ? (
-                      <p className="text-xs">
-                        <span style={{ color: 'var(--app-macro-protein)' }}>P {fmtMacro(p)}g</span>
-                        <span style={{ color: 'var(--app-text-muted)' }}> · </span>
-                        <span style={{ color: 'var(--app-macro-carbs)' }}>C {fmtMacro(c)}g</span>
-                        <span style={{ color: 'var(--app-text-muted)' }}> · </span>
-                        <span style={{ color: 'var(--app-macro-fat)' }}>F {fmtMacro(f)}g</span>
-                      </p>
+                      <MacroPills
+                        className="mt-0.5"
+                        chips={{ p, c, f }}
+                        placeholderForNull="—"
+                        formatGrams={formatPer100Grams}
+                      />
                     ) : (
                       <p className="text-xs" style={{ color: 'var(--app-text-muted)' }}>
                         {product.calories} kcal

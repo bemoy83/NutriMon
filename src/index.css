@@ -51,6 +51,9 @@
   --app-macro-protein: #8B5CF6;
   --app-macro-carbs: #06B6D4;
   --app-macro-fat: #F59E0B;
+  --app-macro-protein-bg: #EDE9FE;
+  --app-macro-carbs-bg: #CFFAFE;
+  --app-macro-fat-bg: #FEF3C7;
 
   /* Toast */
   --app-toast-bg: #1E293B;

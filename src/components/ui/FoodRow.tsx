@@ -1,10 +1,6 @@
 import type { ReactNode } from 'react'
-
-interface MacroChips {
-  p?: number | null
-  c?: number | null
-  f?: number | null
-}
+import { MacroPills } from '@/components/ui/MacroPills'
+import type { MacroChips } from '@/components/ui/MacroPills'
 
 interface FoodRowProps {
   name: string
@@ -38,30 +34,6 @@ function ChevronCircle() {
   )
 }
 
-function MacroPills({ chips }: { chips: MacroChips }) {
-  const items = [
-    { key: 'p', label: 'P', val: chips.p, color: 'var(--app-macro-protein)', bg: '#EDE9FE' },
-    { key: 'c', label: 'C', val: chips.c, color: 'var(--app-macro-carbs)', bg: '#CFFAFE' },
-    { key: 'f', label: 'F', val: chips.f, color: 'var(--app-macro-fat)', bg: '#FEF3C7' },
-  ].filter((i) => i.val != null && i.val > 0)
-
-  if (items.length === 0) return null
-
-  return (
-    <div className="flex gap-1.5 mt-1">
-      {items.map(({ key, label, val, color, bg }) => (
-        <span
-          key={key}
-          className="text-[10px] font-bold rounded px-1 py-px"
-          style={{ color, background: bg }}
-        >
-          {label} {Math.round(val!)}g
-        </span>
-      ))}
-    </div>
-  )
-}
-
 export default function FoodRow({
   name,
   subtitle,
@@ -85,7 +57,7 @@ export default function FoodRow({
           {leading && <div className="mb-0.5">{leading}</div>}
           <p className="text-sm text-[var(--app-text-primary)] truncate">{name}</p>
           <p className="text-xs text-[var(--app-text-muted)]">{subtitle}</p>
-          {macroChips && <MacroPills chips={macroChips} />}
+          {macroChips && <MacroPills chips={macroChips} className="mt-1" />}
         </button>
         <button
           type="button"
@@ -114,7 +86,7 @@ export default function FoodRow({
       <div className="flex-1 min-w-0">
         <p className="text-[var(--app-text-primary)] text-sm truncate">{name}</p>
         <p className="text-[var(--app-text-muted)] text-xs">{subtitle}</p>
-        {macroChips && <MacroPills chips={macroChips} />}
+        {macroChips && <MacroPills chips={macroChips} className="mt-1" />}
       </div>
       {indicator}
     </button>
