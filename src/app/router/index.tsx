@@ -33,13 +33,14 @@ const routes = [
           {
             element: <RequireOnboarding />,
             children: [
-              {
-                element: <AppShell />,
-                children: [
-                  { path: '/app', element: <AppIndexRedirect /> },
-                  { path: '/app/log/:date', element: <DailyLogPage /> },
-                  { path: '/app/creature', lazy: () => import('@/app/router/route-modules/creature') },
-                  { path: '/app/battle', lazy: () => import('@/app/router/route-modules/battle-hub') },
+                  {
+                    element: <AppShell />,
+                    children: [
+                      { path: '/app', element: <AppIndexRedirect /> },
+                      { path: '/app/log/:date', element: <DailyLogPage /> },
+                      { path: '/app/log/:date/meal/:mealId/edit', lazy: () => import('@/app/router/route-modules/meal-edit') },
+                      { path: '/app/creature', lazy: () => import('@/app/router/route-modules/creature') },
+                      { path: '/app/battle', lazy: () => import('@/app/router/route-modules/battle-hub') },
                   { path: '/app/battle/arenas/:arenaId', lazy: () => import('@/app/router/route-modules/battle-arena-detail') },
                   { path: '/app/weight', lazy: () => import('@/app/router/route-modules/weight') },
                   { path: '/app/my-food', lazy: () => import('@/app/router/route-modules/my-food') },

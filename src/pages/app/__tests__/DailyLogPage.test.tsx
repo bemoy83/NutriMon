@@ -5,6 +5,7 @@ import DailyLogPage from '../DailyLogPage'
 import type { Meal } from '@/types/domain'
 import type { MealType } from '@/lib/mealType'
 import type { DeleteMealResult, MealMutationResult } from '@/types/database'
+import type { DailyLogMealEditState } from '@/features/logging/mealEditNavigation'
 
 const useDailyLogCoreMock = vi.fn()
 const useDailyLogDerivedMock = vi.fn()
@@ -18,7 +19,6 @@ const repeatLastMealMock = vi.fn()
 const deleteMealMock = vi.fn()
 const deleteMealItemMock = vi.fn()
 const restoreMealFromSnapshotMock = vi.fn()
-const updateMealWithItemsMock = vi.fn()
 const getTodayInTimezoneMock = vi.fn()
 const isTodayMock = vi.fn()
 
@@ -74,130 +74,79 @@ vi.mock('@/features/logging/api', () => ({
   deleteMealItem: (...args: unknown[]) => deleteMealItemMock(...args),
   repeatLastMeal: (...args: unknown[]) => repeatLastMealMock(...args),
   restoreMealFromSnapshot: (...args: unknown[]) => restoreMealFromSnapshotMock(...args),
-  updateMealWithItems: (...args: unknown[]) => updateMealWithItemsMock(...args),
 }))
 
 vi.mock('@/features/logging/MealSheet', () => ({
   default: ({
-    mode,
-    meal,
-    onSaved,
     onAdded,
   }: {
-    mode: 'add' | 'edit'
-    meal?: Meal
-    onSaved?: (meal: Meal, result: MealMutationResult) => void
     onAdded?: (result: MealMutationResult) => void
   }) => {
-    if (mode === 'add') {
-      return (
-        <div>
-          <div>quick-add-sheet</div>
-          <button
-            type="button"
-            onClick={() =>
-              onAdded?.({
-                meal: {
-                  id: 'meal-lunch',
-                  daily_log_id: 'log-1',
-                  logged_at: '2026-01-05T12:00:00.000Z',
-                  meal_type: 'Lunch',
-                  meal_name: null,
-                  total_calories: 220,
-                  item_count: 1,
-                },
-                meal_items: [],
-                inserted_meal_item_ids: ['appended-item-1', 'appended-item-2'],
-                daily_log: {
-                  id: 'log-1',
-                  user_id: 'user-1',
-                  log_date: '2026-01-05',
-                  total_calories: 220,
-                  meal_count: 1,
-                  is_finalized: false,
-                  finalized_at: null,
-                  created_at: '2026-01-05T00:00:00.000Z',
-                  updated_at: '2026-01-05T00:00:00.000Z',
-                },
-              })
-            }
-          >
-            simulate-append-add
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              onAdded?.({
-                meal: {
-                  id: 'meal-new',
-                  daily_log_id: 'log-1',
-                  logged_at: '2026-01-05T08:00:00.000Z',
-                  meal_type: 'Breakfast',
-                  meal_name: null,
-                  total_calories: 100,
-                  item_count: 1,
-                },
-                meal_items: [],
-                daily_log: {
-                  id: 'log-1',
-                  user_id: 'user-1',
-                  log_date: '2026-01-05',
-                  total_calories: 100,
-                  meal_count: 1,
-                  is_finalized: false,
-                  finalized_at: null,
-                  created_at: '2026-01-05T00:00:00.000Z',
-                  updated_at: '2026-01-05T00:00:00.000Z',
-                },
-              })
-            }
-          >
-            simulate-new-meal-no-ids
-          </button>
-        </div>
-      )
-    }
     return (
-      <button
-        type="button"
-        onClick={() =>
-          onSaved?.(meal!, {
-            meal: {
-              id: meal!.id,
-              daily_log_id: meal!.dailyLogId,
-              logged_at: meal!.loggedAt,
-              meal_type: meal!.mealType,
-              meal_name: meal!.mealName,
-              total_calories: meal!.totalCalories,
-              item_count: meal!.itemCount,
-            },
-            meal_items: [],
-            daily_log: {
-              id: 'log-1',
-              user_id: 'user-1',
-              log_date: '2026-01-05',
-              total_calories: 520,
-              meal_count: 1,
-              is_finalized: false,
-              finalized_at: null,
-              created_at: '2026-01-05T00:00:00.000Z',
-              updated_at: '2026-01-05T00:00:00.000Z',
-            },
-            creature_preview: {
-              tomorrow_readiness_score: 71,
-              tomorrow_readiness_band: 'ready',
-              projected_strength: 69,
-              projected_resilience: 68,
-              projected_momentum: 72,
-              projected_vitality: 94,
-              meal_rating: 'strong',
-              meal_feedback_message: 'Preview updated after edit.',
-            },
-          })
-        }
-      >
-        save-edit
-      </button>
+      <div>
+        <div>quick-add-sheet</div>
+        <button
+          type="button"
+          onClick={() =>
+            onAdded?.({
+              meal: {
+                id: 'meal-lunch',
+                daily_log_id: 'log-1',
+                logged_at: '2026-01-05T12:00:00.000Z',
+                meal_type: 'Lunch',
+                meal_name: null,
+                total_calories: 220,
+                item_count: 1,
+              },
+              meal_items: [],
+              inserted_meal_item_ids: ['appended-item-1', 'appended-item-2'],
+              daily_log: {
+                id: 'log-1',
+                user_id: 'user-1',
+                log_date: '2026-01-05',
+                total_calories: 220,
+                meal_count: 1,
+                is_finalized: false,
+                finalized_at: null,
+                created_at: '2026-01-05T00:00:00.000Z',
+                updated_at: '2026-01-05T00:00:00.000Z',
+              },
+            })
+          }
+        >
+          simulate-append-add
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            onAdded?.({
+              meal: {
+                id: 'meal-new',
+                daily_log_id: 'log-1',
+                logged_at: '2026-01-05T08:00:00.000Z',
+                meal_type: 'Breakfast',
+                meal_name: null,
+                total_calories: 100,
+                item_count: 1,
+              },
+              meal_items: [],
+              daily_log: {
+                id: 'log-1',
+                user_id: 'user-1',
+                log_date: '2026-01-05',
+                total_calories: 100,
+                meal_count: 1,
+                is_finalized: false,
+                finalized_at: null,
+                created_at: '2026-01-05T00:00:00.000Z',
+                updated_at: '2026-01-05T00:00:00.000Z',
+              },
+            })
+          }
+        >
+          simulate-new-meal-no-ids
+        </button>
+      </div>
     )
   },
 }))
@@ -317,9 +266,9 @@ const baseMeal: Meal = {
   ],
 }
 
-function renderPage() {
+function renderPage(initialEntries: Array<string | { pathname: string; state?: DailyLogMealEditState }> = ['/app/log/2026-01-05']) {
   return render(
-    <MemoryRouter initialEntries={['/app/log/2026-01-05']}>
+    <MemoryRouter initialEntries={initialEntries}>
       <Routes>
         <Route path="/app/log/:date" element={<DailyLogPage />} />
       </Routes>
@@ -381,7 +330,6 @@ describe('DailyLogPage', () => {
       },
     })
     restoreMealFromSnapshotMock.mockResolvedValue({})
-    updateMealWithItemsMock.mockResolvedValue({})
     useProfileSummaryMock.mockReturnValue({
       data: {
         timezone: 'UTC',
@@ -563,10 +511,7 @@ describe('DailyLogPage', () => {
     })
   })
 
-  it('does not offer undo after editing a meal', async () => {
-    const invalidate = vi.fn()
-    useInvalidateDailyLogMock.mockReturnValue(invalidate)
-
+  it('restores creature preview from meal edit save navigation state', async () => {
     useDailyLogCoreMock.mockReturnValue({
       data: {
         dailyLog: {
@@ -585,14 +530,138 @@ describe('DailyLogPage', () => {
       isLoading: false,
     })
 
-    renderPage()
-    fireEvent.click(screen.getByText('trigger-edit'))
-    fireEvent.click(await screen.findByText('save-edit'))
+    const state: DailyLogMealEditState = {
+      mealEditAction: {
+        kind: 'saved',
+        logDate: '2026-01-05',
+        result: {
+          meal: {
+            id: baseMeal.id,
+            daily_log_id: baseMeal.dailyLogId,
+            logged_at: baseMeal.loggedAt,
+            meal_type: baseMeal.mealType,
+            meal_name: baseMeal.mealName,
+            total_calories: baseMeal.totalCalories,
+            item_count: baseMeal.itemCount,
+          },
+          meal_items: [],
+          daily_log: {
+            id: 'log-1',
+            user_id: 'user-1',
+            log_date: '2026-01-05',
+            total_calories: 520,
+            meal_count: 1,
+            is_finalized: false,
+            finalized_at: null,
+            created_at: '2026-01-05T00:00:00.000Z',
+            updated_at: '2026-01-05T00:00:00.000Z',
+          },
+          creature_preview: {
+            tomorrow_readiness_score: 71,
+            tomorrow_readiness_band: 'ready',
+            projected_strength: 69,
+            projected_resilience: 68,
+            projected_momentum: 72,
+            projected_vitality: 94,
+            meal_rating: 'strong',
+            meal_feedback_message: 'Preview updated after edit.',
+          },
+        },
+      },
+    }
 
-    expect(screen.queryByText('Meal updated')).not.toBeInTheDocument()
+    renderPage([{ pathname: '/app/log/2026-01-05', state }])
+
+    expect(await screen.findByText('Preview updated after edit.')).toBeInTheDocument()
     expect(screen.queryByText('Undo')).not.toBeInTheDocument()
-    expect(updateMealWithItemsMock).not.toHaveBeenCalled()
-    expect(invalidate).toHaveBeenCalledWith('2026-01-05')
+  })
+
+  it('restores undo state from meal edit delete navigation state', async () => {
+    useDailyLogCoreMock.mockReturnValue({
+      data: {
+        dailyLog: {
+          id: 'log-1',
+          userId: 'user-1',
+          logDate: '2026-01-05',
+          totalCalories: 520,
+          mealCount: 1,
+          isFinalized: false,
+          finalizedAt: null,
+          createdAt: '2026-01-05T00:00:00.000Z',
+          updatedAt: '2026-01-05T00:00:00.000Z',
+        },
+        meals: [baseMeal],
+      },
+      isLoading: false,
+    })
+
+    const state: DailyLogMealEditState = {
+      mealEditAction: {
+        kind: 'deleted',
+        logDate: '2026-01-05',
+        deletedMeal: baseMeal,
+        result: {
+          deleted_meal_id: baseMeal.id,
+          daily_log: {
+            id: 'log-1',
+            user_id: 'user-1',
+            log_date: '2026-01-05',
+            total_calories: 0,
+            meal_count: 0,
+            is_finalized: false,
+            finalized_at: null,
+            created_at: '2026-01-05T00:00:00.000Z',
+            updated_at: '2026-01-05T00:00:00.000Z',
+          },
+          creature_preview: {
+            tomorrow_readiness_score: 58,
+            tomorrow_readiness_band: 'building',
+            projected_strength: 56,
+            projected_resilience: 55,
+            projected_momentum: 59,
+            projected_vitality: 82,
+            meal_rating: 'solid',
+            meal_feedback_message: 'Preview updated after delete.',
+          },
+        },
+      },
+    }
+
+    renderPage([{ pathname: '/app/log/2026-01-05', state }])
+
+    expect(await screen.findByText('Meal deleted')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Undo'))
+
+    await waitFor(() => {
+      expect(restoreMealFromSnapshotMock).toHaveBeenCalledWith(
+        '2026-01-05',
+        '2026-01-05T08:30:00.000Z',
+        [
+          {
+            quantity: 1,
+            product_name_snapshot: 'Eggs',
+            calories_per_serving_snapshot: 150,
+            protein_g_snapshot: 12,
+            carbs_g_snapshot: 1,
+            fat_g_snapshot: 10,
+            serving_amount_snapshot: 2,
+            serving_unit_snapshot: 'pcs',
+          },
+          {
+            quantity: 1.5,
+            product_name_snapshot: 'Deleted Toast',
+            calories_per_serving_snapshot: 80,
+            protein_g_snapshot: 3,
+            carbs_g_snapshot: 15,
+            fat_g_snapshot: 1,
+            serving_amount_snapshot: 1,
+            serving_unit_snapshot: 'slice',
+          },
+        ],
+        'Breakfast',
+        null,
+      )
+    })
   })
 
   it('does not show undo after inline quick add (append)', async () => {

@@ -1,10 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MealSheet from '../MealSheet'
-import type { Meal } from '@/types/domain'
 
 const createMealWithItemsMock = vi.fn()
-const updateMealWithItemsMock = vi.fn()
 const deleteMealTemplateMock = vi.fn()
 const invalidateDailyLogMock = vi.fn()
 const invalidateProductsMock = vi.fn()
@@ -12,7 +10,6 @@ const invalidateTemplatesMock = vi.fn()
 
 vi.mock('../api', () => ({
   createMealWithItems: (...args: unknown[]) => createMealWithItemsMock(...args),
-  updateMealWithItems: (...args: unknown[]) => updateMealWithItemsMock(...args),
   deleteMealTemplate: (...args: unknown[]) => deleteMealTemplateMock(...args),
 }))
 
@@ -78,7 +75,7 @@ const mealMutationResult = {
   },
 }
 
-describe('MealSheet — add mode', () => {
+describe('MealSheet', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     createMealWithItemsMock.mockResolvedValue(mealMutationResult)
@@ -87,7 +84,6 @@ describe('MealSheet — add mode', () => {
   it('tapping a food opens the serving step with live kcal', async () => {
     render(
       <MealSheet
-        mode="add"
         logDate="2026-01-05"
         loggedAt="2026-01-05T08:00:00.000Z"
         onClose={vi.fn()}
@@ -96,8 +92,8 @@ describe('MealSheet — add mode', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'My oats' }))
-    // Serving step is now visible
-    expect(screen.getByText('220')).toBeInTheDocument() // 100g × 220kcal/100g = 220 kcal
+
+    expect(screen.getByText('220')).toBeInTheDocument()
     expect(screen.getByText('kcal')).toBeInTheDocument()
   })
 
@@ -107,7 +103,6 @@ describe('MealSheet — add mode', () => {
 
     render(
       <MealSheet
-        mode="add"
         logDate="2026-01-05"
         loggedAt="2026-01-05T08:00:00.000Z"
         onClose={onClose}
@@ -115,11 +110,8 @@ describe('MealSheet — add mode', () => {
       />,
     )
 
-    // Tap food → serving step
     fireEvent.click(screen.getByRole('button', { name: 'My oats' }))
-    // Confirm serving (default 100g)
     fireEvent.click(screen.getByRole('button', { name: 'Add to Breakfast' }))
-    // Back in browse, submit the meal
     fireEvent.click(screen.getByRole('button', { name: /Add to Breakfast · 1 item/ }))
 
     await waitFor(() => {
@@ -135,92 +127,33 @@ describe('MealSheet — add mode', () => {
       expect(onClose).toHaveBeenCalled()
     })
   })
-})
 
-const snapshotMeal: Meal = {
-  id: 'meal-1',
-  userId: 'user-1',
-  dailyLogId: 'log-1',
-  loggedAt: '2026-01-05T08:30:00.000Z',
-  mealType: null,
-  mealName: null,
-  totalCalories: 120,
-  itemCount: 1,
-  createdAt: '2026-01-05T08:30:00.000Z',
-  updatedAt: '2026-01-05T08:30:00.000Z',
-  items: [
-    {
-      id: 'item-1',
-      mealId: 'meal-1',
-      productId: null,
-      catalogItemId: null,
-      quantity: 1,
-      productNameSnapshot: 'Deleted toast',
-      caloriesPerServingSnapshot: 120,
-      proteinGSnapshot: 4,
-      carbsGSnapshot: 18,
-      fatGSnapshot: 2,
-      servingAmountSnapshot: 1,
-      servingUnitSnapshot: 'slice',
-      lineTotalCalories: 120,
-      createdAt: '2026-01-05T08:30:00.000Z',
-    },
-  ],
-}
-
-describe('MealSheet — edit mode', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    updateMealWithItemsMock.mockResolvedValue(mealMutationResult)
-  })
-
-  it('keeps snapshot-only items editable when saving', async () => {
-    const onSaved = vi.fn()
+  it('returns selected items without calling create when onItemsSelected is provided', async () => {
+    const onItemsSelected = vi.fn()
     const onClose = vi.fn()
 
     render(
       <MealSheet
-        mode="edit"
-        meal={snapshotMeal}
         logDate="2026-01-05"
-        loggedAt="2026-01-05T08:30:00.000Z"
+        loggedAt="2026-01-05T08:00:00.000Z"
         onClose={onClose}
-        onSaved={onSaved}
+        onItemsSelected={onItemsSelected}
       />,
     )
 
-    // Edit quantity in the cart bar (expand first). Non-`g` serving units use piece mode (aria-label "Pieces").
-    fireEvent.click(screen.getByRole('button', { name: /1 item/ }))
-    const quantityInput = screen.getByRole('textbox', { name: 'Pieces' })
-    fireEvent.focus(quantityInput)
-    fireEvent.change(quantityInput, { target: { value: '2' } })
-    fireEvent.keyDown(quantityInput, { key: 'Enter' })
-
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'My oats' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Breakfast' }))
+    fireEvent.click(screen.getByRole('button', { name: /Add to Breakfast · 1 item/ }))
 
     await waitFor(() => {
-      expect(updateMealWithItemsMock).toHaveBeenCalledWith(
-        'meal-1',
-        '2026-01-05T08:30:00.000Z',
-        [
-          {
-            meal_item_id: 'item-1',
-            quantity: 2,
-            product_name_snapshot: 'Deleted toast',
-            calories_per_serving_snapshot: 120,
-            protein_g_snapshot: 4,
-            carbs_g_snapshot: 18,
-            fat_g_snapshot: 2,
-            serving_amount_snapshot: 1,
-            serving_unit_snapshot: 'slice',
-          },
-        ],
-        'Breakfast',
-        null,
-      )
-      expect(invalidateDailyLogMock).toHaveBeenCalledWith('2026-01-05')
-      expect(invalidateProductsMock).toHaveBeenCalled()
-      expect(onSaved).toHaveBeenCalled()
+      expect(onItemsSelected).toHaveBeenCalledWith([
+        expect.objectContaining({
+          productId: 'product-1',
+          quantity: 1,
+          snapshotName: 'My oats',
+        }),
+      ])
+      expect(createMealWithItemsMock).not.toHaveBeenCalled()
       expect(onClose).toHaveBeenCalled()
     })
   })
