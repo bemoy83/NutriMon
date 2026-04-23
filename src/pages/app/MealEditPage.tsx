@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import LoadingState from '@/components/ui/LoadingState'
+import BottomSheet from '@/components/ui/BottomSheet'
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import MealTypeSelector from '@/components/ui/MealTypeSelector'
 import MealSheet from '@/features/logging/MealSheet'
@@ -94,6 +95,7 @@ export default function MealEditPage() {
   const [deleting, setDeleting] = useState(false)
   const [servingEditTarget, setServingEditTarget] = useState<{ item: Item; idx: number } | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
+  const [mealOptionsOpen, setMealOptionsOpen] = useState(false)
   const hydratedMealIdRef = useRef<string | null>(null)
   const mealTheme = getMealTypeTheme(mealType)
   const totalKcal = items.reduce((sum, item) => sum + getItemKcal(item), 0)
@@ -223,6 +225,7 @@ export default function MealEditPage() {
     const label = meal.mealName ?? meal.mealType ?? 'this meal'
     if (!window.confirm(`Delete "${label}"?`)) return
 
+    setMealOptionsOpen(false)
     setDeleting(true)
     setSubmitError(null)
     try {
@@ -245,32 +248,33 @@ export default function MealEditPage() {
   }
 
   return (
-    <div className="app-page min-h-full pb-28">
+    <div className="app-page min-h-full pb-40">
       <div className="sticky top-0 z-10" style={{ background: 'var(--app-bg)' }}>
-        <div className="flex items-center gap-2 px-4 pt-4 pb-3">
+        <div className="flex items-center px-4 pt-4 pb-3">
           <button
             type="button"
             onClick={() => navigate(`/app/log/${logDate}`)}
-            className="flex-none h-10 w-10 flex items-center justify-center rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-hover-overlay)]"
+            className="flex-none -ml-2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--app-surface)] text-[var(--app-brand)] transition-[transform,background-color] hover:bg-[var(--app-surface-muted)] active:scale-90"
             aria-label="Back to daily log"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--app-text-subtle)]">
-              Meal editor
-            </p>
-            <h1 className="truncate text-lg font-semibold text-[var(--app-text-primary)]">Edit meal</h1>
-          </div>
+          <h1 className="min-w-0 flex-1 truncate text-center text-lg font-semibold text-[var(--app-text-primary)]">
+            Edit meal
+          </h1>
           <button
             type="button"
-            disabled={submitting || items.length === 0}
-            onClick={handleSave}
-            className="app-button-primary px-4 py-2 text-sm"
+            onClick={() => setMealOptionsOpen(true)}
+            className="flex-none -mr-2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--app-surface)] text-[var(--app-brand)] transition-[transform,background-color] hover:bg-[var(--app-surface-muted)] active:scale-90"
+            aria-label="Meal options"
           >
-            {submitting ? 'Saving…' : 'Save'}
+            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="5" cy="12" r="2" />
+              <circle cx="12" cy="12" r="2" />
+              <circle cx="19" cy="12" r="2" />
+            </svg>
           </button>
         </div>
       </div>
@@ -287,12 +291,20 @@ export default function MealEditPage() {
           >
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--app-text-subtle)]">
-                  Overview
-                </p>
-                <h2 className="mt-1 truncate text-2xl font-bold tracking-tight text-[var(--app-text-primary)]">
-                  {mealName.trim() || mealType}
-                </h2>
+                <div className="min-w-0">
+                  <label htmlFor="meal-edit-title" className="sr-only">
+                    Meal name
+                  </label>
+                  <input
+                    id="meal-edit-title"
+                    type="text"
+                    value={mealName}
+                    onChange={(e) => setMealName(e.target.value)}
+                    placeholder={mealType}
+                    autoComplete="off"
+                    className="min-w-0 w-full truncate rounded-md bg-transparent px-0 py-0.5 text-2xl font-bold tracking-tight text-[var(--app-text-primary)] placeholder:text-[var(--app-text-muted)] outline-none ring-[var(--app-brand)] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                  />
+                </div>
                 <p className="mt-1 text-sm text-[var(--app-text-muted)]">
                   {items.length} item{items.length !== 1 ? 's' : ''} · {totalKcal} kcal
                 </p>
@@ -310,46 +322,22 @@ export default function MealEditPage() {
           </div>
 
           <div className="border-t border-[var(--app-border-muted)] px-4 py-4">
-            <label className="block">
-              <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--app-text-subtle)]">
-                Meal name
-              </span>
-              <input
-                type="text"
-                value={mealName}
-                onChange={(e) => setMealName(e.target.value)}
-                placeholder="Meal name (optional)"
-                className="app-input w-full px-3 py-2 text-sm"
-              />
-            </label>
-
-            <div className="mt-4 -mx-4 border-t border-[var(--app-border-muted)] pt-4">
-              <div className="px-4 pb-1">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--app-text-subtle)]">
-                  Meal type
-                </p>
-              </div>
-              <MealTypeSelector value={mealType} onChange={setMealType} />
+            <div className="pb-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--app-text-subtle)]">
+                Meal type
+              </p>
             </div>
+            <MealTypeSelector value={mealType} onChange={setMealType} />
           </div>
         </div>
 
-        <div className="mt-6 flex items-center justify-between px-1">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--app-text-subtle)]">
-              Foods
-            </p>
-            <p className="mt-1 text-sm text-[var(--app-text-muted)]">
-              Tap a row to adjust serving size.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowAddSheet(true)}
-            className="app-button-secondary px-3 py-2 text-sm"
-          >
-            Browse foods
-          </button>
+        <div className="mt-6 px-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--app-text-subtle)]">
+            Foods
+          </p>
+          <p className="mt-1 text-sm text-[var(--app-text-muted)]">
+            Tap a row to adjust serving size.
+          </p>
         </div>
 
         <div className="app-card mt-3 overflow-hidden">
@@ -410,20 +398,38 @@ export default function MealEditPage() {
             <span>Add food</span>
           </button>
         </div>
-
-        {submitError && (
-          <p className="px-1 pt-4 text-sm text-[var(--app-danger)]">{submitError}</p>
-        )}
-
-        <button
-          type="button"
-          disabled={deleting}
-          onClick={handleDeleteMeal}
-          className="app-button-danger mt-6 w-full py-2.5 text-sm"
-        >
-          {deleting ? 'Deleting…' : 'Delete meal'}
-        </button>
       </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-[19] pointer-events-none bg-gradient-to-t from-[var(--app-bg)] via-[var(--app-bg)]/70 to-transparent px-4 pt-10 pb-[5.5rem]">
+        <div className="mx-auto flex w-full max-w-lg flex-col gap-2 pointer-events-auto">
+          {submitError && (
+            <p className="text-center text-sm text-[var(--app-danger)]">{submitError}</p>
+          )}
+          <button
+            type="button"
+            disabled={submitting || items.length === 0}
+            onClick={handleSave}
+            className="app-button-primary w-full py-2.5 text-sm"
+          >
+            {submitting ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      </div>
+
+      {mealOptionsOpen && (
+        <BottomSheet title="Meal options" onClose={() => setMealOptionsOpen(false)}>
+          <div className="px-4 pb-6 pt-2">
+            <button
+              type="button"
+              disabled={deleting}
+              onClick={() => void handleDeleteMeal()}
+              className="app-button-danger w-full py-2.5 text-sm"
+            >
+              {deleting ? 'Deleting…' : 'Delete meal'}
+            </button>
+          </div>
+        </BottomSheet>
+      )}
 
       {servingEditTarget && (
         <ServingEditSheet
