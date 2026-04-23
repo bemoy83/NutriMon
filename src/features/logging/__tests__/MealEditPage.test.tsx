@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MealEditPage from '@/pages/app/MealEditPage'
@@ -429,7 +429,9 @@ describe('MealEditPage', () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
 
     renderEditor()
-    fireEvent.click(screen.getByRole('button', { name: 'Delete meal' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Meal options' }))
+    const optionsSheet = await screen.findByRole('dialog', { name: 'Meal options' })
+    fireEvent.click(within(optionsSheet).getByRole('button', { name: 'Delete meal' }))
 
     await waitFor(() => {
       expect(deleteMealMock).toHaveBeenCalledWith('meal-1')
