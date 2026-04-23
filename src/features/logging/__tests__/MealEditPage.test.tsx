@@ -1,5 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
+import type { InitialEntry } from 'react-router'
+import {
+  createMemoryRouter,
+  RouterProvider,
+  useLocation,
+  useNavigate,
+  useParams,
+} from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MealEditPage from '@/pages/app/MealEditPage'
 import type { Meal } from '@/types/domain'
@@ -140,15 +147,44 @@ function LocationStateSpy() {
   )
 }
 
-function renderEditor(initialEntries: Array<string | { pathname: string; state?: unknown }> = ['/app/log/2026-01-05/meal/meal-1/edit']) {
-  return render(
-    <MemoryRouter initialEntries={initialEntries}>
-      <Routes>
-        <Route path="/app/log/:date/meal/:mealId/edit" element={<MealEditPage />} />
-        <Route path="/app/log/:date" element={<LocationStateSpy />} />
-      </Routes>
-    </MemoryRouter>,
+function MealEditWithNavProbe() {
+  const { date } = useParams<{ date: string; mealId: string }>()
+  const navigate = useNavigate()
+  return (
+    <div>
+      <MealEditPage />
+      <button
+        type="button"
+        aria-label="Test navigate to daily log"
+        onClick={() => navigate(`/app/log/${date}`)}
+      >
+        go-log
+      </button>
+    </div>
   )
+}
+
+function createMealEditRouter(initialEntries: InitialEntry[], probeNav: boolean) {
+  return createMemoryRouter(
+    [
+      {
+        path: '/app/log/:date/meal/:mealId/edit',
+        element: probeNav ? <MealEditWithNavProbe /> : <MealEditPage />,
+      },
+      { path: '/app/log/:date', element: <LocationStateSpy /> },
+    ],
+    { initialEntries },
+  )
+}
+
+function renderEditor(
+  initialEntries: Array<string | { pathname: string; state?: unknown }> = ['/app/log/2026-01-05/meal/meal-1/edit'],
+  options?: { probeNav?: boolean },
+) {
+  const entries = initialEntries.map((e) => (typeof e === 'string' ? e : e)) as InitialEntry[]
+  const router = createMealEditRouter(entries, Boolean(options?.probeNav))
+  const view = render(<RouterProvider router={router} />)
+  return { ...view, router }
 }
 
 describe('MealEditPage', () => {
@@ -264,31 +300,22 @@ describe('MealEditPage', () => {
   })
 
   it('hydrates local state after the meal query resolves', async () => {
-    let queryResult: { data: unknown; isLoading: boolean } = {
+    useDailyLogCoreMock.mockReturnValue({
       data: null,
       isLoading: true,
-    }
-    useDailyLogCoreMock.mockImplementation(() => queryResult)
-
-    const view = renderEditor()
+    })
+    const { unmount } = renderEditor()
     expect(screen.getByText('Loading…')).toBeInTheDocument()
+    unmount()
 
-    queryResult = {
+    useDailyLogCoreMock.mockReturnValue({
       data: {
         dailyLog: null,
         meals: [meal],
       },
       isLoading: false,
-    }
-
-    view.rerender(
-      <MemoryRouter initialEntries={['/app/log/2026-01-05/meal/meal-1/edit']}>
-        <Routes>
-          <Route path="/app/log/:date/meal/:mealId/edit" element={<MealEditPage />} />
-          <Route path="/app/log/:date" element={<LocationStateSpy />} />
-        </Routes>
-      </MemoryRouter>,
-    )
+    })
+    renderEditor()
 
     expect(await screen.findByDisplayValue('Morning bowl')).toBeInTheDocument()
     expect(screen.getByText('100g · 100 kcal')).toBeInTheDocument()
@@ -444,5 +471,94 @@ describe('MealEditPage', () => {
     expect(screen.getByTestId('location-state').textContent).toContain('"kind":"deleted"')
 
     confirmSpy.mockRestore()
+  })
+
+  it('navigates back to the log without a discard prompt when there are no edits', async () => {
+    useDailyLogCoreMock.mockReturnValue({
+      data: {
+        dailyLog: null,
+        meals: [meal],
+      },
+      isLoading: false,
+    })
+
+    renderEditor()
+
+    await screen.findByDisplayValue('Morning bowl')
+    fireEvent.click(screen.getByRole('button', { name: 'Back to daily log' }))
+
+    expect(await screen.findByText('log page')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: 'Discard changes?' })).not.toBeInTheDocument()
+  })
+
+  it('prompts before discarding when the meal name was edited', async () => {
+    useDailyLogCoreMock.mockReturnValue({
+      data: {
+        dailyLog: null,
+        meals: [meal],
+      },
+      isLoading: false,
+    })
+
+    renderEditor()
+    await screen.findByDisplayValue('Morning bowl')
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Meal name' }), {
+      target: { value: 'Afternoon bowl' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Back to daily log' }))
+
+    const discardSheet = await screen.findByRole('dialog', { name: 'Discard changes?' })
+    fireEvent.click(within(discardSheet).getByRole('button', { name: 'Keep editing' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Discard changes?' })).not.toBeInTheDocument()
+    })
+    expect(screen.getByDisplayValue('Afternoon bowl')).toBeInTheDocument()
+  })
+
+  it('discards edits and returns to the log when leaving from the back button', async () => {
+    useDailyLogCoreMock.mockReturnValue({
+      data: {
+        dailyLog: null,
+        meals: [meal],
+      },
+      isLoading: false,
+    })
+
+    renderEditor()
+    await screen.findByDisplayValue('Morning bowl')
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Meal name' }), {
+      target: { value: 'Temporary title' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Back to daily log' }))
+    const discardSheet = await screen.findByRole('dialog', { name: 'Discard changes?' })
+    fireEvent.click(within(discardSheet).getByRole('button', { name: 'Discard' }))
+
+    expect(await screen.findByText('log page')).toBeInTheDocument()
+  })
+
+  it('blocks in-app navigation when dirty and proceeds after discard', async () => {
+    useDailyLogCoreMock.mockReturnValue({
+      data: {
+        dailyLog: null,
+        meals: [meal],
+      },
+      isLoading: false,
+    })
+
+    renderEditor(undefined, { probeNav: true })
+    await screen.findByDisplayValue('Morning bowl')
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Meal name' }), {
+      target: { value: 'Changed' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Test navigate to daily log' }))
+
+    const discardSheet = await screen.findByRole('dialog', { name: 'Discard changes?' })
+    fireEvent.click(within(discardSheet).getByRole('button', { name: 'Discard' }))
+
+    expect(await screen.findByText('log page')).toBeInTheDocument()
   })
 })

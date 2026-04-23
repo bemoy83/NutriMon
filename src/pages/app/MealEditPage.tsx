@@ -1,5 +1,5 @@
-import { Fragment, useEffect, useRef, useState } from 'react'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { matchPath, Navigate, useBlocker, useNavigate, useParams } from 'react-router-dom'
 import LoadingState from '@/components/ui/LoadingState'
 import BottomSheet from '@/components/ui/BottomSheet'
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
@@ -14,6 +14,7 @@ import {
   getItemSourceType,
   initItemsFromMeal,
 } from '@/features/logging/itemHelpers'
+import { serializeMealEditSnapshot } from '@/features/logging/mealEditDirtySnapshot'
 import type { DailyLogMealEditState } from '@/features/logging/mealEditNavigation'
 import type { Item } from '@/features/logging/types'
 import { useInvalidateProductQueries } from '@/features/logging/queryInvalidation'
@@ -39,6 +40,8 @@ function getItemServingLabel(item: Item): string {
   }
   return `${Math.round(item.quantity * 100)}g`
 }
+
+const MEAL_EDIT_ROUTE_PATTERN = '/app/log/:date/meal/:mealId/edit'
 
 function mergeItems(previous: Item[], incoming: Item[]): Item[] {
   return incoming.reduce<Item[]>((next, item) => {
@@ -96,7 +99,12 @@ export default function MealEditPage() {
   const [servingEditTarget, setServingEditTarget] = useState<{ item: Item; idx: number } | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
   const [mealOptionsOpen, setMealOptionsOpen] = useState(false)
+  const [editBaseline, setEditBaseline] = useState<string | null>(null)
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false)
   const hydratedMealIdRef = useRef<string | null>(null)
+  const leaveSourceRef = useRef<'back' | 'blocker'>('back')
+  const allowNavigationRef = useRef(false)
+
   const mealTheme = getMealTypeTheme(mealType)
   const totalKcal = items.reduce((sum, item) => sum + getItemKcal(item), 0)
   const missingProductIds = [...new Set(
@@ -114,10 +122,14 @@ export default function MealEditPage() {
   useEffect(() => {
     if (!meal) return
     if (hydratedMealIdRef.current === meal.id) return
-    setItems(initItemsFromMeal(meal))
-    setMealName(meal.mealName ?? '')
-    setMealType(resolveMealType(meal.mealType, meal.loggedAt))
+    const initialItems = initItemsFromMeal(meal)
+    const initialType = resolveMealType(meal.mealType, meal.loggedAt)
+    const initialName = meal.mealName ?? ''
+    setItems(initialItems)
+    setMealName(initialName)
+    setMealType(initialType)
     setSubmitError(null)
+    setEditBaseline(serializeMealEditSnapshot(initialName, initialType, initialItems))
     hydratedMealIdRef.current = meal.id
   }, [meal])
 
@@ -143,8 +155,33 @@ export default function MealEditPage() {
     })
   }, [sourceMapQuery.data])
 
-  if (coreQuery.isLoading) return <LoadingState fullScreen />
-  if (!meal) return <Navigate to={`/app/log/${date}`} replace />
+  const serializedEdit = useMemo(
+    () => (meal ? serializeMealEditSnapshot(mealName, mealType, items) : ''),
+    [meal, mealName, mealType, items],
+  )
+  const isDirty = Boolean(meal) && editBaseline != null && serializedEdit !== editBaseline
+
+  const blocker = useBlocker(({ nextLocation }) => {
+    if (allowNavigationRef.current) return false
+    const guard = Boolean(meal) && (isDirty || submitting)
+    if (!guard) return false
+    const nextMatch = matchPath({ path: MEAL_EDIT_ROUTE_PATTERN, end: true }, nextLocation.pathname)
+    if (
+      nextMatch
+      && nextMatch.params.date === logDate
+      && nextMatch.params.mealId === editMealId
+    ) {
+      return false
+    }
+    return true
+  })
+
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return
+    setMealOptionsOpen(false)
+    leaveSourceRef.current = 'blocker'
+    setLeaveConfirmOpen(true)
+  }, [blocker.state])
 
   function handleServingConfirmed(idx: number, quantity: number, compositeMode?: 'grams' | 'pieces') {
     setItems((prev) => prev.map((it, i) => (
@@ -212,6 +249,7 @@ export default function MealEditPage() {
           result,
         },
       }
+      allowNavigationRef.current = true
       navigate(`/app/log/${logDate}`, { state })
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to update meal')
@@ -240,6 +278,7 @@ export default function MealEditPage() {
           deletedMeal: meal,
         },
       }
+      allowNavigationRef.current = true
       navigate(`/app/log/${logDate}`, { state })
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to delete meal')
@@ -247,13 +286,46 @@ export default function MealEditPage() {
     }
   }
 
+  function handleBackButton() {
+    if (submitting) return
+    if (!isDirty) {
+      navigate(`/app/log/${logDate}`)
+      return
+    }
+    setMealOptionsOpen(false)
+    leaveSourceRef.current = 'back'
+    setLeaveConfirmOpen(true)
+  }
+
+  function handleLeaveKeepEditing() {
+    setLeaveConfirmOpen(false)
+    if (leaveSourceRef.current === 'blocker') {
+      blocker.reset?.()
+    }
+  }
+
+  function handleLeaveDiscard() {
+    if (submitting) return
+    const source = leaveSourceRef.current
+    setLeaveConfirmOpen(false)
+    if (source === 'blocker') {
+      blocker.proceed?.()
+    } else {
+      allowNavigationRef.current = true
+      navigate(`/app/log/${logDate}`)
+    }
+  }
+
+  if (coreQuery.isLoading) return <LoadingState fullScreen />
+  if (!meal) return <Navigate to={`/app/log/${date}`} replace />
+
   return (
     <div className="app-page min-h-full pb-40">
       <div className="sticky top-0 z-10" style={{ background: 'var(--app-bg)' }}>
         <div className="flex items-center px-4 pt-4 pb-3">
           <button
             type="button"
-            onClick={() => navigate(`/app/log/${logDate}`)}
+            onClick={handleBackButton}
             className="flex-none -ml-2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--app-surface)] text-[var(--app-brand)] transition-[transform,background-color] hover:bg-[var(--app-surface-muted)] active:scale-90"
             aria-label="Back to daily log"
           >
@@ -415,6 +487,36 @@ export default function MealEditPage() {
           </button>
         </div>
       </div>
+
+      {leaveConfirmOpen && (
+        <BottomSheet title="Discard changes?" onClose={handleLeaveKeepEditing}>
+          <div className="space-y-4 px-4 pb-6 pt-2">
+            <p className="text-sm text-[var(--app-text-muted)]">
+              You have unsaved edits. If you leave now, they will be lost.
+              {items.length === 0 && (
+                <span className="mt-2 block text-[var(--app-text-subtle)]">
+                  Add at least one food to save this meal.
+                </span>
+              )}
+            </p>
+            <button
+              type="button"
+              onClick={handleLeaveKeepEditing}
+              className="app-button-primary w-full py-2.5 text-sm"
+            >
+              Keep editing
+            </button>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={handleLeaveDiscard}
+              className="app-button-danger w-full py-2.5 text-sm disabled:opacity-50"
+            >
+              Discard
+            </button>
+          </div>
+        </BottomSheet>
+      )}
 
       {mealOptionsOpen && (
         <BottomSheet title="Meal options" onClose={() => setMealOptionsOpen(false)}>
