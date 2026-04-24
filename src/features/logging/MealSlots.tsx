@@ -203,6 +203,7 @@ function SlotCard({
   onEditMeal: (meal: Meal) => void
   onDeleteSuccess: (meal: Meal, result: DeleteMealResult) => void
 }) {
+  const [expanded, setExpanded] = useState(false)
   const theme = getMealTypeTheme(slot.type)
   const totalCal = meals.reduce((s, m) => s + m.totalCalories, 0)
   const allMacros = meals.reduce(
@@ -212,11 +213,21 @@ function SlotCard({
     },
     { protein: 0, carbs: 0, fat: 0 },
   )
+  const hasMeals = meals.length > 0
+  const allItems = meals.flatMap(m => m.items ?? [])
+  const itemPreview = allItems.slice(0, 3).map(i => i.productNameSnapshot).join(' · ')
+  const itemOverflowCount = allItems.length > 3 ? allItems.length - 3 : 0
 
   return (
     <div className="app-card overflow-hidden">
-      {/* Slot header */}
-      <div className="flex items-center gap-3 px-4 py-3.5">
+      {/* Unified tappable header */}
+      <div
+        role={hasMeals ? 'button' : undefined}
+        tabIndex={hasMeals ? 0 : undefined}
+        onClick={() => hasMeals ? setExpanded(e => !e) : undefined}
+        onKeyDown={hasMeals ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(p => !p) } } : undefined}
+        className={`flex items-center gap-3 px-4 py-3.5 ${hasMeals ? 'cursor-pointer select-none' : ''}`}
+      >
         <div
           className="w-10 h-10 rounded-xl flex-none flex items-center justify-center"
           style={{ background: theme?.bg ?? 'var(--app-surface-muted)' }}
@@ -229,55 +240,80 @@ function SlotCard({
           <p className="font-semibold text-sm" style={{ color: 'var(--app-text-primary)' }}>
             {slot.type}
           </p>
-          {meals.length > 0 ? (
-            <MacroPills
-              className="mt-1"
-              showZeroValues
-              chips={{
-                p: allMacros.protein,
-                c: allMacros.carbs,
-                f: allMacros.fat,
-              }}
-            />
+          {hasMeals ? (
+            <>
+              <MacroPills
+                className="mt-1"
+                showZeroValues
+                chips={{
+                  p: allMacros.protein,
+                  c: allMacros.carbs,
+                  f: allMacros.fat,
+                }}
+              />
+              <p className="text-xs mt-1 truncate" style={{ color: 'var(--app-text-muted)' }}>
+                {itemPreview}
+                {itemOverflowCount > 0 && (
+                  <span style={{ color: 'var(--app-text-subtle)' }}> +{itemOverflowCount} more</span>
+                )}
+              </p>
+            </>
           ) : (
-            <p className="text-xs mt-0.5" style={{ color: 'var(--app-text-subtle)' }}>
+            <p className="text-xs mt-0.5 italic" style={{ color: 'var(--app-text-subtle)' }}>
               Nothing logged yet
             </p>
           )}
         </div>
 
-        {totalCal > 0 && (
-          <div className="text-right flex-none mr-1">
-            <p className="text-sm font-bold tabular-nums" style={{ color: 'var(--app-text-primary)' }}>
-              {totalCal}
-            </p>
-            <p className="text-[10px]" style={{ color: 'var(--app-text-muted)' }}>kcal</p>
-          </div>
-        )}
-
-        {!isFinalized && (
-          <button
-            type="button"
-            onClick={onAdd}
-            className="w-9 h-9 rounded-xl flex-none flex items-center justify-center transition-opacity hover:opacity-70 active:scale-90"
-            style={{ background: theme?.bg ?? 'var(--app-brand-soft)' }}
-            aria-label={`Add food to ${slot.type}`}
-          >
-            <svg width={MEAL_SLOT_PLUS_SVG_PX} height={MEAL_SLOT_PLUS_SVG_PX} viewBox="0 0 16 16" fill="none">
-              <path
-                d="M8 3v10M3 8h10"
-                stroke={theme?.text ?? 'var(--app-brand)'}
-                strokeWidth={MEAL_SLOT_ICON_STROKE_WIDTH}
-                strokeLinecap="round"
-              />
+        {/* Right side: kcal badge + chevron when meals logged, add button when empty */}
+        {hasMeals ? (
+          <div className="flex items-center gap-2 flex-none">
+            <div
+              className="rounded-[10px] px-2.5 py-1 flex-none"
+              style={{ background: theme?.bg ?? 'var(--app-surface-muted)' }}
+            >
+              <span className="text-sm font-bold tabular-nums" style={{ color: theme?.text ?? 'var(--app-text-primary)' }}>
+                {totalCal}
+              </span>
+              <span className="text-[10px] ml-0.5 opacity-70" style={{ color: theme?.text ?? 'var(--app-text-muted)' }}>
+                kcal
+              </span>
+            </div>
+            <svg
+              className={`w-4 h-4 flex-none transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              style={{ color: 'var(--app-text-muted)' }}
+              aria-hidden
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
-          </button>
+          </div>
+        ) : (
+          !isFinalized && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onAdd() }}
+              className="w-9 h-9 rounded-xl flex-none flex items-center justify-center transition-opacity hover:opacity-70 active:scale-90"
+              style={{ background: theme?.bg ?? 'var(--app-brand-soft)' }}
+              aria-label={`Add food to ${slot.type}`}
+            >
+              <svg width={MEAL_SLOT_PLUS_SVG_PX} height={MEAL_SLOT_PLUS_SVG_PX} viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M8 3v10M3 8h10"
+                  stroke={theme?.text ?? 'var(--app-brand)'}
+                  strokeWidth={MEAL_SLOT_ICON_STROKE_WIDTH}
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          )
         )}
       </div>
 
-      {/* Logged meal rows */}
-      {meals.length > 0 && (
-        <div className="border-t" style={{ borderColor: 'var(--app-border-muted)' }}>
+      {/* Expanded: meal rows + add food footer */}
+      {expanded && hasMeals && (
+        <div>
+          <div className="mx-4 h-px" style={{ background: 'var(--app-border-muted)' }} />
           {meals.map((meal, i) => (
             <LoggedMealRow
               key={meal.id}
@@ -286,10 +322,32 @@ function SlotCard({
               timezone={timezone}
               logDate={logDate}
               hasDivider={i < meals.length - 1}
+              showMealLabel={meals.length > 1}
               onEditMeal={onEditMeal}
               onDeleteSuccess={onDeleteSuccess}
             />
           ))}
+          {!isFinalized && (
+            <div className="px-4 py-3">
+              <button
+                type="button"
+                onClick={onAdd}
+                className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition-colors"
+                style={{
+                  border: `1.5px dashed ${(theme?.text ?? 'var(--app-brand)') + '50'}`,
+                  color: theme?.text ?? 'var(--app-brand)',
+                  background: 'transparent',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = theme?.bg ?? 'var(--app-brand-soft)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+              >
+                <svg width={MEAL_SLOT_PLUS_SVG_PX} height={MEAL_SLOT_PLUS_SVG_PX} viewBox="0 0 16 16" fill="none" aria-hidden>
+                  <path d="M8 3v10M3 8h10" stroke={theme?.text ?? 'var(--app-brand)'} strokeWidth={MEAL_SLOT_ICON_STROKE_WIDTH} strokeLinecap="round" />
+                </svg>
+                Add food
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -297,17 +355,17 @@ function SlotCard({
 }
 
 function LoggedMealRow({
-  meal, isFinalized, timezone, logDate, hasDivider, onEditMeal, onDeleteSuccess,
+  meal, isFinalized, timezone, logDate, hasDivider, showMealLabel, onEditMeal, onDeleteSuccess,
 }: {
   meal: Meal
   isFinalized: boolean
   timezone: string
   logDate: string
   hasDivider: boolean
+  showMealLabel: boolean
   onEditMeal: (meal: Meal) => void
   onDeleteSuccess: (meal: Meal, result: DeleteMealResult) => void
 }) {
-  const [expanded, setExpanded] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [savingTemplate, setSavingTemplate] = useState(false)
   const [showSavePrompt, setShowSavePrompt] = useState(false)
@@ -339,110 +397,83 @@ function LoggedMealRow({
   }
 
   const items = meal.items ?? []
-  const preview = items.slice(0, 3).map(i => i.productNameSnapshot).join(' · ')
-  const overflow = items.length > 3 ? ` +${items.length - 3} more` : ''
 
   return (
-    <div className={hasDivider ? 'border-b' : ''} style={{ borderColor: 'var(--app-border-muted)' }}>
-      {/* Row: tap anywhere to expand */}
-      <button
-        type="button"
-        onClick={() => setExpanded(p => !p)}
-        className="w-full flex items-center gap-2 pl-4 pr-3 py-2.5 text-left"
-      >
-        <div className="flex-1 min-w-0">
-          <p className="text-xs truncate" style={{ color: 'var(--app-text-secondary)' }}>
-            {preview}
-            {overflow && <span style={{ color: 'var(--app-text-subtle)' }}>{overflow}</span>}
-          </p>
-          <p className="text-[11px] mt-0.5" style={{ color: 'var(--app-text-muted)' }}>
-            {formatTime(meal.loggedAt, timezone)} · {meal.itemCount} item{meal.itemCount !== 1 ? 's' : ''}
-            {meal.mealName ? ` · ${meal.mealName}` : ''}
-          </p>
-        </div>
+    <div>
+      {/* Meal label — only when multiple meals share the same slot */}
+      {showMealLabel && (
+        <p className="px-4 pt-2.5 pb-0.5 text-[11px] font-medium" style={{ color: 'var(--app-text-muted)' }}>
+          {meal.mealName ?? formatTime(meal.loggedAt, timezone)}
+        </p>
+      )}
 
-        <div className="flex items-center gap-1.5 flex-none">
-          <span className="text-xs font-semibold tabular-nums" style={{ color: 'var(--app-text-secondary)' }}>
-            {meal.totalCalories} kcal
-          </span>
-          <svg
-            className={`w-3.5 h-3.5 transition-transform flex-none ${expanded ? 'rotate-180' : ''}`}
-            fill="none" viewBox="0 0 24 24" stroke="currentColor"
-            style={{ color: 'var(--app-text-muted)' }}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
-      </button>
+      {/* Food items — always visible, no nested expand */}
+      <div className="px-4 py-2 space-y-1.5">
+        {items.map(item => <MealItemRow key={item.id} item={item} />)}
+      </div>
 
-      {/* Expanded: item breakdown + actions */}
-      {expanded && (
-        <div className="border-t" style={{ borderColor: 'var(--app-border-muted)' }}>
-          <div className="px-4 py-2 space-y-1.5">
-            {items.map(item => <MealItemRow key={item.id} item={item} />)}
-          </div>
-
-          {!isFinalized && (
-            <div className="border-t px-4 py-2.5 space-y-2" style={{ borderColor: 'var(--app-border-muted)' }}>
-              {showSavePrompt ? (
-                <div className="flex gap-2">
-                  <input
-                    autoFocus
-                    type="text"
-                    value={templateName}
-                    onChange={e => setTemplateName(e.target.value)}
-                    placeholder="Name this meal…"
-                    className="app-input flex-1 px-3 py-1.5 text-sm"
-                  />
-                  <button
-                    onClick={() => {
-                      if (!templateName.trim()) return
-                      handleSaveTemplate(templateName.trim())
-                      setShowSavePrompt(false)
-                      setTemplateName('')
-                    }}
-                    disabled={!templateName.trim()}
-                    className="app-button-primary px-3 py-1.5 text-sm disabled:opacity-40"
-                  >
-                    Save
-                  </button>
-                  <button onClick={() => setShowSavePrompt(false)} className="app-button-secondary px-3 py-1.5 text-sm">
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => onEditMeal(meal)}
-                    className="flex-1 app-button-secondary px-3 py-1.5 text-sm text-center"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={deleting}
-                    className="flex-1 app-button-danger px-3 py-1.5 text-sm text-center disabled:opacity-40"
-                  >
-                    {deleting ? 'Deleting…' : 'Delete'}
-                  </button>
-                  <button
-                    onClick={() => { setTemplateName(meal.mealName ?? meal.mealType ?? ''); setShowSavePrompt(true) }}
-                    disabled={savingTemplate}
-                    className="flex items-center gap-1 text-xs text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] transition-colors disabled:opacity-40 flex-none"
-                    title="Save as template"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                    </svg>
-                  </button>
-                </div>
-              )}
+      {/* Actions */}
+      {!isFinalized && (
+        <div className="px-4 py-2.5 space-y-2">
+          <div className="h-px mb-2.5" style={{ background: 'var(--app-border-muted)' }} />
+          {showSavePrompt ? (
+            <div className="flex gap-2">
+              <input
+                autoFocus
+                type="text"
+                value={templateName}
+                onChange={e => setTemplateName(e.target.value)}
+                placeholder="Name this meal…"
+                className="app-input flex-1 px-3 py-1.5 text-sm"
+              />
+              <button
+                onClick={() => {
+                  if (!templateName.trim()) return
+                  handleSaveTemplate(templateName.trim())
+                  setShowSavePrompt(false)
+                  setTemplateName('')
+                }}
+                disabled={!templateName.trim()}
+                className="app-button-primary px-3 py-1.5 text-sm disabled:opacity-40"
+              >
+                Save
+              </button>
+              <button onClick={() => setShowSavePrompt(false)} className="app-button-secondary px-3 py-1.5 text-sm">
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onEditMeal(meal)}
+                className="flex-1 app-button-secondary px-3 py-1.5 text-sm text-center"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 app-button-danger px-3 py-1.5 text-sm text-center disabled:opacity-40"
+              >
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+              <button
+                onClick={() => { setTemplateName(meal.mealName ?? meal.mealType ?? ''); setShowSavePrompt(true) }}
+                disabled={savingTemplate}
+                className="flex items-center gap-1 text-xs text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] transition-colors disabled:opacity-40 flex-none"
+                title="Save as template"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+              </button>
             </div>
           )}
         </div>
       )}
+      {hasDivider && <div className="mx-4 h-px mt-1" style={{ background: 'var(--app-border-muted)' }} />}
     </div>
   )
 }
