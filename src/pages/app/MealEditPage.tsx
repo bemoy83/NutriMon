@@ -539,6 +539,7 @@ export default function MealEditPage() {
           idx={servingEditTarget.idx}
           onConfirm={handleServingConfirmed}
           onClose={() => setServingEditTarget(null)}
+          onRemove={() => { handleDeleteItem(servingEditTarget.idx); setServingEditTarget(null) }}
         />
       )}
 

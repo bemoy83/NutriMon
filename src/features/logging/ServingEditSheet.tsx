@@ -9,10 +9,11 @@ interface ServingEditSheetProps {
   idx: number
   onConfirm: (idx: number, quantity: number, compositeMode?: 'grams' | 'pieces') => void | Promise<void>
   onClose: () => void
+  onRemove?: () => void | Promise<void>
   confirmLabel?: string
 }
 
-export default function ServingEditSheet({ item, idx, onConfirm, onClose, confirmLabel = 'Update' }: ServingEditSheetProps) {
+export default function ServingEditSheet({ item, idx, onConfirm, onClose, onRemove, confirmLabel = 'Update' }: ServingEditSheetProps) {
   const [pendingGrams, setPendingGrams] = useState(() =>
     item.compositeQuantityMode === 'pieces' ? item.quantity : Math.round(item.quantity * 100),
   )
@@ -192,6 +193,7 @@ export default function ServingEditSheet({ item, idx, onConfirm, onClose, confir
         }}
         onBack={onClose}
         isUpdate
+        onRemove={onRemove}
         compositeMode={pendingMode}
         onModeChange={setPendingMode}
         showModeToggle={Boolean(isCompositeWithPieces)}

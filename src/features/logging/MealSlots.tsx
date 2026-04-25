@@ -260,8 +260,8 @@ function SlotCard({
     },
     { protein: 0, carbs: 0, fat: 0 },
   )
-  const hasMeals = meals.length > 0
   const allItems = meals.flatMap(m => m.items ?? [])
+  const hasMeals = allItems.length > 0
   const itemPreview = allItems.slice(0, 3).map(i => i.productNameSnapshot).join(' · ')
   const itemOverflowCount = allItems.length > 3 ? allItems.length - 3 : 0
 
@@ -566,6 +566,21 @@ function LoggedMealRow({
     setServingEditTarget(null)
   }
 
+  async function handleDeleteItem(idx: number) {
+    const nextItems = editableItems.filter((_, i) => i !== idx)
+    const result = await updateMealWithItems(
+      meal.id,
+      meal.loggedAt,
+      buildMealUpdateItemsFromEditableItems(nextItems),
+      meal.mealType,
+      meal.mealName,
+    )
+    invalidateDailyLog(logDate)
+    invalidateProducts()
+    onUpdateSuccess(result)
+    setServingEditTarget(null)
+  }
+
   return (
     <div>
       {/* Meal label — only when multiple meals share the same slot */}
@@ -604,6 +619,7 @@ function LoggedMealRow({
           idx={servingEditTarget.idx}
           onConfirm={handleServingConfirmed}
           onClose={() => setServingEditTarget(null)}
+          onRemove={() => void handleDeleteItem(servingEditTarget.idx)}
         />
       )}
     </div>
