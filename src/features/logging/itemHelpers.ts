@@ -1,5 +1,9 @@
-import type { Meal } from '@/types/domain'
+import type { Meal, MealItem } from '@/types/domain'
 import type { Item } from './types'
+
+function formatAmount(value: number): string {
+  return Number.isInteger(value) ? String(value) : parseFloat(value.toFixed(2)).toString()
+}
 
 export function getItemKey(item: Item): string {
   if (item.productId) return `user_product:${item.productId}`
@@ -29,6 +33,19 @@ export function getItemSourceType(item: Item): 'user_product' | 'catalog_item' |
   if (item.productId) return 'user_product'
   if (item.catalogItemId) return 'catalog_item'
   return null
+}
+
+export function formatMealItemServingLabel(
+  item: Pick<MealItem, 'quantity' | 'servingAmountSnapshot' | 'servingUnitSnapshot'>,
+): string {
+  const unit = item.servingUnitSnapshot?.trim()
+  if (!unit) return `×${formatAmount(item.quantity)}`
+  if (unit.toLowerCase() !== 'g') return `${formatAmount(item.quantity)} ${unit}`
+
+  const grams = item.servingAmountSnapshot
+    ? item.quantity * item.servingAmountSnapshot
+    : item.quantity
+  return `${formatAmount(grams)}g`
 }
 
 /** Compute kcal for a single cart item, accounting for composite piece mode. */

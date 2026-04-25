@@ -5,8 +5,11 @@ import { formatTime } from '@/lib/date'
 import { getMealTypeTheme, type MealType } from '@/lib/mealType'
 import { useInvalidateDailyLog } from './useDailyLog'
 import { useInvalidateMealTemplates, useInvalidateProductQueries } from './queryInvalidation'
-import { deleteMeal, saveMealAsTemplate } from './api'
-import type { DeleteMealResult } from '@/types/database'
+import { deleteMeal, saveMealAsTemplate, updateMealWithItems } from './api'
+import { formatMealItemServingLabel, initItemsFromMeal } from './itemHelpers'
+import ServingEditSheet from './ServingEditSheet'
+import type { DeleteMealResult, MealItemUpdateInput, MealMutationResult } from '@/types/database'
+import type { Item } from './types'
 
 const SLOTS: { type: MealType }[] = [
   { type: 'Breakfast' },
@@ -156,18 +159,51 @@ function getMealMacros(meal: Meal) {
   }
 }
 
+function buildMealUpdateItemsFromEditableItems(items: Item[]): MealItemUpdateInput[] {
+  return items.map((item) => {
+    if (item.productId) {
+      return {
+        product_id: item.productId,
+        quantity: item.quantity,
+        ...(item.compositeQuantityMode && { composite_quantity_mode: item.compositeQuantityMode }),
+      }
+    }
+
+    if (item.catalogItemId) {
+      return {
+        catalog_item_id: item.catalogItemId,
+        quantity: item.quantity,
+        ...(item.compositeQuantityMode && { composite_quantity_mode: item.compositeQuantityMode }),
+      }
+    }
+
+    return {
+      meal_item_id: item.mealItemId,
+      quantity: item.quantity,
+      ...(item.compositeQuantityMode && { composite_quantity_mode: item.compositeQuantityMode }),
+      product_name_snapshot: item.snapshotName,
+      calories_per_serving_snapshot: item.snapshotCalories,
+      protein_g_snapshot: item.snapshotProteinG,
+      carbs_g_snapshot: item.snapshotCarbsG,
+      fat_g_snapshot: item.snapshotFatG,
+      serving_amount_snapshot: item.snapshotServingAmount,
+      serving_unit_snapshot: item.snapshotServingUnit,
+    }
+  })
+}
+
 interface Props {
   meals: Meal[]
   isFinalized: boolean
   timezone: string
   logDate: string
   onAddToSlot: (type: MealType) => void
-  onEditMeal: (meal: Meal) => void
+  onUpdateSuccess: (result: MealMutationResult) => void
   onDeleteSuccess: (meal: Meal, result: DeleteMealResult) => void
 }
 
 export default function MealSlots({
-  meals, isFinalized, timezone, logDate, onAddToSlot, onEditMeal, onDeleteSuccess,
+  meals, isFinalized, timezone, logDate, onAddToSlot, onUpdateSuccess, onDeleteSuccess,
 }: Props) {
   return (
     <div className="space-y-2">
@@ -182,7 +218,7 @@ export default function MealSlots({
             timezone={timezone}
             logDate={logDate}
             onAdd={() => onAddToSlot(slot.type)}
-            onEditMeal={onEditMeal}
+            onUpdateSuccess={onUpdateSuccess}
             onDeleteSuccess={onDeleteSuccess}
           />
         )
@@ -192,7 +228,7 @@ export default function MealSlots({
 }
 
 function SlotCard({
-  slot, meals, isFinalized, timezone, logDate, onAdd, onEditMeal, onDeleteSuccess,
+  slot, meals, isFinalized, timezone, logDate, onAdd, onUpdateSuccess, onDeleteSuccess,
 }: {
   slot: { type: MealType }
   meals: Meal[]
@@ -200,7 +236,7 @@ function SlotCard({
   timezone: string
   logDate: string
   onAdd: () => void
-  onEditMeal: (meal: Meal) => void
+  onUpdateSuccess: (result: MealMutationResult) => void
   onDeleteSuccess: (meal: Meal, result: DeleteMealResult) => void
 }) {
   const [expanded, setExpanded] = useState(false)
@@ -310,7 +346,7 @@ function SlotCard({
               logDate={logDate}
               hasDivider={i < meals.length - 1}
               showMealLabel={meals.length > 1}
-              onEditMeal={onEditMeal}
+              onUpdateSuccess={onUpdateSuccess}
               onDeleteSuccess={onDeleteSuccess}
             />
           ))}
@@ -338,7 +374,7 @@ function SlotCard({
 }
 
 function LoggedMealRow({
-  meal, isFinalized, timezone, logDate, hasDivider, showMealLabel, onEditMeal, onDeleteSuccess,
+  meal, isFinalized, timezone, logDate, hasDivider, showMealLabel, onUpdateSuccess, onDeleteSuccess,
 }: {
   meal: Meal
   isFinalized: boolean
@@ -346,13 +382,14 @@ function LoggedMealRow({
   logDate: string
   hasDivider: boolean
   showMealLabel: boolean
-  onEditMeal: (meal: Meal) => void
+  onUpdateSuccess: (result: MealMutationResult) => void
   onDeleteSuccess: (meal: Meal, result: DeleteMealResult) => void
 }) {
   const [deleting, setDeleting] = useState(false)
   const [savingTemplate, setSavingTemplate] = useState(false)
   const [showSavePrompt, setShowSavePrompt] = useState(false)
   const [templateName, setTemplateName] = useState('')
+  const [servingEditTarget, setServingEditTarget] = useState<{ item: Item; idx: number } | null>(null)
   const invalidateDailyLog = useInvalidateDailyLog()
   const invalidateProducts = useInvalidateProductQueries()
   const invalidateTemplates = useInvalidateMealTemplates()
@@ -380,6 +417,26 @@ function LoggedMealRow({
   }
 
   const items = meal.items ?? []
+  const editableItems = initItemsFromMeal(meal)
+
+  async function handleServingConfirmed(idx: number, quantity: number, compositeMode?: 'grams' | 'pieces') {
+    const nextItems = editableItems.map((item, itemIdx) => (
+      itemIdx === idx
+        ? { ...item, quantity, compositeQuantityMode: compositeMode }
+        : item
+    ))
+    const result = await updateMealWithItems(
+      meal.id,
+      meal.loggedAt,
+      buildMealUpdateItemsFromEditableItems(nextItems),
+      meal.mealType,
+      meal.mealName,
+    )
+    invalidateDailyLog(logDate)
+    invalidateProducts()
+    onUpdateSuccess(result)
+    setServingEditTarget(null)
+  }
 
   return (
     <div>
@@ -390,10 +447,25 @@ function LoggedMealRow({
         </p>
       )}
 
-      {/* Food items — always visible, no nested expand */}
-      <div className="px-4 py-2 space-y-1.5">
-        {items.map(item => <MealItemRow key={item.id} item={item} />)}
-      </div>
+      {/* Food items — tapping the meal summary opens the edit flow. */}
+      {isFinalized ? (
+        <div className="px-4 py-2 space-y-1.5">
+          {items.map(item => <MealItemRow key={item.id} item={item} />)}
+        </div>
+      ) : (
+        <div className="px-4 py-2 space-y-1.5">
+          {items.map((item, idx) => (
+            <MealItemRow
+              key={item.id}
+              item={item}
+              onClick={() => {
+                const editableItem = editableItems[idx]
+                if (editableItem) setServingEditTarget({ item: editableItem, idx })
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Actions */}
       {!isFinalized && (
@@ -429,13 +501,6 @@ function LoggedMealRow({
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => onEditMeal(meal)}
-                className="flex-1 app-button-secondary px-3 py-1.5 text-sm text-center"
-              >
-                Edit
-              </button>
-              <button
-                type="button"
                 onClick={handleDelete}
                 disabled={deleting}
                 className="flex-1 app-button-danger px-3 py-1.5 text-sm text-center disabled:opacity-40"
@@ -457,22 +522,46 @@ function LoggedMealRow({
         </div>
       )}
       {hasDivider && <div className="mx-4 h-px mt-1" style={{ background: 'var(--app-border-muted)' }} />}
+      {servingEditTarget && (
+        <ServingEditSheet
+          item={servingEditTarget.item}
+          idx={servingEditTarget.idx}
+          onConfirm={handleServingConfirmed}
+          onClose={() => setServingEditTarget(null)}
+        />
+      )}
     </div>
   )
 }
 
-function MealItemRow({ item }: { item: MealItem }) {
-  const servingLabel =
-    item.servingAmountSnapshot && item.servingUnitSnapshot
-      ? `${parseFloat((item.quantity * item.servingAmountSnapshot).toPrecision(6))}${item.servingUnitSnapshot}`
-      : `×${item.quantity}`
-  return (
-    <div className="flex items-center justify-between gap-3">
+function MealItemRow({ item, onClick }: { item: MealItem; onClick?: () => void }) {
+  const servingLabel = formatMealItemServingLabel(item)
+  const content = (
+    <>
       <div className="flex items-baseline gap-1.5 min-w-0">
         <span className="text-sm truncate" style={{ color: 'var(--app-text-primary)' }}>{item.productNameSnapshot}</span>
         <span className="text-xs flex-none" style={{ color: 'var(--app-text-muted)' }}>{servingLabel}</span>
       </div>
       <span className="text-sm flex-none" style={{ color: 'var(--app-text-secondary)' }}>{item.lineTotalCalories} kcal</span>
+    </>
+  )
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="-mx-2 flex w-[calc(100%+1rem)] items-center justify-between gap-3 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-[var(--app-hover-overlay)] active:bg-[var(--app-surface-muted)]"
+        aria-label={`Adjust serving for ${item.productNameSnapshot}`}
+      >
+        {content}
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3">
+      {content}
     </div>
   )
 }

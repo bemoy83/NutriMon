@@ -152,13 +152,11 @@ vi.mock('@/features/logging/MealSlots', () => ({
     isFinalized,
     onAddToSlot,
     onDeleteSuccess,
-    onEditMeal,
   }: {
     meals: Meal[]
     isFinalized: boolean
     onAddToSlot: (type: MealType) => void
     onDeleteSuccess: (meal: Meal, result: DeleteMealResult) => void
-    onEditMeal: (meal: Meal) => void
   }) => (
     <div data-testid="meal-slots-mock">
       {!isFinalized && (
@@ -204,9 +202,6 @@ vi.mock('@/features/logging/MealSlots', () => ({
             }
           >
             trigger-delete
-          </button>
-          <button type="button" onClick={() => onEditMeal(meals[0])}>
-            trigger-edit
           </button>
         </>
       )}

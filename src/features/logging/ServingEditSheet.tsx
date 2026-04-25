@@ -7,11 +7,12 @@ import type { Item } from './types'
 interface ServingEditSheetProps {
   item: Item
   idx: number
-  onConfirm: (idx: number, quantity: number, compositeMode?: 'grams' | 'pieces') => void
+  onConfirm: (idx: number, quantity: number, compositeMode?: 'grams' | 'pieces') => void | Promise<void>
   onClose: () => void
+  confirmLabel?: string
 }
 
-export default function ServingEditSheet({ item, idx, onConfirm, onClose }: ServingEditSheetProps) {
+export default function ServingEditSheet({ item, idx, onConfirm, onClose, confirmLabel = 'Update' }: ServingEditSheetProps) {
   const [pendingGrams, setPendingGrams] = useState(() =>
     item.compositeQuantityMode === 'pieces' ? item.quantity : Math.round(item.quantity * 100),
   )
@@ -26,6 +27,8 @@ export default function ServingEditSheet({ item, idx, onConfirm, onClose }: Serv
       ? Math.max(1, Math.round(currentGrams / labelGrams))
       : 1
   })
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const servingTarget = item.foodSource
     ? {
@@ -78,14 +81,20 @@ export default function ServingEditSheet({ item, idx, onConfirm, onClose }: Serv
     return Math.round((pendingGrams / 100) * getItemCalories(item))
   }, [item, massInputMode, pendingGrams, pendingMode, pendingPortions])
 
-  function handleUpdate() {
+  async function handleUpdate() {
+    if (submitting) return
+    setSubmitting(true)
+    setError(null)
     if (item.foodSource) {
       const isCompositeWithPieces = item.foodSource.kind === 'composite'
         && (item.foodSource.pieceCount ?? 0) > 0
         && (item.foodSource.totalMassG ?? 0) > 0
       if (pendingMode === 'pieces' && isCompositeWithPieces) {
-        if (pendingGrams <= 0) return
-        onConfirm(idx, pendingGrams, 'pieces')
+        if (pendingGrams <= 0) {
+          setSubmitting(false)
+          return
+        }
+        await submitConfirm(idx, pendingGrams, 'pieces')
         return
       }
 
@@ -95,19 +104,37 @@ export default function ServingEditSheet({ item, idx, onConfirm, onClose }: Serv
         && item.foodSource.labelPortionGrams > 0
           ? pendingPortions * item.foodSource.labelPortionGrams
           : pendingGrams
-      if (gramsEq <= 0) return
-      onConfirm(idx, gramsEq / 100, item.foodSource.kind === 'composite' ? 'grams' : undefined)
+      if (gramsEq <= 0) {
+        setSubmitting(false)
+        return
+      }
+      await submitConfirm(idx, gramsEq / 100, item.foodSource.kind === 'composite' ? 'grams' : undefined)
       return
     }
 
     if (item.compositeQuantityMode === 'pieces') {
-      if (pendingGrams <= 0) return
-      onConfirm(idx, pendingGrams, 'pieces')
+      if (pendingGrams <= 0) {
+        setSubmitting(false)
+        return
+      }
+      await submitConfirm(idx, pendingGrams, 'pieces')
       return
     }
 
-    if (pendingGrams <= 0) return
-    onConfirm(idx, pendingGrams / 100, item.compositeQuantityMode)
+    if (pendingGrams <= 0) {
+      setSubmitting(false)
+      return
+    }
+    await submitConfirm(idx, pendingGrams / 100, item.compositeQuantityMode)
+  }
+
+  async function submitConfirm(idx: number, quantity: number, compositeMode?: 'grams' | 'pieces') {
+    try {
+      await onConfirm(idx, quantity, compositeMode)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update serving')
+      setSubmitting(false)
+    }
   }
 
   const isCompositeWithPieces = item.foodSource?.kind === 'composite'
@@ -115,22 +142,28 @@ export default function ServingEditSheet({ item, idx, onConfirm, onClose }: Serv
     && (item.foodSource.totalMassG ?? 0) > 0
 
   const footer = (
-    <button
-      type="button"
-      onClick={handleUpdate}
-      disabled={
-        pendingMode === 'pieces'
-          ? pendingGrams <= 0
-          : massInputMode === 'portions'
-            && servingTarget.labelPortionGrams
-            && servingTarget.labelPortionGrams > 0
-            ? pendingPortions <= 0
-            : pendingGrams <= 0
-      }
-      className="app-button-primary w-full py-3"
-    >
-      Update
-    </button>
+    <div className="space-y-2">
+      {error ? (
+        <p className="text-center text-sm text-[var(--app-danger)]">{error}</p>
+      ) : null}
+      <button
+        type="button"
+        onClick={() => void handleUpdate()}
+        disabled={
+          submitting ||
+          (pendingMode === 'pieces'
+            ? pendingGrams <= 0
+            : massInputMode === 'portions'
+              && servingTarget.labelPortionGrams
+              && servingTarget.labelPortionGrams > 0
+              ? pendingPortions <= 0
+              : pendingGrams <= 0)
+        }
+        className="app-button-primary w-full py-3 disabled:opacity-50"
+      >
+        {submitting ? 'Updating...' : confirmLabel}
+      </button>
+    </div>
   )
 
   return (

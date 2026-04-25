@@ -5,6 +5,7 @@ import { getMealTypeTheme } from '@/lib/mealType'
 import { useInvalidateDailyLog } from './useDailyLog'
 import { useInvalidateMealTemplates, useInvalidateProductQueries } from './queryInvalidation'
 import { deleteMeal, saveMealAsTemplate } from './api'
+import { formatMealItemServingLabel } from './itemHelpers'
 import EmptyState from '@/components/ui/EmptyState'
 import type { DeleteMealResult } from '@/types/database'
 
@@ -258,10 +259,7 @@ function MealCard({
 }
 
 function MealItemRow({ item }: { item: MealItem }) {
-  const servingLabel =
-    item.servingAmountSnapshot && item.servingUnitSnapshot
-      ? `${item.quantity * item.servingAmountSnapshot}${item.servingUnitSnapshot}`
-      : `×${item.quantity}`
+  const servingLabel = formatMealItemServingLabel(item)
 
   return (
     <div className="flex items-center justify-between gap-3">

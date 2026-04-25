@@ -286,7 +286,10 @@ export default function DailyLogPage() {
           timezone={timezone}
           logDate={logDate}
           onAddToSlot={(type) => { setAddToSlotType(type); setShowQuickAdd(true) }}
-          onEditMeal={(meal) => navigate(`/app/log/${logDate}/meal/${meal.id}/edit`)}
+          onUpdateSuccess={(result) => {
+            setCreaturePreviewState({ date: logDate, preview: mapCreaturePreviewPayload(result.creature_preview ?? null) })
+            setBattlePrepState({ date: logDate, summary: null })
+          }}
           onDeleteSuccess={(meal, result) => {
             setCreaturePreviewState({ date: logDate, preview: mapCreaturePreviewPayload(result.creature_preview ?? null) })
             setBattlePrepState({ date: logDate, summary: null })
