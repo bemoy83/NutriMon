@@ -166,8 +166,8 @@ describe('MealSheet', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'My oats' }))
     fireEvent.click(screen.getByRole('button', { name: 'Add to Breakfast' }))
-    fireEvent.click(await screen.findByRole('button', { name: /expand cart/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Edit My oats' }))
+    fireEvent.click(await screen.findByRole('tab', { name: 'Pending · 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'My oats' }))
 
     expect(screen.getByText('220')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Update' })).toBeInTheDocument()

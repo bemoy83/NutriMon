@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { lazy, Suspense, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useInvalidateDailyLog } from '@/features/logging/useDailyLog'
 import { useDailyLogCore } from '@/features/logging/useDailyLogCore'
 import { useDailyLogDerived } from '@/features/logging/useDailyLogDerived'
@@ -16,7 +16,6 @@ import { useProfileSummary } from '@/features/profile/useProfileSummary'
 import { useFinalizeDay } from '@/features/logging/useFinalizeDay'
 import { useRepeatLastMealAction } from '@/features/logging/useRepeatLastMealAction'
 import { useUndoToast } from '@/features/logging/useUndoToast'
-import type { DailyLogMealEditState } from '@/features/logging/mealEditNavigation'
 import {
   DailyLogCompactCard,
   DailyLogDateHeader,
@@ -71,7 +70,6 @@ export default function DailyLogPage() {
   if (!date) throw new Error('No date param')
   const logDate = date
   const navigate = useNavigate()
-  const location = useLocation()
   const profileQuery = useProfileSummary()
   const timezone = profileQuery.data?.timezone ?? 'UTC'
   const calorieTarget = profileQuery.data?.calorieTarget ?? 0
@@ -98,7 +96,6 @@ export default function DailyLogPage() {
   const [creaturePreviewState, setCreaturePreviewState] = useState<{ date: string; preview: CreaturePreview | null } | null>(null)
   const [battlePrepState, setBattlePrepState] = useState<{ date: string; summary: BattlePrepSummary | null } | null>(null)
   const { undoAction, showUndo, clearUndo } = useUndoToast()
-  const handledMealEditLocationKeyRef = useRef<string | null>(null)
 
   const dailyLog = coreQuery.data?.dailyLog ?? null
   const meals = coreQuery.data?.meals ?? []
@@ -150,37 +147,6 @@ export default function DailyLogPage() {
     setBattlePrepState({ date: logDate, summary: null })
     invalidateDailyLog(logDate)
   }
-
-  useEffect(() => {
-    const state = location.state as DailyLogMealEditState | null
-    const action = state?.mealEditAction
-    if (!action || action.logDate !== logDate) return
-    if (handledMealEditLocationKeyRef.current === location.key) return
-    handledMealEditLocationKeyRef.current = location.key
-
-    queueMicrotask(() => {
-      setCreaturePreviewState({ date: logDate, preview: mapCreaturePreviewPayload(action.result.creature_preview ?? null) })
-      setBattlePrepState({ date: logDate, summary: null })
-    })
-
-    if (action.kind === 'deleted') {
-      showUndo({
-        label: 'Meal deleted',
-        undo: async () => {
-          await restoreMealFromSnapshot(
-            logDate,
-            action.deletedMeal.loggedAt,
-            buildMealSnapshotItems(action.deletedMeal),
-            action.deletedMeal.mealType,
-            action.deletedMeal.mealName,
-          )
-          invalidateDailyLog(logDate)
-        },
-      })
-    }
-
-    navigate(`/app/log/${logDate}`, { replace: true, state: null })
-  }, [location.key, location.state, logDate, navigate, showUndo, invalidateDailyLog])
 
   const creaturePreview = creaturePreviewState?.date === logDate ? creaturePreviewState.preview : null
   const battlePrep = battlePrepState?.date === logDate ? battlePrepState.summary : null

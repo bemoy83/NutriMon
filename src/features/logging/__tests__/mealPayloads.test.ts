@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildMealSnapshotItems, buildMealUpdateItems } from '../mealPayloads'
+import { buildMealSnapshotItems } from '../mealPayloads'
 import type { Meal } from '@/types/domain'
 
 const meal: Meal = {
@@ -27,6 +27,7 @@ const meal: Meal = {
       fatGSnapshot: 3,
       servingAmountSnapshot: 150,
       servingUnitSnapshot: 'g',
+      labelPortionGramsSnapshot: null,
       lineTotalCalories: 180,
       createdAt: '2026-01-05T08:30:00.000Z',
     },
@@ -43,6 +44,7 @@ const meal: Meal = {
       fatGSnapshot: 31.7,
       servingAmountSnapshot: 100,
       servingUnitSnapshot: 'g',
+      labelPortionGramsSnapshot: null,
       lineTotalCalories: 383,
       createdAt: '2026-01-05T08:30:00.000Z',
     },
@@ -59,6 +61,7 @@ const meal: Meal = {
       fatGSnapshot: 7,
       servingAmountSnapshot: 50,
       servingUnitSnapshot: 'g',
+      labelPortionGramsSnapshot: null,
       lineTotalCalories: 340,
       createdAt: '2026-01-05T08:30:00.000Z',
     },
@@ -66,30 +69,6 @@ const meal: Meal = {
 }
 
 describe('meal payload builders', () => {
-  it('builds update items for active products, catalog items, and deleted snapshots', () => {
-    expect(buildMealUpdateItems(meal)).toEqual([
-      {
-        product_id: 'product-1',
-        quantity: 1.5,
-      },
-      {
-        catalog_item_id: 'matvaretabellen_2026:01.344',
-        quantity: 1,
-      },
-      {
-        meal_item_id: 'item-deleted',
-        quantity: 2,
-        product_name_snapshot: 'Deleted Granola',
-        calories_per_serving_snapshot: 170,
-        protein_g_snapshot: 5,
-        carbs_g_snapshot: 20,
-        fat_g_snapshot: 7,
-        serving_amount_snapshot: 50,
-        serving_unit_snapshot: 'g',
-      },
-    ])
-  })
-
   it('builds snapshot-only restore items for delete undo', () => {
     expect(buildMealSnapshotItems(meal)).toEqual([
       {

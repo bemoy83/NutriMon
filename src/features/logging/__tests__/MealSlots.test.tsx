@@ -48,6 +48,7 @@ const meal: Meal = {
       fatGSnapshot: 22,
       servingAmountSnapshot: 160,
       servingUnitSnapshot: 'piece',
+      labelPortionGramsSnapshot: null,
       lineTotalCalories: 328,
       createdAt: '2026-01-05T08:30:00.000Z',
     },

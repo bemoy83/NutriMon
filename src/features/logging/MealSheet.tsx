@@ -210,10 +210,6 @@ export default function MealSheet({
     setSheetView('browse')
   }
 
-  function removeItem(idx: number) {
-    setItems((prev) => prev.filter((_, i) => i !== idx))
-  }
-
   function handleServingRemove() {
     if (!servingTarget) return
     setItems((prev) => prev.filter((i) =>

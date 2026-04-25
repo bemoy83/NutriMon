@@ -5,7 +5,6 @@ import DailyLogPage from '../DailyLogPage'
 import type { Meal } from '@/types/domain'
 import type { MealType } from '@/lib/mealType'
 import type { DeleteMealResult, MealMutationResult } from '@/types/database'
-import type { DailyLogMealEditState } from '@/features/logging/mealEditNavigation'
 
 const useDailyLogCoreMock = vi.fn()
 const useDailyLogDerivedMock = vi.fn()
@@ -234,6 +233,7 @@ const baseMeal: Meal = {
       fatGSnapshot: 10,
       servingAmountSnapshot: 2,
       servingUnitSnapshot: 'pcs',
+      labelPortionGramsSnapshot: null,
       lineTotalCalories: 150,
       createdAt: '2026-01-05T08:30:00.000Z',
     },
@@ -250,13 +250,14 @@ const baseMeal: Meal = {
       fatGSnapshot: 1,
       servingAmountSnapshot: 1,
       servingUnitSnapshot: 'slice',
+      labelPortionGramsSnapshot: null,
       lineTotalCalories: 120,
       createdAt: '2026-01-05T08:30:00.000Z',
     },
   ],
 }
 
-function renderPage(initialEntries: Array<string | { pathname: string; state?: DailyLogMealEditState }> = ['/app/log/2026-01-05']) {
+function renderPage(initialEntries: Array<string | { pathname: string; state?: unknown }> = ['/app/log/2026-01-05']) {
   return render(
     <MemoryRouter initialEntries={initialEntries}>
       <Routes>
@@ -466,159 +467,6 @@ describe('DailyLogPage', () => {
     fireEvent.click(screen.getByText('trigger-delete'))
 
     expect(screen.getByText('Meal deleted')).toBeInTheDocument()
-    fireEvent.click(screen.getByText('Undo'))
-
-    await waitFor(() => {
-      expect(restoreMealFromSnapshotMock).toHaveBeenCalledWith(
-        '2026-01-05',
-        '2026-01-05T08:30:00.000Z',
-        [
-          {
-            quantity: 1,
-            product_name_snapshot: 'Eggs',
-            calories_per_serving_snapshot: 150,
-            protein_g_snapshot: 12,
-            carbs_g_snapshot: 1,
-            fat_g_snapshot: 10,
-            serving_amount_snapshot: 2,
-            serving_unit_snapshot: 'pcs',
-          },
-          {
-            quantity: 1.5,
-            product_name_snapshot: 'Deleted Toast',
-            calories_per_serving_snapshot: 80,
-            protein_g_snapshot: 3,
-            carbs_g_snapshot: 15,
-            fat_g_snapshot: 1,
-            serving_amount_snapshot: 1,
-            serving_unit_snapshot: 'slice',
-          },
-        ],
-        'Breakfast',
-        null,
-      )
-    })
-  })
-
-  it('restores creature preview from meal edit save navigation state', async () => {
-    useDailyLogCoreMock.mockReturnValue({
-      data: {
-        dailyLog: {
-          id: 'log-1',
-          userId: 'user-1',
-          logDate: '2026-01-05',
-          totalCalories: 520,
-          mealCount: 1,
-          isFinalized: false,
-          finalizedAt: null,
-          createdAt: '2026-01-05T00:00:00.000Z',
-          updatedAt: '2026-01-05T00:00:00.000Z',
-        },
-        meals: [baseMeal],
-      },
-      isLoading: false,
-    })
-
-    const state: DailyLogMealEditState = {
-      mealEditAction: {
-        kind: 'saved',
-        logDate: '2026-01-05',
-        result: {
-          meal: {
-            id: baseMeal.id,
-            daily_log_id: baseMeal.dailyLogId,
-            logged_at: baseMeal.loggedAt,
-            meal_type: baseMeal.mealType,
-            meal_name: baseMeal.mealName,
-            total_calories: baseMeal.totalCalories,
-            item_count: baseMeal.itemCount,
-          },
-          meal_items: [],
-          daily_log: {
-            id: 'log-1',
-            user_id: 'user-1',
-            log_date: '2026-01-05',
-            total_calories: 520,
-            meal_count: 1,
-            is_finalized: false,
-            finalized_at: null,
-            created_at: '2026-01-05T00:00:00.000Z',
-            updated_at: '2026-01-05T00:00:00.000Z',
-          },
-          creature_preview: {
-            tomorrow_readiness_score: 71,
-            tomorrow_readiness_band: 'ready',
-            projected_strength: 69,
-            projected_resilience: 68,
-            projected_momentum: 72,
-            projected_vitality: 94,
-            meal_rating: 'strong',
-            meal_feedback_message: 'Preview updated after edit.',
-          },
-        },
-      },
-    }
-
-    renderPage([{ pathname: '/app/log/2026-01-05', state }])
-
-    expect(await screen.findByText('Preview updated after edit.')).toBeInTheDocument()
-    expect(screen.queryByText('Undo')).not.toBeInTheDocument()
-  })
-
-  it('restores undo state from meal edit delete navigation state', async () => {
-    useDailyLogCoreMock.mockReturnValue({
-      data: {
-        dailyLog: {
-          id: 'log-1',
-          userId: 'user-1',
-          logDate: '2026-01-05',
-          totalCalories: 520,
-          mealCount: 1,
-          isFinalized: false,
-          finalizedAt: null,
-          createdAt: '2026-01-05T00:00:00.000Z',
-          updatedAt: '2026-01-05T00:00:00.000Z',
-        },
-        meals: [baseMeal],
-      },
-      isLoading: false,
-    })
-
-    const state: DailyLogMealEditState = {
-      mealEditAction: {
-        kind: 'deleted',
-        logDate: '2026-01-05',
-        deletedMeal: baseMeal,
-        result: {
-          deleted_meal_id: baseMeal.id,
-          daily_log: {
-            id: 'log-1',
-            user_id: 'user-1',
-            log_date: '2026-01-05',
-            total_calories: 0,
-            meal_count: 0,
-            is_finalized: false,
-            finalized_at: null,
-            created_at: '2026-01-05T00:00:00.000Z',
-            updated_at: '2026-01-05T00:00:00.000Z',
-          },
-          creature_preview: {
-            tomorrow_readiness_score: 58,
-            tomorrow_readiness_band: 'building',
-            projected_strength: 56,
-            projected_resilience: 55,
-            projected_momentum: 59,
-            projected_vitality: 82,
-            meal_rating: 'solid',
-            meal_feedback_message: 'Preview updated after delete.',
-          },
-        },
-      },
-    }
-
-    renderPage([{ pathname: '/app/log/2026-01-05', state }])
-
-    expect(await screen.findByText('Meal deleted')).toBeInTheDocument()
     fireEvent.click(screen.getByText('Undo'))
 
     await waitFor(() => {
