@@ -67,19 +67,19 @@ export default function BottomSheet({ children, onClose, title, titleContent, fo
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="flex justify-center pt-1.5 sm:hidden">
-            <div className="w-10 h-1 rounded-full bg-[var(--app-border)]" />
+          <div className="flex justify-center pt-2 sm:hidden">
+            <div className="w-10 h-1 rounded-full bg-slate-300" />
           </div>
-          <div className="flex items-center justify-between px-4 py-2">
+          <div className="flex items-center justify-between px-4 py-3">
             <h3 className="text-base font-semibold text-[var(--app-text-primary)]">{titleContent ?? title}</h3>
             <button
               type="button"
               onClick={onClose}
-              className="rounded p-1 text-[var(--app-text-muted)] transition-colors hover:text-[var(--app-text-primary)]"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface-elevated)] hover:text-[var(--app-text-primary)]"
               aria-label={`Close ${title}`}
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
