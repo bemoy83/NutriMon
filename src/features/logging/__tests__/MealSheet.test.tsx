@@ -112,7 +112,7 @@ describe('MealSheet', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'My oats' }))
     fireEvent.click(screen.getByRole('button', { name: 'Add to Breakfast' }))
-    fireEvent.click(screen.getByRole('button', { name: /Add to Breakfast · 1 item/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /Add to Breakfast · 1 item/ }))
 
     await waitFor(() => {
       expect(createMealWithItemsMock).toHaveBeenCalledWith(
@@ -142,7 +142,7 @@ describe('MealSheet', () => {
     fireEvent.click(screen.getByRole('menuitemradio', { name: 'Lunch' }))
     fireEvent.click(screen.getByRole('button', { name: 'My oats' }))
     fireEvent.click(screen.getByRole('button', { name: 'Add to Lunch' }))
-    fireEvent.click(screen.getByRole('button', { name: /Add to Lunch · 1 item/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /Add to Lunch · 1 item/ }))
 
     await waitFor(() => {
       expect(createMealWithItemsMock).toHaveBeenCalledWith(
@@ -152,6 +152,25 @@ describe('MealSheet', () => {
         'Lunch',
       )
     })
+  })
+
+  it('reopens the serving step from a pending cart row', async () => {
+    render(
+      <MealSheet
+        logDate="2026-01-05"
+        loggedAt="2026-01-05T08:00:00.000Z"
+        onClose={vi.fn()}
+        onAdded={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'My oats' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Breakfast' }))
+    fireEvent.click(await screen.findByRole('button', { name: /expand cart/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Edit My oats' }))
+
+    expect(screen.getByText('220')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Update' })).toBeInTheDocument()
   })
 
   it('returns selected items without calling create when onItemsSelected is provided', async () => {
@@ -169,7 +188,7 @@ describe('MealSheet', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'My oats' }))
     fireEvent.click(screen.getByRole('button', { name: 'Add to Breakfast' }))
-    fireEvent.click(screen.getByRole('button', { name: /Add to Breakfast · 1 item/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /Add to Breakfast · 1 item/ }))
 
     await waitFor(() => {
       expect(onItemsSelected).toHaveBeenCalledWith([

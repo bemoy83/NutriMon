@@ -9,7 +9,6 @@ import { useMealTemplates } from './useMealTemplates'
 import BottomSheet from '@/components/ui/BottomSheet'
 import FoodRow from '@/components/ui/FoodRow'
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
-import GramInput from '@/components/ui/GramInput'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
 import ProductForm from './ProductForm'
 import ServingStep from './ServingStep'
@@ -215,22 +214,14 @@ export default function MealSheet({
     setSheetView('browse')
   }
 
-  function updateItemGrams(idx: number, value: number) {
-    const item = items[idx]
-    if (value <= 0) {
-      setItems((prev) => prev.filter((_, i) => i !== idx))
-      return
+  function removeItem(idx: number) {
+    setItems((prev) => prev.filter((_, i) => i !== idx))
+  }
+
+  function handleCartItemEdit(item: Item) {
+    if (item.foodSource) {
+      handleFoodTap(item.foodSource)
     }
-    if (item.compositeQuantityMode === 'pieces') {
-      setItems((prev) =>
-        prev.map((it, i) => (i === idx ? { ...it, quantity: value } : it)),
-      )
-      return
-    }
-    const servingAmount = getItemServingAmount()
-    setItems((prev) =>
-      prev.map((it, i) => (i === idx ? { ...it, quantity: value / servingAmount } : it)),
-    )
   }
 
   async function handleLogTemplate(template: MealTemplate) {
@@ -423,13 +414,20 @@ export default function MealSheet({
     </div>
   )
 
+  function getCartItemServingLabel(item: Item): string {
+    if (item.compositeQuantityMode === 'pieces') {
+      return `${item.quantity} ${item.foodSource?.pieceLabel ?? 'pc'}`
+    }
+    return `${Math.round(item.quantity * getItemServingAmount())}g`
+  }
+
   const cartSummary =
     items.length > 0 ? (
-      <div className="mb-3 overflow-hidden rounded-2xl border border-[var(--app-border-muted)] bg-white">
+      <div className={`-mx-4 mb-5 border-b border-[var(--app-border-muted)] bg-white ${submitError ? '' : '-mt-5'}`}>
         <button
           type="button"
           onClick={() => setCartOpen((o) => !o)}
-          className="flex w-full items-center justify-between px-3.5 py-2.5 text-left transition-colors"
+          className="flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors"
           style={{
             background: mealTheme ? mealTheme.bg : 'var(--app-brand-soft)',
             color: mealTheme ? mealTheme.text : 'var(--app-brand)',
@@ -454,50 +452,51 @@ export default function MealSheet({
         {cartOpen && (
           <div className="max-h-44 overflow-y-auto">
             {items.map((item, idx) => {
-              const isPieceMode = item.compositeQuantityMode === 'pieces'
-              const displayValue = isPieceMode
-                ? item.quantity
-                : Math.round(item.quantity * getItemServingAmount())
               const kcal = getItemKcal(item)
               const sourceType = getItemSourceType(item)
+              const canEdit = Boolean(item.foodSource)
               return (
                 <div
                   key={getItemKey(item)}
-                  className="flex items-center gap-2 border-b border-[var(--app-border-muted)] px-3 py-2 last:border-0"
+                  className="flex items-center gap-2 border-b border-[var(--app-border-muted)] px-4 py-2.5 last:border-0"
                 >
                   <button
                     type="button"
-                    onClick={() => updateItemGrams(idx, 0)}
+                    onClick={() => removeItem(idx)}
                     className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-sm text-[var(--app-text-subtle)] transition-colors hover:bg-[var(--app-danger-soft)] hover:text-[var(--app-danger)]"
                     aria-label={`Remove ${getItemLabel(item)}`}
                   >
                     ✕
                   </button>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      {sourceType && <FoodSourceBadge sourceType={sourceType} />}
-                      <p className="truncate text-sm text-[var(--app-text-primary)]">
-                        {getItemLabel(item)}
+                  <button
+                    type="button"
+                    onClick={() => handleCartItemEdit(item)}
+                    disabled={!canEdit}
+                    className="group flex min-w-0 flex-1 items-center gap-3 rounded-xl py-0.5 text-left disabled:cursor-default"
+                    aria-label={`Edit ${getItemLabel(item)}`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        {sourceType && <FoodSourceBadge sourceType={sourceType} />}
+                        <p className="truncate text-sm text-[var(--app-text-primary)]">
+                          {getItemLabel(item)}
+                        </p>
+                      </div>
+                      <p className="text-xs text-[var(--app-text-muted)]">
+                        {kcal} kcal · {getCartItemServingLabel(item)}
                       </p>
                     </div>
-                    <p className="text-xs text-[var(--app-text-muted)]">
-                      {kcal} kcal
-                      {isPieceMode && item.foodSource?.pieceLabel && (
-                        <span className="ml-1">· {item.quantity} {item.foodSource.pieceLabel}</span>
-                      )}
-                    </p>
-                  </div>
-                  <GramInput
-                    grams={displayValue}
-                    onChange={(g) => updateItemGrams(idx, g)}
-                    showSteppers={false}
-                    {...(isPieceMode
-                      ? {
-                          unitSuffix: item.foodSource?.pieceLabel ?? 'pc',
-                          quantityAriaLabel: 'Pieces',
-                        }
-                      : {})}
-                  />
+                    {canEdit && (
+                      <span
+                        className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[var(--app-input-bg)] text-[var(--app-brand)] transition-colors group-hover:bg-[var(--app-input-bg-focus)] group-hover:text-[var(--app-brand-hover)]"
+                        aria-hidden="true"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </span>
+                    )}
+                  </button>
                 </div>
               )
             })}
@@ -506,9 +505,8 @@ export default function MealSheet({
       </div>
     ) : null
 
-  const footer =
-    sheetView === 'browse' ? (
-      <>
+  const browseFooter = (
+    <div className="flex-none border-t border-[var(--app-border-muted)] bg-white px-4 py-5">
         {submitError && <p className="pb-2 text-xs text-[var(--app-danger)]">{submitError}</p>}
         {items.length === 0 && (
           <p className="pb-2 text-xs text-center text-[var(--app-text-subtle)]">
@@ -529,8 +527,11 @@ export default function MealSheet({
               ? `Add to ${mealType} · ${items.length} item${items.length !== 1 ? 's' : ''} · ${totalKcal} kcal`
               : `Add to ${mealType}`}
         </button>
-      </>
-    ) : sheetView === 'serving' ? (
+    </div>
+  )
+
+  const servingFooter = (
+    <div className="flex-none border-t border-[var(--app-border-muted)] bg-white px-4 py-5">
       <button
         type="button"
         onClick={confirmServing}
@@ -540,7 +541,8 @@ export default function MealSheet({
       >
         {isEditingExisting ? 'Update' : `Add to ${mealType}`}
       </button>
-    ) : null
+    </div>
+  )
 
   return (
     <BottomSheet
@@ -548,11 +550,11 @@ export default function MealSheet({
       title={`Add to ${mealType}`}
       titleContent={mealTitleControl}
       className="h-[85vh] sm:h-[600px]"
-      footer={footer}
     >
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
         <div
           className="absolute inset-0 flex flex-col transition-transform duration-[250ms] ease-out"
+          aria-hidden={sheetView !== 'browse'}
           style={{ transform: browseTranslate }}
         >
           <div className="flex-none px-4 py-2 bg-white">
@@ -660,10 +662,12 @@ export default function MealSheet({
               </>
             )}
           </div>
+          {browseFooter}
         </div>
 
         <div
           className="absolute inset-0 flex flex-col transition-transform duration-[250ms] ease-out"
+          aria-hidden={sheetView === 'browse'}
           style={{ transform: detailTranslate }}
         >
           {sheetView === 'serving' && servingTarget && (
@@ -700,6 +704,7 @@ export default function MealSheet({
               showModeToggle={isCompositeWithPieces}
             />
           )}
+          {sheetView === 'serving' && servingTarget && servingFooter}
           {sheetView === 'create' && (
             <div className="flex-1 overflow-y-auto">
               <ProductForm
