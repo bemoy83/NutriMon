@@ -80,12 +80,12 @@ export default function GramInput({
   const shellClass = (active: boolean) =>
     `flex h-[30px] min-w-16 w-max max-w-[7rem] flex-none items-center gap-0.5 rounded-md border py-0.5 pl-1 pr-1 transition-colors transition-shadow ${
       active
-        ? 'border-[var(--app-focus)] bg-[var(--app-input-bg-focus)] shadow-[var(--app-input-shadow-focus),0_0_0_2px_var(--app-brand-ring)]'
-        : 'border-[var(--app-input-border)] bg-[var(--app-input-bg)] shadow-[var(--app-input-shadow)] hover:border-[var(--app-brand)]'
+        ? 'border-transparent bg-[var(--app-input-bg-focus)] shadow-[0_0_0_3px_var(--app-brand-ring),var(--app-input-shadow-focus)]'
+        : 'border-[var(--app-input-border)] bg-[var(--app-input-bg)] shadow-[var(--app-input-shadow)] hover:bg-[var(--app-input-bg-focus)]'
     }`
 
   const btnClass =
-    'h-7 w-7 rounded-full flex items-center justify-center bg-[var(--app-surface-elevated)] text-[var(--app-text-muted)] border border-[var(--app-border)] transition-colors hover:text-[var(--app-text-primary)] hover:bg-[var(--app-border)] text-base leading-none'
+    'h-7 w-7 rounded-full flex items-center justify-center border border-transparent bg-[var(--app-input-bg)] text-[var(--app-brand)] transition-[background-color,color,box-shadow] duration-[var(--app-transition-fast)] hover:bg-[var(--app-input-bg-focus)] hover:text-[var(--app-brand-hover)] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--app-brand-ring),var(--app-input-shadow-focus)] text-base leading-none'
 
   return (
     <div className="flex items-center gap-1.5">

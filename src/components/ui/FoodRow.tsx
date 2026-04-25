@@ -26,7 +26,7 @@ function CheckmarkCircle() {
 
 function ChevronCircle() {
   return (
-    <div className="flex-none h-8 w-8 flex items-center justify-center rounded-full bg-[rgb(0_0_0/0.06)] text-[var(--app-text-muted)] border border-[var(--app-border)]">
+    <div className="flex-none h-8 w-8 flex items-center justify-center rounded-full border border-transparent bg-[var(--app-input-bg)] text-[var(--app-brand)] transition-[background-color,color,box-shadow] duration-[var(--app-transition-fast)] group-hover:bg-[var(--app-input-bg-focus)] group-hover:text-[var(--app-brand-hover)]">
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
       </svg>
@@ -76,7 +76,7 @@ export default function FoodRow({
       type="button"
       onClick={onTap}
       aria-label={name}
-      className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[var(--app-hover-overlay)] active:bg-[var(--app-hover-overlay)] transition-colors"
+      className="group flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[var(--app-hover-overlay)] active:bg-[var(--app-hover-overlay)] transition-colors"
     >
       {leading && (
         <div className="w-4 h-4 flex-none flex items-center justify-center">

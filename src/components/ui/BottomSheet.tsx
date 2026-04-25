@@ -5,13 +5,14 @@ interface BottomSheetProps {
   children: ReactNode
   onClose: () => void
   title: string
+  titleContent?: ReactNode
   footer?: ReactNode
   className?: string
 }
 
 const DISMISS_THRESHOLD = 80
 
-export default function BottomSheet({ children, onClose, title, footer, className }: BottomSheetProps) {
+export default function BottomSheet({ children, onClose, title, titleContent, footer, className }: BottomSheetProps) {
   const [dragY, setDragY] = useState(0)
   const [transitioning, setTransitioning] = useState(false)
   const startYRef = useRef(0)
@@ -70,7 +71,7 @@ export default function BottomSheet({ children, onClose, title, footer, classNam
             <div className="w-10 h-1 rounded-full bg-[var(--app-border)]" />
           </div>
           <div className="flex items-center justify-between px-4 py-2">
-            <h3 className="text-base font-semibold text-[var(--app-text-primary)]">{title}</h3>
+            <h3 className="text-base font-semibold text-[var(--app-text-primary)]">{titleContent ?? title}</h3>
             <button
               type="button"
               onClick={onClose}

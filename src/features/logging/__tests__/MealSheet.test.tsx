@@ -128,6 +128,32 @@ describe('MealSheet', () => {
     })
   })
 
+  it('changes meal type from the sheet title menu', async () => {
+    render(
+      <MealSheet
+        logDate="2026-01-05"
+        loggedAt="2026-01-05T08:00:00.000Z"
+        onClose={vi.fn()}
+        onAdded={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Change meal type, currently Breakfast' }))
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Lunch' }))
+    fireEvent.click(screen.getByRole('button', { name: 'My oats' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Lunch' }))
+    fireEvent.click(screen.getByRole('button', { name: /Add to Lunch · 1 item/ }))
+
+    await waitFor(() => {
+      expect(createMealWithItemsMock).toHaveBeenCalledWith(
+        '2026-01-05',
+        '2026-01-05T08:00:00.000Z',
+        [{ product_id: 'product-1', quantity: 1 }],
+        'Lunch',
+      )
+    })
+  })
+
   it('returns selected items without calling create when onItemsSelected is provided', async () => {
     const onItemsSelected = vi.fn()
     const onClose = vi.fn()

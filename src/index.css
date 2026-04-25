@@ -88,12 +88,13 @@
   --app-surface-blue-text: #1E3A8A;
 
   /* Inputs */
-  --app-input-bg: rgb(0 0 0 / 0.05);
-  --app-input-bg-focus: rgb(0 0 0 / 0.03);
-  --app-input-border: rgb(0 0 0 / 0.10);
-  --app-input-shadow: inset 0 2px 5px rgb(0 0 0 / 0.08), inset 0 1px 2px rgb(0 0 0 / 0.05);
-  --app-input-shadow-focus: inset 0 2px 5px rgb(0 0 0 / 0.06), inset 0 1px 2px rgb(0 0 0 / 0.04);
-  --app-brand-ring: rgb(124 58 237 / 0.25);
+  --app-input-bg: var(--app-bg);
+  --app-input-bg-focus: #F7F4FD;
+  --app-input-border: transparent;
+  --app-input-shadow: 0 0 0 0 transparent;
+  --app-input-shadow-focus: 0 0 18px rgb(124 58 237 / 0.16);
+  --app-input-placeholder: rgb(100 83 132 / 0.62);
+  --app-brand-ring: rgb(124 58 237 / 0.14);
 
   /* Spacing */
   --app-radius-sm: 0.5rem;
@@ -262,6 +263,11 @@ select {
 }
 .animate-slide-up-in { animation: slide-up-in 0.15s ease-out both; }
 
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.92) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
 /* Full-viewport flash for special actions.
    Quick burst (0 → 92% in 12%) → hold → fade out.
    Duration driven by BATTLE_ANIM.SPECIAL_FLASH_MS (450ms). */
@@ -304,14 +310,15 @@ select {
 }
 
 .app-input::placeholder {
-  color: var(--app-text-subtle);
+  color: var(--app-input-placeholder);
+  opacity: 1;
 }
 
 .app-input:focus {
   outline: none;
   background: var(--app-input-bg-focus);
-  border-color: var(--app-focus);
-  box-shadow: var(--app-input-shadow-focus), 0 0 0 2px var(--app-brand-ring);
+  border-color: transparent;
+  box-shadow: 0 0 0 3px var(--app-brand-ring), var(--app-input-shadow-focus);
 }
 
 .app-button-primary,
@@ -359,7 +366,19 @@ select {
 .app-button-primary:disabled,
 .app-button-secondary:disabled,
 .app-button-danger:disabled {
+  cursor: not-allowed;
   opacity: 0.5;
+}
+
+.app-button-primary:disabled {
+  background: var(--app-input-bg);
+  box-shadow: none;
+  color: var(--app-input-placeholder);
+  opacity: 1;
+}
+
+.app-button-primary:disabled:hover {
+  background: var(--app-input-bg);
 }
 
 .app-badge {

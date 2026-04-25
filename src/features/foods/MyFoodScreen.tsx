@@ -157,11 +157,8 @@ export default function MyFoodScreen() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search foods…"
-              className="w-full pl-10 pr-9 py-3 text-sm rounded-full border outline-none transition-[border-color,box-shadow] focus:border-[var(--app-focus)] focus:ring-2 focus:ring-[var(--app-brand-ring)]"
+              className="w-full pl-10 pr-9 py-3 text-sm rounded-full border border-[var(--app-input-border)] bg-[var(--app-input-bg)] shadow-[var(--app-input-shadow)] placeholder:text-[var(--app-input-placeholder)] outline-none transition-[background-color,box-shadow] focus:border-transparent focus:bg-[var(--app-input-bg-focus)] focus:shadow-[0_0_0_3px_var(--app-brand-ring),var(--app-input-shadow-focus)] focus:ring-0"
               style={{
-                background: 'var(--app-surface)',
-                borderColor: 'var(--app-input-border)',
-                boxShadow: '0 2px 12px rgb(0 0 0 / 0.08)',
                 color: 'var(--app-text-primary)',
               }}
             />

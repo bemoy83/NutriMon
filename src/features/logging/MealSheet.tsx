@@ -1,4 +1,4 @@
-import { useState, useDeferredValue, useEffect } from 'react'
+import { useState, useDeferredValue, useEffect, useRef } from 'react'
 import { useInvalidateDailyLog } from './useDailyLog'
 import { createMealWithItems, deleteMealTemplate } from './api'
 import type { FoodSource, MealTemplate } from '@/types/domain'
@@ -10,7 +10,6 @@ import BottomSheet from '@/components/ui/BottomSheet'
 import FoodRow from '@/components/ui/FoodRow'
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import GramInput from '@/components/ui/GramInput'
-import MealTypeSelector from '@/components/ui/MealTypeSelector'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
 import ProductForm from './ProductForm'
 import ServingStep from './ServingStep'
@@ -22,7 +21,7 @@ import {
   getItemSourceType,
 } from './itemHelpers'
 import type { Item } from './types'
-import { getDefaultMealType, getMealTypeTheme } from '@/lib/mealType'
+import { MEAL_TYPES, getDefaultMealType, getMealTypeTheme } from '@/lib/mealType'
 import type { MealType } from '@/lib/mealType'
 
 interface MealSheetProps {
@@ -55,8 +54,10 @@ export default function MealSheet({
   const [searchQuery, setSearchQuery] = useState('')
   const [tab, setTab] = useState<'recent' | 'saved'>('recent')
   const [mealType, setMealType] = useState<MealType>(defaultMealType ?? getDefaultMealType(loggedAt))
+  const [mealMenuOpen, setMealMenuOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const mealMenuRef = useRef<HTMLDivElement | null>(null)
 
   const invalidateDailyLog = useInvalidateDailyLog()
   const invalidateProducts = useInvalidateProductQueries()
@@ -85,6 +86,31 @@ export default function MealSheet({
     document.addEventListener('keydown', handleKeyDown, true)
     return () => document.removeEventListener('keydown', handleKeyDown, true)
   }, [sheetView])
+
+  useEffect(() => {
+    if (!mealMenuOpen) return
+
+    function handlePointerDown(e: PointerEvent) {
+      if (!mealMenuRef.current?.contains(e.target as Node)) {
+        setMealMenuOpen(false)
+      }
+    }
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        setMealMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown, true)
+    document.addEventListener('keydown', handleKeyDown, true)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown, true)
+      document.removeEventListener('keydown', handleKeyDown, true)
+    }
+  }, [mealMenuOpen])
 
   const isSearching = deferredSearchQuery.trim().length > 0
 
@@ -305,6 +331,97 @@ export default function MealSheet({
           : i.catalogItemId === servingTarget.sourceId,
       )
     : false
+  const browseSubmitDisabled = items.length === 0 || submitting
+  const servingConfirmDisabled =
+    pendingMode === 'pieces' && isCompositeWithPieces
+      ? pendingGrams <= 0
+      : massInputMode === 'portions'
+        && servingTarget?.labelPortionGrams
+        && servingTarget.labelPortionGrams > 0
+        ? pendingPortions <= 0
+        : pendingGrams <= 0
+  const mealCtaStyle = mealTheme
+    ? {
+        background: mealTheme.accent,
+        boxShadow: `0 10px 24px ${mealTheme.buttonShadow}`,
+      }
+    : undefined
+  const mealCtaDisabledStyle = mealTheme
+    ? {
+        background: mealTheme.bg,
+        color: mealTheme.text,
+        boxShadow: 'none',
+      }
+    : undefined
+
+  const mealTitleControl = (
+    <div ref={mealMenuRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setMealMenuOpen((open) => !open)}
+        className="group inline-flex items-center gap-1.5 rounded-md py-1 pr-1 text-base font-semibold text-[var(--app-text-primary)] transition-[color,box-shadow] duration-[var(--app-transition-fast)] hover:text-[var(--app-text-secondary)] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--app-brand-ring),var(--app-input-shadow-focus)]"
+        aria-haspopup="menu"
+        aria-expanded={mealMenuOpen}
+        aria-label={`Change meal type, currently ${mealType}`}
+      >
+        <span>
+          Add to{' '}
+          <span style={{ color: mealTheme?.text ?? 'var(--app-brand)' }}>
+            {mealType}
+          </span>
+        </span>
+        <svg
+          className={`h-4 w-4 transition-transform duration-[var(--app-transition-fast)] ${mealMenuOpen ? 'rotate-180' : ''}`}
+          style={{ color: mealTheme?.text ?? 'var(--app-brand)' }}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+
+      {mealMenuOpen && (
+        <div
+          role="menu"
+          className="absolute left-0 top-full z-30 mt-2 w-44 rounded-2xl border border-[var(--app-border-muted)] bg-white p-1.5 shadow-[0_12px_32px_rgb(15_23_42/0.16)]"
+        >
+          {MEAL_TYPES.map((type) => {
+            const selected = mealType === type
+            const theme = getMealTypeTheme(type)
+
+            return (
+              <button
+                key={type}
+                type="button"
+                role="menuitemradio"
+                aria-checked={selected}
+                onClick={() => {
+                  setMealType(type)
+                  setMealMenuOpen(false)
+                }}
+                className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-[var(--app-input-bg)] focus-visible:bg-[var(--app-input-bg)] focus-visible:outline-none"
+                style={{
+                  color: selected
+                    ? (theme?.text ?? 'var(--app-brand)')
+                    : 'var(--app-text-secondary)',
+                }}
+              >
+                <span>{type}</span>
+                {selected && (
+                  <svg className="h-4 w-4 flex-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
 
   const footer =
     sheetView === 'browse' ? (
@@ -318,8 +435,9 @@ export default function MealSheet({
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={items.length === 0 || submitting}
+          disabled={browseSubmitDisabled}
           className="app-button-primary w-full py-3 !rounded-full"
+          style={browseSubmitDisabled ? mealCtaDisabledStyle : mealCtaStyle}
         >
           {submitting
             ? 'Adding…'
@@ -332,16 +450,9 @@ export default function MealSheet({
       <button
         type="button"
         onClick={confirmServing}
-        disabled={
-          pendingMode === 'pieces' && isCompositeWithPieces
-            ? pendingGrams <= 0
-            : massInputMode === 'portions'
-              && servingTarget?.labelPortionGrams
-              && servingTarget.labelPortionGrams > 0
-              ? pendingPortions <= 0
-              : pendingGrams <= 0
-        }
+        disabled={servingConfirmDisabled}
         className="app-button-primary w-full py-3 !rounded-full"
+        style={servingConfirmDisabled ? mealCtaDisabledStyle : mealCtaStyle}
       >
         {isEditingExisting ? 'Update' : `Add to ${mealType}`}
       </button>
@@ -351,18 +462,10 @@ export default function MealSheet({
     <BottomSheet
       onClose={onClose}
       title={`Add to ${mealType}`}
+      titleContent={mealTitleControl}
       className="h-[85vh] sm:h-[600px]"
       footer={footer}
     >
-      <div className="flex-none bg-white">
-        <div className="px-4 pt-1.5 pb-0">
-          <p className="text-[10px] font-semibold tracking-widest uppercase text-[var(--app-text-subtle)]">
-            Meal type
-          </p>
-        </div>
-        <MealTypeSelector value={mealType} onChange={setMealType} />
-      </div>
-
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
         <div
           className="absolute inset-0 flex flex-col transition-transform duration-[250ms] ease-out"
