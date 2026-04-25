@@ -5,6 +5,7 @@ interface GramInputProps {
   grams: number
   onChange: (grams: number) => void
   step?: number
+  /** When true, show − / + buttons beside the field. */
   showSteppers?: boolean
   /** Suffix after the numeric field (default grams). */
   unitSuffix?: string
@@ -17,7 +18,7 @@ export default function GramInput({
   grams,
   onChange,
   step = 10,
-  showSteppers = true,
+  showSteppers = false,
   unitSuffix = 'g',
   quantityAriaLabel,
   size = 'compact',

@@ -6,6 +6,7 @@ import { useAuth } from '@/app/providers/auth'
 import { useEffect, useState } from 'react'
 import type { Product } from '@/types/domain'
 import { mapProduct } from '@/lib/domainMappers'
+import { selectAllOnFocus } from '@/lib/selectAllOnFocus'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -163,6 +164,7 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
           {...register('caloriesPer100g', { valueAsNumber: true })}
           className="app-input px-3 py-2"
           placeholder="e.g. 165"
+          onFocus={selectAllOnFocus}
         />
         {errors.caloriesPer100g && (
           <p className="text-[var(--app-danger)] text-xs mt-1">{errors.caloriesPer100g.message}</p>
@@ -191,6 +193,7 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
               {...register(field, { valueAsNumber: true, setValueAs: v => v === '' ? null : Number(v) })}
               className="app-input px-3 py-2 text-sm"
               placeholder="—"
+              onFocus={selectAllOnFocus}
             />
           </div>
         ))}
@@ -207,6 +210,7 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
           {...register('labelPortionGrams', { valueAsNumber: true, setValueAs: v => v === '' ? null : Number(v) })}
           className="app-input px-3 py-2 text-sm"
           placeholder="e.g. 30 — if the label lists one serving size"
+          onFocus={selectAllOnFocus}
         />
         {portionKcalPreview != null && (
           <p className="text-xs text-[var(--app-text-muted)] mt-1">

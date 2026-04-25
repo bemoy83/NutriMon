@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/app/providers/auth'
 import type { Product } from '@/types/domain'
 import type { SaveHandle } from './RecipeEditor'
+import { selectAllOnFocus } from '@/lib/selectAllOnFocus'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -22,6 +23,12 @@ const schema = z.object({
 })
 
 type FormData = z.infer<typeof schema>
+
+const MACRO_FIELDS = [
+  { id: 'sfe-fat', label: 'Fat', field: 'fatPer100g' as const, accent: 'var(--app-macro-fat)' },
+  { id: 'sfe-carbs', label: 'Carbs', field: 'carbsPer100g' as const, accent: 'var(--app-macro-carbs)' },
+  { id: 'sfe-protein', label: 'Protein', field: 'proteinPer100g' as const, accent: 'var(--app-macro-protein)' },
+] as const
 
 interface SimpleFoodEditorProps {
   initialProduct: Product | null
@@ -144,51 +151,73 @@ export default function SimpleFoodEditor({
           )}
         </div>
 
-        <div>
-          <label htmlFor="sfe-cal" className="block text-sm text-[var(--app-text-secondary)] mb-1">
-            Energy (kcal per 100g) <span className="text-[var(--app-danger)]">*</span>
-          </label>
-          <input
-            id="sfe-cal"
-            type="number"
-            {...register('caloriesPer100g', { valueAsNumber: true })}
-            className="app-input px-3 py-2"
-            placeholder="e.g. 165"
-          />
-          {errors.caloriesPer100g && (
-            <p className="text-[var(--app-danger)] text-xs mt-1">{errors.caloriesPer100g.message}</p>
-          )}
-          <p className="text-xs text-[var(--app-text-muted)] mt-1">
-            Use the values from the "per 100g" column on the nutrition label.
-          </p>
-        </div>
+        <section aria-labelledby="sfe-nutrition-heading" className="space-y-5">
+          <h2
+            id="sfe-nutrition-heading"
+            className="text-[10px] font-semibold uppercase tracking-widest text-[var(--app-text-subtle)]"
+          >
+            Nutrition
+          </h2>
 
-        <div className="grid grid-cols-3 gap-3">
-          {(
-            [
-              { id: 'sfe-fat', label: 'Fat (g / 100g)', field: 'fatPer100g' },
-              { id: 'sfe-carbs', label: 'Carbs (g / 100g)', field: 'carbsPer100g' },
-              { id: 'sfe-protein', label: 'Protein (g / 100g)', field: 'proteinPer100g' },
-            ] as const
-          ).map(({ id, label, field }) => (
-            <div key={id}>
-              <label htmlFor={id} className="block text-xs text-[var(--app-text-secondary)] mb-1">
-                {label}
+          <div className="space-y-2">
+            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-[var(--app-text-muted)]">
+              Energy
+            </h3>
+            <div>
+              <label htmlFor="sfe-cal" className="mb-1 block text-sm text-[var(--app-text-secondary)]">
+                Kcal per 100g <span className="text-[var(--app-danger)]">*</span>
               </label>
               <input
-                id={id}
+                id="sfe-cal"
                 type="number"
-                step="0.1"
-                {...register(field, { valueAsNumber: true, setValueAs: v => v === '' ? null : Number(v) })}
-                className="app-input px-3 py-2 text-sm"
-                placeholder="—"
+                {...register('caloriesPer100g', { valueAsNumber: true })}
+                className="app-input px-3 py-2"
+                placeholder="e.g. 165"
+                onFocus={selectAllOnFocus}
               />
+              {errors.caloriesPer100g && (
+                <p className="mt-1 text-xs text-[var(--app-danger)]">{errors.caloriesPer100g.message}</p>
+              )}
+              <p className="mt-1 text-xs text-[var(--app-text-muted)]">
+                Use the values from the &quot;per 100g&quot; column on the nutrition label.
+              </p>
             </div>
-          ))}
-        </div>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-[var(--app-text-muted)]">
+              Macros
+            </h3>
+            <p className="text-xs text-[var(--app-text-muted)] -mt-1 mb-1">
+              Grams per 100g (optional)
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              {MACRO_FIELDS.map(({ id, label, field, accent }) => (
+                <div key={id}>
+                  <label
+                    htmlFor={id}
+                    className="mb-1 block text-sm font-semibold leading-snug"
+                    style={{ color: accent }}
+                  >
+                    {label}
+                  </label>
+                  <input
+                    id={id}
+                    type="number"
+                    step="0.1"
+                    {...register(field, { valueAsNumber: true, setValueAs: v => v === '' ? null : Number(v) })}
+                    className="app-input px-3 py-2 text-sm"
+                    placeholder="—"
+                    onFocus={selectAllOnFocus}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
         <div>
-          <label htmlFor="sfe-portion" className="block text-xs text-[var(--app-text-secondary)] mb-1">
+          <label htmlFor="sfe-portion" className="mb-1 block text-sm text-[var(--app-text-secondary)]">
             Portion on label (g, optional)
           </label>
           <input
@@ -198,9 +227,10 @@ export default function SimpleFoodEditor({
             {...register('labelPortionGrams', { valueAsNumber: true, setValueAs: v => v === '' ? null : Number(v) })}
             className="app-input px-3 py-2 text-sm"
             placeholder="e.g. 30 — if the label lists one serving size"
+            onFocus={selectAllOnFocus}
           />
           {portionKcalPreview != null && (
-            <p className="text-xs text-[var(--app-text-muted)] mt-1">
+            <p className="mt-1 text-xs text-[var(--app-text-muted)]">
               ≈ {portionKcalPreview} kcal per that portion (derived from per 100g values).
             </p>
           )}

@@ -15,7 +15,7 @@ export default function KcalGramEditor({ kcal, grams, onGramsChange }: KcalGramE
         </p>
         <p className="mt-2 text-sm text-[var(--app-text-muted)]">kcal</p>
       </div>
-      <GramInput grams={grams} onChange={onGramsChange} showSteppers />
+      <GramInput grams={grams} onChange={onGramsChange} />
     </div>
   )
 }

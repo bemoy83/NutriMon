@@ -238,7 +238,6 @@ export default function ServingStep({
                 <GramInput
                   grams={grams}
                   onChange={onGramsChange}
-                  showSteppers
                   step={1}
                   unitSuffix={pieceUnit}
                   quantityAriaLabel="Pieces"
@@ -248,14 +247,13 @@ export default function ServingStep({
                 <GramInput
                   grams={portions}
                   onChange={onPortionsChange}
-                  showSteppers
                   step={1}
                   unitSuffix={portionStepperSuffix}
                   quantityAriaLabel="Label servings"
                   size="large"
                 />
               ) : (
-                <GramInput grams={grams} onChange={onGramsChange} showSteppers step={10} size="large" />
+                <GramInput grams={grams} onChange={onGramsChange} step={10} size="large" />
               )}
 
               <div className="min-h-4">
