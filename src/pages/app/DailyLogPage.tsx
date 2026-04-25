@@ -199,7 +199,7 @@ export default function DailyLogPage() {
 
       {/* Feedback card (finalized) */}
       {feedback && isFinalized && (
-        <div className="app-card mx-4 mt-4 p-4">
+        <div className="corner-squircle app-card mx-4 mt-4 p-4">
           <p className="text-xs font-medium mb-3" style={{ color: 'var(--app-text-muted)' }}>Daily Summary</p>
           <div className="flex items-start gap-3">
             <span className="text-2xl mt-0.5">
@@ -217,7 +217,7 @@ export default function DailyLogPage() {
 
 
       {!isFinalized && creaturePreview && (
-        <div className="app-card mx-4 mt-4 p-4 space-y-3">
+        <div className="corner-squircle app-card mx-4 mt-4 p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-[var(--app-text-primary)]">Creature Preview</h2>
             <span className="text-xs font-semibold capitalize text-[var(--app-brand)]">{creaturePreview.mealRating}</span>
@@ -302,14 +302,14 @@ export default function DailyLogPage() {
       )}
 
       {battlePrep && (
-        <div className="app-card mx-4 mt-4 p-4">
+        <div className="corner-squircle app-card mx-4 mt-4 p-4">
           <p className="text-xs font-medium mb-3 text-[var(--app-text-muted)]">Tomorrow&apos;s Battle Prep</p>
           <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="rounded-xl bg-[var(--app-surface-muted)] px-3 py-2">
+            <div className="corner-squircle rounded-[var(--app-radius-lg)] bg-[var(--app-surface-muted)] px-3 py-2">
               <p className="text-xs text-[var(--app-text-muted)]">Readiness</p>
               <p className="font-semibold text-[var(--app-text-primary)]">{battlePrep.readinessScore}</p>
             </div>
-            <div className="rounded-xl bg-[var(--app-surface-muted)] px-3 py-2 capitalize">
+            <div className="corner-squircle rounded-[var(--app-radius-lg)] bg-[var(--app-surface-muted)] px-3 py-2 capitalize">
               <p className="text-xs text-[var(--app-text-muted)]">Condition</p>
               <p className="font-semibold text-[var(--app-text-primary)]">{battlePrep.condition}</p>
             </div>
@@ -357,7 +357,7 @@ export default function DailyLogPage() {
 
 function SheetLoadingFallback() {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-lg rounded-t-3xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-lg">
+    <div className="corner-squircle fixed inset-x-0 bottom-0 z-40 mx-auto max-w-lg rounded-t-[var(--app-radius-xl)] border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-lg">
       <p className="text-sm text-[var(--app-text-muted)]">Loading…</p>
     </div>
   )

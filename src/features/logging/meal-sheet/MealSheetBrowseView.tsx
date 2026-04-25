@@ -61,7 +61,7 @@ export default function MealSheetBrowseView({
           value={searchQuery}
           onChange={(e) => onSearchQueryChange(e.target.value)}
           placeholder="Search foods…"
-          className="app-input w-full px-4 py-1.5 text-sm !rounded-xl"
+          className="corner-squircle app-input box-border h-10 w-full px-4 text-sm leading-snug !rounded-[var(--app-radius-lg)]"
         />
       </div>
 

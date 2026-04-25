@@ -35,41 +35,82 @@ export default function MyFoodScreen() {
     navigate(`/app/my-food/${product.id}`)
   }
 
+  const foodSectionTitle =
+    filter === 'all' ? 'Foods' : filter === 'simple' ? 'Simple foods' : 'Recipes'
+
+  /** Avoid duplicate counts: total under title for “whole library”; section count when list is scoped. */
+  const isLibraryOverview = filter === 'all' && search.trim() === ''
+
   if (productsQuery.isLoading) {
     return <LoadingState fullScreen />
   }
 
   return (
-    <div className="app-page min-h-full pb-40">
-      {/* Sticky header + filter */}
-      <div className="sticky top-0 z-10" style={{ background: 'var(--app-bg)' }}>
-        <div className="px-4 pt-6 pb-3">
+    <div className="app-page min-h-full pb-32">
+      <div className="sticky top-0 z-10 px-4 pt-4 pb-3" style={{ background: 'var(--app-bg)' }}>
+        <div className="relative z-[1]">
           <h1 className="text-[32px] font-bold tracking-tight" style={{ color: 'var(--app-text-primary)' }}>
             My Food
           </h1>
+          {isLibraryOverview ? (
+            <p className="mt-0.5 text-xs" style={{ color: 'var(--app-text-muted)' }}>
+              {allProducts.length} saved food{allProducts.length === 1 ? '' : 's'}
+            </p>
+          ) : null}
         </div>
 
-        <SegmentedTabs
-        options={[
-          { label: 'All', value: 'all' },
-          { label: 'Simple', value: 'simple' },
-          { label: 'Recipes', value: 'recipe' },
-        ] as const}
-        value={filter}
-        onChange={setFilter}
-        className="!bg-transparent !px-4 !py-0"
-      />
-      <div className="pb-4" />
+        <div className="corner-squircle relative z-[1] mt-3 app-card border border-[var(--app-border-muted)] overflow-hidden">
+          <div className="px-4 pt-3 pb-2">
+            <div className="relative">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search foods…"
+                className="corner-squircle app-input box-border h-10 w-full px-4 pr-9 text-sm leading-snug !rounded-[var(--app-radius-lg)]"
+              />
+              {search !== '' && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="corner-squircle absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-[var(--app-radius-sm)] text-[var(--app-text-muted)] hover:bg-[var(--app-hover-overlay)]"
+                  aria-label="Clear search"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+          <SegmentedTabs
+            options={[
+              { label: 'All', value: 'all' },
+              { label: 'Simple', value: 'simple' },
+              { label: 'Recipes', value: 'recipe' },
+            ] as const}
+            value={filter}
+            onChange={setFilter}
+            className="!bg-transparent !px-4 !pt-1.5 !pb-3 !shadow-none"
+          />
+        </div>
+        <div
+          className="pointer-events-none absolute inset-x-0 top-full h-6"
+          style={{
+            background: 'linear-gradient(to bottom, var(--app-bg) 0%, transparent 100%)',
+          }}
+          aria-hidden="true"
+        />
       </div>
 
-      <div>
+      <div className="mt-4">
 
       {/* Empty state — no foods at all */}
       {allProducts.length === 0 ? (
         <div className="py-12 text-center px-4">
           <p className="text-sm font-medium mb-1" style={{ color: 'var(--app-text-primary)' }}>No foods saved yet</p>
           <p className="text-xs" style={{ color: 'var(--app-text-muted)' }}>
-            Use the search bar below to add your first food
+            Use search to filter, or add a food with the button below
           </p>
         </div>
       ) : search !== '' && filtered.length === 0 ? (
@@ -79,7 +120,21 @@ export default function MyFoodScreen() {
           </p>
         </div>
       ) : (
-        <div className="app-card overflow-hidden mx-4">
+        <>
+          <div className="mx-4 mb-3 flex items-baseline justify-between gap-2">
+            <h2 className="text-base font-bold" style={{ color: 'var(--app-text-primary)' }}>
+              {foodSectionTitle}
+            </h2>
+            {!isLibraryOverview ? (
+              <span
+                className="text-base font-bold tabular-nums shrink-0"
+                style={{ color: 'var(--app-text-muted)' }}
+              >
+                {filtered.length}
+              </span>
+            ) : null}
+          </div>
+          <div className="corner-squircle app-card overflow-hidden mx-4">
           {filtered.map((product, idx) => {
             const isComposite = product.kind === 'composite'
             const p = product.proteinPer100g
@@ -133,66 +188,26 @@ export default function MyFoodScreen() {
               </Fragment>
             )
           })}
-        </div>
+          </div>
+        </>
       )}
       </div>
 
-      {/* Bottom toolbar: search + new food — floats above nav bar */}
+      {/* Add food — full-width CTA above nav (search lives in filter card with tabs) */}
       <div
         className="fixed inset-x-0 bottom-0 z-[19] px-4 pb-[5.5rem] pt-8 pointer-events-none"
         style={{ background: 'linear-gradient(to top, var(--app-bg) 60%, transparent)' }}
       >
-        <div className="flex items-center gap-2 pointer-events-auto">
-          {/* Search field */}
-          <div className="relative flex-1">
-            <svg
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-              style={{ color: 'var(--app-text-muted)' }}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-            </svg>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search foods…"
-              className="w-full rounded-xl border border-[var(--app-input-border)] bg-[var(--app-input-bg)] py-3 pl-10 pr-9 text-sm shadow-[var(--app-input-shadow)] outline-none transition-[background-color,box-shadow] placeholder:text-[var(--app-input-placeholder)] focus:border-transparent focus:bg-[var(--app-input-bg-focus)] focus:shadow-[0_0_0_3px_var(--app-brand-ring),var(--app-input-shadow-focus)] focus:ring-0"
-              style={{
-                color: 'var(--app-text-primary)',
-              }}
-            />
-            {search !== '' && (
-              <button
-                type="button"
-                onClick={() => setSearch('')}
-                className="absolute right-3 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-md"
-                style={{ color: 'var(--app-text-muted)' }}
-                aria-label="Clear search"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-          </div>
-
-          {/* New food button */}
-          <button
-            type="button"
-            onClick={() => navigate('/app/my-food/new')}
-            aria-label="New food"
-            className="flex h-12 w-12 flex-none items-center justify-center rounded-xl text-white transition-colors hover:bg-[var(--app-brand-hover)]"
-            style={{
-              background: 'var(--app-brand)',
-              boxShadow: '0 4px 16px rgb(124 58 237 / 0.35)',
-            }}
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => navigate('/app/my-food/new')}
+          className="corner-squircle pointer-events-auto app-button-primary flex w-full items-center justify-center gap-2 !rounded-[var(--app-radius-xl)] py-3.5 text-sm font-semibold shadow-[0_4px_16px_rgb(124_58_237/0.28)]"
+        >
+          <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Add new food
+        </button>
       </div>
     </div>
   )

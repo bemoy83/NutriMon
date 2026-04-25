@@ -291,6 +291,11 @@ select {
   background: var(--app-surface);
 }
 
+/* Superellipse-style corners where supported; older engines use border-radius only */
+.corner-squircle {
+  corner-shape: squircle;
+}
+
 .app-card-solid {
   border-radius: var(--app-radius-lg);
   background: var(--app-surface);
