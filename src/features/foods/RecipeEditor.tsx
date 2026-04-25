@@ -256,38 +256,41 @@ export default function RecipeEditor({
             aria-label={detailsExpanded ? 'Collapse recipe details' : 'Expand recipe details'}
           >
             {hasNutrition ? (
-              <div className="flex flex-wrap items-center gap-1">
-                <span
-                  className="text-[15px] font-extrabold tabular-nums"
-                  style={{ color: 'var(--app-text-primary)' }}
-                >
-                  {Math.round(rollup.totals.calories)}
-                </span>
-                <span
-                  className="text-[10px] font-semibold"
-                  style={{ color: 'var(--app-text-muted)' }}
-                >
-                  kcal
-                </span>
-                <span className="text-[10px]" style={{ color: 'var(--app-text-subtle)' }}>·</span>
-                <span
-                  className="rounded px-1 py-px text-[10px] font-bold tabular-nums"
-                  style={{ color: 'var(--app-macro-protein)', background: 'var(--app-macro-protein-bg)' }}
-                >
-                  P {fmt(rollup.totals.protein)}g
-                </span>
-                <span
-                  className="rounded px-1 py-px text-[10px] font-bold tabular-nums"
-                  style={{ color: 'var(--app-macro-carbs)', background: 'var(--app-macro-carbs-bg)' }}
-                >
-                  C {fmt(rollup.totals.carbs)}g
-                </span>
-                <span
-                  className="rounded px-1 py-px text-[10px] font-bold tabular-nums"
-                  style={{ color: 'var(--app-macro-fat)', background: 'var(--app-macro-fat-bg)' }}
-                >
-                  F {fmt(rollup.totals.fat)}g
-                </span>
+              <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-1">
+                  <span
+                    className="rounded px-1 py-px text-[10px] font-bold tabular-nums"
+                    style={{ color: 'var(--app-macro-protein)', background: 'var(--app-macro-protein-bg)' }}
+                  >
+                    P {fmt(rollup.totals.protein)}g
+                  </span>
+                  <span
+                    className="rounded px-1 py-px text-[10px] font-bold tabular-nums"
+                    style={{ color: 'var(--app-macro-carbs)', background: 'var(--app-macro-carbs-bg)' }}
+                  >
+                    C {fmt(rollup.totals.carbs)}g
+                  </span>
+                  <span
+                    className="rounded px-1 py-px text-[10px] font-bold tabular-nums"
+                    style={{ color: 'var(--app-macro-fat)', background: 'var(--app-macro-fat-bg)' }}
+                  >
+                    F {fmt(rollup.totals.fat)}g
+                  </span>
+                </div>
+                <div className="flex shrink-0 items-baseline gap-0.5">
+                  <span
+                    className="text-[15px] font-extrabold tabular-nums"
+                    style={{ color: 'var(--app-text-primary)' }}
+                  >
+                    {Math.round(rollup.totals.calories)}
+                  </span>
+                  <span
+                    className="text-[10px] font-semibold"
+                    style={{ color: 'var(--app-text-muted)' }}
+                  >
+                    kcal
+                  </span>
+                </div>
               </div>
             ) : (
               <span className="text-xs" style={{ color: 'var(--app-text-subtle)' }}>
@@ -456,6 +459,16 @@ export default function RecipeEditor({
                         </p>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveIngredient(row.key)}
+                      className="flex h-9 w-9 flex-none items-center justify-center rounded-xl text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-danger-soft)] hover:text-[var(--app-danger)]"
+                      aria-label={`Remove ${row.name}`}
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
                   </div>
 
                   <div className="flex flex-1 flex-col overflow-y-auto px-5 pb-5 pt-4">
@@ -466,6 +479,8 @@ export default function RecipeEditor({
                         carbsG={est.carbsG}
                         fatG={est.fatG}
                         description="For this amount in the recipe"
+                        showEyebrow={false}
+                        macros="pills"
                       />
                       <section className="pt-6">
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-subtle)]">
@@ -484,15 +499,6 @@ export default function RecipeEditor({
                           size="large"
                         />
                       </section>
-                      <div className="mt-4 border-t border-[var(--app-border-muted)] pt-4">
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveIngredient(row.key)}
-                          className="w-full py-2 text-center text-sm font-medium text-[var(--app-danger)] transition-opacity hover:opacity-80"
-                        >
-                          Remove ingredient
-                        </button>
-                      </div>
                     </div>
                   </div>
                 </div>

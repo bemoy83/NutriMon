@@ -178,6 +178,8 @@ export default function ServingStep({
             proteinG={estimate.proteinG}
             carbsG={estimate.carbsG}
             fatG={estimate.fatG}
+            showEyebrow={false}
+            macros="pills"
           />
 
           <section className="pt-6">

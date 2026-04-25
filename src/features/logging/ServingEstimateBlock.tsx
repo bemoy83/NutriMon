@@ -11,8 +11,8 @@ export interface ServingEstimateBlockProps {
   description?: string
   /** When false, omit bottom border (e.g. last block in a card). */
   showBottomBorder?: boolean
-  /** `cards` = colored macro tiles; `inline` = one compact P/C/F line (saves space). */
-  macros?: 'cards' | 'inline'
+  /** `cards` = colored macro tiles; `inline` = one compact P/C/F line; `pills` = small colored badge pills. */
+  macros?: 'cards' | 'inline' | 'pills'
 }
 
 export default function ServingEstimateBlock({
@@ -26,7 +26,7 @@ export default function ServingEstimateBlock({
   showBottomBorder = true,
   macros = 'cards',
 }: ServingEstimateBlockProps) {
-  const compactHero = macros === 'inline'
+  const compactHero = macros === 'inline' || macros === 'pills'
   const hasMacros = proteinG != null || carbsG != null || fatG != null
   const macroRows = [
     { label: 'Protein', shortLabel: 'P', value: proteinG, color: 'var(--app-macro-protein)', bg: 'var(--app-macro-protein-bg)' },
@@ -35,12 +35,8 @@ export default function ServingEstimateBlock({
   ]
 
   const padBottom = showBottomBorder
-    ? macros === 'inline'
-      ? 'pb-3'
-      : 'pb-5'
-    : macros === 'inline'
-      ? 'pb-0'
-      : 'pb-5'
+    ? (macros === 'inline' || macros === 'pills') ? 'pb-3' : 'pb-5'
+    : (macros === 'inline' || macros === 'pills') ? 'pb-0' : 'pb-5'
 
   return (
     <section
@@ -51,30 +47,57 @@ export default function ServingEstimateBlock({
           {eyebrow}
         </p>
       ) : null}
-      <div
-        className={`flex justify-between gap-3 ${compactHero ? 'items-center' : 'items-end'} ${showEyebrow ? 'mt-2' : ''}`}
-      >
-        <p
-          className={
-            compactHero
-              ? 'max-w-[min(11rem,55%)] text-xs leading-snug text-[var(--app-text-muted)]'
-              : 'max-w-[11rem] text-sm leading-5 text-[var(--app-text-muted)]'
-          }
-        >
-          {description}
-        </p>
-        {compactHero ? (
+      {macros === 'pills' ? (
+        <div className={`flex items-center justify-between gap-3 ${showEyebrow ? 'mt-2' : ''}`}>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs leading-snug text-[var(--app-text-muted)]">{description}</p>
+            {hasMacros && (
+              <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                {macroRows.map((macro) =>
+                  macro.value != null ? (
+                    <span
+                      key={macro.shortLabel}
+                      className="rounded px-1 py-px text-[10px] font-bold tabular-nums"
+                      style={{ color: macro.color, background: macro.bg }}
+                    >
+                      {macro.shortLabel} {Math.round(macro.value)}g
+                    </span>
+                  ) : null,
+                )}
+              </div>
+            )}
+          </div>
           <div className="flex shrink-0 items-baseline gap-1.5 text-right">
             <p className="text-2xl font-bold leading-none tabular-nums text-[var(--app-text-primary)]">{kcal}</p>
             <p className="text-[10px] font-medium text-[var(--app-text-muted)]">kcal</p>
           </div>
-        ) : (
-          <div className="text-right">
-            <p className="text-5xl font-bold leading-none tabular-nums text-[var(--app-text-primary)]">{kcal}</p>
-            <p className="mt-1 text-xs font-medium text-[var(--app-text-muted)]">kcal</p>
-          </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div
+          className={`flex justify-between gap-3 ${compactHero ? 'items-center' : 'items-end'} ${showEyebrow ? 'mt-2' : ''}`}
+        >
+          <p
+            className={
+              compactHero
+                ? 'max-w-[min(11rem,55%)] text-xs leading-snug text-[var(--app-text-muted)]'
+                : 'max-w-[11rem] text-sm leading-5 text-[var(--app-text-muted)]'
+            }
+          >
+            {description}
+          </p>
+          {compactHero ? (
+            <div className="flex shrink-0 items-baseline gap-1.5 text-right">
+              <p className="text-2xl font-bold leading-none tabular-nums text-[var(--app-text-primary)]">{kcal}</p>
+              <p className="text-[10px] font-medium text-[var(--app-text-muted)]">kcal</p>
+            </div>
+          ) : (
+            <div className="text-right">
+              <p className="text-5xl font-bold leading-none tabular-nums text-[var(--app-text-primary)]">{kcal}</p>
+              <p className="mt-1 text-xs font-medium text-[var(--app-text-muted)]">kcal</p>
+            </div>
+          )}
+        </div>
+      )}
       {hasMacros && macros === 'inline' ? (
         <p
           className="mt-1 text-xs tabular-nums text-[var(--app-text-muted)]"
