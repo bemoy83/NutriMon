@@ -102,6 +102,7 @@ export function LoggedMealRow({
           onConfirm={handleServingConfirmed}
           onClose={() => setServingEditTarget(null)}
           onRemove={() => void handleDeleteItem(servingEditTarget.idx)}
+          mealType={meal.mealType}
         />
       )}
     </div>
