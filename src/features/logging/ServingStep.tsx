@@ -2,6 +2,8 @@ import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import GramInput from '@/components/ui/GramInput'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
 
+type ServingAmountMode = 'grams' | 'portions' | 'pieces'
+
 export interface ServingStepTarget {
   name: string
   sourceType?: 'user_product' | 'catalog_item'
@@ -46,19 +48,56 @@ export default function ServingStep({
   onModeChange,
   showModeToggle,
 }: ServingStepProps) {
-  void isUpdate
-
   const isPieceMode = compositeMode === 'pieces'
   const gramsPerPiece = target.totalMassG && target.pieceCount && target.pieceCount > 0
     ? target.totalMassG / target.pieceCount
     : null
 
   const labelPortionG = target.labelPortionGrams
-  const showLabelPortionTabs = Boolean(labelPortionG && labelPortionG > 0 && !showModeToggle && !isPieceMode)
+  const canUseLabelPortions = Boolean(labelPortionG && labelPortionG > 0)
+  const selectedAmountMode: ServingAmountMode = isPieceMode
+    ? 'pieces'
+    : canUseLabelPortions && massInputMode === 'portions'
+      ? 'portions'
+      : 'grams'
+  const amountModeOptions: Array<{ value: ServingAmountMode; label: string }> = [
+    { value: 'grams', label: 'Weight' },
+    ...(canUseLabelPortions ? [{ value: 'portions' as const, label: 'Label serving' }] : []),
+    ...(showModeToggle ? [{ value: 'pieces' as const, label: 'Pieces' }] : []),
+  ]
   const portionStepperSuffix =
     target.defaultServingUnit?.trim() && target.defaultServingUnit !== 'g'
       ? target.defaultServingUnit
       : 'portion'
+  const servingActionLabel = isUpdate ? 'Edit serving' : 'Add serving'
+  const pieceUnit = target.pieceLabel ?? 'pc'
+  const quickChoices =
+    selectedAmountMode === 'pieces'
+      ? [
+          { label: `1 ${pieceUnit}`, value: 1 },
+          { label: `2 ${pieceUnit}`, value: 2 },
+          ...(target.pieceCount && target.pieceCount > 2
+            ? [{ label: `All ${target.pieceCount}`, value: target.pieceCount }]
+            : []),
+        ]
+      : selectedAmountMode === 'portions'
+        ? [
+            { label: `1 ${portionStepperSuffix}`, value: 1 },
+            { label: `2 ${portionStepperSuffix}`, value: 2 },
+          ]
+        : [
+            ...(target.defaultServingAmount && target.defaultServingUnit && target.defaultServingUnit !== 'g'
+              ? [{ label: `1 ${target.defaultServingUnit}`, value: target.defaultServingAmount }]
+              : []),
+            ...(labelPortionG ? [{ label: 'Label serving', value: Math.round(labelPortionG) }] : []),
+            { label: '100g', value: 100 },
+          ]
+  const quickChoiceGridClass =
+    quickChoices.length === 1
+      ? 'grid-cols-1'
+      : quickChoices.length === 2
+        ? 'grid-cols-2'
+        : 'grid-cols-3'
 
   function handleCompositeModeSwitch(mode: 'grams' | 'pieces') {
     if (mode === compositeMode) return
@@ -71,6 +110,54 @@ export default function ServingStep({
     }
     onModeChange(mode)
   }
+
+  function handleAmountModeChange(mode: ServingAmountMode) {
+    if (mode === selectedAmountMode) return
+
+    if (mode === 'pieces') {
+      if (massInputMode !== 'grams') onMassInputModeChange('grams')
+      handleCompositeModeSwitch('pieces')
+      return
+    }
+
+    if (isPieceMode) {
+      onMassInputModeChange(mode)
+      if (gramsPerPiece) {
+        const nextGrams = Math.round(grams * gramsPerPiece)
+        onGramsChange(nextGrams)
+        if (mode === 'portions' && labelPortionG) {
+          onPortionsChange(Math.max(1, Math.round(nextGrams / labelPortionG)))
+        }
+      }
+      onModeChange('grams')
+      return
+    }
+
+    onMassInputModeChange(mode)
+  }
+
+  function handleQuickChoice(value: number) {
+    if (selectedAmountMode === 'portions') {
+      onPortionsChange(value)
+      if (labelPortionG) onGramsChange(Math.round(value * labelPortionG))
+      return
+    }
+    onGramsChange(value)
+  }
+
+  const conversionHint = isPieceMode
+    ? gramsPerPiece && target.pieceLabel
+      ? `1 ${target.pieceLabel} = ${Math.round(gramsPerPiece)}g`
+      : target.pieceLabel
+        ? `Unit: ${target.pieceLabel}`
+        : null
+    : selectedAmountMode === 'portions' && labelPortionG
+      ? `1 ${portionStepperSuffix} = ${Math.round(labelPortionG)}g from label`
+      : target.defaultServingUnit &&
+          target.defaultServingUnit !== 'g' &&
+          target.defaultServingAmount != null
+        ? `1 ${target.defaultServingUnit} = ${target.defaultServingAmount}g`
+        : null
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -91,7 +178,12 @@ export default function ServingStep({
           ) : (
             <span className="h-2 w-2 flex-none rounded-full bg-[var(--app-text-muted)] opacity-35" aria-hidden="true" />
           )}
-          <p className="text-sm font-semibold text-[var(--app-text-primary)] truncate">{target.name}</p>
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[var(--app-text-subtle)]">
+              {servingActionLabel}
+            </p>
+            <p className="text-sm font-semibold text-[var(--app-text-primary)] truncate">{target.name}</p>
+          </div>
         </div>
         {onRemove && (
           <button
@@ -107,87 +199,96 @@ export default function ServingStep({
         )}
       </div>
 
-      {showModeToggle && (
-        <div className="flex-none px-6 pt-3">
-          <SegmentedTabs
-            value={compositeMode}
-            options={[
-              { value: 'grams' as const, label: 'Grams' },
-              { value: 'pieces' as const, label: 'Pieces' },
-            ]}
-            onChange={handleCompositeModeSwitch}
-            className="!bg-transparent !px-0 !py-0 !shadow-none"
-          />
-        </div>
-      )}
-
-      {showLabelPortionTabs && (
-        <div className="flex-none px-6 pt-3">
-          <SegmentedTabs
-            value={massInputMode}
-            options={[
-              { value: 'grams' as const, label: 'Grams' },
-              { value: 'portions' as const, label: 'Portions' },
-            ]}
-            onChange={onMassInputModeChange}
-            className="!bg-transparent !px-0 !py-0 !shadow-none"
-          />
-        </div>
-      )}
-
-      <div className="flex flex-1 flex-col items-center justify-center gap-8 px-8 py-6">
-        <div className="text-center">
-          <p className="text-6xl font-bold tabular-nums text-[var(--app-text-primary)] leading-none">
-            {liveKcal}
-          </p>
-          <p className="mt-2 text-sm text-[var(--app-text-muted)]">kcal</p>
-        </div>
-
-        <div className="flex flex-col items-center gap-2">
-          {isPieceMode ? (
-            <GramInput
-              grams={grams}
-              onChange={onGramsChange}
-              showSteppers
-              step={1}
-              unitSuffix={target.pieceLabel ?? 'pc'}
-              quantityAriaLabel="Pieces"
-            />
-          ) : showLabelPortionTabs && massInputMode === 'portions' ? (
-            <GramInput
-              grams={portions}
-              onChange={onPortionsChange}
-              showSteppers
-              step={1}
-              unitSuffix={portionStepperSuffix}
-              quantityAriaLabel="Portions"
-            />
-          ) : (
-            <GramInput grams={grams} onChange={onGramsChange} showSteppers step={10} />
-          )}
-          {isPieceMode ? (
-            gramsPerPiece && target.pieceLabel ? (
-              <p className="text-xs text-[var(--app-text-subtle)]">
-                1 {target.pieceLabel} = {Math.round(gramsPerPiece)}g
-              </p>
-            ) : target.pieceLabel ? (
-              <p className="text-xs text-[var(--app-text-subtle)]">
-                Unit: {target.pieceLabel}
-              </p>
-            ) : null
-          ) : showLabelPortionTabs && massInputMode === 'portions' && labelPortionG ? (
-            <p className="text-xs text-[var(--app-text-subtle)]">
-              1 portion = {Math.round(labelPortionG)}g (from label)
+      <div className="flex flex-1 flex-col overflow-y-auto px-5 pb-5 pt-4">
+        <div className="mx-auto flex w-full max-w-sm flex-1 flex-col">
+          <section className="border-b border-[var(--app-border-muted)] pb-5">
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--app-text-subtle)]">
+              Estimate
             </p>
-          ) : (
-            target.defaultServingUnit &&
-            target.defaultServingUnit !== 'g' &&
-            target.defaultServingAmount != null && (
-              <p className="text-xs text-[var(--app-text-subtle)]">
-                1 {target.defaultServingUnit} = {target.defaultServingAmount}g
+            <div className="mt-2 flex items-end justify-between gap-4">
+              <p className="max-w-[11rem] text-sm leading-5 text-[var(--app-text-muted)]">
+                Calories for this serving
               </p>
-            )
-          )}
+              <div className="text-right">
+                <p className="text-5xl font-bold leading-none tabular-nums text-[var(--app-text-primary)]">
+                  {liveKcal}
+                </p>
+                <p className="mt-1 text-xs font-medium text-[var(--app-text-muted)]">kcal</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="pt-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-subtle)]">
+              How much?
+            </p>
+            <p className="mt-1 text-sm text-[var(--app-text-muted)]">
+              Choose the way you measured this serving.
+            </p>
+
+            {amountModeOptions.length > 1 && (
+              <SegmentedTabs
+                value={selectedAmountMode}
+                options={amountModeOptions}
+                onChange={handleAmountModeChange}
+                className="!mt-4 !bg-transparent !px-0 !py-0 !shadow-none"
+              />
+            )}
+          </section>
+
+          <section className="mt-auto flex flex-col items-center gap-4 pb-2 pt-8">
+            {quickChoices.length > 0 && (
+              <div className="w-full space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--app-text-subtle)]">
+                  Quick amounts
+                </p>
+                <div className={`grid ${quickChoiceGridClass} gap-2`}>
+                  {quickChoices.map((choice) => (
+                    <button
+                      key={`${choice.label}-${choice.value}`}
+                      type="button"
+                      onClick={() => handleQuickChoice(choice.value)}
+                      className="min-h-10 rounded-xl border border-[var(--app-input-border)] bg-[var(--app-input-bg)] px-2 text-sm font-semibold text-[var(--app-text-primary)] shadow-[var(--app-input-shadow)] transition-[background-color,border-color,color,box-shadow] hover:bg-[var(--app-input-bg-focus)] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--app-brand-ring),var(--app-input-shadow-focus)]"
+                    >
+                      {choice.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col items-center gap-3">
+              {isPieceMode ? (
+                <GramInput
+                  grams={grams}
+                  onChange={onGramsChange}
+                  showSteppers
+                  step={1}
+                  unitSuffix={pieceUnit}
+                  quantityAriaLabel="Pieces"
+                  size="large"
+                />
+              ) : selectedAmountMode === 'portions' ? (
+                <GramInput
+                  grams={portions}
+                  onChange={onPortionsChange}
+                  showSteppers
+                  step={1}
+                  unitSuffix={portionStepperSuffix}
+                  quantityAriaLabel="Label servings"
+                  size="large"
+                />
+              ) : (
+                <GramInput grams={grams} onChange={onGramsChange} showSteppers step={10} size="large" />
+              )}
+
+              <div className="min-h-4">
+                {conversionHint ? (
+                  <p className="text-center text-xs text-[var(--app-text-subtle)]">{conversionHint}</p>
+                ) : null}
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </div>

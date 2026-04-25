@@ -10,6 +10,7 @@ interface GramInputProps {
   unitSuffix?: string
   /** Overrides the input’s accessible name (defaults from unitSuffix). */
   quantityAriaLabel?: string
+  size?: 'compact' | 'large'
 }
 
 export default function GramInput({
@@ -19,6 +20,7 @@ export default function GramInput({
   showSteppers = true,
   unitSuffix = 'g',
   quantityAriaLabel,
+  size = 'compact',
 }: GramInputProps) {
   const [focused, setFocused] = useState(false)
   const [draft, setDraft] = useState('')
@@ -74,21 +76,23 @@ export default function GramInput({
   const ariaLabel =
     quantityAriaLabel ?? (unitSuffix === 'g' ? 'Grams' : `Amount (${unitSuffix})`)
 
-  const fieldClass =
-    'min-w-0 flex-1 bg-transparent text-right text-sm font-medium tabular-nums text-[var(--app-text-primary)] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+  const isLarge = size === 'large'
+  const fieldClass = `min-w-0 flex-1 bg-transparent text-right ${
+    isLarge ? 'text-xl' : 'text-sm'
+  } font-semibold tabular-nums text-[var(--app-text-primary)] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`
 
   const shellClass = (active: boolean) =>
-    `flex h-[30px] min-w-16 w-max max-w-[7rem] flex-none items-center gap-0.5 rounded-md border py-0.5 pl-1 pr-1 transition-colors transition-shadow ${
+    `flex ${isLarge ? 'h-12 min-w-24 max-w-[9rem] rounded-2xl px-3' : 'h-[30px] min-w-16 max-w-[7rem] rounded-md py-0.5 pl-1 pr-1'} w-max flex-none items-center gap-0.5 border transition-colors transition-shadow ${
       active
         ? 'border-transparent bg-[var(--app-input-bg-focus)] shadow-[0_0_0_3px_var(--app-brand-ring),var(--app-input-shadow-focus)]'
         : 'border-[var(--app-input-border)] bg-[var(--app-input-bg)] shadow-[var(--app-input-shadow)] hover:bg-[var(--app-input-bg-focus)]'
     }`
 
   const btnClass =
-    'h-7 w-7 rounded-full flex items-center justify-center border border-transparent bg-[var(--app-input-bg)] text-[var(--app-brand)] transition-[background-color,color,box-shadow] duration-[var(--app-transition-fast)] hover:bg-[var(--app-input-bg-focus)] hover:text-[var(--app-brand-hover)] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--app-brand-ring),var(--app-input-shadow-focus)] text-base leading-none'
+    `${isLarge ? 'h-14 w-14 text-3xl shadow-[var(--app-input-shadow)]' : 'h-7 w-7 text-base'} rounded-full flex items-center justify-center border border-transparent bg-[var(--app-input-bg)] text-[var(--app-brand)] transition-[background-color,color,box-shadow] duration-[var(--app-transition-fast)] hover:bg-[var(--app-input-bg-focus)] hover:text-[var(--app-brand-hover)] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--app-brand-ring),var(--app-input-shadow-focus)] leading-none`
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className={`flex items-center ${isLarge ? 'gap-3' : 'gap-1.5'}`}>
       {showSteppers && (
         <button type="button" onClick={() => adjust(-step)} className={btnClass} aria-label="Decrease">
           −
@@ -121,7 +125,7 @@ export default function GramInput({
           onKeyDown={handleKeyDown}
           className={fieldClass}
         />
-        <span className="pointer-events-none select-none truncate text-sm font-medium tabular-nums text-[var(--app-text-muted)]">
+        <span className={`pointer-events-none select-none truncate ${isLarge ? 'text-base' : 'text-sm'} font-medium tabular-nums text-[var(--app-text-muted)]`}>
           {unitSuffix}
         </span>
       </div>
