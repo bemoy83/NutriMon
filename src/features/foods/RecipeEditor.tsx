@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState, useImperativeHandle } from 'react'
 import type { Ref } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import FoodRow from '@/components/ui/FoodRow'
-import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import GramInput from '@/components/ui/GramInput'
 import LoadingState from '@/components/ui/LoadingState'
 import ServingEstimateBlock from '@/features/logging/ServingEstimateBlock'
@@ -10,6 +8,7 @@ import { getCompositeProduct, upsertCompositeProduct } from '@/features/foods/ap
 import { computeRollup } from '@/features/foods/compositeRollup'
 import type { CompositeIngredientInput } from '@/types/database'
 import IngredientPickerSheet from './IngredientPickerSheet'
+import { RecipeIngredientRow } from './RecipeIngredientRow'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -42,20 +41,6 @@ function fmt(n: number): string {
   return n < 10 ? n.toFixed(1) : Math.round(n).toString()
 }
 
-function formatMacroPer100(n: number): string {
-  return n < 10 ? n.toFixed(1) : String(Math.round(n))
-}
-
-function ingredientEstimateFromRow(row: DraftIngredientRow) {
-  const scale = row.massG / 100
-  return {
-    kcal: Math.round((row.caloriesPer100g * row.massG) / 100),
-    proteinG: row.proteinPer100g != null ? row.proteinPer100g * scale : null,
-    carbsG: row.carbsPer100g != null ? row.carbsPer100g * scale : null,
-    fatG: row.fatPer100g != null ? row.fatPer100g * scale : null,
-  }
-}
-
 function nutritionDensityLine(
   label: string,
   data: { calories: number; protein: number; carbs: number; fat: number },
@@ -67,6 +52,16 @@ function nutritionDensityLine(
       {fmt(data.calories)} kcal · P {fmt(data.protein)}g · C {fmt(data.carbs)}g · F {fmt(data.fat)}g
     </p>
   )
+}
+
+function ingredientEstimateFromRow(row: DraftIngredientRow) {
+  const scale = row.massG / 100
+  return {
+    kcal: Math.round((row.caloriesPer100g * row.massG) / 100),
+    proteinG: row.proteinPer100g != null ? row.proteinPer100g * scale : null,
+    carbsG: row.carbsPer100g != null ? row.carbsPer100g * scale : null,
+    fatG: row.fatPer100g != null ? row.fatPer100g * scale : null,
+  }
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -88,6 +83,7 @@ export default function RecipeEditor({
   const [saving, setSaving] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
   const [initialized, setInitialized] = useState(!isEditMode)
+  const [detailsExpanded, setDetailsExpanded] = useState(false)
 
   // ─── Edit mode: fetch existing composite ──────────────────────────────────
 
@@ -119,13 +115,10 @@ export default function RecipeEditor({
     setInitialized(true)
   }, [isEditMode, editQuery.data])
 
-  /** Batch weight = sum of ingredient masses (no separate manual field). */
   const recipeTotalMassG = useMemo(
     () => ingredients.reduce((sum, r) => sum + r.massG, 0),
     [ingredients],
   )
-
-  // ─── Live rollup ──────────────────────────────────────────────────────────
 
   const rollup = useMemo(
     () => computeRollup(ingredients, recipeTotalMassG, pieceCount),
@@ -228,153 +221,187 @@ export default function RecipeEditor({
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
+  const hasNutrition = ingredients.length > 0
+
   return (
     <>
-      <div className="flex flex-col min-h-0 flex-1">
-        {/* Recipe + preview + servings — aligned with MealSheet / ServingStep */}
-        <div className="flex-none space-y-5 bg-white px-4 py-4">
-          <section>
-            <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--app-text-subtle)]">
-              Recipe
-            </h2>
-            <div>
-              <label htmlFor="comp-name" className="mb-1 block text-sm text-[var(--app-text-secondary)]">
-                Name <span className="text-[var(--app-danger)]">*</span>
-              </label>
-              <input
-                id="comp-name"
-                type="text"
-                autoFocus
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="app-input px-3 py-2"
-                placeholder="e.g. Spaghetti Bolognese"
-              />
-            </div>
-          </section>
+      <div className="flex min-h-0 flex-1 flex-col">
 
-          <section>
-            <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--app-text-muted)]">
-              Nutrition preview
-            </h2>
-            {ingredients.length === 0 ? (
-              <p className="text-sm leading-snug text-[var(--app-text-muted)]">
-                Add ingredients to see energy and macros for the full batch.
-              </p>
+        {/* Always-visible header: name + nutrition summary */}
+        <div className="flex-none border-b border-[var(--app-border-muted)] bg-white px-4 pb-2 pt-3">
+          <div className="mb-2">
+            <label
+              htmlFor="comp-name"
+              className="mb-1 block text-xs text-[var(--app-text-muted)]"
+            >
+              Name <span className="text-[var(--app-danger)]">*</span>
+            </label>
+            <input
+              id="comp-name"
+              type="text"
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="app-input px-3 py-2"
+              placeholder="e.g. Spaghetti Bolognese"
+            />
+          </div>
+
+          {/* Nutrition summary row — doubles as expand trigger */}
+          <button
+            type="button"
+            onClick={() => setDetailsExpanded((p) => !p)}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-1 py-1.5 text-left transition-colors hover:bg-[var(--app-hover-overlay)]"
+            aria-expanded={detailsExpanded}
+            aria-label={detailsExpanded ? 'Collapse recipe details' : 'Expand recipe details'}
+          >
+            {hasNutrition ? (
+              <div className="flex flex-wrap items-center gap-1">
+                <span
+                  className="text-[15px] font-extrabold tabular-nums"
+                  style={{ color: 'var(--app-text-primary)' }}
+                >
+                  {Math.round(rollup.totals.calories)}
+                </span>
+                <span
+                  className="text-[10px] font-semibold"
+                  style={{ color: 'var(--app-text-muted)' }}
+                >
+                  kcal
+                </span>
+                <span className="text-[10px]" style={{ color: 'var(--app-text-subtle)' }}>·</span>
+                <span
+                  className="rounded px-1 py-px text-[10px] font-bold tabular-nums"
+                  style={{ color: 'var(--app-macro-protein)', background: 'var(--app-macro-protein-bg)' }}
+                >
+                  P {fmt(rollup.totals.protein)}g
+                </span>
+                <span
+                  className="rounded px-1 py-px text-[10px] font-bold tabular-nums"
+                  style={{ color: 'var(--app-macro-carbs)', background: 'var(--app-macro-carbs-bg)' }}
+                >
+                  C {fmt(rollup.totals.carbs)}g
+                </span>
+                <span
+                  className="rounded px-1 py-px text-[10px] font-bold tabular-nums"
+                  style={{ color: 'var(--app-macro-fat)', background: 'var(--app-macro-fat-bg)' }}
+                >
+                  F {fmt(rollup.totals.fat)}g
+                </span>
+              </div>
             ) : (
-              <>
-                <ServingEstimateBlock
-                  kcal={Math.round(rollup.totals.calories)}
-                  proteinG={rollup.totals.protein}
-                  carbsG={rollup.totals.carbs}
-                  fatG={rollup.totals.fat}
-                  showEyebrow={false}
-                  macros="inline"
-                  description={`Whole recipe (${Math.round(recipeTotalMassG)} g)`}
-                  showBottomBorder={Boolean(rollup.per100g || (rollup.perPiece && pieceCount && pieceCount > 0))}
-                />
-                <div className="mt-2 space-y-1">
-                  {rollup.per100g && nutritionDensityLine('Per 100 g', rollup.per100g)}
-                  {rollup.perPiece && pieceCount && pieceCount > 0 && (
-                    nutritionDensityLine(
-                      `Per ${pieceLabel.trim() || 'piece'} (${fmt(recipeTotalMassG / pieceCount)} g)`,
-                      rollup.perPiece,
-                    )
-                  )}
-                </div>
-              </>
+              <span className="text-xs" style={{ color: 'var(--app-text-subtle)' }}>
+                Add ingredients to see nutrition
+              </span>
             )}
-          </section>
+            <svg
+              className={`h-4 w-4 flex-none transition-transform duration-200 ${detailsExpanded ? 'rotate-180' : ''}`}
+              style={{ color: 'var(--app-text-subtle)' }}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
 
-          <section>
-            <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--app-text-muted)]">
-              Servings
-            </h2>
-            <div>
-              <label htmlFor="comp-pieces" className="mb-1 block text-xs text-[var(--app-text-muted)]">
-                Servings / pieces <span className="text-[var(--app-text-subtle)]">(optional)</span>
-              </label>
-              <input
-                id="comp-pieces"
-                type="number"
-                inputMode="numeric"
-                min={0}
-                value={pieceCount ?? ''}
-                onChange={handlePieceCountChange}
-                className="app-input px-3 py-2 text-sm"
-                placeholder="e.g. 4"
-              />
-            </div>
-
-            {pieceCount != null && pieceCount > 0 && (
-              <div className="mt-3">
-                <label htmlFor="comp-piece-label" className="mb-1 block text-xs text-[var(--app-text-muted)]">
-                  Piece label
-                </label>
-                <input
-                  id="comp-piece-label"
-                  type="text"
-                  value={pieceLabel}
-                  onChange={(e) => setPieceLabel(e.target.value)}
-                  className="app-input px-3 py-2 text-sm"
-                  placeholder="e.g. slice"
-                />
+        {/* Expandable details: per-serving density + servings inputs */}
+        {detailsExpanded && (
+          <div className="flex-none space-y-3 border-b border-[var(--app-border-muted)] bg-white px-4 pb-3 pt-3">
+            {hasNutrition && (rollup.per100g || (rollup.perPiece && pieceCount && pieceCount > 0)) && (
+              <div className="space-y-1">
+                {rollup.per100g && nutritionDensityLine('Per 100 g', rollup.per100g)}
+                {rollup.perPiece && pieceCount && pieceCount > 0 &&
+                  nutritionDensityLine(
+                    `Per ${pieceLabel.trim() || 'piece'} (${fmt(recipeTotalMassG / pieceCount)} g)`,
+                    rollup.perPiece,
+                  )
+                }
               </div>
             )}
-          </section>
-        </div>
+
+            <section>
+              <h2 className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-[var(--app-text-muted)]">
+                Servings
+              </h2>
+              <div>
+                <label
+                  htmlFor="comp-pieces"
+                  className="mb-1 block text-xs text-[var(--app-text-muted)]"
+                >
+                  Servings / pieces{' '}
+                  <span className="text-[var(--app-text-subtle)]">(optional)</span>
+                </label>
+                <input
+                  id="comp-pieces"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  value={pieceCount ?? ''}
+                  onChange={handlePieceCountChange}
+                  className="app-input px-3 py-2 text-sm"
+                  placeholder="e.g. 4"
+                />
+              </div>
+
+              {pieceCount != null && pieceCount > 0 && (
+                <div className="mt-3">
+                  <label
+                    htmlFor="comp-piece-label"
+                    className="mb-1 block text-xs text-[var(--app-text-muted)]"
+                  >
+                    Piece label
+                  </label>
+                  <input
+                    id="comp-piece-label"
+                    type="text"
+                    value={pieceLabel}
+                    onChange={(e) => setPieceLabel(e.target.value)}
+                    className="app-input px-3 py-2 text-sm"
+                    placeholder="e.g. slice"
+                  />
+                </div>
+              )}
+            </section>
+          </div>
+        )}
 
         {/* Sliding panels */}
         <div className="relative flex min-h-0 flex-1 overflow-hidden">
-          {/* Browse panel: ingredient list + nutrition preview */}
+
+          {/* Browse panel: ingredient list */}
           <div
             className="absolute inset-0 flex min-h-0 flex-col transition-transform duration-[250ms] ease-out"
             style={{ transform: selectedKey ? 'translateX(-100%)' : 'translateX(0)' }}
           >
-            <div className="flex-none border-b border-[var(--app-border-muted)] bg-white px-4 pb-2 pt-3">
+            <div className="flex-none border-b border-[var(--app-border-muted)] bg-white px-4 pb-2 pt-2">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--app-text-subtle)]">
                 Ingredients <span className="text-[var(--app-danger)]">*</span>
               </p>
-              <p className="mt-1 text-xs leading-snug text-[var(--app-text-muted)]">
-                Build this like a meal: pick foods and set amounts. It saves as one item for next time.
+              <p className="mt-0.5 text-xs leading-snug text-[var(--app-text-muted)]">
+                Pick foods and gram amounts — same idea as logging a meal.
               </p>
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto">
-              {ingredients.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <p className="text-sm text-[var(--app-text-muted)]">No ingredients yet.</p>
-                  <p className="mt-1 text-xs text-[var(--app-text-subtle)]">
-                    Tap below to add foods — same flow as when you log a meal.
-                  </p>
-                </div>
-              ) : (
-                ingredients.map((row) => {
-                  const kcalInRecipe = Math.round((row.caloriesPer100g * row.massG) / 100)
+              {ingredients.map((row) => {
+                  const scale = row.massG / 100
                   return (
-                    <FoodRow
+                    <RecipeIngredientRow
                       key={row.key}
                       name={row.name}
-                      subtitle={`${Math.round(row.caloriesPer100g)} kcal / 100g · ${row.massG}g in recipe (${kcalInRecipe} kcal)`}
-                      leading={
-                        <FoodSourceBadge
-                          sourceType={row.sourceType === 'catalog' ? 'catalog_item' : 'user_product'}
-                        />
-                      }
-                      macroChips={
-                        row.proteinPer100g != null || row.carbsPer100g != null || row.fatPer100g != null
-                          ? { p: row.proteinPer100g, c: row.carbsPer100g, f: row.fatPer100g }
-                          : undefined
-                      }
-                      macroFormatGrams={formatMacroPer100}
-                      isChecked
+                      massG={row.massG}
+                      kcal={Math.round((row.caloriesPer100g * row.massG) / 100)}
+                      proteinG={row.proteinPer100g != null ? row.proteinPer100g * scale : null}
+                      carbsG={row.carbsPer100g != null ? row.carbsPer100g * scale : null}
+                      fatG={row.fatPer100g != null ? row.fatPer100g * scale : null}
                       onTap={() => setSelectedKey(row.key)}
-                      onRemove={() => handleRemoveIngredient(row.key)}
-                      removeAriaLabel={`Remove ${row.name} from recipe`}
                     />
                   )
-                })
-              )}
+                })}
 
               <button
                 type="button"
@@ -424,10 +451,13 @@ export default function RecipeEditor({
                         <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[var(--app-text-subtle)]">
                           Ingredient
                         </p>
-                        <p className="truncate text-sm font-semibold text-[var(--app-text-primary)]">{row.name}</p>
+                        <p className="truncate text-sm font-semibold text-[var(--app-text-primary)]">
+                          {row.name}
+                        </p>
                       </div>
                     </div>
                   </div>
+
                   <div className="flex flex-1 flex-col overflow-y-auto px-5 pb-5 pt-4">
                     <div className="mx-auto flex w-full max-w-sm flex-1 flex-col">
                       <ServingEstimateBlock
@@ -454,6 +484,15 @@ export default function RecipeEditor({
                           size="large"
                         />
                       </section>
+                      <div className="mt-4 border-t border-[var(--app-border-muted)] pt-4">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveIngredient(row.key)}
+                          className="w-full py-2 text-center text-sm font-medium text-[var(--app-danger)] transition-opacity hover:opacity-80"
+                        >
+                          Remove ingredient
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
