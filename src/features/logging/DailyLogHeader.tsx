@@ -13,9 +13,9 @@ const COMPACT_RING_CY = COMPACT_RING_SIZE / 2
 const COMPACT_CIRCUMFERENCE = 2 * Math.PI * COMPACT_RING_R
 
 const MACRO_TRACK: Record<string, string> = {
-  Protein: '#EDE9FE',
-  Carbs: '#CFFAFE',
-  Fat: '#FEF3C7',
+  Protein: 'var(--app-macro-protein-bg)',
+  Carbs: 'var(--app-macro-carbs-bg)',
+  Fat: 'var(--app-macro-fat-bg)',
 }
 
 export interface DailyLogDateHeaderProps {

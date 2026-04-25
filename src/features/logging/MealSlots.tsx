@@ -220,97 +220,80 @@ function SlotCard({
 
   return (
     <div className="app-card overflow-hidden">
-      {/* Unified tappable header */}
-      <div
-        role={hasMeals ? 'button' : undefined}
-        tabIndex={hasMeals ? 0 : undefined}
-        onClick={() => hasMeals ? setExpanded(e => !e) : undefined}
-        onKeyDown={hasMeals ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(p => !p) } } : undefined}
-        className={`flex items-center gap-3 px-4 py-3.5 ${hasMeals ? 'cursor-pointer select-none' : ''}`}
-      >
+      <div className="flex items-center gap-2.5 px-4 py-3.5">
+
+        {/* LEFT ZONE — tappable: expand when collapsed, collapse when expanded, add when empty */}
         <div
-          className="w-10 h-10 rounded-xl flex-none flex items-center justify-center"
-          style={{ background: theme?.bg ?? 'var(--app-surface-muted)' }}
-          aria-hidden
+          className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer select-none"
+          onClick={() => hasMeals ? setExpanded(e => !e) : onAdd()}
         >
-          <MealSlotGlyph type={slot.type} stroke={theme?.text ?? 'var(--app-text-secondary)'} />
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm" style={{ color: 'var(--app-text-primary)' }}>
-            {slot.type}
-          </p>
-          {hasMeals ? (
-            <>
-              <MacroPills
-                className="mt-1"
-                showZeroValues
-                chips={{
-                  p: allMacros.protein,
-                  c: allMacros.carbs,
-                  f: allMacros.fat,
-                }}
-              />
-              <p className="text-xs mt-1 truncate" style={{ color: 'var(--app-text-muted)' }}>
-                {itemPreview}
-                {itemOverflowCount > 0 && (
-                  <span style={{ color: 'var(--app-text-subtle)' }}> +{itemOverflowCount} more</span>
-                )}
-              </p>
-            </>
-          ) : (
-            <p className="text-xs mt-0.5 italic" style={{ color: 'var(--app-text-subtle)' }}>
-              Nothing logged yet
-            </p>
-          )}
-        </div>
-
-        {/* Right side: kcal badge + chevron when meals logged, add button when empty */}
-        {hasMeals ? (
-          <div className="flex items-center gap-2 flex-none">
-            <div
-              className="rounded-[10px] px-2.5 py-1 flex-none"
-              style={{ background: theme?.bg ?? 'var(--app-surface-muted)' }}
-            >
-              <span className="text-sm font-bold tabular-nums" style={{ color: theme?.text ?? 'var(--app-text-primary)' }}>
-                {totalCal}
-              </span>
-              <span className="text-[10px] ml-0.5 opacity-70" style={{ color: theme?.text ?? 'var(--app-text-muted)' }}>
-                kcal
-              </span>
-            </div>
-            <svg
-              className={`w-4 h-4 flex-none transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor"
-              style={{ color: 'var(--app-text-muted)' }}
-              aria-hidden
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+          <div
+            className="w-10 h-10 rounded-xl flex-none flex items-center justify-center"
+            style={{ background: theme?.bg ?? 'var(--app-surface-muted)' }}
+            aria-hidden
+          >
+            <MealSlotGlyph type={slot.type} stroke={theme?.text ?? 'var(--app-text-secondary)'} />
           </div>
-        ) : (
-          !isFinalized && (
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onAdd() }}
-              className="w-9 h-9 rounded-xl flex-none flex items-center justify-center transition-opacity hover:opacity-70 active:scale-90"
-              style={{ background: theme?.bg ?? 'var(--app-brand-soft)' }}
-              aria-label={`Add food to ${slot.type}`}
-            >
-              <svg width={MEAL_SLOT_PLUS_SVG_PX} height={MEAL_SLOT_PLUS_SVG_PX} viewBox="0 0 16 16" fill="none">
-                <path
-                  d="M8 3v10M3 8h10"
-                  stroke={theme?.text ?? 'var(--app-brand)'}
-                  strokeWidth={MEAL_SLOT_ICON_STROKE_WIDTH}
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
-          )
+
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm" style={{ color: 'var(--app-text-primary)' }}>
+              {slot.type}
+            </p>
+            {hasMeals ? (
+              expanded ? (
+                /* Expanded subtitle: macros (items are visible below) */
+                <MacroPills className="mt-1" showZeroValues chips={{ p: allMacros.protein, c: allMacros.carbs, f: allMacros.fat }} />
+              ) : (
+                /* Collapsed subtitle: item names (answer "what did I eat?") */
+                <p className="text-xs mt-1 truncate" style={{ color: 'var(--app-text-muted)' }}>
+                  {itemPreview}
+                  {itemOverflowCount > 0 && <span style={{ color: 'var(--app-text-subtle)' }}> +{itemOverflowCount} more</span>}
+                </p>
+              )
+            ) : (
+              <p className="text-xs mt-0.5 italic" style={{ color: 'var(--app-text-subtle)' }}>
+                Nothing logged yet
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Kcal badge */}
+        {totalCal > 0 && (
+          <div className="rounded-[10px] px-2.5 py-1 flex-none" style={{ background: theme?.bg ?? 'var(--app-surface-muted)' }}>
+            <span className="text-sm font-bold tabular-nums" style={{ color: theme?.text ?? 'var(--app-text-primary)' }}>
+              {totalCal}
+            </span>
+            <span className="text-[10px] ml-0.5 opacity-70" style={{ color: theme?.text ?? 'var(--app-text-muted)' }}>kcal</span>
+          </div>
         )}
+
+        {/* Morphing button — [+] when collapsed/empty → add; [↑] when expanded → collapse */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            if (expanded) setExpanded(false)
+            else onAdd()
+          }}
+          className="w-[34px] h-[34px] rounded-[10px] flex-none flex items-center justify-center active:scale-90 transition-all duration-200"
+          style={{ background: expanded ? 'var(--app-surface-muted)' : (theme?.bg ?? 'var(--app-brand-soft)'), border: 'none' }}
+          aria-label={expanded ? `Collapse ${slot.type}` : `Add food to ${slot.type}`}
+        >
+          {expanded ? (
+            <svg width={14} height={14} viewBox="0 0 14 14" fill="none" aria-hidden>
+              <path d="M2.5 9.5l4-4 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+                style={{ color: 'var(--app-text-muted)' }} />
+            </svg>
+          ) : (
+            <svg width={MEAL_SLOT_PLUS_SVG_PX} height={MEAL_SLOT_PLUS_SVG_PX} viewBox="0 0 16 16" fill="none" aria-hidden>
+              <path d="M8 3v10M3 8h10" stroke={theme?.text ?? 'var(--app-brand)'} strokeWidth={MEAL_SLOT_ICON_STROKE_WIDTH} strokeLinecap="round" />
+            </svg>
+          )}
+        </button>
       </div>
 
-      {/* Expanded: meal rows + add food footer */}
+      {/* Expanded: meal rows + dashed add footer */}
       {expanded && hasMeals && (
         <div>
           <div className="mx-4 h-px" style={{ background: 'var(--app-border-muted)' }} />
@@ -333,11 +316,7 @@ function SlotCard({
                 type="button"
                 onClick={onAdd}
                 className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition-colors"
-                style={{
-                  border: `1.5px dashed ${(theme?.text ?? 'var(--app-brand)') + '50'}`,
-                  color: theme?.text ?? 'var(--app-brand)',
-                  background: 'transparent',
-                }}
+                style={{ border: `1.5px dashed ${(theme?.text ?? 'var(--app-brand)') + '50'}`, color: theme?.text ?? 'var(--app-brand)', background: 'transparent' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = theme?.bg ?? 'var(--app-brand-soft)' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
               >

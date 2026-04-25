@@ -48,12 +48,22 @@
   --app-resilience: #0EA5E9;
 
   /* Macronutrient colors */
-  --app-macro-protein: #8B5CF6;
-  --app-macro-carbs: #06B6D4;
-  --app-macro-fat: #F59E0B;
-  --app-macro-protein-bg: #EDE9FE;
-  --app-macro-carbs-bg: #CFFAFE;
-  --app-macro-fat-bg: #FEF3C7;
+  --app-macro-protein: #4EA8FF;
+  --app-macro-carbs: #FF9F3D;
+  --app-macro-fat: #FF6B9D;
+  --app-macro-protein-bg: #E0EFFF;
+  --app-macro-carbs-bg: #FFF0DC;
+  --app-macro-fat-bg: #FFE0ED;
+
+  /* Meal type colors (Dusk theme — matches app brand) */
+  --app-meal-breakfast: #7B5EFF;
+  --app-meal-breakfast-bg: #EDE8FF;
+  --app-meal-lunch: #FF9F3D;
+  --app-meal-lunch-bg: #FFF3DC;
+  --app-meal-dinner: #FF6B9D;
+  --app-meal-dinner-bg: #FFE0ED;
+  --app-meal-snack: #3DAB72;
+  --app-meal-snack-bg: #E5F5EC;
 
   /* Toast */
   --app-toast-bg: #1E293B;
