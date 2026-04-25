@@ -367,6 +367,8 @@ export default function IngredientPickerSheet({
                     carbsG={detailEstimate.carbsG}
                     fatG={detailEstimate.fatG}
                     description="For this amount in the batch"
+                    showEyebrow={false}
+                    macros="pills"
                   />
                   <section className="pt-6">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-subtle)]">
