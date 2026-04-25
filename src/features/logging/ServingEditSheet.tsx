@@ -95,7 +95,7 @@ export default function ServingEditSheet({
         type="button"
         onClick={() => void handleUpdate()}
         disabled={submitting || confirmDisabled}
-        className="app-button-primary w-full py-3 !rounded-full disabled:opacity-50"
+        className="app-button-primary w-full py-3 !rounded-xl disabled:opacity-50"
         style={submitting || confirmDisabled ? ctaDisabledStyle : ctaStyle}
       >
         {submitting ? 'Updating...' : confirmLabel}

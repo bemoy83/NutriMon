@@ -16,7 +16,7 @@ interface FoodRowProps {
 
 function CheckmarkCircle() {
   return (
-    <div className="flex-none h-8 w-8 flex items-center justify-center rounded-full bg-[var(--app-brand)] text-white">
+    <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-[var(--app-brand)] text-white">
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
       </svg>
@@ -26,7 +26,7 @@ function CheckmarkCircle() {
 
 function ChevronCircle() {
   return (
-    <div className="flex-none h-8 w-8 flex items-center justify-center rounded-full border border-transparent bg-[var(--app-input-bg)] text-[var(--app-brand)] transition-[background-color,color,box-shadow] duration-[var(--app-transition-fast)] group-hover:bg-[var(--app-input-bg-focus)] group-hover:text-[var(--app-brand-hover)]">
+    <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl border border-transparent bg-[var(--app-input-bg)] text-[var(--app-brand)] transition-[background-color,color,box-shadow] duration-[var(--app-transition-fast)] group-hover:bg-[var(--app-input-bg-focus)] group-hover:text-[var(--app-brand-hover)]">
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
       </svg>

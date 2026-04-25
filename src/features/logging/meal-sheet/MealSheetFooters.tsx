@@ -33,7 +33,7 @@ export function MealSheetBrowseFooter({
         type="button"
         onClick={onSubmit}
         disabled={browseSubmitDisabled}
-        className="app-button-primary w-full py-3 !rounded-full"
+        className="app-button-primary w-full py-3 !rounded-xl"
         style={browseSubmitDisabled ? mealCtaDisabledStyle : mealCtaStyle}
       >
         {submitting
@@ -67,7 +67,7 @@ export function MealSheetServingFooter({
         type="button"
         onClick={onConfirm}
         disabled={servingConfirmDisabled}
-        className="app-button-primary w-full py-3 !rounded-full"
+        className="app-button-primary w-full py-3 !rounded-xl"
         style={servingConfirmDisabled ? mealCtaDisabledStyle : mealCtaStyle}
       >
         {isEditingExisting ? 'Update' : `Add to ${mealType}`}

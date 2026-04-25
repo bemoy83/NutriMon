@@ -103,13 +103,13 @@ export default function WeightPage() {
                 <label htmlFor="weightValue" className="text-xs text-[var(--app-text-muted)]">
                   Weight
                 </label>
-                <div className="flex rounded-full bg-[rgb(0_0_0/0.06)] shadow-[inset_0_1px_3px_rgb(0_0_0/0.10)] p-0.5">
+                <div className="flex rounded-2xl bg-[rgb(0_0_0/0.06)] p-1 shadow-[inset_0_1px_3px_rgb(0_0_0/0.10)]">
                   {(['kg', 'lb'] as const).map((u) => (
                     <button
                       key={u}
                       type="button"
                       onClick={() => setWeightUnit(u)}
-                      className={`text-xs px-3 py-1 rounded-full transition-all duration-150 ${
+                      className={`rounded-xl px-3 py-1 text-xs transition-all duration-150 ${
                         weightUnit === u
                           ? 'bg-[var(--app-brand)] text-white shadow-sm'
                           : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]'
@@ -163,12 +163,12 @@ export default function WeightPage() {
       <div className="app-card p-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[var(--app-text-primary)] text-base font-semibold">History</h2>
-          <div className="flex rounded-full bg-[rgb(0_0_0/0.06)] shadow-[inset_0_1px_3px_rgb(0_0_0/0.10)] p-0.5">
+          <div className="flex rounded-2xl bg-[rgb(0_0_0/0.06)] p-1 shadow-[inset_0_1px_3px_rgb(0_0_0/0.10)]">
             {([30, 90] as const).map((d) => (
               <button
                 key={d}
                 onClick={() => setChartDays(d)}
-                className={`text-xs px-3 py-1 rounded-full transition-all duration-150 ${
+                className={`rounded-xl px-3 py-1 text-xs transition-all duration-150 ${
                   chartDays === d
                     ? 'bg-[var(--app-brand)] text-white shadow-sm'
                     : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]'

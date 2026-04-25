@@ -61,7 +61,7 @@ export default function MealSheetBrowseView({
           value={searchQuery}
           onChange={(e) => onSearchQueryChange(e.target.value)}
           placeholder="Search foods…"
-          className="app-input w-full px-4 py-1.5 text-sm !rounded-full"
+          className="app-input w-full px-4 py-1.5 text-sm !rounded-xl"
         />
       </div>
 
@@ -181,7 +181,7 @@ export default function MealSheetBrowseView({
                     onClick={onOpenCreateFood}
                     className="flex w-full items-center gap-3 px-4 py-3 text-sm text-[var(--app-text-muted)] hover:text-[var(--app-brand)] hover:bg-[var(--app-hover-overlay)] transition-colors border-t border-[var(--app-border-muted)]"
                   >
-                    <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full border border-dashed border-[var(--app-border)] text-lg leading-none">
+                    <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl border border-dashed border-[var(--app-border)] text-lg leading-none">
                       +
                     </span>
                     <span>Create new food</span>

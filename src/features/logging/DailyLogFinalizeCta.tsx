@@ -20,7 +20,7 @@ export default function DailyLogFinalizeCta({
         type="button"
         onClick={onFinalize}
         disabled={finalizing}
-        className="flex-1 rounded-full bg-[var(--app-brand)] py-3 font-medium text-white shadow-[0_4px_16px_rgb(124_58_237/0.35)] transition-colors hover:bg-[var(--app-brand-hover)] disabled:opacity-50"
+        className="flex-1 rounded-xl bg-[var(--app-brand)] py-3 font-medium text-white shadow-[0_4px_16px_rgb(124_58_237/0.35)] transition-colors hover:bg-[var(--app-brand-hover)] disabled:opacity-50"
       >
         {finalizing ? 'Finalizing…' : 'Finalize & Prep'}
       </button>

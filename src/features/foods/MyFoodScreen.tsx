@@ -143,7 +143,7 @@ export default function MyFoodScreen() {
         style={{ background: 'linear-gradient(to top, var(--app-bg) 60%, transparent)' }}
       >
         <div className="flex items-center gap-2 pointer-events-auto">
-          {/* Search pill */}
+          {/* Search field */}
           <div className="relative flex-1">
             <svg
               className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
@@ -157,7 +157,7 @@ export default function MyFoodScreen() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search foods…"
-              className="w-full pl-10 pr-9 py-3 text-sm rounded-full border border-[var(--app-input-border)] bg-[var(--app-input-bg)] shadow-[var(--app-input-shadow)] placeholder:text-[var(--app-input-placeholder)] outline-none transition-[background-color,box-shadow] focus:border-transparent focus:bg-[var(--app-input-bg-focus)] focus:shadow-[0_0_0_3px_var(--app-brand-ring),var(--app-input-shadow-focus)] focus:ring-0"
+              className="w-full rounded-xl border border-[var(--app-input-border)] bg-[var(--app-input-bg)] py-3 pl-10 pr-9 text-sm shadow-[var(--app-input-shadow)] outline-none transition-[background-color,box-shadow] placeholder:text-[var(--app-input-placeholder)] focus:border-transparent focus:bg-[var(--app-input-bg-focus)] focus:shadow-[0_0_0_3px_var(--app-brand-ring),var(--app-input-shadow-focus)] focus:ring-0"
               style={{
                 color: 'var(--app-text-primary)',
               }}
@@ -166,7 +166,7 @@ export default function MyFoodScreen() {
               <button
                 type="button"
                 onClick={() => setSearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full"
+                className="absolute right-3 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-md"
                 style={{ color: 'var(--app-text-muted)' }}
                 aria-label="Clear search"
               >
@@ -182,7 +182,7 @@ export default function MyFoodScreen() {
             type="button"
             onClick={() => navigate('/app/my-food/new')}
             aria-label="New food"
-            className="w-12 h-12 flex-none flex items-center justify-center rounded-full text-white transition-colors hover:bg-[var(--app-brand-hover)]"
+            className="flex h-12 w-12 flex-none items-center justify-center rounded-xl text-white transition-colors hover:bg-[var(--app-brand-hover)]"
             style={{
               background: 'var(--app-brand)',
               boxShadow: '0 4px 16px rgb(124 58 237 / 0.35)',

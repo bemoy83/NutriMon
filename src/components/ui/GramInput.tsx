@@ -89,7 +89,7 @@ export default function GramInput({
     }`
 
   const btnClass =
-    `${isLarge ? 'h-14 w-14 text-3xl shadow-[var(--app-input-shadow)]' : 'h-7 w-7 text-base'} rounded-full flex items-center justify-center border border-transparent bg-[var(--app-input-bg)] text-[var(--app-brand)] transition-[background-color,color,box-shadow] duration-[var(--app-transition-fast)] hover:bg-[var(--app-input-bg-focus)] hover:text-[var(--app-brand-hover)] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--app-brand-ring),var(--app-input-shadow-focus)] leading-none`
+    `${isLarge ? 'h-14 w-14 rounded-2xl text-3xl shadow-[var(--app-input-shadow)]' : 'h-7 w-7 rounded-lg text-base'} flex items-center justify-center border border-transparent bg-[var(--app-input-bg)] text-[var(--app-brand)] transition-[background-color,color,box-shadow] duration-[var(--app-transition-fast)] hover:bg-[var(--app-input-bg-focus)] hover:text-[var(--app-brand-hover)] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--app-brand-ring),var(--app-input-shadow-focus)] leading-none`
 
   return (
     <div className={`flex items-center ${isLarge ? 'gap-3' : 'gap-1.5'}`}>

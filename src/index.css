@@ -299,7 +299,7 @@ select {
 .app-input {
   width: 100%;
   border: 1px solid var(--app-input-border);
-  border-radius: var(--app-radius-sm);
+  border-radius: var(--app-radius-md);
   background: var(--app-input-bg);
   box-shadow: var(--app-input-shadow);
   color: var(--app-text-primary);
@@ -324,7 +324,7 @@ select {
 .app-button-primary,
 .app-button-secondary,
 .app-button-danger {
-  border-radius: var(--app-radius-sm);
+  border-radius: var(--app-radius-md);
   font-weight: 500;
   transition:
     background-color var(--app-transition-fast) ease,

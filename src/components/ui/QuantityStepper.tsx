@@ -11,7 +11,7 @@ export default function QuantityStepper({
   onIncrease,
   compact = false,
 }: QuantityStepperProps) {
-  const buttonSize = compact ? 'h-6 w-6 rounded' : 'h-7 w-7 rounded-full'
+  const buttonSize = compact ? 'h-6 w-6 rounded' : 'h-7 w-7 rounded-lg'
 
   return (
     <div className="flex items-center gap-2">
