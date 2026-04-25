@@ -326,6 +326,18 @@ select {
   box-shadow: 0 0 0 3px var(--app-brand-ring), var(--app-input-shadow-focus);
 }
 
+/* Native number spinners — hide for app-styled fields (mobile/desktop). */
+input[type="number"].app-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+input[type="number"].app-input::-webkit-outer-spin-button,
+input[type="number"].app-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .app-button-primary,
 .app-button-secondary,
 .app-button-danger {

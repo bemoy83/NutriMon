@@ -1,6 +1,7 @@
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import GramInput from '@/components/ui/GramInput'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
+import ServingEstimateBlock from './ServingEstimateBlock'
 
 type ServingAmountMode = 'grams' | 'portions' | 'pieces'
 
@@ -61,12 +62,6 @@ export default function ServingStep({
     : null
 
   const labelPortionG = target.labelPortionGrams
-  const hasMacros = estimate.proteinG != null || estimate.carbsG != null || estimate.fatG != null
-  const macroRows = [
-    { label: 'Protein', shortLabel: 'P', value: estimate.proteinG, color: 'var(--app-macro-protein)', bg: 'var(--app-macro-protein-bg)' },
-    { label: 'Carbs', shortLabel: 'C', value: estimate.carbsG, color: 'var(--app-macro-carbs)', bg: 'var(--app-macro-carbs-bg)' },
-    { label: 'Fat', shortLabel: 'F', value: estimate.fatG, color: 'var(--app-macro-fat)', bg: 'var(--app-macro-fat-bg)' },
-  ]
   const canUseLabelPortions = Boolean(labelPortionG && labelPortionG > 0)
   const selectedAmountMode: ServingAmountMode = isPieceMode
     ? 'pieces'
@@ -178,41 +173,12 @@ export default function ServingStep({
 
       <div className="flex flex-1 flex-col overflow-y-auto px-5 pb-5 pt-4">
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col">
-          <section className="border-b border-[var(--app-border-muted)] pb-5">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--app-text-subtle)]">
-              Estimate
-            </p>
-            <div className="mt-2 flex items-end justify-between gap-4">
-              <p className="max-w-[11rem] text-sm leading-5 text-[var(--app-text-muted)]">
-                Nutrition for this serving
-              </p>
-              <div className="text-right">
-                <p className="text-5xl font-bold leading-none tabular-nums text-[var(--app-text-primary)]">
-                  {estimate.kcal}
-                </p>
-                <p className="mt-1 text-xs font-medium text-[var(--app-text-muted)]">kcal</p>
-              </div>
-            </div>
-            {hasMacros ? (
-              <div className="mt-4 grid grid-cols-3 gap-2">
-                {macroRows.map((macro) => (
-                  <div
-                    key={macro.shortLabel}
-                    className="rounded-xl px-2 py-2 text-center"
-                    style={{ background: macro.bg }}
-                    aria-label={`${macro.label} ${macro.value == null ? 'unknown' : `${Math.round(macro.value)} grams`}`}
-                  >
-                    <p className="text-[10px] font-bold uppercase tracking-[0.12em]" style={{ color: macro.color }}>
-                      {macro.shortLabel}
-                    </p>
-                    <p className="mt-0.5 text-sm font-bold tabular-nums" style={{ color: macro.color }}>
-                      {macro.value == null ? '—' : Math.round(macro.value)}g
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </section>
+          <ServingEstimateBlock
+            kcal={estimate.kcal}
+            proteinG={estimate.proteinG}
+            carbsG={estimate.carbsG}
+            fatG={estimate.fatG}
+          />
 
           <section className="pt-6">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-subtle)]">
@@ -239,6 +205,7 @@ export default function ServingStep({
                   grams={grams}
                   onChange={onGramsChange}
                   step={1}
+                  showSteppers
                   unitSuffix={pieceUnit}
                   quantityAriaLabel="Pieces"
                   size="large"
@@ -248,12 +215,19 @@ export default function ServingStep({
                   grams={portions}
                   onChange={onPortionsChange}
                   step={1}
+                  showSteppers
                   unitSuffix={portionStepperSuffix}
                   quantityAriaLabel="Label servings"
                   size="large"
                 />
               ) : (
-                <GramInput grams={grams} onChange={onGramsChange} step={10} size="large" />
+                <GramInput
+                  grams={grams}
+                  onChange={onGramsChange}
+                  step={10}
+                  showSteppers
+                  size="large"
+                />
               )}
 
               <div className="min-h-4">

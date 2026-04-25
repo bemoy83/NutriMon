@@ -12,6 +12,8 @@ interface FoodRowProps {
   onRemove?: () => void
   removeAriaLabel?: string
   macroChips?: MacroChips
+  /** Passed through to MacroPills (e.g. per-100g formatting). */
+  macroFormatGrams?: (n: number) => string
 }
 
 function CheckmarkCircle() {
@@ -43,6 +45,7 @@ export default function FoodRow({
   onRemove,
   removeAriaLabel,
   macroChips,
+  macroFormatGrams,
 }: FoodRowProps) {
   const indicator = isChecked ? <CheckmarkCircle /> : <ChevronCircle />
 
@@ -57,7 +60,9 @@ export default function FoodRow({
           {leading && <div className="mb-0.5">{leading}</div>}
           <p className="text-sm text-[var(--app-text-primary)] truncate">{name}</p>
           <p className="text-xs text-[var(--app-text-muted)]">{subtitle}</p>
-          {macroChips && <MacroPills chips={macroChips} className="mt-1" />}
+          {macroChips && (
+            <MacroPills chips={macroChips} className="mt-1" formatGrams={macroFormatGrams} />
+          )}
         </button>
         <button
           type="button"
@@ -86,7 +91,9 @@ export default function FoodRow({
       <div className="flex-1 min-w-0">
         <p className="text-[var(--app-text-primary)] text-sm truncate">{name}</p>
         <p className="text-[var(--app-text-muted)] text-xs">{subtitle}</p>
-        {macroChips && <MacroPills chips={macroChips} className="mt-1" />}
+        {macroChips && (
+          <MacroPills chips={macroChips} className="mt-1" formatGrams={macroFormatGrams} />
+        )}
       </div>
       {indicator}
     </button>

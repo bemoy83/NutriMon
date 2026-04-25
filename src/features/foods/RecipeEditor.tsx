@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState, useImperativeHandle } from 'react'
 import type { Ref } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import FoodRow from '@/components/ui/FoodRow'
-import KcalGramEditor from '@/components/ui/KcalGramEditor'
+import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
+import GramInput from '@/components/ui/GramInput'
 import LoadingState from '@/components/ui/LoadingState'
+import ServingEstimateBlock from '@/features/logging/ServingEstimateBlock'
 import { getCompositeProduct, upsertCompositeProduct } from '@/features/foods/api'
 import { computeRollup } from '@/features/foods/compositeRollup'
 import type { CompositeIngredientInput } from '@/types/database'
@@ -40,27 +42,30 @@ function fmt(n: number): string {
   return n < 10 ? n.toFixed(1) : Math.round(n).toString()
 }
 
-function NutritionRow({
-  label,
-  data,
-  fmt,
-}: {
-  label: string
-  data: { calories: number; protein: number; carbs: number; fat: number }
-  fmt: (n: number) => string
-}) {
+function formatMacroPer100(n: number): string {
+  return n < 10 ? n.toFixed(1) : String(Math.round(n))
+}
+
+function ingredientEstimateFromRow(row: DraftIngredientRow) {
+  const scale = row.massG / 100
+  return {
+    kcal: Math.round((row.caloriesPer100g * row.massG) / 100),
+    proteinG: row.proteinPer100g != null ? row.proteinPer100g * scale : null,
+    carbsG: row.carbsPer100g != null ? row.carbsPer100g * scale : null,
+    fatG: row.fatPer100g != null ? row.fatPer100g * scale : null,
+  }
+}
+
+function nutritionDensityLine(
+  label: string,
+  data: { calories: number; protein: number; carbs: number; fat: number },
+) {
   return (
-    <div>
-      <p className="text-xs text-[var(--app-text-muted)] mb-0.5">{label}</p>
-      <p className="text-sm text-[var(--app-text-primary)]">
-        {fmt(data.calories)} kcal
-        <span className="text-[var(--app-text-muted)]">
-          {' '}· P {fmt(data.protein)}g
-          {' '}· C {fmt(data.carbs)}g
-          {' '}· F {fmt(data.fat)}g
-        </span>
-      </p>
-    </div>
+    <p className="text-xs tabular-nums leading-snug text-[var(--app-text-muted)]">
+      <span className="text-[var(--app-text-subtle)]">{label}</span>
+      {' · '}
+      {fmt(data.calories)} kcal · P {fmt(data.protein)}g · C {fmt(data.carbs)}g · F {fmt(data.fat)}g
+    </p>
   )
 }
 
@@ -75,7 +80,6 @@ export default function RecipeEditor({
   const isEditMode = editProductId != null
 
   const [name, setName] = useState('')
-  const [totalMassG, setTotalMassG] = useState(0)
   const [pieceCount, setPieceCount] = useState<number | null>(null)
   const [pieceLabel, setPieceLabel] = useState('')
   const [ingredients, setIngredients] = useState<DraftIngredientRow[]>([])
@@ -97,7 +101,6 @@ export default function RecipeEditor({
     if (!isEditMode || !editQuery.data) return
     const cp = editQuery.data
     setName(cp.name)
-    setTotalMassG(cp.totalMassG)
     setPieceCount(cp.pieceCount)
     setPieceLabel(cp.pieceLabel ?? '')
     setIngredients(
@@ -116,16 +119,23 @@ export default function RecipeEditor({
     setInitialized(true)
   }, [isEditMode, editQuery.data])
 
+  /** Batch weight = sum of ingredient masses (no separate manual field). */
+  const recipeTotalMassG = useMemo(
+    () => ingredients.reduce((sum, r) => sum + r.massG, 0),
+    [ingredients],
+  )
+
   // ─── Live rollup ──────────────────────────────────────────────────────────
 
   const rollup = useMemo(
-    () => computeRollup(ingredients, totalMassG, pieceCount),
-    [ingredients, totalMassG, pieceCount],
+    () => computeRollup(ingredients, recipeTotalMassG, pieceCount),
+    [ingredients, recipeTotalMassG, pieceCount],
   )
 
   // ─── canSave + saveRef ────────────────────────────────────────────────────
 
-  const canSave = name.trim().length > 0 && totalMassG > 0 && ingredients.length > 0
+  const canSave =
+    name.trim().length > 0 && ingredients.length > 0 && recipeTotalMassG > 0
 
   useEffect(() => {
     onCanSaveChange(canSave && !saving)
@@ -185,7 +195,7 @@ export default function RecipeEditor({
       await upsertCompositeProduct({
         productId: editProductId ?? null,
         name: name.trim(),
-        totalMassG,
+        totalMassG: recipeTotalMassG,
         pieceCount,
         pieceLabel: pieceCount && pieceCount > 0 && pieceLabel.trim() ? pieceLabel.trim() : null,
         ingredients: apiIngredients,
@@ -212,8 +222,6 @@ export default function RecipeEditor({
     .filter((r) => r.sourceType === 'product')
     .map((r) => r.sourceId)
 
-  const rawMassSum = ingredients.reduce((sum, r) => sum + r.massG, 0)
-
   // ─── Loading ──────────────────────────────────────────────────────────────
 
   if (isEditMode && !initialized) return <LoadingState />
@@ -223,45 +231,68 @@ export default function RecipeEditor({
   return (
     <>
       <div className="flex flex-col min-h-0 flex-1">
-        {/* Always-visible metadata band */}
-        <div className="flex-none bg-white px-4 pt-3 pb-4 space-y-3 border-b border-[var(--app-border-muted)]">
-          <div>
-            <label htmlFor="comp-name" className="block text-xs text-[var(--app-text-muted)] mb-1">
-              Recipe name <span className="text-[var(--app-danger)]">*</span>
-            </label>
-            <input
-              id="comp-name"
-              type="text"
-              autoFocus
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="app-input px-3 py-2"
-              placeholder="e.g. Spaghetti Bolognese"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+        {/* Recipe + preview + servings — aligned with MealSheet / ServingStep */}
+        <div className="flex-none space-y-5 bg-white px-4 py-4">
+          <section>
+            <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--app-text-subtle)]">
+              Recipe
+            </h2>
             <div>
-              <label htmlFor="comp-mass" className="block text-xs text-[var(--app-text-muted)] mb-1">
-                Prepared weight (g) <span className="text-[var(--app-danger)]">*</span>
+              <label htmlFor="comp-name" className="mb-1 block text-sm text-[var(--app-text-secondary)]">
+                Name <span className="text-[var(--app-danger)]">*</span>
               </label>
               <input
-                id="comp-mass"
-                type="number"
-                inputMode="numeric"
-                min={1}
-                value={totalMassG || ''}
-                onChange={(e) => {
-                  const v = parseInt(e.target.value, 10)
-                  setTotalMassG(isNaN(v) ? 0 : Math.max(0, v))
-                }}
-                className="app-input px-3 py-2 text-sm"
-                placeholder="800"
+                id="comp-name"
+                type="text"
+                autoFocus
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="app-input px-3 py-2"
+                placeholder="e.g. Spaghetti Bolognese"
               />
             </div>
+          </section>
+
+          <section>
+            <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--app-text-muted)]">
+              Nutrition preview
+            </h2>
+            {ingredients.length === 0 ? (
+              <p className="text-sm leading-snug text-[var(--app-text-muted)]">
+                Add ingredients to see energy and macros for the full batch.
+              </p>
+            ) : (
+              <>
+                <ServingEstimateBlock
+                  kcal={Math.round(rollup.totals.calories)}
+                  proteinG={rollup.totals.protein}
+                  carbsG={rollup.totals.carbs}
+                  fatG={rollup.totals.fat}
+                  showEyebrow={false}
+                  macros="inline"
+                  description={`Whole recipe (${Math.round(recipeTotalMassG)} g)`}
+                  showBottomBorder={Boolean(rollup.per100g || (rollup.perPiece && pieceCount && pieceCount > 0))}
+                />
+                <div className="mt-2 space-y-1">
+                  {rollup.per100g && nutritionDensityLine('Per 100 g', rollup.per100g)}
+                  {rollup.perPiece && pieceCount && pieceCount > 0 && (
+                    nutritionDensityLine(
+                      `Per ${pieceLabel.trim() || 'piece'} (${fmt(recipeTotalMassG / pieceCount)} g)`,
+                      rollup.perPiece,
+                    )
+                  )}
+                </div>
+              </>
+            )}
+          </section>
+
+          <section>
+            <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--app-text-muted)]">
+              Servings
+            </h2>
             <div>
-              <label htmlFor="comp-pieces" className="block text-xs text-[var(--app-text-muted)] mb-1">
-                Servings / pieces
+              <label htmlFor="comp-pieces" className="mb-1 block text-xs text-[var(--app-text-muted)]">
+                Servings / pieces <span className="text-[var(--app-text-subtle)]">(optional)</span>
               </label>
               <input
                 id="comp-pieces"
@@ -274,85 +305,90 @@ export default function RecipeEditor({
                 placeholder="e.g. 4"
               />
             </div>
-          </div>
 
-          {pieceCount != null && pieceCount > 0 && (
-            <div>
-              <label htmlFor="comp-piece-label" className="block text-xs text-[var(--app-text-muted)] mb-1">
-                Piece label
-              </label>
-              <input
-                id="comp-piece-label"
-                type="text"
-                value={pieceLabel}
-                onChange={(e) => setPieceLabel(e.target.value)}
-                className="app-input px-3 py-2 text-sm"
-                placeholder="e.g. slice"
-              />
-            </div>
-          )}
+            {pieceCount != null && pieceCount > 0 && (
+              <div className="mt-3">
+                <label htmlFor="comp-piece-label" className="mb-1 block text-xs text-[var(--app-text-muted)]">
+                  Piece label
+                </label>
+                <input
+                  id="comp-piece-label"
+                  type="text"
+                  value={pieceLabel}
+                  onChange={(e) => setPieceLabel(e.target.value)}
+                  className="app-input px-3 py-2 text-sm"
+                  placeholder="e.g. slice"
+                />
+              </div>
+            )}
+          </section>
         </div>
 
         {/* Sliding panels */}
         <div className="relative flex min-h-0 flex-1 overflow-hidden">
           {/* Browse panel: ingredient list + nutrition preview */}
           <div
-            className="absolute inset-0 flex flex-col transition-transform duration-[250ms] ease-out"
+            className="absolute inset-0 flex min-h-0 flex-col transition-transform duration-[250ms] ease-out"
             style={{ transform: selectedKey ? 'translateX(-100%)' : 'translateX(0)' }}
           >
-            <div className="flex-1 overflow-y-auto">
-              <p className="px-4 pt-3 pb-1 text-[10px] font-semibold tracking-widest uppercase text-[var(--app-text-subtle)]">
+            <div className="flex-none border-b border-[var(--app-border-muted)] bg-white px-4 pb-2 pt-3">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--app-text-subtle)]">
                 Ingredients <span className="text-[var(--app-danger)]">*</span>
               </p>
+              <p className="mt-1 text-xs leading-snug text-[var(--app-text-muted)]">
+                Build this like a meal: pick foods and set amounts. It saves as one item for next time.
+              </p>
+            </div>
 
-              <div className="divide-y divide-[var(--app-border-muted)]">
-                {ingredients.map((row) => {
-                  const kcal = Math.round(row.caloriesPer100g * row.massG / 100)
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {ingredients.length === 0 ? (
+                <div className="px-4 py-8 text-center">
+                  <p className="text-sm text-[var(--app-text-muted)]">No ingredients yet.</p>
+                  <p className="mt-1 text-xs text-[var(--app-text-subtle)]">
+                    Tap below to add foods — same flow as when you log a meal.
+                  </p>
+                </div>
+              ) : (
+                ingredients.map((row) => {
+                  const kcalInRecipe = Math.round((row.caloriesPer100g * row.massG) / 100)
                   return (
                     <FoodRow
                       key={row.key}
                       name={row.name}
-                      subtitle={`${row.massG}g · ${kcal} kcal`}
+                      subtitle={`${Math.round(row.caloriesPer100g)} kcal / 100g · ${row.massG}g in recipe (${kcalInRecipe} kcal)`}
+                      leading={
+                        <FoodSourceBadge
+                          sourceType={row.sourceType === 'catalog' ? 'catalog_item' : 'user_product'}
+                        />
+                      }
+                      macroChips={
+                        row.proteinPer100g != null || row.carbsPer100g != null || row.fatPer100g != null
+                          ? { p: row.proteinPer100g, c: row.carbsPer100g, f: row.fatPer100g }
+                          : undefined
+                      }
+                      macroFormatGrams={formatMacroPer100}
                       isChecked
                       onTap={() => setSelectedKey(row.key)}
                       onRemove={() => handleRemoveIngredient(row.key)}
+                      removeAriaLabel={`Remove ${row.name} from recipe`}
                     />
                   )
-                })}
-
-                <button
-                  type="button"
-                  onClick={() => setShowPicker(true)}
-                  className="flex w-full items-center gap-2 px-4 py-3 text-sm text-[var(--app-brand)] hover:bg-[var(--app-hover-overlay)] transition-colors"
-                >
-                  <svg className="h-4 w-4 flex-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                  Add ingredient
-                </button>
-              </div>
-
-              {ingredients.length > 0 && (
-                <div className="border-t border-[var(--app-border-muted)] px-4 pt-3 pb-4 space-y-2">
-                  <p className="text-[10px] font-semibold tracking-widest uppercase text-[var(--app-text-subtle)]">
-                    Nutrition preview
-                  </p>
-                  <div className="space-y-2">
-                    <NutritionRow label={`Whole recipe (${rawMassSum}g raw)`} data={rollup.totals} fmt={fmt} />
-                    {rollup.per100g && <NutritionRow label="Per 100 g" data={rollup.per100g} fmt={fmt} />}
-                    {rollup.perPiece && pieceCount && pieceCount > 0 && (
-                      <NutritionRow
-                        label={`Per ${pieceLabel.trim() || 'piece'} (${fmt(totalMassG / pieceCount)}g)`}
-                        data={rollup.perPiece}
-                        fmt={fmt}
-                      />
-                    )}
-                  </div>
-                </div>
+                })
               )}
 
+              <button
+                type="button"
+                onClick={() => setShowPicker(true)}
+                className="flex w-full items-center gap-3 border-t border-[var(--app-border-muted)] px-4 py-3 text-sm text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-hover-overlay)] hover:text-[var(--app-brand)]"
+              >
+                <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl border border-dashed border-[var(--app-border)] text-lg leading-none">
+                  +
+                </span>
+                <span>Add ingredient</span>
+              </button>
+
               {serverError && (
-                <p className="px-4 pb-3 text-[var(--app-danger)] text-sm">{serverError}</p>
+                <p className="px-4 pb-3 text-sm text-[var(--app-danger)]">{serverError}</p>
               )}
             </div>
           </div>
@@ -365,10 +401,10 @@ export default function RecipeEditor({
             {(() => {
               const row = ingredients.find((r) => r.key === selectedKey)
               if (!row) return null
-              const kcal = Math.round(row.caloriesPer100g * row.massG / 100)
+              const est = ingredientEstimateFromRow(row)
               return (
-                <>
-                  <div className="flex-none flex items-center gap-3 px-4 py-3 border-b border-[var(--app-border-muted)]">
+                <div className="flex flex-1 flex-col overflow-hidden">
+                  <div className="flex-none flex items-center gap-3 border-b border-[var(--app-border-muted)] px-4 py-3">
                     <button
                       type="button"
                       onClick={() => setSelectedKey(null)}
@@ -379,16 +415,48 @@ export default function RecipeEditor({
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
-                    <p className="text-sm font-semibold text-[var(--app-text-primary)] truncate">{row.name}</p>
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <span
+                        className="h-2 w-2 flex-none rounded-full bg-[var(--app-text-muted)] opacity-35"
+                        aria-hidden
+                      />
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[var(--app-text-subtle)]">
+                          Ingredient
+                        </p>
+                        <p className="truncate text-sm font-semibold text-[var(--app-text-primary)]">{row.name}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex flex-1 flex-col items-center justify-center">
-                    <KcalGramEditor
-                      kcal={kcal}
-                      grams={row.massG}
-                      onGramsChange={(g) => handleMassChange(row.key, g)}
-                    />
+                  <div className="flex flex-1 flex-col overflow-y-auto px-5 pb-5 pt-4">
+                    <div className="mx-auto flex w-full max-w-sm flex-1 flex-col">
+                      <ServingEstimateBlock
+                        kcal={est.kcal}
+                        proteinG={est.proteinG}
+                        carbsG={est.carbsG}
+                        fatG={est.fatG}
+                        description="For this amount in the recipe"
+                      />
+                      <section className="pt-6">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-subtle)]">
+                          How much?
+                        </p>
+                        <p className="mt-1 text-sm text-[var(--app-text-muted)]">
+                          Same idea as logging a meal — set grams for this ingredient in the batch.
+                        </p>
+                      </section>
+                      <section className="mt-auto flex flex-col items-center pb-2 pt-8">
+                        <GramInput
+                          grams={row.massG}
+                          onChange={(g) => handleMassChange(row.key, g)}
+                          step={10}
+                          showSteppers
+                          size="large"
+                        />
+                      </section>
+                    </div>
                   </div>
-                </>
+                </div>
               )
             })()}
           </div>
