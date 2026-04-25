@@ -14,7 +14,6 @@ const useInvalidateDailyLogMock = vi.fn()
 const useAuthMock = vi.fn()
 const useProfileSummaryMock = vi.fn()
 const useRepeatLastMealPreviewMock = vi.fn()
-const useDailyLogHeaderCompactMock = vi.fn()
 const repeatLastMealMock = vi.fn()
 const deleteMealMock = vi.fn()
 const deleteMealItemMock = vi.fn()
@@ -48,10 +47,6 @@ vi.mock('@/features/profile/useProfileSummary', () => ({
 
 vi.mock('@/features/logging/useRepeatLastMealPreview', () => ({
   useRepeatLastMealPreview: (...args: unknown[]) => useRepeatLastMealPreviewMock(...args),
-}))
-
-vi.mock('@/features/logging/useDailyLogHeaderCompact', () => ({
-  useDailyLogHeaderCompact: (...args: unknown[]) => useDailyLogHeaderCompactMock(...args),
 }))
 
 vi.mock('@/lib/supabase', () => ({
@@ -339,7 +334,6 @@ describe('DailyLogPage', () => {
       isLoading: false,
     })
     useRepeatLastMealPreviewMock.mockReturnValue({ data: null, isLoading: false })
-    useDailyLogHeaderCompactMock.mockReturnValue(false)
     useDailyLogDerivedMock.mockReturnValue({
       data: {
         evaluation: null,
@@ -427,8 +421,7 @@ describe('DailyLogPage', () => {
     expect(screen.queryByText('Copy previous meal')).not.toBeInTheDocument()
   })
 
-  it('keeps a single persistent page heading when the compact summary is shown', () => {
-    useDailyLogHeaderCompactMock.mockReturnValue(true)
+  it('keeps a persistent compact summary without duplicate detail sections', () => {
     useDailyLogCoreMock.mockReturnValue({
       data: {
         dailyLog: {
@@ -451,7 +444,8 @@ describe('DailyLogPage', () => {
 
     expect(screen.getByRole('heading', { name: '2026-01-05' })).toBeInTheDocument()
     expect(screen.getAllByText('2026-01-05')).toHaveLength(1)
-    expect(screen.getByText('520 eaten · goal 2,000')).toBeInTheDocument()
+    expect(screen.getByText('of 2,000 kcal')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Nutrition balance' })).not.toBeInTheDocument()
   })
 
   it('restores a deleted meal from snapshots on undo', async () => {

@@ -20,11 +20,9 @@ import type { DailyLogMealEditState } from '@/features/logging/mealEditNavigatio
 import {
   DailyLogCompactCard,
   DailyLogDateHeader,
-  DailyLogFullCard,
   type DailyLogDateHeaderProps,
   type DailyLogSummaryCardProps,
 } from '@/features/logging/DailyLogHeader'
-import { useDailyLogHeaderCompact } from '@/features/logging/useDailyLogHeaderCompact'
 import DailyLogFinalizeCta from '@/features/logging/DailyLogFinalizeCta'
 import DailyLogRepeatCta from '@/features/logging/DailyLogRepeatCta'
 import UndoToast from '@/features/logging/UndoToast'
@@ -100,16 +98,7 @@ export default function DailyLogPage() {
   const [creaturePreviewState, setCreaturePreviewState] = useState<{ date: string; preview: CreaturePreview | null } | null>(null)
   const [battlePrepState, setBattlePrepState] = useState<{ date: string; summary: BattlePrepSummary | null } | null>(null)
   const { undoAction, showUndo, clearUndo } = useUndoToast()
-  const [scrollAnchor, setScrollAnchor] = useState<HTMLDivElement | null>(null)
-  const [dateSticky, setDateSticky] = useState<HTMLDivElement | null>(null)
-  const [fullHeader, setFullHeader] = useState<HTMLDivElement | null>(null)
   const handledMealEditLocationKeyRef = useRef<string | null>(null)
-  const headerCompact = useDailyLogHeaderCompact({
-    scrollAnchor,
-    dateSticky,
-    fullHeader,
-    resetKey: logDate,
-  })
 
   const dailyLog = coreQuery.data?.dailyLog ?? null
   const meals = coreQuery.data?.meals ?? []
@@ -220,43 +209,26 @@ export default function DailyLogPage() {
   }
 
   return (
-    <div ref={setScrollAnchor} className="app-page flex min-h-full flex-col pb-40">
+    <div className="app-page flex min-h-full flex-col pb-40">
       <div
-        className="sticky top-0 z-[18] px-4 pt-2"
+        className="sticky top-0 z-[18] px-4 pt-2 pb-3"
         style={{
           background: 'var(--app-bg)',
-          boxShadow: headerCompact ? '0 10px 24px rgba(15, 23, 42, 0.08)' : 'none',
-          transition: 'box-shadow 180ms ease',
         }}
       >
-        <div ref={setDateSticky} className="relative z-[1]">
+        <div className="relative z-[1]">
           <DailyLogDateHeader {...dateHeaderProps} />
         </div>
+        <div className="mt-2">
+          <DailyLogCompactCard {...summaryCardProps} />
+        </div>
         <div
-          className={`pointer-events-none absolute inset-x-0 top-full z-[1] transition-[opacity,height] duration-180 ease-out ${
-            headerCompact ? 'h-32 opacity-100' : 'h-0 opacity-0'
-          }`}
+          className="pointer-events-none absolute inset-x-0 top-full h-6"
           style={{
-            background: 'linear-gradient(to bottom, var(--app-bg) 0%, var(--app-bg) 72%, transparent 100%)',
+            background: 'linear-gradient(to bottom, var(--app-bg) 0%, transparent 100%)',
           }}
           aria-hidden="true"
         />
-        <div
-          className={`pointer-events-none absolute inset-x-4 top-full z-[2] origin-top transition-[opacity,transform] duration-180 ease-out ${
-            headerCompact
-              ? 'translate-y-0 scale-y-100 opacity-100'
-              : '-translate-y-1 scale-y-[0.96] opacity-0'
-          }`}
-          aria-hidden={!headerCompact}
-        >
-          <div className="pointer-events-auto">
-            <DailyLogCompactCard {...summaryCardProps} />
-          </div>
-        </div>
-      </div>
-
-      <div ref={setFullHeader} className="px-4 pt-3 pb-4">
-        <DailyLogFullCard {...summaryCardProps} />
       </div>
 
       {/* Feedback card (finalized) */}

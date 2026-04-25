@@ -277,7 +277,11 @@ function SlotCard({
             else onAdd()
           }}
           className="w-[34px] h-[34px] rounded-[10px] flex-none flex items-center justify-center active:scale-90 transition-all duration-200"
-          style={{ background: expanded ? 'var(--app-surface-muted)' : (theme?.bg ?? 'var(--app-brand-soft)'), border: 'none' }}
+          style={{
+            background: expanded ? 'var(--app-surface-muted)' : (theme?.text ?? 'var(--app-brand)'),
+            boxShadow: expanded ? 'none' : `0 2px 8px ${theme?.buttonShadow ?? 'rgba(124,58,237,0.35)'}`,
+            border: 'none',
+          }}
           aria-label={expanded ? `Collapse ${slot.type}` : `Add food to ${slot.type}`}
         >
           {expanded ? (
@@ -287,7 +291,7 @@ function SlotCard({
             </svg>
           ) : (
             <svg width={MEAL_SLOT_PLUS_SVG_PX} height={MEAL_SLOT_PLUS_SVG_PX} viewBox="0 0 16 16" fill="none" aria-hidden>
-              <path d="M8 3v10M3 8h10" stroke={theme?.text ?? 'var(--app-brand)'} strokeWidth={MEAL_SLOT_ICON_STROKE_WIDTH} strokeLinecap="round" />
+              <path d="M8 3v10M3 8h10" stroke="#fff" strokeWidth={MEAL_SLOT_ICON_STROKE_WIDTH} strokeLinecap="round" />
             </svg>
           )}
         </button>

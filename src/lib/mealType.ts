@@ -8,6 +8,7 @@ export type MealTypeTheme = {
   pillActiveBg: string
   pillActiveText: string
   accent: string
+  buttonShadow: string
 }
 
 const MEAL_TYPE_THEMES: Record<MealType, MealTypeTheme | null> = {
@@ -18,6 +19,7 @@ const MEAL_TYPE_THEMES: Record<MealType, MealTypeTheme | null> = {
     pillActiveBg: 'var(--app-meal-breakfast-bg)',
     pillActiveText: 'var(--app-meal-breakfast)',
     accent: 'var(--app-meal-breakfast)',
+    buttonShadow: 'rgba(123,94,255,0.35)',
   },
   Lunch: {
     bg: 'var(--app-meal-lunch-bg)',
@@ -26,6 +28,7 @@ const MEAL_TYPE_THEMES: Record<MealType, MealTypeTheme | null> = {
     pillActiveBg: 'var(--app-meal-lunch-bg)',
     pillActiveText: 'var(--app-meal-lunch)',
     accent: 'var(--app-meal-lunch)',
+    buttonShadow: 'rgba(255,159,61,0.35)',
   },
   Dinner: {
     bg: 'var(--app-meal-dinner-bg)',
@@ -34,6 +37,7 @@ const MEAL_TYPE_THEMES: Record<MealType, MealTypeTheme | null> = {
     pillActiveBg: 'var(--app-meal-dinner-bg)',
     pillActiveText: 'var(--app-meal-dinner)',
     accent: 'var(--app-meal-dinner)',
+    buttonShadow: 'rgba(255,107,157,0.35)',
   },
   Snack: {
     bg: 'var(--app-meal-snack-bg)',
@@ -42,6 +46,7 @@ const MEAL_TYPE_THEMES: Record<MealType, MealTypeTheme | null> = {
     pillActiveBg: 'var(--app-meal-snack-bg)',
     pillActiveText: 'var(--app-meal-snack)',
     accent: 'var(--app-meal-snack)',
+    buttonShadow: 'rgba(61,171,114,0.35)',
   },
   Other: null,
 }
