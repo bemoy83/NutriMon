@@ -68,6 +68,9 @@
   /* Toast */
   --app-toast-bg: #1E293B;
 
+  /* Ring */
+  --app-ring-track: #DDD6FF;
+
   /* Charts */
   --app-chart-grid: #E2E8F0;
   --app-chart-line: #7C3AED;
