@@ -4,7 +4,7 @@ import type { Item } from './types'
 import {
   applyMassInputModeForLabel,
   buildConfirmPayloadItemEdit,
-  computeLiveKcalItemEdit,
+  computeLiveEstimateItemEdit,
   initFoodSourceServingDraft,
   initItemServingDraft,
   isConfirmDisabledItemEdit,
@@ -89,8 +89,8 @@ export function useItemServingDraftState(item: Item) {
 
   const target: ServingStepTarget = useMemo(() => servingStepTargetFromItem(item), [item])
 
-  const liveKcal = useMemo(
-    () => computeLiveKcalItemEdit(item, state),
+  const estimate = useMemo(
+    () => computeLiveEstimateItemEdit(item, state),
     [item, state],
   )
 
@@ -123,7 +123,7 @@ export function useItemServingDraftState(item: Item) {
     setMassInputMode,
     setPendingMode,
     target,
-    liveKcal,
+    estimate,
     confirmDisabled,
     confirmPayload,
     onMassInputModeChange,

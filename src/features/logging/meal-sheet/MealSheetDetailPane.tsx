@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import type { FoodSource, Product } from '@/types/domain'
 import ProductForm from '../ProductForm'
 import ServingStep from '../ServingStep'
+import type { ServingStepEstimate } from '../ServingStep'
 import { servingStepTargetFromFood } from '../servingDraftModel'
 
 type SheetView = 'browse' | 'serving' | 'create'
@@ -17,7 +18,7 @@ export interface MealSheetDetailPaneProps {
   onMassInputModeChange: (mode: 'grams' | 'portions') => void
   pendingMode: 'grams' | 'pieces'
   onPendingModeChange: (m: 'grams' | 'pieces') => void
-  servingLiveKcal: number
+  servingEstimate: ServingStepEstimate
   isCompositeWithPieces: boolean
   isEditingExisting: boolean
   onServingBack: () => void
@@ -39,7 +40,7 @@ export default function MealSheetDetailPane({
   onMassInputModeChange,
   pendingMode,
   onPendingModeChange,
-  servingLiveKcal,
+  servingEstimate,
   isCompositeWithPieces,
   isEditingExisting,
   onServingBack,
@@ -56,7 +57,7 @@ export default function MealSheetDetailPane({
           target={servingStepTargetFromFood(servingTarget)}
           grams={pendingGrams}
           portions={pendingPortions}
-          liveKcal={servingLiveKcal}
+          estimate={servingEstimate}
           onGramsChange={onPendingGramsChange}
           onPortionsChange={onPendingPortionsChange}
           massInputMode={massInputMode}

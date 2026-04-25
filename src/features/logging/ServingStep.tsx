@@ -4,6 +4,13 @@ import SegmentedTabs from '@/components/ui/SegmentedTabs'
 
 type ServingAmountMode = 'grams' | 'portions' | 'pieces'
 
+export interface ServingStepEstimate {
+  kcal: number
+  proteinG: number | null
+  carbsG: number | null
+  fatG: number | null
+}
+
 export interface ServingStepTarget {
   name: string
   sourceType?: 'user_product' | 'catalog_item'
@@ -19,7 +26,7 @@ export interface ServingStepProps {
   target: ServingStepTarget
   grams: number
   portions: number
-  liveKcal: number
+  estimate: ServingStepEstimate
   onGramsChange: (g: number) => void
   onPortionsChange: (n: number) => void
   massInputMode: 'grams' | 'portions'
@@ -36,7 +43,7 @@ export default function ServingStep({
   target,
   grams,
   portions,
-  liveKcal,
+  estimate,
   onGramsChange,
   onPortionsChange,
   massInputMode,
@@ -54,6 +61,12 @@ export default function ServingStep({
     : null
 
   const labelPortionG = target.labelPortionGrams
+  const hasMacros = estimate.proteinG != null || estimate.carbsG != null || estimate.fatG != null
+  const macroRows = [
+    { label: 'Protein', shortLabel: 'P', value: estimate.proteinG, color: 'var(--app-macro-protein)', bg: 'var(--app-macro-protein-bg)' },
+    { label: 'Carbs', shortLabel: 'C', value: estimate.carbsG, color: 'var(--app-macro-carbs)', bg: 'var(--app-macro-carbs-bg)' },
+    { label: 'Fat', shortLabel: 'F', value: estimate.fatG, color: 'var(--app-macro-fat)', bg: 'var(--app-macro-fat-bg)' },
+  ]
   const canUseLabelPortions = Boolean(labelPortionG && labelPortionG > 0)
   const selectedAmountMode: ServingAmountMode = isPieceMode
     ? 'pieces'
@@ -71,33 +84,6 @@ export default function ServingStep({
       : 'portion'
   const servingActionLabel = isUpdate ? 'Edit serving' : 'Add serving'
   const pieceUnit = target.pieceLabel ?? 'pc'
-  const quickChoices =
-    selectedAmountMode === 'pieces'
-      ? [
-          { label: `1 ${pieceUnit}`, value: 1 },
-          { label: `2 ${pieceUnit}`, value: 2 },
-          ...(target.pieceCount && target.pieceCount > 2
-            ? [{ label: `All ${target.pieceCount}`, value: target.pieceCount }]
-            : []),
-        ]
-      : selectedAmountMode === 'portions'
-        ? [
-            { label: `1 ${portionStepperSuffix}`, value: 1 },
-            { label: `2 ${portionStepperSuffix}`, value: 2 },
-          ]
-        : [
-            ...(target.defaultServingAmount && target.defaultServingUnit && target.defaultServingUnit !== 'g'
-              ? [{ label: `1 ${target.defaultServingUnit}`, value: target.defaultServingAmount }]
-              : []),
-            ...(labelPortionG ? [{ label: 'Label serving', value: Math.round(labelPortionG) }] : []),
-            { label: '100g', value: 100 },
-          ]
-  const quickChoiceGridClass =
-    quickChoices.length === 1
-      ? 'grid-cols-1'
-      : quickChoices.length === 2
-        ? 'grid-cols-2'
-        : 'grid-cols-3'
 
   function handleCompositeModeSwitch(mode: 'grams' | 'pieces') {
     if (mode === compositeMode) return
@@ -134,15 +120,6 @@ export default function ServingStep({
     }
 
     onMassInputModeChange(mode)
-  }
-
-  function handleQuickChoice(value: number) {
-    if (selectedAmountMode === 'portions') {
-      onPortionsChange(value)
-      if (labelPortionG) onGramsChange(Math.round(value * labelPortionG))
-      return
-    }
-    onGramsChange(value)
   }
 
   const conversionHint = isPieceMode
@@ -207,15 +184,34 @@ export default function ServingStep({
             </p>
             <div className="mt-2 flex items-end justify-between gap-4">
               <p className="max-w-[11rem] text-sm leading-5 text-[var(--app-text-muted)]">
-                Calories for this serving
+                Nutrition for this serving
               </p>
               <div className="text-right">
                 <p className="text-5xl font-bold leading-none tabular-nums text-[var(--app-text-primary)]">
-                  {liveKcal}
+                  {estimate.kcal}
                 </p>
                 <p className="mt-1 text-xs font-medium text-[var(--app-text-muted)]">kcal</p>
               </div>
             </div>
+            {hasMacros ? (
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {macroRows.map((macro) => (
+                  <div
+                    key={macro.shortLabel}
+                    className="rounded-xl px-2 py-2 text-center"
+                    style={{ background: macro.bg }}
+                    aria-label={`${macro.label} ${macro.value == null ? 'unknown' : `${Math.round(macro.value)} grams`}`}
+                  >
+                    <p className="text-[10px] font-bold uppercase tracking-[0.12em]" style={{ color: macro.color }}>
+                      {macro.shortLabel}
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold tabular-nums" style={{ color: macro.color }}>
+                      {macro.value == null ? '—' : Math.round(macro.value)}g
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </section>
 
           <section className="pt-6">
@@ -236,27 +232,7 @@ export default function ServingStep({
             )}
           </section>
 
-          <section className="mt-auto flex flex-col items-center gap-4 pb-2 pt-8">
-            {quickChoices.length > 0 && (
-              <div className="w-full space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--app-text-subtle)]">
-                  Quick amounts
-                </p>
-                <div className={`grid ${quickChoiceGridClass} gap-2`}>
-                  {quickChoices.map((choice) => (
-                    <button
-                      key={`${choice.label}-${choice.value}`}
-                      type="button"
-                      onClick={() => handleQuickChoice(choice.value)}
-                      className="min-h-10 rounded-xl border border-[var(--app-input-border)] bg-[var(--app-input-bg)] px-2 text-sm font-semibold text-[var(--app-text-primary)] shadow-[var(--app-input-shadow)] transition-[background-color,border-color,color,box-shadow] hover:bg-[var(--app-input-bg-focus)] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--app-brand-ring),var(--app-input-shadow-focus)]"
-                    >
-                      {choice.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
+          <section className="mt-auto flex flex-col items-center pb-2 pt-8">
             <div className="flex flex-col items-center gap-3">
               {isPieceMode ? (
                 <GramInput

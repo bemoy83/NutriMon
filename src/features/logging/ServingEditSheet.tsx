@@ -35,7 +35,7 @@ export default function ServingEditSheet({
     pendingMode,
     setPendingMode,
     target,
-    liveKcal,
+    estimate,
     confirmDisabled,
     confirmPayload,
     onMassInputModeChange,
@@ -88,7 +88,7 @@ export default function ServingEditSheet({
         target={target}
         grams={pendingGrams}
         portions={pendingPortions}
-        liveKcal={liveKcal}
+        estimate={estimate}
         onGramsChange={setPendingGrams}
         onPortionsChange={setPendingPortions}
         massInputMode={massInputMode}

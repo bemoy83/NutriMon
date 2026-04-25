@@ -10,7 +10,7 @@ import BottomSheet from '@/components/ui/BottomSheet'
 import {
   applyMassInputModeForLabel,
   buildConfirmPayloadFromFood,
-  computeLiveKcalFoodSource,
+  computeLiveEstimateFoodSource,
   isCompositeWithPiecesForFood,
   isConfirmDisabledForFood,
 } from './servingDraftModel'
@@ -272,16 +272,16 @@ export default function MealSheet({
   const browseTranslate = sheetView === 'browse' ? 'translateX(0)' : 'translateX(-100%)'
   const detailTranslate = sheetView !== 'browse' ? 'translateX(0)' : 'translateX(100%)'
 
-  const servingLiveKcal = useMemo(
+  const servingEstimate = useMemo(
     () =>
       servingTarget
-        ? computeLiveKcalFoodSource(servingTarget, {
+        ? computeLiveEstimateFoodSource(servingTarget, {
             pendingMode,
             massInputMode,
             pendingGrams,
             pendingPortions,
           })
-        : 0,
+        : { kcal: 0, proteinG: null, carbsG: null, fatG: null },
     [servingTarget, pendingMode, massInputMode, pendingGrams, pendingPortions],
   )
 
@@ -406,7 +406,7 @@ export default function MealSheet({
             }}
             pendingMode={pendingMode}
             onPendingModeChange={setPendingMode}
-            servingLiveKcal={servingLiveKcal}
+            servingEstimate={servingEstimate}
             isCompositeWithPieces={isCompositeWithPieces}
             isEditingExisting={isEditingExisting}
             onServingBack={() => setSheetView('browse')}

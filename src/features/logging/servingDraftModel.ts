@@ -15,6 +15,20 @@ export interface ServingConfirmPayload {
   compositeQuantityMode?: 'grams' | 'pieces'
 }
 
+export interface ServingNutritionEstimate {
+  kcal: number
+  proteinG: number | null
+  carbsG: number | null
+  fatG: number | null
+}
+
+type ServingDraft = {
+  pendingMode: 'grams' | 'pieces'
+  massInputMode: 'grams' | 'portions'
+  pendingGrams: number
+  pendingPortions: number
+}
+
 /**
  * True when the food supports switching between mass (g) and piece count for a composite.
  */
@@ -139,26 +153,36 @@ function gramsEquivalentForFood(
   return pendingGrams
 }
 
+function scaleMacro(valuePer100g: number | null | undefined, gramsEq: number): number | null {
+  if (valuePer100g == null) return null
+  return valuePer100g * (gramsEq / 100)
+}
+
 /**
  * Live kcal while editing with a `FoodSource` (MealSheet serving step and ServingEditSheet when `item.foodSource` exists).
  */
-export function computeLiveKcalFoodSource(
-  food: FoodSource,
-  draft: {
-    pendingMode: 'grams' | 'pieces'
-    massInputMode: 'grams' | 'portions'
-    pendingGrams: number
-    pendingPortions: number
-  },
-): number {
+export function computeLiveEstimateFoodSource(food: FoodSource, draft: ServingDraft): ServingNutritionEstimate {
   const densityPer100 = food.caloriesPer100g ?? food.calories
   const isCompPieces = isCompositeWithPiecesForFood(food)
+  let gramsEq: number
+
   if (draft.pendingMode === 'pieces' && isCompPieces) {
     const gramsPerPiece = food.totalMassG! / food.pieceCount!
-    return Math.round(draft.pendingGrams * (densityPer100 / 100) * gramsPerPiece)
+    gramsEq = draft.pendingGrams * gramsPerPiece
+  } else {
+    gramsEq = gramsEquivalentForFood(food, draft.massInputMode, draft.pendingGrams, draft.pendingPortions)
   }
-  const gramsEq = gramsEquivalentForFood(food, draft.massInputMode, draft.pendingGrams, draft.pendingPortions)
-  return Math.round(gramsEq * (densityPer100 / 100))
+
+  return {
+    kcal: Math.round(gramsEq * (densityPer100 / 100)),
+    proteinG: scaleMacro(food.proteinG, gramsEq),
+    carbsG: scaleMacro(food.carbsG, gramsEq),
+    fatG: scaleMacro(food.fatG, gramsEq),
+  }
+}
+
+export function computeLiveKcalFoodSource(food: FoodSource, draft: ServingDraft): number {
+  return computeLiveEstimateFoodSource(food, draft).kcal
 }
 
 /**
@@ -166,27 +190,36 @@ export function computeLiveKcalFoodSource(
  * `initItemsFromMeal` does not attach `foodSource`, so most edit rows use snapshot fields — when the stepper
  * is in **portions** mode, kcal must follow `pendingPortions × label grams`, not the stale `pendingGrams` slice.
  */
-export function computeLiveKcalItemEdit(
-  item: Item,
-  draft: {
-    pendingMode: 'grams' | 'pieces'
-    massInputMode: 'grams' | 'portions'
-    pendingGrams: number
-    pendingPortions: number
-  },
-): number {
+export function computeLiveEstimateItemEdit(item: Item, draft: ServingDraft): ServingNutritionEstimate {
   if (item.foodSource) {
-    return computeLiveKcalFoodSource(item.foodSource, draft)
+    return computeLiveEstimateFoodSource(item.foodSource, draft)
   }
   if (item.compositeQuantityMode === 'pieces') {
-    return Math.round(draft.pendingGrams * getItemCalories(item))
+    return {
+      kcal: Math.round(draft.pendingGrams * getItemCalories(item)),
+      proteinG: item.snapshotProteinG == null ? null : draft.pendingGrams * item.snapshotProteinG,
+      carbsG: item.snapshotCarbsG == null ? null : draft.pendingGrams * item.snapshotCarbsG,
+      fatG: item.snapshotFatG == null ? null : draft.pendingGrams * item.snapshotFatG,
+    }
   }
   const label = item.snapshotLabelPortionGrams
+  let quantity: number
   if (draft.massInputMode === 'portions' && label && label > 0) {
     const gramsEq = draft.pendingPortions * label
-    return Math.round(gramsEq * (getItemCalories(item) / 100))
+    quantity = gramsEq / 100
+  } else {
+    quantity = draft.pendingGrams / 100
   }
-  return Math.round((draft.pendingGrams / 100) * getItemCalories(item))
+  return {
+    kcal: Math.round(quantity * getItemCalories(item)),
+    proteinG: item.snapshotProteinG == null ? null : quantity * item.snapshotProteinG,
+    carbsG: item.snapshotCarbsG == null ? null : quantity * item.snapshotCarbsG,
+    fatG: item.snapshotFatG == null ? null : quantity * item.snapshotFatG,
+  }
+}
+
+export function computeLiveKcalItemEdit(item: Item, draft: ServingDraft): number {
+  return computeLiveEstimateItemEdit(item, draft).kcal
 }
 
 export function isConfirmDisabledForFood(
