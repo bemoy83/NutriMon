@@ -9,6 +9,7 @@ export interface Item {
   snapshotCalories?: number
   snapshotServingAmount?: number | null
   snapshotServingUnit?: string | null
+  snapshotLabelPortionGrams?: number | null
   snapshotProteinG?: number | null
   snapshotCarbsG?: number | null
   snapshotFatG?: number | null

@@ -49,9 +49,8 @@ export default function MealSheet({
   const [massInputMode, setMassInputMode] = useState<'grams' | 'portions'>('grams')
   const [pendingMode, setPendingMode] = useState<'grams' | 'pieces'>('grams')
   const [items, setItems] = useState<Item[]>([])
-  const [cartOpen, setCartOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [tab, setTab] = useState<'recent' | 'saved'>('recent')
+  const [tab, setTab] = useState<'recent' | 'saved' | 'pending'>('recent')
   const [mealType, setMealType] = useState<MealType>(defaultMealType ?? getDefaultMealType(loggedAt))
   const [mealMenuOpen, setMealMenuOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -69,10 +68,6 @@ export default function MealSheet({
 
   const mealTheme = getMealTypeTheme(mealType)
   const totalKcal = items.reduce((sum, i) => sum + getItemKcal(i), 0)
-
-  useEffect(() => {
-    if (items.length === 0) setCartOpen(false)
-  }, [items.length])
 
   useEffect(() => {
     if (sheetView === 'browse') return
@@ -206,6 +201,7 @@ export default function MealSheet({
           snapshotFatG: servingTarget.fatG,
           snapshotServingAmount: servingTarget.defaultServingAmount,
           snapshotServingUnit: servingTarget.defaultServingUnit,
+          snapshotLabelPortionGrams: servingTarget.labelPortionGrams ?? null,
           quantity,
           compositeQuantityMode,
         },
@@ -218,10 +214,14 @@ export default function MealSheet({
     setItems((prev) => prev.filter((_, i) => i !== idx))
   }
 
-  function handleCartItemEdit(item: Item) {
-    if (item.foodSource) {
-      handleFoodTap(item.foodSource)
-    }
+  function handleServingRemove() {
+    if (!servingTarget) return
+    setItems((prev) => prev.filter((i) =>
+      servingTarget.sourceType === 'user_product'
+        ? i.productId !== servingTarget.sourceId
+        : i.catalogItemId !== servingTarget.sourceId,
+    ))
+    setSheetView('browse')
   }
 
   async function handleLogTemplate(template: MealTemplate) {
@@ -421,112 +421,27 @@ export default function MealSheet({
     return `${Math.round(item.quantity * getItemServingAmount())}g`
   }
 
-  const cartSummary =
-    items.length > 0 ? (
-      <div className={`-mx-4 mb-5 border-b border-[var(--app-border-muted)] bg-white ${submitError ? '' : '-mt-5'}`}>
-        <button
-          type="button"
-          onClick={() => setCartOpen((o) => !o)}
-          className="flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors"
-          style={{
-            background: mealTheme ? mealTheme.bg : 'var(--app-brand-soft)',
-            color: mealTheme ? mealTheme.text : 'var(--app-brand)',
-          }}
-          aria-expanded={cartOpen}
-          aria-label={`${items.length} item${items.length !== 1 ? 's' : ''} selected, ${totalKcal} kcal — ${cartOpen ? 'collapse' : 'expand'} cart`}
-        >
-          <span className="text-sm font-medium">
-            Pending · {items.length} item{items.length !== 1 ? 's' : ''} ·{' '}
-            <span className="font-semibold">{totalKcal} kcal</span>
-          </span>
-          <svg
-            className={`h-4 w-4 flex-none transition-transform duration-200 ${cartOpen ? '' : 'rotate-180'}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-          </svg>
-        </button>
-        {cartOpen && (
-          <div className="max-h-44 overflow-y-auto">
-            {items.map((item, idx) => {
-              const kcal = getItemKcal(item)
-              const sourceType = getItemSourceType(item)
-              const canEdit = Boolean(item.foodSource)
-              return (
-                <div
-                  key={getItemKey(item)}
-                  className="flex items-center gap-2 border-b border-[var(--app-border-muted)] px-4 py-2.5 last:border-0"
-                >
-                  <button
-                    type="button"
-                    onClick={() => removeItem(idx)}
-                    className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-sm text-[var(--app-text-subtle)] transition-colors hover:bg-[var(--app-danger-soft)] hover:text-[var(--app-danger)]"
-                    aria-label={`Remove ${getItemLabel(item)}`}
-                  >
-                    ✕
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleCartItemEdit(item)}
-                    disabled={!canEdit}
-                    className="group flex min-w-0 flex-1 items-center gap-3 rounded-xl py-0.5 text-left disabled:cursor-default"
-                    aria-label={`Edit ${getItemLabel(item)}`}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        {sourceType && <FoodSourceBadge sourceType={sourceType} />}
-                        <p className="truncate text-sm text-[var(--app-text-primary)]">
-                          {getItemLabel(item)}
-                        </p>
-                      </div>
-                      <p className="text-xs text-[var(--app-text-muted)]">
-                        {kcal} kcal · {getCartItemServingLabel(item)}
-                      </p>
-                    </div>
-                    {canEdit && (
-                      <span
-                        className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[var(--app-input-bg)] text-[var(--app-brand)] transition-colors group-hover:bg-[var(--app-input-bg-focus)] group-hover:text-[var(--app-brand-hover)]"
-                        aria-hidden="true"
-                      >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
-                      </span>
-                    )}
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-    ) : null
-
   const browseFooter = (
     <div className="flex-none border-t border-[var(--app-border-muted)] bg-white px-4 py-5">
-        {submitError && <p className="pb-2 text-xs text-[var(--app-danger)]">{submitError}</p>}
-        {items.length === 0 && (
-          <p className="pb-2 text-xs text-center text-[var(--app-text-subtle)]">
-            Tap a food to add it to {mealType}
-          </p>
-        )}
-        {cartSummary}
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={browseSubmitDisabled}
-          className="app-button-primary w-full py-3 !rounded-full"
-          style={browseSubmitDisabled ? mealCtaDisabledStyle : mealCtaStyle}
-        >
-          {submitting
-            ? 'Adding…'
-            : items.length > 0
-              ? `Add to ${mealType} · ${items.length} item${items.length !== 1 ? 's' : ''} · ${totalKcal} kcal`
-              : `Add to ${mealType}`}
-        </button>
+      {submitError && <p className="pb-2 text-xs text-[var(--app-danger)]">{submitError}</p>}
+      {items.length === 0 && (
+        <p className="pb-2 text-xs text-center text-[var(--app-text-subtle)]">
+          Tap a food to add it to {mealType}
+        </p>
+      )}
+      <button
+        type="button"
+        onClick={handleSubmit}
+        disabled={browseSubmitDisabled}
+        className="app-button-primary w-full py-3 !rounded-full"
+        style={browseSubmitDisabled ? mealCtaDisabledStyle : mealCtaStyle}
+      >
+        {submitting
+          ? 'Adding…'
+          : items.length > 0
+            ? `Add to ${mealType} · ${items.length} item${items.length !== 1 ? 's' : ''} · ${totalKcal} kcal`
+            : `Add to ${mealType}`}
+      </button>
     </div>
   )
 
@@ -572,6 +487,7 @@ export default function MealSheet({
             options={[
               { value: 'recent', label: 'Recent' },
               { value: 'saved', label: 'Saved' },
+              { value: 'pending', label: items.length > 0 ? `Pending · ${items.length}` : 'Pending' },
             ]}
             onChange={(t) => setTab(t)}
             className="!bg-white !shadow-none !pt-1.5 !pb-3 !border-b !border-[var(--app-border-muted)]"
@@ -582,7 +498,38 @@ export default function MealSheet({
           )}
 
           <div className="flex-1 overflow-y-auto">
-            {tab === 'saved' ? (
+            {tab === 'pending' ? (
+              items.length === 0 ? (
+                <div className="px-4 py-8 text-center">
+                  <p className="text-sm text-[var(--app-text-muted)]">No items added yet.</p>
+                  <p className="mt-1 text-xs text-[var(--app-text-subtle)]">Tap a food from Recent to get started.</p>
+                </div>
+              ) : (
+                items.map((item) => (
+                  <FoodRow
+                    key={getItemKey(item)}
+                    name={getItemLabel(item)}
+                    subtitle={`${getItemKcal(item)} kcal · ${getCartItemServingLabel(item)}`}
+                    leading={
+                      item.foodSource?.kind === 'composite' ? (
+                        <svg className="w-4 h-4 text-[var(--app-brand)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 6h14M5 10h14M5 14h10" />
+                        </svg>
+                      ) : (
+                        <FoodSourceBadge sourceType={getItemSourceType(item) ?? 'user_product'} />
+                      )
+                    }
+                    isChecked
+                    onTap={() => item.foodSource && handleFoodTap(item.foodSource)}
+                    macroChips={
+                      item.snapshotProteinG != null || item.snapshotCarbsG != null || item.snapshotFatG != null
+                        ? { p: item.snapshotProteinG, c: item.snapshotCarbsG, f: item.snapshotFatG }
+                        : undefined
+                    }
+                  />
+                ))
+              )
+            ) : tab === 'saved' ? (
               visibleTemplates.length === 0 ? (
                 <div className="px-4 py-8 text-center">
                   {isSearching ? (
@@ -699,6 +646,7 @@ export default function MealSheet({
               }}
               onBack={() => setSheetView('browse')}
               isUpdate={isEditingExisting}
+              onRemove={isEditingExisting ? handleServingRemove : undefined}
               compositeMode={pendingMode}
               onModeChange={setPendingMode}
               showModeToggle={isCompositeWithPieces}

@@ -357,6 +357,7 @@ export interface MealItemRow {
   fat_g_snapshot: number | null
   serving_amount_snapshot: number | null
   serving_unit_snapshot: string | null
+  label_portion_grams_snapshot: number | null
   line_total_calories: number
   created_at: string
 }

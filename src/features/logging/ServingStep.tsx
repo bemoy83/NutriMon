@@ -24,6 +24,7 @@ export interface ServingStepProps {
   onMassInputModeChange: (mode: 'grams' | 'portions') => void
   onBack: () => void
   isUpdate: boolean
+  onRemove?: () => void
   compositeMode: 'grams' | 'pieces'
   onModeChange: (mode: 'grams' | 'pieces') => void
   showModeToggle: boolean
@@ -40,6 +41,7 @@ export default function ServingStep({
   onMassInputModeChange,
   onBack,
   isUpdate,
+  onRemove,
   compositeMode,
   onModeChange,
   showModeToggle,
@@ -91,6 +93,18 @@ export default function ServingStep({
           )}
           <p className="text-sm font-semibold text-[var(--app-text-primary)] truncate">{target.name}</p>
         </div>
+        {onRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="flex-none h-9 w-9 flex items-center justify-center rounded-full text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-danger-soft)] hover:text-[var(--app-danger)]"
+            aria-label="Remove item"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {showModeToggle && (

@@ -166,6 +166,7 @@ export interface MealItem {
   fatGSnapshot: number | null
   servingAmountSnapshot: number | null
   servingUnitSnapshot: string | null
+  labelPortionGramsSnapshot: number | null
   lineTotalCalories: number
   createdAt: string
 }

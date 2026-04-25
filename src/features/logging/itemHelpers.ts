@@ -76,6 +76,7 @@ export function initItemsFromMeal(meal: Meal): Item[] {
         snapshotFatG: i.fatGSnapshot,
         snapshotServingAmount: i.servingAmountSnapshot,
         snapshotServingUnit: i.servingUnitSnapshot,
+        snapshotLabelPortionGrams: i.labelPortionGramsSnapshot,
         quantity: i.quantity,
         compositeQuantityMode,
       }
@@ -90,6 +91,7 @@ export function initItemsFromMeal(meal: Meal): Item[] {
       snapshotFatG: i.fatGSnapshot,
       snapshotServingAmount: i.servingAmountSnapshot,
       snapshotServingUnit: i.servingUnitSnapshot,
+      snapshotLabelPortionGrams: i.labelPortionGramsSnapshot,
       quantity: i.quantity,
       compositeQuantityMode,
     }

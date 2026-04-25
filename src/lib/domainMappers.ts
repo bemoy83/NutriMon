@@ -151,6 +151,7 @@ export function mapMealItem(row: MealItemRow): MealItem {
     fatGSnapshot: row.fat_g_snapshot,
     servingAmountSnapshot: row.serving_amount_snapshot,
     servingUnitSnapshot: row.serving_unit_snapshot,
+    labelPortionGramsSnapshot: row.label_portion_grams_snapshot,
     lineTotalCalories: row.line_total_calories,
     createdAt: row.created_at,
   }

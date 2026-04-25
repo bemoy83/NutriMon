@@ -21,7 +21,7 @@ export default function ServingEditSheet({ item, idx, onConfirm, onClose, confir
   )
   const [massInputMode, setMassInputMode] = useState<'grams' | 'portions'>('grams')
   const [pendingPortions, setPendingPortions] = useState(() => {
-    const labelGrams = item.foodSource?.labelPortionGrams
+    const labelGrams = item.foodSource?.labelPortionGrams ?? item.snapshotLabelPortionGrams
     const currentGrams = item.compositeQuantityMode === 'pieces' ? item.quantity : Math.round(item.quantity * 100)
     return labelGrams && labelGrams > 0
       ? Math.max(1, Math.round(currentGrams / labelGrams))
@@ -46,7 +46,7 @@ export default function ServingEditSheet({ item, idx, onConfirm, onClose, confir
         sourceType: getItemSourceType(item) ?? undefined,
         defaultServingAmount: item.snapshotServingAmount ?? null,
         defaultServingUnit: item.snapshotServingUnit ?? null,
-        labelPortionGrams: null,
+        labelPortionGrams: item.snapshotLabelPortionGrams ?? null,
         pieceCount: null,
         pieceLabel:
           item.snapshotServingUnit && item.snapshotServingUnit !== 'g'

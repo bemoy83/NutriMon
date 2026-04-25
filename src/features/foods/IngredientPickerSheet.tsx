@@ -90,7 +90,6 @@ export default function IngredientPickerSheet({
 
   // ─── Data sources ─────────────────────────────────────────────────────────
 
-  // My foods: simple products with unit = 'g'
   const myProductsQuery = useQuery({
     queryKey: ['my-food-products', user?.id],
     enabled: !!user,
@@ -106,11 +105,9 @@ export default function IngredientPickerSheet({
         p.defaultServingAmount > 0,
     )
     const q = deferredQuery.trim().toLowerCase()
-    const searched = q ? all.filter((p) => p.name.toLowerCase().includes(q)) : all
-    return searched
+    return q ? all.filter((p) => p.name.toLowerCase().includes(q)) : all
   }, [myProductsQuery.data, deferredQuery])
 
-  // Catalog: search via existing RPC
   const catalogSearch = useFoodSourceSearch(tab === 'catalog' ? deferredQuery : '')
 
   const catalogFiltered = useMemo(() => {
@@ -139,6 +136,10 @@ export default function IngredientPickerSheet({
     setMassG(100)
   }
 
+  function handleBack() {
+    setSelected(null)
+  }
+
   function handleConfirm() {
     if (!selected || massG <= 0) return
     onAdd({
@@ -156,143 +157,160 @@ export default function IngredientPickerSheet({
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
-  // If an item is selected, show the mass input sub-view
-  if (selected) {
-    const previewCal = (selected.caloriesPer100g * massG) / 100
-    return (
-      <BottomSheet
-        onClose={() => setSelected(null)}
-        title="Set amount"
-        footer={
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => setSelected(null)}
-              className="app-button-secondary flex-1 py-2.5"
-            >
-              Back
-            </button>
-            <button
-              type="button"
-              disabled={massG <= 0}
-              onClick={handleConfirm}
-              className="app-button-primary flex-1 py-2.5"
-            >
-              Add
-            </button>
-          </div>
-        }
-      >
-        <div className="p-4 space-y-4">
-          <p className="text-sm font-medium text-[var(--app-text-primary)]">
-            {selected.name}
-          </p>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-[var(--app-text-muted)]">Amount:</span>
-            <GramInput grams={massG} onChange={setMassG} step={10} />
-          </div>
-          <p className="text-sm text-[var(--app-text-muted)]">
-            {Math.round(previewCal)} kcal for {massG}g
-          </p>
-        </div>
-      </BottomSheet>
-    )
-  }
+  const inDetail = selected !== null
+  const listTranslate = inDetail ? 'translateX(-100%)' : 'translateX(0)'
+  const detailTranslate = inDetail ? 'translateX(0)' : 'translateX(100%)'
 
   return (
-    <BottomSheet onClose={onClose} title="Add ingredient" className="max-h-[80vh]">
-      <SegmentedTabs options={TAB_OPTIONS} value={tab} onChange={setTab} />
+    <BottomSheet
+      onClose={onClose}
+      title={inDetail ? 'Set amount' : 'Add ingredient'}
+      className="h-[80vh] sm:h-[600px]"
+    >
+      <div className="relative flex min-h-0 flex-1 overflow-hidden">
+        {/* Browse view */}
+        <div
+          className="absolute inset-0 flex flex-col transition-transform duration-[250ms] ease-out"
+          aria-hidden={inDetail}
+          style={{ transform: listTranslate }}
+        >
+          <SegmentedTabs options={TAB_OPTIONS} value={tab} onChange={setTab} />
 
-      <div className="px-4 pt-2 pb-1">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder={tab === 'my-foods' ? 'Search my foods' : 'Search catalog'}
-          className="app-input px-3 py-2 text-sm w-full"
-          autoFocus
-        />
-      </div>
+          <div className="px-4 pt-2 pb-1">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={tab === 'my-foods' ? 'Search my foods' : 'Search catalog'}
+              className="app-input px-3 py-2 text-sm w-full"
+              autoFocus
+            />
+          </div>
 
-      <div className="overflow-y-auto px-4 pb-4">
-        {tab === 'my-foods' && (
-          <>
-            {myFoodsFiltered.length === 0 ? (
-              <p className="text-xs text-[var(--app-text-muted)] py-6 text-center">
-                {deferredQuery.trim()
-                  ? 'No matching simple foods with gram servings.'
-                  : 'No simple foods with gram servings yet.'}
-              </p>
-            ) : (
-              <div className="space-y-1 pt-1">
-                {myFoodsFiltered.map((product) => {
-                  const excluded = excludeProductIds.includes(product.id)
-                  return (
-                    <button
-                      key={product.id}
-                      type="button"
-                      disabled={excluded}
-                      onClick={() => handleSelectProduct(product)}
-                      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left transition-colors ${
-                        excluded
-                          ? 'opacity-40 cursor-not-allowed'
-                          : 'hover:bg-[var(--app-surface-elevated)]'
-                      }`}
-                    >
-                      <FoodSourceBadge sourceType="user_product" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm text-[var(--app-text-primary)] truncate">
-                          {product.name}
-                        </p>
-                        <p className="text-xs text-[var(--app-text-muted)]">
-                          {product.calories} kcal / {product.defaultServingAmount}g
-                        </p>
-                      </div>
-                      {excluded && (
-                        <span className="text-[10px] text-[var(--app-text-muted)]">Added</span>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
+            {tab === 'my-foods' && (
+              <>
+                {myFoodsFiltered.length === 0 ? (
+                  <p className="text-xs text-[var(--app-text-muted)] py-6 text-center">
+                    {deferredQuery.trim()
+                      ? 'No matching simple foods with gram servings.'
+                      : 'No simple foods with gram servings yet.'}
+                  </p>
+                ) : (
+                  <div className="space-y-1 pt-1">
+                    {myFoodsFiltered.map((product) => {
+                      const excluded = excludeProductIds.includes(product.id)
+                      return (
+                        <button
+                          key={product.id}
+                          type="button"
+                          disabled={excluded}
+                          onClick={() => handleSelectProduct(product)}
+                          className={`flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left transition-colors ${
+                            excluded
+                              ? 'opacity-40 cursor-not-allowed'
+                              : 'hover:bg-[var(--app-surface-elevated)]'
+                          }`}
+                        >
+                          <FoodSourceBadge sourceType="user_product" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm text-[var(--app-text-primary)] truncate">
+                              {product.name}
+                            </p>
+                            <p className="text-xs text-[var(--app-text-muted)]">
+                              {product.calories} kcal / {product.defaultServingAmount}g
+                            </p>
+                          </div>
+                          {excluded && (
+                            <span className="text-[10px] text-[var(--app-text-muted)]">Added</span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </>
             )}
-          </>
-        )}
 
-        {tab === 'catalog' && (
-          <>
-            {deferredQuery.trim().length === 0 ? (
-              <p className="text-xs text-[var(--app-text-muted)] py-6 text-center">
-                Type to search the food catalog.
-              </p>
-            ) : catalogFiltered.length === 0 ? (
-              <p className="text-xs text-[var(--app-text-muted)] py-6 text-center">
-                No matching catalog items with gram servings.
-              </p>
-            ) : (
-              <div className="space-y-1 pt-1">
-                {catalogFiltered.map((fs) => (
-                  <button
-                    key={fs.sourceId}
-                    type="button"
-                    onClick={() => handleSelectCatalog(fs)}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-[var(--app-surface-elevated)]"
-                  >
-                    <FoodSourceBadge sourceType="catalog_item" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-[var(--app-text-primary)] truncate">
-                        {fs.name}
-                      </p>
-                      <p className="text-xs text-[var(--app-text-muted)]">
-                        {fs.calories} kcal / {fs.defaultServingAmount}g
-                      </p>
-                    </div>
-                  </button>
-                ))}
-              </div>
+            {tab === 'catalog' && (
+              <>
+                {deferredQuery.trim().length === 0 ? (
+                  <p className="text-xs text-[var(--app-text-muted)] py-6 text-center">
+                    Type to search the food catalog.
+                  </p>
+                ) : catalogFiltered.length === 0 ? (
+                  <p className="text-xs text-[var(--app-text-muted)] py-6 text-center">
+                    No matching catalog items with gram servings.
+                  </p>
+                ) : (
+                  <div className="space-y-1 pt-1">
+                    {catalogFiltered.map((fs) => (
+                      <button
+                        key={fs.sourceId}
+                        type="button"
+                        onClick={() => handleSelectCatalog(fs)}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-[var(--app-surface-elevated)]"
+                      >
+                        <FoodSourceBadge sourceType="catalog_item" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-[var(--app-text-primary)] truncate">
+                            {fs.name}
+                          </p>
+                          <p className="text-xs text-[var(--app-text-muted)]">
+                            {fs.calories} kcal / {fs.defaultServingAmount}g
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
-          </>
-        )}
+          </div>
+        </div>
+
+        {/* Detail view — amount picker */}
+        <div
+          className="absolute inset-0 flex flex-col transition-transform duration-[250ms] ease-out"
+          aria-hidden={!inDetail}
+          style={{ transform: detailTranslate }}
+        >
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {selected && (
+              <>
+                <p className="text-sm font-medium text-[var(--app-text-primary)]">
+                  {selected.name}
+                </p>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-[var(--app-text-muted)]">Amount:</span>
+                  <GramInput grams={massG} onChange={setMassG} step={10} />
+                </div>
+                <p className="text-sm text-[var(--app-text-muted)]">
+                  {Math.round((selected.caloriesPer100g * massG) / 100)} kcal for {massG}g
+                </p>
+              </>
+            )}
+          </div>
+          <div className="flex-none border-t border-[var(--app-border-muted)] bg-white px-4 py-5">
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleBack}
+                className="app-button-secondary flex-1 py-2.5"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                disabled={massG <= 0}
+                onClick={handleConfirm}
+                className="app-button-primary flex-1 py-2.5"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </BottomSheet>
   )
