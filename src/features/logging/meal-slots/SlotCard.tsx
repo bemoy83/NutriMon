@@ -32,6 +32,8 @@ export function SlotCard({
   const menuContainerRef = useRef<HTMLDivElement>(null)
 
   const theme = getMealTypeTheme(slot.type)
+  const accentColor = theme?.text ?? 'var(--app-brand)'
+  const accentBg = theme?.bg ?? 'var(--app-brand-soft)'
   const invalidateDailyLog = useInvalidateDailyLog()
   const invalidateProducts = useInvalidateProductQueries()
   const invalidateTemplates = useInvalidateMealTemplates()
@@ -59,6 +61,17 @@ export function SlotCard({
     document.addEventListener('pointerdown', onPointerDown)
     return () => document.removeEventListener('pointerdown', onPointerDown)
   }, [menuOpen])
+
+  useEffect(() => {
+    if (!menuOpen && !showSavePrompt) return
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return
+      setMenuOpen(false)
+      setShowSavePrompt(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [menuOpen, showSavePrompt])
 
   async function handleClearAll() {
     setMenuOpen(false)
@@ -88,16 +101,19 @@ export function SlotCard({
   }
 
   return (
-    <div className="app-card overflow-hidden">
+    <div className="app-card overflow-hidden transition-shadow duration-200 hover:shadow-sm">
       <div className="flex items-center gap-2.5 px-4 py-3.5">
 
         {/* LEFT ZONE — tappable: expand when collapsed, collapse when expanded, add when empty */}
-        <div
-          className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer select-none"
+        <button
+          type="button"
+          className="group -ml-1 flex flex-1 min-w-0 items-center gap-3 rounded-2xl py-1 pl-1 pr-2 text-left transition-colors hover:bg-[var(--app-hover-overlay)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus)]"
           onClick={() => hasMeals ? setExpanded(e => !e) : onAdd()}
+          aria-expanded={hasMeals ? expanded : undefined}
+          aria-label={hasMeals ? `${expanded ? 'Collapse' : 'Expand'} ${slot.type}` : `Add food to ${slot.type}`}
         >
           <div
-            className="w-10 h-10 rounded-xl flex-none flex items-center justify-center"
+            className="w-10 h-10 rounded-xl flex-none flex items-center justify-center transition-transform duration-200 group-active:scale-95"
             style={{ background: theme?.bg ?? 'var(--app-surface-muted)' }}
             aria-hidden
           >
@@ -123,7 +139,7 @@ export function SlotCard({
               </p>
             )}
           </div>
-        </div>
+        </button>
 
         {/* Kcal badge */}
         {totalCal > 0 && (
@@ -146,10 +162,12 @@ export function SlotCard({
             }}
             className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center active:scale-90 transition-all duration-200"
             style={{
-              background: (hasMeals && expanded) ? 'var(--app-surface-muted)' : (theme?.text ?? 'var(--app-brand)'),
+              background: (hasMeals && expanded) ? 'var(--app-surface-muted)' : accentColor,
               boxShadow: (hasMeals && expanded) ? 'none' : `0 2px 8px ${theme?.buttonShadow ?? 'rgba(124,58,237,0.35)'}`,
               border: 'none',
             }}
+            aria-expanded={(hasMeals && expanded) ? menuOpen : undefined}
+            aria-haspopup={(hasMeals && expanded) ? 'menu' : undefined}
             aria-label={(hasMeals && expanded) ? `${slot.type} options` : `Add food to ${slot.type}`}
           >
             {hasMeals && expanded ? (
@@ -168,12 +186,14 @@ export function SlotCard({
           {/* Overflow popover */}
           {menuOpen && (
             <div
+              role="menu"
               className="absolute right-0 z-[500] overflow-hidden"
               style={{
                 top: 42,
                 width: 224,
                 borderRadius: 16,
                 background: 'var(--app-surface)',
+                border: '1px solid var(--app-border-muted)',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06)',
                 animation: 'popIn 0.15s ease-out',
               }}
@@ -181,6 +201,7 @@ export function SlotCard({
               {/* Save as template */}
               <button
                 type="button"
+                role="menuitem"
                 disabled={savingTemplate}
                 onClick={() => {
                   setMenuOpen(false)
@@ -192,9 +213,9 @@ export function SlotCard({
               >
                 <div
                   className="flex items-center justify-center shrink-0 rounded-[9px]"
-                  style={{ width: 30, height: 30, background: theme?.bg ?? 'var(--app-brand-soft)' }}
+                  style={{ width: 30, height: 30, background: accentBg }}
                 >
-                  <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={theme?.text ?? 'var(--app-brand)'} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                   </svg>
                 </div>
@@ -209,6 +230,7 @@ export function SlotCard({
               {/* Clear all items */}
               <button
                 type="button"
+                role="menuitem"
                 disabled={deleting}
                 onClick={handleClearAll}
                 className="w-full flex items-center gap-3 text-left transition-colors hover:bg-[var(--app-surface-muted)] disabled:opacity-40"
@@ -250,62 +272,66 @@ export function SlotCard({
             />
           ))}
           {!isFinalized && (
-            <div className="px-4 py-3">
-              {showSavePrompt ? (
-                <div className="flex gap-2">
-                  <input
-                    autoFocus
-                    type="text"
-                    value={templateName}
-                    onChange={e => setTemplateName(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && templateName.trim()) {
+            <>
+              <div className="mx-4 h-px" style={{ background: 'var(--app-border-muted)' }} />
+              <div className="px-4 py-3">
+                {showSavePrompt ? (
+                  <div className="flex gap-2 rounded-2xl border border-[var(--app-border-muted)] bg-[var(--app-surface-muted)] p-2">
+                    <input
+                      autoFocus
+                      type="text"
+                      value={templateName}
+                      onChange={e => setTemplateName(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && templateName.trim()) {
+                          handleSaveTemplate(templateName.trim())
+                          setShowSavePrompt(false)
+                          setTemplateName('')
+                        } else if (e.key === 'Escape') {
+                          setShowSavePrompt(false)
+                          setTemplateName('')
+                        }
+                      }}
+                      placeholder="Name this meal…"
+                      className="app-input min-w-0 flex-1 px-3 py-1.5 text-sm"
+                    />
+                    <button
+                      onClick={() => {
+                        if (!templateName.trim()) return
                         handleSaveTemplate(templateName.trim())
                         setShowSavePrompt(false)
                         setTemplateName('')
-                      } else if (e.key === 'Escape') {
-                        setShowSavePrompt(false)
-                        setTemplateName('')
-                      }
-                    }}
-                    placeholder="Name this meal…"
-                    className="app-input flex-1 px-3 py-1.5 text-sm"
-                  />
+                      }}
+                      disabled={!templateName.trim() || savingTemplate}
+                      className="app-button-primary px-3 py-1.5 text-sm disabled:opacity-40"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => { setShowSavePrompt(false); setTemplateName('') }}
+                      className="app-button-secondary px-3 py-1.5 text-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
                   <button
-                    onClick={() => {
-                      if (!templateName.trim()) return
-                      handleSaveTemplate(templateName.trim())
-                      setShowSavePrompt(false)
-                      setTemplateName('')
+                    type="button"
+                    onClick={onAdd}
+                    className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold text-white transition-all hover:brightness-95 active:scale-[0.99]"
+                    style={{
+                      background: accentColor,
+                      boxShadow: `0 2px 8px ${theme?.buttonShadow ?? 'rgba(124,58,237,0.35)'}`,
                     }}
-                    disabled={!templateName.trim() || savingTemplate}
-                    className="app-button-primary px-3 py-1.5 text-sm disabled:opacity-40"
                   >
-                    Save
+                    <svg width={MEAL_SLOT_PLUS_SVG_PX} height={MEAL_SLOT_PLUS_SVG_PX} viewBox="0 0 16 16" fill="none" aria-hidden>
+                      <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth={MEAL_SLOT_ICON_STROKE_WIDTH} strokeLinecap="round" />
+                    </svg>
+                    Add food
                   </button>
-                  <button
-                    onClick={() => { setShowSavePrompt(false); setTemplateName('') }}
-                    className="app-button-secondary px-3 py-1.5 text-sm"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={onAdd}
-                  className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition-colors"
-                  style={{ border: `1.5px dashed ${(theme?.text ?? 'var(--app-brand)') + '50'}`, color: theme?.text ?? 'var(--app-brand)', background: 'transparent' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = theme?.bg ?? 'var(--app-brand-soft)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
-                >
-                  <svg width={MEAL_SLOT_PLUS_SVG_PX} height={MEAL_SLOT_PLUS_SVG_PX} viewBox="0 0 16 16" fill="none" aria-hidden>
-                    <path d="M8 3v10M3 8h10" stroke={theme?.text ?? 'var(--app-brand)'} strokeWidth={MEAL_SLOT_ICON_STROKE_WIDTH} strokeLinecap="round" />
-                  </svg>
-                  Add food
-                </button>
-              )}
-            </div>
+                )}
+              </div>
+            </>
           )}
         </div>
       )}

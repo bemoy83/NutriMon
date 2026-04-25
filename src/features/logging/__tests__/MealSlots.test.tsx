@@ -74,6 +74,6 @@ describe('MealSlots', () => {
     expect(screen.queryByText('160piece')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Adjust serving for Knekkebrod m/egg' }))
 
-    expect(screen.getByRole('dialog', { name: 'Knekkebrod m/egg (deleted)' })).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'Edit Breakfast' })).toBeInTheDocument()
   })
 })
