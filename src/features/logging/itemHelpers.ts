@@ -48,7 +48,7 @@ export function formatMealItemServingLabel(
   return `${formatAmount(grams)}g`
 }
 
-/** Compute kcal for a single cart item, accounting for composite piece mode. */
+/** Compute kcal for a single pending / draft item, accounting for composite piece mode. */
 export function getItemKcal(item: Item): number {
   if (item.compositeQuantityMode === 'pieces') {
     const fs = item.foodSource

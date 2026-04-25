@@ -51,12 +51,12 @@ export interface Meal {
   const totalFatG = allItems.reduce((s, i) => s + (i.fatGSnapshot ?? 0) * i.quantity, 0)
 ```
 
-- **List:** `MealList` receives the full `meals` array (no grouping by meal type; see §3).
-- **Sheets:** Lazy-loaded `MealSheet` — `mode="add"` from the FAB, `mode="edit"` from a card.
+- **Slots:** `MealSlots` groups the loaded `meals` by `mealType` into fixed Breakfast / Lunch / Dinner / Snack cards (several `Meal` rows can appear under the same slot).
+- **Sheets:** `MealSheet` is the add-food flow (from FAB or **+** on a slot). Serving amounts are edited per line via `ServingEditSheet` on the slot’s expanded list (there is no separate full-page meal editor).
 - **Empty day:** `InlineQuickAdd` when the day is not finalized and `mealCount === 0`.
 - **Bottom bar:** `+` opens the add sheet; **Repeat last …** vs **Finalize** depends on time of day and whether **any** meal today already uses the **current default meal type** (see §6).
 
-**Gap anchor:** Day totals are correct at **day** scope. **Meal-type / “one lunch”** scope is **not** modeled in the header—only per **card** inside `MealList`.
+**Gap anchor:** Day totals are correct at **day** scope. Slot cards show **per-slot** kcal (and expanded macro detail). Server shape is still one `meals` row per logged meal, not a single merged row per slot.
 
 ---
 
@@ -93,36 +93,14 @@ export interface Meal {
 
 ---
 
-## 4. Presentation (`MealList` / `MealCard`)
+## 4. Presentation (`MealSlots` / `SlotCard` / `LoggedMealRow`)
 
-- **One card per `Meal`:** title uses `mealName` → else `mealType` → else formatted `loggedAt`.
-- **Collapsed header** shows **that card’s** `totalCalories` and item count.
-- **Expanded:** macro strip for **that card only**, then each `MealItemRow` (name, serving label, line kcal).
-- Actions per card: Edit (opens `MealSheet` with that meal), Save template, Delete.
+- **One row per meal type slot:** `MealSlots` maps Breakfast–Snack; each `SlotCard` shows combined kcal for all `Meal` rows with that `mealType`, and expands to list each logged meal and its line items.
+- **Collapsed header** shows slot name, item preview, and **combined** slot calories when any items exist.
+- **Expanded:** per-meal label when multiple meals share a slot, then `LoggedMealItemRow` lines (serving label, macros, kcal). Tapping a line opens `ServingEditSheet` for `updateMealWithItems` (not a separate route).
+- **Overflow menu** on an expanded slot: save-as-template, clear all.
 
-```67:84:src/features/logging/MealList.tsx
-      <div className="space-y-2">
-        {meals.map((meal) => (
-          <MealCard
-            key={meal.id}
-            meal={meal}
-            isFinalized={isFinalized}
-            timezone={timezone}
-            expanded={expandedMealId === meal.id}
-            deleting={deletingId === meal.id}
-            savingTemplate={savingTemplateId === meal.id}
-            onToggle={() =>
-              setExpandedMealId((prev) => (prev === meal.id ? null : meal.id))
-            }
-            onEdit={() => onEditMeal(meal)}
-            onDelete={() => handleDelete(meal)}
-            onSaveTemplate={(name) => handleSaveTemplate(meal, name)}
-          />
-        ))}
-      </div>
-```
-
-**Gap anchor:** This matches **line items under a header** only **inside each card**. **Several cards with the same `mealType`** each get their **own** header and subtotal—the “parallel Lunch cards” case.
+**Gap anchor:** The UI **groups** by `mealType`, but persistence is still **many `meals` rows** for the same type—the “parallel Lunch cards” case remains at the data layer until **Option B** append/merge.
 
 ---
 
@@ -133,8 +111,8 @@ All primary “add” paths create a **new `meals` row** (or replace one meal’
 | Entry point | Behavior |
 |-------------|----------|
 | **`InlineQuickAdd`** | `createMealWithItems` with **one** item and `getDefaultMealType(loggedAt)` → **new meal** per tap. Shown only when the day is **empty** (`mealCount === 0`). |
-| **`MealSheet` add** | User picks `mealType` / optional `mealName`, builds item list, submits → **`create_meal_with_items`** → **always a new meal**, even if another card already has the same `meal_type`. |
-| **`MealSheet` edit** | **`update_meal_with_items`** for **that** meal id—does not merge with another same-type card or “append” to another meal. |
+| **`MealSheet` add** | Default `mealType` comes from the slot (or time-based default from FAB). Pending items are staged in a **Pending** tab; submit → **`create_meal_with_items`** → **new meal** row. |
+| **Line serving edit** | From an expanded slot, **`update_meal_with_items`** for **that** meal’s id via `ServingEditSheet`—does not merge with another same-type card. |
 | **Repeat last meal** | `repeatLastMealOfType` copies a prior meal’s snapshot into **a new meal** on the target day. |
 | **Delete / undo** | `delete_meal` / `restoreMealFromSnapshot` at **meal** granularity. |
 

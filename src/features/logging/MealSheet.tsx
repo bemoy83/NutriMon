@@ -1,4 +1,4 @@
-import { useState, useDeferredValue, useEffect, useRef } from 'react'
+import { useState, useDeferredValue, useEffect, useMemo, useRef } from 'react'
 import { useInvalidateDailyLog } from './useDailyLog'
 import { createMealWithItems, deleteMealTemplate } from './api'
 import type { FoodSource, MealTemplate } from '@/types/domain'
@@ -7,21 +7,25 @@ import { useFoodSourceSearch, useRecentFoodSources } from './useFoodSources'
 import { useInvalidateMealTemplates, useInvalidateProductQueries } from './queryInvalidation'
 import { useMealTemplates } from './useMealTemplates'
 import BottomSheet from '@/components/ui/BottomSheet'
-import FoodRow from '@/components/ui/FoodRow'
-import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
-import SegmentedTabs from '@/components/ui/SegmentedTabs'
-import ProductForm from './ProductForm'
-import ServingStep from './ServingStep'
 import {
-  getItemKey,
+  applyMassInputModeForLabel,
+  buildConfirmPayloadFromFood,
+  computeLiveKcalFoodSource,
+  isCompositeWithPiecesForFood,
+  isConfirmDisabledForFood,
+} from './servingDraftModel'
+import { useFoodSourceServingDraft } from './useServingDraft'
+import {
   getItemKcal,
-  getItemLabel,
   getItemServingAmount,
-  getItemSourceType,
 } from './itemHelpers'
 import type { Item } from './types'
-import { MEAL_TYPES, getDefaultMealType, getMealTypeTheme } from '@/lib/mealType'
+import { getDefaultMealType, getMealTypeTheme } from '@/lib/mealType'
 import type { MealType } from '@/lib/mealType'
+import MealTypeTitleMenu from './meal-sheet/MealTypeTitleMenu'
+import MealSheetBrowseView from './meal-sheet/MealSheetBrowseView'
+import MealSheetDetailPane from './meal-sheet/MealSheetDetailPane'
+import { MealSheetBrowseFooter, MealSheetServingFooter } from './meal-sheet/MealSheetFooters'
 
 interface MealSheetProps {
   logDate: string
@@ -44,10 +48,17 @@ export default function MealSheet({
 }: MealSheetProps) {
   const [sheetView, setSheetView] = useState<SheetView>('browse')
   const [servingTarget, setServingTarget] = useState<FoodSource | null>(null)
-  const [pendingGrams, setPendingGrams] = useState(100)
-  const [pendingPortions, setPendingPortions] = useState(1)
-  const [massInputMode, setMassInputMode] = useState<'grams' | 'portions'>('grams')
-  const [pendingMode, setPendingMode] = useState<'grams' | 'pieces'>('grams')
+  const {
+    pendingGrams,
+    setPendingGrams,
+    pendingPortions,
+    setPendingPortions,
+    massInputMode,
+    setMassInputMode,
+    pendingMode,
+    setPendingMode,
+    reinitialize: reinitializeServingDraft,
+  } = useFoodSourceServingDraft()
   const [items, setItems] = useState<Item[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [tab, setTab] = useState<'recent' | 'saved' | 'pending'>('recent')
@@ -118,7 +129,7 @@ export default function MealSheet({
     !isSearching || t.name.toLowerCase().includes(deferredSearchQuery.trim().toLowerCase()),
   )
 
-  function isItemInCart(fs: FoodSource): boolean {
+  function isItemPending(fs: FoodSource): boolean {
     return items.some((i) =>
       fs.sourceType === 'user_product' ? i.productId === fs.sourceId : i.catalogItemId === fs.sourceId,
     )
@@ -131,53 +142,22 @@ export default function MealSheet({
         : i.catalogItemId === foodSource.sourceId,
     )
 
-    setMassInputMode('grams')
-
-    if (existing?.compositeQuantityMode === 'pieces') {
-      setPendingMode('pieces')
-      setPendingGrams(existing.quantity)
-    } else {
-      setPendingMode('grams')
-      const currentGrams = existing
-        ? Math.round(existing.quantity * 100)
-        : (foodSource.labelPortionGrams ?? 100)
-      setPendingGrams(currentGrams)
-      if (foodSource.labelPortionGrams && foodSource.labelPortionGrams > 0) {
-        setPendingPortions(Math.max(1, Math.round(currentGrams / foodSource.labelPortionGrams)))
-      } else {
-        setPendingPortions(1)
-      }
-    }
-
+    reinitializeServingDraft(foodSource, existing)
     setServingTarget(foodSource)
     setSheetView('serving')
   }
 
-  const isCompositeWithPieces = servingTarget?.kind === 'composite'
-    && (servingTarget.pieceCount ?? 0) > 0
-    && (servingTarget.totalMassG ?? 0) > 0
-
   function confirmServing() {
     if (!servingTarget) return
 
-    let quantity: number
-    let compositeQuantityMode: 'grams' | 'pieces' | undefined
-
-    if (pendingMode === 'pieces' && isCompositeWithPieces) {
-      if (pendingGrams <= 0) return
-      quantity = pendingGrams
-      compositeQuantityMode = 'pieces'
-    } else {
-      const gramsEq =
-        massInputMode === 'portions'
-        && servingTarget.labelPortionGrams
-        && servingTarget.labelPortionGrams > 0
-          ? pendingPortions * servingTarget.labelPortionGrams
-          : pendingGrams
-      if (gramsEq <= 0) return
-      quantity = gramsEq / 100
-      compositeQuantityMode = servingTarget.kind === 'composite' ? 'grams' : undefined
-    }
+    const payload = buildConfirmPayloadFromFood(servingTarget, {
+      pendingMode,
+      massInputMode,
+      pendingGrams,
+      pendingPortions,
+    })
+    if (!payload) return
+    const { quantity, compositeQuantityMode } = payload
 
     setItems((prev) => {
       const existingIdx = prev.findIndex((i) =>
@@ -292,24 +272,18 @@ export default function MealSheet({
   const browseTranslate = sheetView === 'browse' ? 'translateX(0)' : 'translateX(-100%)'
   const detailTranslate = sheetView !== 'browse' ? 'translateX(0)' : 'translateX(100%)'
 
-  const densityPer100 = servingTarget
-    ? (servingTarget.caloriesPer100g ?? servingTarget.calories)
-    : 0
-
-  const servingLiveKcal = (() => {
-    if (!servingTarget) return 0
-    if (pendingMode === 'pieces' && isCompositeWithPieces) {
-      const gramsPerPiece = servingTarget.totalMassG! / servingTarget.pieceCount!
-      return Math.round(pendingGrams * (densityPer100 / 100) * gramsPerPiece)
-    }
-    const gramsEq =
-      massInputMode === 'portions'
-      && servingTarget.labelPortionGrams
-      && servingTarget.labelPortionGrams > 0
-        ? pendingPortions * servingTarget.labelPortionGrams
-        : pendingGrams
-    return Math.round(gramsEq * (densityPer100 / 100))
-  })()
+  const servingLiveKcal = useMemo(
+    () =>
+      servingTarget
+        ? computeLiveKcalFoodSource(servingTarget, {
+            pendingMode,
+            massInputMode,
+            pendingGrams,
+            pendingPortions,
+          })
+        : 0,
+    [servingTarget, pendingMode, massInputMode, pendingGrams, pendingPortions],
+  )
 
   const isEditingExisting = servingTarget
     ? items.some((i) =>
@@ -319,14 +293,15 @@ export default function MealSheet({
       )
     : false
   const browseSubmitDisabled = items.length === 0 || submitting
-  const servingConfirmDisabled =
-    pendingMode === 'pieces' && isCompositeWithPieces
-      ? pendingGrams <= 0
-      : massInputMode === 'portions'
-        && servingTarget?.labelPortionGrams
-        && servingTarget.labelPortionGrams > 0
-        ? pendingPortions <= 0
-        : pendingGrams <= 0
+  const isCompositeWithPieces = Boolean(servingTarget && isCompositeWithPiecesForFood(servingTarget))
+  const servingConfirmDisabled = servingTarget
+    ? isConfirmDisabledForFood(servingTarget, {
+        pendingMode,
+        massInputMode,
+        pendingGrams,
+        pendingPortions,
+      })
+    : true
   const mealCtaStyle = mealTheme
     ? {
         background: mealTheme.accent,
@@ -341,125 +316,27 @@ export default function MealSheet({
       }
     : undefined
 
-  const mealTitleControl = (
-    <div ref={mealMenuRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setMealMenuOpen((open) => !open)}
-        className="group inline-flex items-center gap-1.5 rounded-md py-1 pr-1 text-base font-semibold text-[var(--app-text-primary)] transition-[color,box-shadow] duration-[var(--app-transition-fast)] hover:text-[var(--app-text-secondary)] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--app-brand-ring),var(--app-input-shadow-focus)]"
-        aria-haspopup="menu"
-        aria-expanded={mealMenuOpen}
-        aria-label={`Change meal type, currently ${mealType}`}
-      >
-        <span>
-          Add to{' '}
-          <span style={{ color: mealTheme?.text ?? 'var(--app-brand)' }}>
-            {mealType}
-          </span>
-        </span>
-        <svg
-          className={`h-4 w-4 transition-transform duration-[var(--app-transition-fast)] ${mealMenuOpen ? 'rotate-180' : ''}`}
-          style={{ color: mealTheme?.text ?? 'var(--app-brand)' }}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-          aria-hidden="true"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
-        </svg>
-      </button>
-
-      {mealMenuOpen && (
-        <div
-          role="menu"
-          className="absolute left-0 top-full z-30 mt-2 w-44 rounded-2xl border border-[var(--app-border-muted)] bg-white p-1.5 shadow-[0_12px_32px_rgb(15_23_42/0.16)]"
-        >
-          {MEAL_TYPES.map((type) => {
-            const selected = mealType === type
-            const theme = getMealTypeTheme(type)
-
-            return (
-              <button
-                key={type}
-                type="button"
-                role="menuitemradio"
-                aria-checked={selected}
-                onClick={() => {
-                  setMealType(type)
-                  setMealMenuOpen(false)
-                }}
-                className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-[var(--app-input-bg)] focus-visible:bg-[var(--app-input-bg)] focus-visible:outline-none"
-                style={{
-                  color: selected
-                    ? (theme?.text ?? 'var(--app-brand)')
-                    : 'var(--app-text-secondary)',
-                }}
-              >
-                <span>{type}</span>
-                {selected && (
-                  <svg className="h-4 w-4 flex-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </button>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-
-  function getCartItemServingLabel(item: Item): string {
+  function getPendingItemServingLabel(item: Item): string {
     if (item.compositeQuantityMode === 'pieces') {
       return `${item.quantity} ${item.foodSource?.pieceLabel ?? 'pc'}`
     }
     return `${Math.round(item.quantity * getItemServingAmount())}g`
   }
 
-  const browseFooter = (
-    <div className="flex-none border-t border-[var(--app-border-muted)] bg-white px-4 py-5">
-      {submitError && <p className="pb-2 text-xs text-[var(--app-danger)]">{submitError}</p>}
-      {items.length === 0 && (
-        <p className="pb-2 text-xs text-center text-[var(--app-text-subtle)]">
-          Tap a food to add it to {mealType}
-        </p>
-      )}
-      <button
-        type="button"
-        onClick={handleSubmit}
-        disabled={browseSubmitDisabled}
-        className="app-button-primary w-full py-3 !rounded-full"
-        style={browseSubmitDisabled ? mealCtaDisabledStyle : mealCtaStyle}
-      >
-        {submitting
-          ? 'Adding…'
-          : items.length > 0
-            ? `Add to ${mealType} · ${items.length} item${items.length !== 1 ? 's' : ''} · ${totalKcal} kcal`
-            : `Add to ${mealType}`}
-      </button>
-    </div>
-  )
-
-  const servingFooter = (
-    <div className="flex-none border-t border-[var(--app-border-muted)] bg-white px-4 py-5">
-      <button
-        type="button"
-        onClick={confirmServing}
-        disabled={servingConfirmDisabled}
-        className="app-button-primary w-full py-3 !rounded-full"
-        style={servingConfirmDisabled ? mealCtaDisabledStyle : mealCtaStyle}
-      >
-        {isEditingExisting ? 'Update' : `Add to ${mealType}`}
-      </button>
-    </div>
-  )
-
   return (
     <BottomSheet
       onClose={onClose}
       title={`Add to ${mealType}`}
-      titleContent={mealTitleControl}
+      titleContent={(
+        <MealTypeTitleMenu
+          mealMenuRef={mealMenuRef}
+          mealMenuOpen={mealMenuOpen}
+          onOpenChange={setMealMenuOpen}
+          mealType={mealType}
+          onMealTypeChange={setMealType}
+          mealTheme={mealTheme}
+        />
+      )}
       className="h-[85vh] sm:h-[600px]"
     >
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
@@ -468,144 +345,38 @@ export default function MealSheet({
           aria-hidden={sheetView !== 'browse'}
           style={{ transform: browseTranslate }}
         >
-          <div className="flex-none px-4 py-2 bg-white">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search foods…"
-              className="app-input w-full px-4 py-1.5 text-sm !rounded-full"
-            />
-          </div>
-
-          <SegmentedTabs
-            value={tab}
-            options={[
-              { value: 'recent', label: 'Recent' },
-              { value: 'saved', label: 'Saved' },
-              { value: 'pending', label: items.length > 0 ? `Pending · ${items.length}` : 'Pending' },
-            ]}
-            onChange={(t) => setTab(t)}
-            className="!bg-white !shadow-none !pt-1.5 !pb-3 !border-b !border-[var(--app-border-muted)]"
-          />
-
-          {isSearching && tab === 'recent' && searchResults.isPending && (
-            <div className="px-4 py-3 text-sm text-[var(--app-text-muted)]">Searching…</div>
-          )}
-
-          <div className="flex-1 overflow-y-auto">
-            {tab === 'pending' ? (
-              items.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <p className="text-sm text-[var(--app-text-muted)]">No items added yet.</p>
-                  <p className="mt-1 text-xs text-[var(--app-text-subtle)]">Tap a food from Recent to get started.</p>
-                </div>
-              ) : (
-                items.map((item) => (
-                  <FoodRow
-                    key={getItemKey(item)}
-                    name={getItemLabel(item)}
-                    subtitle={`${getItemKcal(item)} kcal · ${getCartItemServingLabel(item)}`}
-                    leading={
-                      item.foodSource?.kind === 'composite' ? (
-                        <svg className="w-4 h-4 text-[var(--app-brand)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 6h14M5 10h14M5 14h10" />
-                        </svg>
-                      ) : (
-                        <FoodSourceBadge sourceType={getItemSourceType(item) ?? 'user_product'} />
-                      )
-                    }
-                    isChecked
-                    onTap={() => item.foodSource && handleFoodTap(item.foodSource)}
-                    macroChips={
-                      item.snapshotProteinG != null || item.snapshotCarbsG != null || item.snapshotFatG != null
-                        ? { p: item.snapshotProteinG, c: item.snapshotCarbsG, f: item.snapshotFatG }
-                        : undefined
-                    }
-                  />
-                ))
-              )
-            ) : tab === 'saved' ? (
-              visibleTemplates.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  {isSearching ? (
-                    <p className="text-sm text-[var(--app-text-muted)]">No saved meals match &ldquo;{deferredSearchQuery.trim()}&rdquo;</p>
-                  ) : (
-                    <>
-                      <p className="text-sm text-[var(--app-text-muted)]">No saved meals yet.</p>
-                      <p className="mt-1 text-xs text-[var(--app-text-subtle)]">
-                        Save a meal from the meal card to reuse it here.
-                      </p>
-                    </>
-                  )}
-                </div>
-              ) : (
-                visibleTemplates.map((template) => (
-                  <TemplateRow
-                    key={template.id}
-                    template={template}
-                    loading={submitting}
-                    onLog={() => handleLogTemplate(template)}
-                    onDelete={() => handleDeleteTemplate(template.id)}
-                  />
-                ))
-              )
-            ) : (
-              <>
-                {isSearching && !searchResults.isPending && (searchResults.data?.length ?? 0) === 0 ? (
-                  <div className="flex flex-col items-center py-8 gap-3">
-                    <p className="text-sm text-[var(--app-text-muted)]">No foods found</p>
-                    <button
-                      type="button"
-                      onClick={() => setSheetView('create')}
-                      className="app-button-secondary text-sm px-4 py-2"
-                    >
-                      + Create &ldquo;{deferredSearchQuery.trim()}&rdquo;
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    {activeFoodSources.map((fs) => (
-                      <FoodRow
-                        key={`${fs.sourceType}:${fs.sourceId}`}
-                        name={fs.name}
-                        subtitle={`${Math.round(fs.caloriesPer100g)} kcal / 100g${fs.labelPortionGrams ? ` · label portion ${fs.labelPortionGrams}g` : ''}`}
-                        leading={
-                          fs.kind === 'composite' ? (
-                            <svg className="w-4 h-4 text-[var(--app-brand)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 6h14M5 10h14M5 14h10" />
-                            </svg>
-                          ) : (
-                            <FoodSourceBadge sourceType={fs.sourceType} />
-                          )
-                        }
-                        isChecked={isItemInCart(fs)}
-                        onTap={() => handleFoodTap(fs)}
-                        macroChips={
-                          fs.proteinG != null || fs.carbsG != null || fs.fatG != null
-                            ? { p: fs.proteinG, c: fs.carbsG, f: fs.fatG }
-                            : undefined
-                        }
-                      />
-                    ))}
-                    {!isSearching && (
-                      <button
-                        type="button"
-                        onClick={() => setSheetView('create')}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-[var(--app-text-muted)] hover:text-[var(--app-brand)] hover:bg-[var(--app-hover-overlay)] transition-colors border-t border-[var(--app-border-muted)]"
-                      >
-                        <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full border border-dashed border-[var(--app-border)] text-lg leading-none">
-                          +
-                        </span>
-                        <span>Create new food</span>
-                      </button>
-                    )}
-                  </>
-                )}
-              </>
+          <MealSheetBrowseView
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            tab={tab}
+            onTabChange={setTab}
+            items={items}
+            isSearching={isSearching}
+            deferredSearchQuery={deferredSearchQuery}
+            searchResults={searchResults}
+            activeFoodSources={activeFoodSources}
+            visibleTemplates={visibleTemplates}
+            submitting={submitting}
+            isItemPending={isItemPending}
+            onFoodTap={handleFoodTap}
+            getPendingItemServingLabel={getPendingItemServingLabel}
+            onLogTemplate={handleLogTemplate}
+            onDeleteTemplate={handleDeleteTemplate}
+            onOpenCreateFood={() => setSheetView('create')}
+            footer={(
+              <MealSheetBrowseFooter
+                submitError={submitError}
+                itemsCount={items.length}
+                mealType={mealType}
+                totalKcal={totalKcal}
+                submitting={submitting}
+                browseSubmitDisabled={browseSubmitDisabled}
+                mealCtaStyle={mealCtaStyle}
+                mealCtaDisabledStyle={mealCtaDisabledStyle}
+                onSubmit={handleSubmit}
+              />
             )}
-          </div>
-          {browseFooter}
+          />
         </div>
 
         <div
@@ -613,130 +384,77 @@ export default function MealSheet({
           aria-hidden={sheetView === 'browse'}
           style={{ transform: detailTranslate }}
         >
-          {sheetView === 'serving' && servingTarget && (
-            <ServingStep
-              target={{
-                name: servingTarget.name,
-                sourceType: servingTarget.sourceType,
-                defaultServingAmount: servingTarget.defaultServingAmount,
-                defaultServingUnit: servingTarget.defaultServingUnit,
-                labelPortionGrams: servingTarget.labelPortionGrams,
-                pieceCount: servingTarget.pieceCount,
-                pieceLabel: servingTarget.pieceLabel,
-                totalMassG: servingTarget.totalMassG,
-              }}
-              grams={pendingGrams}
-              portions={pendingPortions}
-              liveKcal={servingLiveKcal}
-              onGramsChange={setPendingGrams}
-              onPortionsChange={setPendingPortions}
-              massInputMode={massInputMode}
-              onMassInputModeChange={(mode) => {
-                setMassInputMode(mode)
-                const labelGrams = servingTarget.labelPortionGrams
-                if (mode === 'portions' && labelGrams && labelGrams > 0) {
-                  setPendingPortions(Math.max(1, Math.round(pendingGrams / labelGrams)))
-                } else if (mode === 'grams' && labelGrams && labelGrams > 0) {
-                  setPendingGrams(Math.round(pendingPortions * labelGrams))
-                }
-              }}
-              onBack={() => setSheetView('browse')}
-              isUpdate={isEditingExisting}
-              onRemove={isEditingExisting ? handleServingRemove : undefined}
-              compositeMode={pendingMode}
-              onModeChange={setPendingMode}
-              showModeToggle={isCompositeWithPieces}
-            />
-          )}
-          {sheetView === 'serving' && servingTarget && servingFooter}
-          {sheetView === 'create' && (
-            <div className="flex-1 overflow-y-auto">
-              <ProductForm
-                onSave={() => {
-                  invalidateProducts()
-                  setSheetView('browse')
-                }}
-                onSaveAndAdd={(product) => {
-                  const cal100 = product.caloriesPer100g ?? product.calories
-                  const foodSource: FoodSource = {
-                    sourceType: 'user_product',
-                    sourceId: product.id,
-                    name: product.name,
-                    calories: product.calories,
-                    caloriesPer100g: cal100,
-                    proteinG: product.proteinG,
-                    carbsG: product.carbsG,
-                    fatG: product.fatG,
-                    defaultServingAmount: product.defaultServingAmount,
-                    defaultServingUnit: product.defaultServingUnit,
-                    labelPortionGrams: product.labelPortionGrams,
-                    useCount: 0,
-                    lastUsedAt: null,
-                    kind: 'simple',
-                    pieceCount: null,
-                    pieceLabel: null,
-                    totalMassG: null,
-                  }
-                  invalidateProducts()
-                  setMassInputMode('grams')
-                  setPendingPortions(1)
-                  setPendingGrams(product.labelPortionGrams ?? 100)
-                  setPendingMode('grams')
-                  setServingTarget(foodSource)
-                  setSheetView('serving')
-                }}
-                onCancel={() => setSheetView('browse')}
+          <MealSheetDetailPane
+            sheetView={sheetView}
+            servingTarget={servingTarget}
+            pendingGrams={pendingGrams}
+            onPendingGramsChange={setPendingGrams}
+            pendingPortions={pendingPortions}
+            onPendingPortionsChange={setPendingPortions}
+            massInputMode={massInputMode}
+            onMassInputModeChange={(mode) => {
+              setMassInputMode(mode)
+              if (!servingTarget) return
+              const { pendingGrams: g, pendingPortions: p } = applyMassInputModeForLabel(
+                servingTarget.labelPortionGrams,
+                mode,
+                pendingGrams,
+                pendingPortions,
+              )
+              setPendingGrams(g)
+              setPendingPortions(p)
+            }}
+            pendingMode={pendingMode}
+            onPendingModeChange={setPendingMode}
+            servingLiveKcal={servingLiveKcal}
+            isCompositeWithPieces={isCompositeWithPieces}
+            isEditingExisting={isEditingExisting}
+            onServingBack={() => setSheetView('browse')}
+            onServingRemove={handleServingRemove}
+            onProductSave={() => {
+              invalidateProducts()
+              setSheetView('browse')
+            }}
+            onProductSaveAndAdd={(product) => {
+              const cal100 = product.caloriesPer100g ?? product.calories
+              const foodSource: FoodSource = {
+                sourceType: 'user_product',
+                sourceId: product.id,
+                name: product.name,
+                calories: product.calories,
+                caloriesPer100g: cal100,
+                proteinG: product.proteinG,
+                carbsG: product.carbsG,
+                fatG: product.fatG,
+                defaultServingAmount: product.defaultServingAmount,
+                defaultServingUnit: product.defaultServingUnit,
+                labelPortionGrams: product.labelPortionGrams,
+                useCount: 0,
+                lastUsedAt: null,
+                kind: 'simple',
+                pieceCount: null,
+                pieceLabel: null,
+                totalMassG: null,
+              }
+              invalidateProducts()
+              reinitializeServingDraft(foodSource)
+              setServingTarget(foodSource)
+              setSheetView('serving')
+            }}
+            onProductCancel={() => setSheetView('browse')}
+            servingFooter={(
+              <MealSheetServingFooter
+                servingConfirmDisabled={servingConfirmDisabled}
+                mealCtaStyle={mealCtaStyle}
+                mealCtaDisabledStyle={mealCtaDisabledStyle}
+                isEditingExisting={isEditingExisting}
+                mealType={mealType}
+                onConfirm={confirmServing}
               />
-            </div>
-          )}
+            )}
+          />
         </div>
       </div>
     </BottomSheet>
-  )
-}
-
-function TemplateRow({
-  template,
-  loading,
-  onLog,
-  onDelete,
-}: {
-  template: MealTemplate
-  loading: boolean
-  onLog: () => void
-  onDelete: () => void
-}) {
-  const estimatedCalories = template.items.reduce(
-    (sum, i) => sum + Math.round(i.quantity * i.caloriesSnapshot),
-    0,
-  )
-  return (
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--app-border-muted)] hover:bg-[var(--app-hover-overlay)] active:bg-[var(--app-hover-overlay)] transition-colors">
-      <div className="flex-1 min-w-0">
-        <p className="text-[var(--app-text-primary)] text-sm font-medium truncate">{template.name}</p>
-        <p className="text-[var(--app-text-muted)] text-xs">
-          {template.items.length} item{template.items.length !== 1 ? 's' : ''} · ~{estimatedCalories} kcal
-          {template.defaultMealType && <span className="ml-1">· {template.defaultMealType}</span>}
-        </p>
-      </div>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onDelete}
-          className="text-[var(--app-text-subtle)] hover:text-[var(--app-danger)] transition-colors text-xs px-1.5 py-1"
-          aria-label="Delete template"
-        >
-          ✕
-        </button>
-        <button
-          type="button"
-          onClick={onLog}
-          disabled={loading}
-          className="app-button-primary px-3 py-1.5 text-xs disabled:opacity-50"
-        >
-          Log
-        </button>
-      </div>
-    </div>
   )
 }

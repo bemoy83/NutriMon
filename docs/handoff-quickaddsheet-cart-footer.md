@@ -1,5 +1,7 @@
 # Handoff: QuickAddSheet — Cart Footer Redesign
 
+> **Superseded (2026):** The add flow is implemented in **`MealSheet`** (not `QuickAddSheet`). Pending selections use a **Pending** tab in the segmented control; footers and CTAs sit inside the same sliding panes as browse vs serving (`MealSheet` + `meal-sheet/*`). This file remains **historical** context for the cart-bar layout experiment.
+
 ## Problem
 
 The "Add meal" sheet (`QuickAddSheet`) shows a **pending items tray** inline inside

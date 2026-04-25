@@ -154,7 +154,7 @@ describe('MealSheet', () => {
     })
   })
 
-  it('reopens the serving step from a pending cart row', async () => {
+  it('reopens the serving step from a pending list row', async () => {
     render(
       <MealSheet
         logDate="2026-01-05"

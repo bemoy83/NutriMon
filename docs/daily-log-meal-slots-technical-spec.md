@@ -63,7 +63,7 @@ Canonical set must match client `MEAL_TYPES` excluding `'Other'` for uniqueness:
 Breakfast, Lunch, Dinner, Snack
 ```
 
-**Collation:** use exact equality as currently written by `MealTypeSelector` / `getDefaultMealType` (Pascal-case strings). Do **not** lowercase in DB without migrating existing rows first.
+**Collation:** use exact equality as currently written by slot labels / `getDefaultMealType` (Pascal-case strings). Do **not** lowercase in DB without migrating existing rows first.
 
 ### 4.2 Partial unique index (required)
 
@@ -270,7 +270,7 @@ No change expected if `daily_logs.total_calories` remains correct.
 | Area | File(s) |
 | --- | --- |
 | Core fetch | `src/features/logging/useDailyLogCore.ts` — order: slot order then `Other`/NULL by `logged_at`. |
-| List UI | `src/features/logging/MealList.tsx` — optional: hide empty slot rows; section headers. |
+| List UI | `src/features/logging/MealSlots.tsx` (+ `meal-slots/*`) — fixed Breakfast–Snack cards; expand for logged meals. |
 | Page | `src/pages/app/DailyLogPage.tsx` — toast **undo only after delete meal** (restore snapshot); no undo on add/append; `loggedMealTypes` / repeat CTA logic — **audit**. |
 | API | `src/features/logging/api.ts` — new `deleteMealItem`, response typing. |
 | Types | `src/types/database.ts` — `MealMutationResult` extended. |

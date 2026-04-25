@@ -74,10 +74,10 @@
 
 | ID | Surface | Current state | Status | Gap | Owner |
 | --- | --- | --- | --- | --- | --- |
-| S1 | **Daily Log layout / grouping** | `MealList`: one card per meal, `logged_at` desc. | **Gap** | One section per **slot** (fixed ordering per day). | **B** |
+| S1 | **Daily Log layout / grouping** | `MealSlots`: one **slot** (Breakfast…Snack); multiple `Meal` rows can share a `mealType`. | **Partial** / **Gap** | One section per **slot** (fixed ordering per day), merged subtotals. | **B** |
 | S2 | **MealSheet / quick-add / copy** | Sheet title “Add meal”; primary CTA “Add to meal” in add mode; FAB `aria-label` “Add meal”. | **Partial** | Copy/behavior: **add to [slot]** / append. | **Client** + **B** |
 | S3 | **Empty / first-meal states** | `InlineQuickAdd` only when `mealCount === 0`. | **Met** / **Partial** | `meal_count` may mean “slot count” after B; quick-add targets slot. | **Both** |
-| S4 | **Finalized day** | Same `MealList`; read-only actions hidden. | **Met** | Same slot UI when finalized. | **B** |
+| S4 | **Finalized day** | Same `MealSlots`; read-only actions hidden. | **Met** | Same slot UI when finalized. | **B** |
 
 ---
 
@@ -117,7 +117,7 @@
 | --- | --- | --- |
 | Q1 | **Merge** compatible duplicate lines **in the same slot** (e.g. two glasses of **same** milk → **one line**, quantity summed) so the diary shows one **summary** row. Distinct products or incompatible snapshots → separate lines. | Implement merge-on-append per [technical spec](./daily-log-meal-slots-technical-spec.md) §8. Affects G9, J4, D3. |
 | Q2 | **v1:** No second **standard** slot (e.g. two `Lunch` rows). Second occasion → `Snack` / `Other` / **future** user-defined meals or `slot_instance`. | Matches technical spec §17; D2 unique index unchanged for v1. |
-| Q3 | **Meal subtotals always visible:** kcal **and** carbs, fat, protein for each meal section (not expand-only). | **Client:** e.g. `MealList` / `MealCard` header always shows macro strip + calories. |
+| Q3 | **Meal subtotals always visible:** kcal **and** carbs, fat, protein for each meal section (not expand-only). | **Client:** e.g. `MealSlots` / slot card header always shows macro strip + calories. |
 | Q4 | **v1 default:** target slot by **time of day** (same idea as `getDefaultMealType`). Stronger rules **later**, after usage. | **Client** + copy; optional future “continue last slot.” |
 
 ---
@@ -129,7 +129,7 @@
 | **A. Presentation-first** | **Not selected** for this initiative | Useful reference for phased UI experiments only. |
 | **B. Structural meal slots** | **Selected** (2026-04-18; scope §8.1) | Enforce **one parent meal per slot** per day (± explicit second instance when product defines it); append lines; migration from legacy duplicate same-type rows. |
 
-All **Owner** values **B** in §§1–6 assume this fork. **Next engineering step:** schema + RPC design (unique key / slot entity, append RPC, migration), then client `MealList` + logging flows.
+All **Owner** values **B** in §§1–6 assume this fork. **Next engineering step:** schema + RPC design (unique key / slot entity, append RPC, migration), then client `MealSlots` + logging flows.
 
 ---
 

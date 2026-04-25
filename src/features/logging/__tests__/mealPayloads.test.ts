@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { buildMealSnapshotItems } from '../mealPayloads'
+import { buildMealSnapshotItems, buildMealUpdateItemsFromEditableItems } from '../mealPayloads'
 import type { Meal } from '@/types/domain'
+import type { Item } from '../types'
 
 const meal: Meal = {
   id: 'meal-1',
@@ -98,6 +99,46 @@ describe('meal payload builders', () => {
         protein_g_snapshot: 5,
         carbs_g_snapshot: 20,
         fat_g_snapshot: 7,
+        serving_amount_snapshot: 50,
+        serving_unit_snapshot: 'g',
+      },
+    ])
+  })
+
+  it('builds update payload lines from editable items (product, catalog, snapshot-only)', () => {
+    const items: Item[] = [
+      {
+        productId: 'p1',
+        quantity: 1.2,
+        compositeQuantityMode: 'grams',
+      },
+      {
+        catalogItemId: 'c1',
+        quantity: 0.5,
+      },
+      {
+        mealItemId: 'mi1',
+        quantity: 2,
+        snapshotName: 'Gone',
+        snapshotCalories: 100,
+        snapshotProteinG: 1,
+        snapshotCarbsG: 2,
+        snapshotFatG: 3,
+        snapshotServingAmount: 50,
+        snapshotServingUnit: 'g',
+      },
+    ]
+    expect(buildMealUpdateItemsFromEditableItems(items)).toEqual([
+      { product_id: 'p1', quantity: 1.2, composite_quantity_mode: 'grams' },
+      { catalog_item_id: 'c1', quantity: 0.5 },
+      {
+        meal_item_id: 'mi1',
+        quantity: 2,
+        product_name_snapshot: 'Gone',
+        calories_per_serving_snapshot: 100,
+        protein_g_snapshot: 1,
+        carbs_g_snapshot: 2,
+        fat_g_snapshot: 3,
         serving_amount_snapshot: 50,
         serving_unit_snapshot: 'g',
       },
