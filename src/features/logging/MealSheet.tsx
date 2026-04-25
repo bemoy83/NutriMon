@@ -423,6 +423,89 @@ export default function MealSheet({
     </div>
   )
 
+  const cartSummary =
+    items.length > 0 ? (
+      <div className="mb-3 overflow-hidden rounded-2xl border border-[var(--app-border-muted)] bg-white">
+        <button
+          type="button"
+          onClick={() => setCartOpen((o) => !o)}
+          className="flex w-full items-center justify-between px-3.5 py-2.5 text-left transition-colors"
+          style={{
+            background: mealTheme ? mealTheme.bg : 'var(--app-brand-soft)',
+            color: mealTheme ? mealTheme.text : 'var(--app-brand)',
+          }}
+          aria-expanded={cartOpen}
+          aria-label={`${items.length} item${items.length !== 1 ? 's' : ''} selected, ${totalKcal} kcal — ${cartOpen ? 'collapse' : 'expand'} cart`}
+        >
+          <span className="text-sm font-medium">
+            Pending · {items.length} item{items.length !== 1 ? 's' : ''} ·{' '}
+            <span className="font-semibold">{totalKcal} kcal</span>
+          </span>
+          <svg
+            className={`h-4 w-4 flex-none transition-transform duration-200 ${cartOpen ? '' : 'rotate-180'}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+        {cartOpen && (
+          <div className="max-h-44 overflow-y-auto">
+            {items.map((item, idx) => {
+              const isPieceMode = item.compositeQuantityMode === 'pieces'
+              const displayValue = isPieceMode
+                ? item.quantity
+                : Math.round(item.quantity * getItemServingAmount())
+              const kcal = getItemKcal(item)
+              const sourceType = getItemSourceType(item)
+              return (
+                <div
+                  key={getItemKey(item)}
+                  className="flex items-center gap-2 border-b border-[var(--app-border-muted)] px-3 py-2 last:border-0"
+                >
+                  <button
+                    type="button"
+                    onClick={() => updateItemGrams(idx, 0)}
+                    className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-sm text-[var(--app-text-subtle)] transition-colors hover:bg-[var(--app-danger-soft)] hover:text-[var(--app-danger)]"
+                    aria-label={`Remove ${getItemLabel(item)}`}
+                  >
+                    ✕
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      {sourceType && <FoodSourceBadge sourceType={sourceType} />}
+                      <p className="truncate text-sm text-[var(--app-text-primary)]">
+                        {getItemLabel(item)}
+                      </p>
+                    </div>
+                    <p className="text-xs text-[var(--app-text-muted)]">
+                      {kcal} kcal
+                      {isPieceMode && item.foodSource?.pieceLabel && (
+                        <span className="ml-1">· {item.quantity} {item.foodSource.pieceLabel}</span>
+                      )}
+                    </p>
+                  </div>
+                  <GramInput
+                    grams={displayValue}
+                    onChange={(g) => updateItemGrams(idx, g)}
+                    showSteppers={false}
+                    {...(isPieceMode
+                      ? {
+                          unitSuffix: item.foodSource?.pieceLabel ?? 'pc',
+                          quantityAriaLabel: 'Pieces',
+                        }
+                      : {})}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    ) : null
+
   const footer =
     sheetView === 'browse' ? (
       <>
@@ -432,6 +515,7 @@ export default function MealSheet({
             Tap a food to add it to {mealType}
           </p>
         )}
+        {cartSummary}
         <button
           type="button"
           onClick={handleSubmit}
@@ -480,88 +564,6 @@ export default function MealSheet({
               className="app-input w-full px-4 py-1.5 text-sm !rounded-full"
             />
           </div>
-
-          {items.length > 0 && (
-            <div className="flex-none border-b border-[var(--app-border)]">
-              <button
-                type="button"
-                onClick={() => setCartOpen((o) => !o)}
-                className="flex w-full items-center justify-between px-4 py-2.5 transition-colors"
-                style={{
-                  background: mealTheme ? mealTheme.bg : 'var(--app-brand-soft)',
-                  color: mealTheme ? mealTheme.text : 'var(--app-brand)',
-                }}
-                aria-expanded={cartOpen}
-                aria-label={`${items.length} item${items.length !== 1 ? 's' : ''} selected, ${totalKcal} kcal — ${cartOpen ? 'collapse' : 'expand'} cart`}
-              >
-                <span className="text-sm font-medium">
-                  {items.length} item{items.length !== 1 ? 's' : ''} ·{' '}
-                  <span className="font-semibold">{totalKcal} kcal</span>
-                </span>
-                <svg
-                  className={`h-4 w-4 flex-none transition-transform duration-200 ${cartOpen ? '' : 'rotate-180'}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                </svg>
-              </button>
-              {cartOpen && (
-                <div className="max-h-40 overflow-y-auto">
-                  {items.map((item, idx) => {
-                    const isPieceMode = item.compositeQuantityMode === 'pieces'
-                    const displayValue = isPieceMode
-                      ? item.quantity
-                      : Math.round(item.quantity * getItemServingAmount())
-                    const kcal = getItemKcal(item)
-                    const sourceType = getItemSourceType(item)
-                    return (
-                      <div
-                        key={getItemKey(item)}
-                        className="flex items-center gap-2 px-4 border-b border-[var(--app-border-muted)] last:border-0 bg-white/60"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => updateItemGrams(idx, 0)}
-                          className="flex-none h-10 w-10 flex items-center justify-center text-[var(--app-text-subtle)] hover:text-[var(--app-danger)] transition-colors text-sm"
-                          aria-label={`Remove ${getItemLabel(item)}`}
-                        >
-                          ✕
-                        </button>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            {sourceType && <FoodSourceBadge sourceType={sourceType} />}
-                            <p className="text-sm truncate text-[var(--app-text-primary)]">
-                              {getItemLabel(item)}
-                            </p>
-                          </div>
-                          <p className="text-xs text-[var(--app-text-muted)]">
-                            {kcal} kcal
-                            {isPieceMode && item.foodSource?.pieceLabel && (
-                              <span className="ml-1">· {item.quantity} {item.foodSource.pieceLabel}</span>
-                            )}
-                          </p>
-                        </div>
-                        <GramInput
-                          grams={displayValue}
-                          onChange={(g) => updateItemGrams(idx, g)}
-                          showSteppers={false}
-                          {...(isPieceMode
-                            ? {
-                                unitSuffix: item.foodSource?.pieceLabel ?? 'pc',
-                                quantityAriaLabel: 'Pieces',
-                              }
-                            : {})}
-                        />
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )}
 
           <SegmentedTabs
             value={tab}
