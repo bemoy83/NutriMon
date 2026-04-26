@@ -21,6 +21,7 @@ jobs:
     env:
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      VITE_KASSALAPP_TOKEN: ${{ secrets.VITE_KASSALAPP_TOKEN }}
       VITE_APP_BASE_PATH: /NutriMon/
       VITE_ROUTER_MODE: hash
     steps:
