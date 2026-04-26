@@ -9,6 +9,11 @@ export interface ManifestChunk {
 
 export type BuildManifest = Record<string, ManifestChunk>
 
+export interface CollectPrecacheOptions {
+  /** When true, follows `dynamicImports` so lazy route chunks are precached (cold PWA launch). */
+  includeDynamicImports?: boolean
+}
+
 export function stripBasePath(url: string, basePath: string): string {
   const normalizedUrl = url.startsWith('/') ? url.slice(1) : url
   const normalizedBase = basePath === '/' ? '' : basePath.replace(/^\/|\/$/g, '')
@@ -20,8 +25,17 @@ export function stripBasePath(url: string, basePath: string): string {
   return normalizedUrl
 }
 
-export function collectEagerAssetUrls(manifest: BuildManifest, entryKey: string): Set<string> {
-  const eagerUrls = new Set<string>()
+/**
+ * Collects output asset paths (JS, CSS, chunk assets) reachable from the entry chunk.
+ * Optionally includes Vite `dynamicImports` (lazy routes) and their nested graphs.
+ */
+export function collectPrecacheAssetUrls(
+  manifest: BuildManifest,
+  entryKey: string,
+  options: CollectPrecacheOptions = {},
+): Set<string> {
+  const { includeDynamicImports = false } = options
+  const urls = new Set<string>()
   const visited = new Set<string>()
 
   function visitChunk(chunkKey: string) {
@@ -31,14 +45,22 @@ export function collectEagerAssetUrls(manifest: BuildManifest, entryKey: string)
     const chunk = manifest[chunkKey]
     if (!chunk) return
 
-    eagerUrls.add(chunk.file)
-    chunk.css?.forEach((cssFile) => eagerUrls.add(cssFile))
-    chunk.assets?.forEach((assetFile) => eagerUrls.add(assetFile))
+    urls.add(chunk.file)
+    chunk.css?.forEach((cssFile) => urls.add(cssFile))
+    chunk.assets?.forEach((assetFile) => urls.add(assetFile))
     chunk.imports?.forEach((importKey) => visitChunk(importKey))
+    if (includeDynamicImports) {
+      chunk.dynamicImports?.forEach((importKey) => visitChunk(importKey))
+    }
   }
 
   visitChunk(entryKey)
-  return eagerUrls
+  return urls
+}
+
+/** Static import graph only (same as `collectPrecacheAssetUrls` without dynamic imports). */
+export function collectEagerAssetUrls(manifest: BuildManifest, entryKey: string): Set<string> {
+  return collectPrecacheAssetUrls(manifest, entryKey, { includeDynamicImports: false })
 }
 
 export function filterPrecacheEntries<T extends { url: string }>(

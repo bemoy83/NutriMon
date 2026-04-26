@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { loadEnv } from 'vite'
-import { collectEagerAssetUrls, filterPrecacheEntries, type BuildManifest } from './src/lib/pwaPrecache'
+import { collectPrecacheAssetUrls, filterPrecacheEntries, type BuildManifest } from './src/lib/pwaPrecache'
 
 function normalizeBasePath(value?: string): string {
   const trimmed = (value ?? '/').trim()
@@ -82,7 +82,9 @@ export default defineConfig(({ mode }) => {
                 throw new Error('Unable to locate the Vite entry chunk in the build manifest')
               }
 
-              const eagerAssetUrls = collectEagerAssetUrls(manifest, entryKey)
+              const eagerAssetUrls = collectPrecacheAssetUrls(manifest, entryKey, {
+                includeDynamicImports: true,
+              })
               const staticShellUrls = new Set([
                 'index.html',
                 'manifest.webmanifest',

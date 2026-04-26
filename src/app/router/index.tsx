@@ -4,12 +4,14 @@ import DailyLogPage from '@/pages/app/DailyLogPage'
 import AppShell from '@/components/AppShell'
 import { AppIndexRedirect, RequireAuth, RequireOnboarding } from '@/app/router/guards'
 import RootLayout from '@/app/router/RootLayout'
+import RouteErrorBoundary from '@/app/router/RouteErrorBoundary'
 import RouterLoadingFallback from '@/app/router/RouterLoadingFallback'
 import { getRouterBasename, getRouterMode } from '@/lib/appUrl'
 
 const routes = [
   {
     Component: RootLayout,
+    errorElement: <RouteErrorBoundary />,
     HydrateFallback: RouterLoadingFallback,
     children: [
       // Public auth routes
