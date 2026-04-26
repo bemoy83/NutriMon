@@ -62,12 +62,11 @@ function mapProduct(ean: string, raw: KassalappApiProduct): KassalappProduct {
 }
 
 export class KassalappError extends Error {
-  constructor(
-    message: string,
-    public readonly status?: number,
-  ) {
+  readonly status: number | undefined
+  constructor(message: string, status?: number) {
     super(message)
     this.name = 'KassalappError'
+    this.status = status
   }
 }
 
