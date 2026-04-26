@@ -72,23 +72,42 @@ export class KassalappError extends Error {
   }
 }
 
+function authHeaders(token: string) {
+  return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+}
+
 export async function lookupBarcode(ean: string): Promise<KassalappProduct | null> {
   const token = import.meta.env.VITE_KASSALAPP_TOKEN as string | undefined
   if (!token) throw new KassalappError('VITE_KASSALAPP_TOKEN is not configured')
 
-  const res = await fetch(`${BASE_URL}/products/ean/${encodeURIComponent(ean)}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
+  // Step 1: barcode endpoint — returns name/brand/weight but never nutrition
+  const eanRes = await fetch(`${BASE_URL}/products/ean/${encodeURIComponent(ean)}`, {
+    headers: authHeaders(token),
   })
+  if (eanRes.status === 404) return null
+  if (!eanRes.ok) throw new KassalappError('Kassalapp API error', eanRes.status)
 
-  if (res.status === 404) return null
-  if (!res.ok) throw new KassalappError(`Kassalapp API error`, res.status)
-
-  const json = await res.json()
-  const products: KassalappApiProduct[] | undefined = json?.data?.products
+  const eanJson = await eanRes.json()
+  const products: KassalappApiProduct[] | undefined = eanJson?.data?.products
   if (!products?.length) return null
+  const raw = products[0]
 
-  return mapProduct(ean, products[0])
+  // Step 2: name search — returns nutrition; prefer match by EAN, fall back to first result
+  let nutrition: KassalappNutrient[] = []
+  try {
+    const searchRes = await fetch(
+      `${BASE_URL}/products?search=${encodeURIComponent(raw.name)}&size=5`,
+      { headers: authHeaders(token) },
+    )
+    if (searchRes.ok) {
+      const searchJson = await searchRes.json()
+      const results: Array<KassalappApiProduct & { ean?: string }> = searchJson?.data ?? []
+      const match = results.find((p) => p.ean === ean) ?? results[0]
+      if (Array.isArray(match?.nutrition)) nutrition = match.nutrition
+    }
+  } catch {
+    // nutrition enrichment is best-effort; proceed without it
+  }
+
+  return mapProduct(ean, { ...raw, nutrition })
 }
