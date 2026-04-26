@@ -44,6 +44,7 @@ interface MealSheetProps {
 }
 
 type SheetView = 'browse' | 'serving' | 'create' | 'scan'
+type DetailSheetView = Exclude<SheetView, 'scan'>
 
 export default function MealSheet({
   logDate,
@@ -284,7 +285,9 @@ export default function MealSheet({
   }, [items, submitting, onItemsSelected, logDate, loggedAt, mealType, invalidateDailyLog, invalidateFoodSources, onAdded, onClose])
 
   const browseTranslate = sheetView === 'browse' ? 'translateX(0)' : 'translateX(-100%)'
-  const detailTranslate = (sheetView === 'serving' || sheetView === 'create') ? 'translateX(0)' : 'translateX(100%)'
+  const isDetailView = sheetView === 'serving' || sheetView === 'create'
+  const detailSheetView: DetailSheetView = sheetView === 'scan' ? 'browse' : sheetView
+  const detailTranslate = isDetailView ? 'translateX(0)' : 'translateX(100%)'
   const scanTranslate = sheetView === 'scan' ? 'translateX(0)' : 'translateX(100%)'
 
   const servingEstimate = useMemo(
@@ -527,11 +530,11 @@ export default function MealSheet({
 
         <div
           className="absolute inset-0 flex flex-col transition-transform duration-[250ms] ease-out"
-          aria-hidden={sheetView === 'browse'}
+          aria-hidden={!isDetailView}
           style={{ transform: detailTranslate }}
         >
           <MealSheetDetailPane
-            sheetView={sheetView}
+            sheetView={detailSheetView}
             servingTarget={servingTarget}
             pendingGrams={pendingGrams}
             onPendingGramsChange={setPendingGrams}
