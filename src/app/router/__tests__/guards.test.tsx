@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useParams } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { AppIndexRedirect, RequireOnboarding } from '../guards'
+import { AppIndexRedirect, RequireAuth, RequireOnboarding } from '../guards'
 
 const useAuthMock = vi.fn()
 const useProfileSummaryMock = vi.fn()
@@ -92,5 +92,27 @@ describe('router guards', () => {
 
     expect(await screen.findByText('onboarding-page')).toBeInTheDocument()
     expect(screen.queryByText('protected-creature')).not.toBeInTheDocument()
+  })
+
+  it('shows a loading fallback while auth is resolving', () => {
+    useAuthMock.mockReturnValue({
+      user: null,
+      loading: true,
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/app/creature']}>
+        <Routes>
+          <Route element={<RequireAuth />}>
+            <Route path="/app/creature" element={<div>protected-creature</div>} />
+          </Route>
+          <Route path="/login" element={<div>login-page</div>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
+    expect(screen.queryByText('protected-creature')).not.toBeInTheDocument()
+    expect(screen.queryByText('login-page')).not.toBeInTheDocument()
   })
 })
