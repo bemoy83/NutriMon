@@ -4,6 +4,7 @@ import { useAuth } from '@/app/providers/auth'
 import BottomSheet from '@/components/ui/BottomSheet'
 import { exportUserFoods } from '@/features/foods/foodExport'
 import { importUserFoods } from '@/features/foods/foodImport'
+import { queryKeys } from '@/lib/queryKeys'
 import type { ImportResult } from '@/features/foods/foodImport'
 
 interface Props {
@@ -44,7 +45,7 @@ export default function ImportExportSheet({ onClose }: Props) {
       const result = await importUserFoods(file, user.id)
       setImportResult(result)
       setImportState('done')
-      qc.invalidateQueries({ queryKey: ['my-food-products', user.id] })
+      qc.invalidateQueries({ queryKey: queryKeys.myFood.prefix() })
     } catch (err) {
       setImportError(err instanceof Error ? err.message : 'Import failed.')
       setImportState('error')

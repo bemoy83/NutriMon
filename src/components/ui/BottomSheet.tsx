@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 
 interface BottomSheetProps {
@@ -13,11 +13,34 @@ interface BottomSheetProps {
 const DISMISS_THRESHOLD = 80
 
 export default function BottomSheet({ children, onClose, title, titleContent, footer, className }: BottomSheetProps) {
-  const [dragY, setDragY] = useState(0)
-  const [transitioning, setTransitioning] = useState(false)
   const startYRef = useRef(0)
+  const sheetRef = useRef<HTMLDivElement>(null)
+  const dragYRef = useRef(0)
+  const rafIdRef = useRef<number | null>(null)
   const onCloseRef = useRef(onClose)
   useLayoutEffect(() => { onCloseRef.current = onClose })
+
+  const applyDragTransform = useCallback(() => {
+    rafIdRef.current = null
+    const el = sheetRef.current
+    if (!el) return
+    const y = dragYRef.current
+    if (y > 0) {
+      el.style.transform = `translateY(${y}px)`
+      el.style.transition = 'none'
+    }
+  }, [])
+
+  const scheduleDragFrame = useCallback(() => {
+    if (rafIdRef.current != null) return
+    rafIdRef.current = requestAnimationFrame(applyDragTransform)
+  }, [applyDragTransform])
+
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -29,20 +52,28 @@ export default function BottomSheet({ children, onClose, title, titleContent, fo
 
   function handleTouchStart(e: React.TouchEvent) {
     startYRef.current = e.touches[0].clientY
-    setTransitioning(false)
+    dragYRef.current = 0
   }
 
   function handleTouchMove(e: React.TouchEvent) {
     const delta = e.touches[0].clientY - startYRef.current
-    if (delta > 0) setDragY(delta)
+    if (delta > 0) {
+      dragYRef.current = delta
+      scheduleDragFrame()
+    }
   }
 
   function handleTouchEnd() {
-    if (dragY > DISMISS_THRESHOLD) {
+    const d = dragYRef.current
+    if (d > DISMISS_THRESHOLD) {
       onClose()
-    } else {
-      setTransitioning(true)
-      setDragY(0)
+      return
+    }
+    dragYRef.current = 0
+    const el = sheetRef.current
+    if (el) {
+      el.style.transition = 'transform 0.2s ease'
+      el.style.transform = ''
     }
   }
 
@@ -50,15 +81,11 @@ export default function BottomSheet({ children, onClose, title, titleContent, fo
     <>
       <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} aria-hidden="true" />
       <div
+        ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl border border-[var(--app-border)] bg-white sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl${className ? ` ${className}` : ' max-h-[85vh]'}`}
-        style={{
-          transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
-          transition: transitioning ? 'transform 0.2s ease' : undefined,
-        }}
-        onTransitionEnd={() => setTransitioning(false)}
       >
         {/* Header — drag target on mobile */}
         <div

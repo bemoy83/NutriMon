@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { queryKeys } from '@/lib/queryKeys'
+import { FOOD_CATALOG_ITEM_MAP_SELECT } from '@/lib/supabaseSelect'
+import { PRODUCT_LIST_SELECT } from '@/features/foods/api'
 import {
   FREQUENT_PRODUCTS_LIMIT,
   RECENT_PRODUCTS_LIMIT,
@@ -58,7 +61,7 @@ function mapProductToFoodSource(row: ProductRow): FoodSource {
 export function useRecentFoodSources() {
   const { user } = useAuth()
   return useQuery<FoodSource[]>({
-    queryKey: ['food-sources', 'recent', user?.id],
+    queryKey: queryKeys.foodSources.recent(user?.id),
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_recent_food_sources', {
@@ -73,7 +76,7 @@ export function useRecentFoodSources() {
 export function useFrequentFoodSources() {
   const { user } = useAuth()
   return useQuery<FoodSource[]>({
-    queryKey: ['food-sources', 'frequent', user?.id],
+    queryKey: queryKeys.foodSources.frequent(user?.id),
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_frequent_food_sources', {
@@ -88,7 +91,7 @@ export function useFrequentFoodSources() {
 export function useFoodSourceSearch(query: string) {
   const { user } = useAuth()
   return useQuery<FoodSource[]>({
-    queryKey: ['food-sources', 'search', user?.id, query],
+    queryKey: queryKeys.foodSources.search(user?.id, query),
     enabled: !!user && query.trim().length > 0,
     queryFn: async () => {
       const { data, error } = await supabase.rpc('search_food_sources', {
@@ -107,20 +110,20 @@ export function useFoodSourceMap(productIds: string[], catalogItemIds: string[])
   const normalizedCatalogIds = [...new Set(catalogItemIds)].sort()
 
   return useQuery<Record<string, FoodSource>>({
-    queryKey: ['food-sources', 'map', user?.id, normalizedProductIds, normalizedCatalogIds],
+    queryKey: queryKeys.foodSources.map(user?.id, normalizedProductIds, normalizedCatalogIds),
     enabled: !!user && (normalizedProductIds.length > 0 || normalizedCatalogIds.length > 0),
     queryFn: async () => {
       const [productResult, catalogResult] = await Promise.all([
         normalizedProductIds.length > 0
           ? supabase
               .from('products')
-              .select('*')
+              .select(PRODUCT_LIST_SELECT)
               .in('id', normalizedProductIds)
           : Promise.resolve({ data: [] as ProductRow[], error: null }),
         normalizedCatalogIds.length > 0
           ? supabase
               .from('food_catalog_items')
-              .select('*')
+              .select(FOOD_CATALOG_ITEM_MAP_SELECT)
               .in('id', normalizedCatalogIds)
           : Promise.resolve({ data: [] as FoodCatalogItemRow[], error: null }),
       ])

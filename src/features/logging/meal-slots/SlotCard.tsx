@@ -77,9 +77,9 @@ export function SlotCard({
     setMenuOpen(false)
     setDeleting(true)
     try {
-      for (const meal of meals) {
-        const result = await deleteMeal(meal.id)
-        onDeleteSuccess(meal, result)
+      const deleted = await Promise.all(meals.map((meal) => deleteMeal(meal.id).then((r) => ({ meal, r }))))
+      for (const { meal, r } of deleted) {
+        onDeleteSuccess(meal, r)
       }
       invalidateDailyLog(logDate)
       invalidateProducts()

@@ -1,8 +1,9 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useDeferredValue, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery } from '@tanstack/react-query'
 import { useAuth } from '@/app/providers/auth'
-import { getUserProducts } from '@/features/foods/api'
+import { queryKeys } from '@/lib/queryKeys'
+import { listUserProductsPage } from '@/features/foods/api'
 import LoadingState from '@/components/ui/LoadingState'
 import { MacroPills } from '@/components/ui/MacroPills'
 import { CardTitle, SectionHeader } from '@/components/ui/AppHeadings'
@@ -10,6 +11,8 @@ import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
 import ImportExportSheet from '@/features/foods/ImportExportSheet'
 import type { Product } from '@/types/domain'
+
+const PAGE_SIZE = 40
 
 function formatPer100Grams(n: number): string {
   return n < 10 ? n.toFixed(1) : String(Math.round(n))
@@ -21,19 +24,35 @@ export default function MyFoodScreen() {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'simple' | 'recipe'>('all')
   const [showImportExport, setShowImportExport] = useState(false)
+  const deferredSearch = useDeferredValue(search)
 
-  const productsQuery = useQuery({
-    queryKey: ['my-food-products', user?.id],
+  const productsQuery = useInfiniteQuery({
+    queryKey: queryKeys.myFood.products(user?.id, filter, deferredSearch.trim()),
     enabled: !!user,
-    queryFn: () => getUserProducts(user!.id),
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      listUserProductsPage({
+        userId: user!.id,
+        offset: pageParam,
+        limit: PAGE_SIZE,
+        kind: filter,
+        query: deferredSearch,
+      }),
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.hasMore) return undefined
+      return allPages.length * PAGE_SIZE
+    },
   })
 
-  const allProducts = productsQuery.data ?? []
-  const filtered = allProducts.filter((p) => {
-    if (filter === 'simple' && p.kind !== 'simple') return false
-    if (filter === 'recipe' && p.kind !== 'composite') return false
-    return p.name.toLowerCase().includes(search.trim().toLowerCase())
-  })
+  const allProducts = useMemo(
+    () => productsQuery.data?.pages.flatMap((p) => p.products) ?? [],
+    [productsQuery.data],
+  )
+  const total = productsQuery.data?.pages[0]?.total ?? 0
+  const hasNextPage = productsQuery.hasNextPage
+  const fetchNextPage = productsQuery.fetchNextPage
+  const isLoading = productsQuery.isPending
+  const isFetchNext = productsQuery.isFetching && !productsQuery.isPending
 
   function handleTapProduct(product: Product) {
     navigate(`/app/my-food/${product.id}`)
@@ -42,10 +61,11 @@ export default function MyFoodScreen() {
   const foodSectionTitle =
     filter === 'all' ? 'Foods' : filter === 'simple' ? 'Simple foods' : 'Recipes'
 
-  /** Avoid duplicate counts: total under title for “whole library”; section count when list is scoped. */
-  const isLibraryOverview = filter === 'all' && search.trim() === ''
+  /** Total count when not scoped to search (server total for current filter). */
+  const isLibraryOverview = filter === 'all' && deferredSearch.trim() === ''
+  const isFirstTimeLibrary = isLibraryOverview && total === 0
 
-  if (productsQuery.isLoading) {
+  if (isLoading) {
     return <LoadingState fullScreen />
   }
 
@@ -59,7 +79,7 @@ export default function MyFoodScreen() {
             </h1>
             {isLibraryOverview ? (
               <p className="mt-0.5 text-xs" style={{ color: 'var(--app-text-muted)' }}>
-                {allProducts.length} saved food{allProducts.length === 1 ? '' : 's'}
+                {total} saved food{total === 1 ? '' : 's'}
               </p>
             ) : null}
           </div>
@@ -126,27 +146,36 @@ export default function MyFoodScreen() {
 
       <div className="mt-4">
 
-      {/* Empty state — no foods at all */}
-      {allProducts.length === 0 ? (
+      {/* Empty states */}
+      {isFirstTimeLibrary && !isFetchNext ? (
         <div className="py-12 text-center px-4">
           <p className="text-sm font-medium mb-1" style={{ color: 'var(--app-text-primary)' }}>No foods saved yet</p>
           <p className="text-xs" style={{ color: 'var(--app-text-muted)' }}>
             Use search to filter, or add a food with the button below
           </p>
         </div>
-      ) : search !== '' && filtered.length === 0 ? (
+      ) : allProducts.length === 0 && !isFetchNext ? (
         <div className="py-8 text-center px-4">
-          <p className="text-sm" style={{ color: 'var(--app-text-muted)' }}>
-            No foods match <span style={{ color: 'var(--app-text-primary)' }}>"{search}"</span>
-          </p>
+          {deferredSearch.trim() ? (
+            <p className="text-sm" style={{ color: 'var(--app-text-muted)' }}>
+              No foods match <span style={{ color: 'var(--app-text-primary)' }}>&quot;{deferredSearch}&quot;</span>
+            </p>
+          ) : (
+            <p className="text-sm" style={{ color: 'var(--app-text-muted)' }}>
+              {filter === 'simple' ? 'No simple foods yet.' : filter === 'recipe' ? 'No recipes yet.' : 'No foods in this view.'}
+            </p>
+          )}
         </div>
       ) : (
         <>
-          <SectionHeader className="mx-4 mb-3" trailing={!isLibraryOverview ? filtered.length : null}>
+          <SectionHeader
+            className="mx-4 mb-3"
+            trailing={!isLibraryOverview || deferredSearch.trim() !== '' ? allProducts.length : null}
+          >
             {foodSectionTitle}
           </SectionHeader>
           <div className="app-card overflow-hidden mx-4">
-          {filtered.map((product, idx) => {
+          {allProducts.map((product, idx) => {
             const isComposite = product.kind === 'composite'
             const p = product.proteinPer100g
             const c = product.carbsPer100g
@@ -199,6 +228,18 @@ export default function MyFoodScreen() {
               </Fragment>
             )
           })}
+          {hasNextPage ? (
+            <div className="px-4 py-3">
+              <button
+                type="button"
+                className="w-full rounded-[var(--app-radius-lg)] border border-[var(--app-border-muted)] py-2.5 text-sm font-medium text-[var(--app-text-primary)] transition-colors hover:bg-[var(--app-hover-overlay)] disabled:opacity-50"
+                disabled={isFetchNext}
+                onClick={() => { void fetchNextPage() }}
+              >
+                {isFetchNext ? 'Loading…' : 'Load more'}
+              </button>
+            </div>
+          ) : null}
           </div>
         </>
       )}

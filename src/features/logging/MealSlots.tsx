@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import type { Meal } from '@/types/domain'
 import { type MealType } from '@/lib/mealType'
 import type { DeleteMealResult, MealMutationResult } from '@/types/database'
@@ -17,15 +18,25 @@ interface Props {
 export default function MealSlots({
   meals, isFinalized, timezone, logDate, onAddToSlot, onUpdateSuccess, onDeleteSuccess,
 }: Props) {
+  const mealsByType = useMemo(() => {
+    const map = new Map<MealType, Meal[]>()
+    for (const m of meals) {
+      const slot = (m.mealType ?? 'Other') as MealType
+      const list = map.get(slot) ?? []
+      list.push(m)
+      map.set(slot, list)
+    }
+    return map
+  }, [meals])
+
   return (
     <div className="space-y-2">
-      {SLOTS.map(slot => {
-        const slotMeals = meals.filter(m => m.mealType === slot.type)
+      {SLOTS.map((slot) => {
         return (
           <SlotCard
             key={slot.type}
             slot={slot}
-            meals={slotMeals}
+            meals={mealsByType.get(slot.type) ?? []}
             isFinalized={isFinalized}
             timezone={timezone}
             logDate={logDate}

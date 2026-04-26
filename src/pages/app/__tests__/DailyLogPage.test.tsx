@@ -5,14 +5,11 @@ import DailyLogPage from '../DailyLogPage'
 import type { Meal } from '@/types/domain'
 import type { MealType } from '@/lib/mealType'
 import type { DeleteMealResult, MealMutationResult } from '@/types/database'
+import type { DailyLogScreenData } from '@/features/logging/dailyLogScreenPayload'
 
-const useDailyLogCoreMock = vi.fn()
-const useDailyLogDerivedMock = vi.fn()
-const useLatestFallbackMetricsMock = vi.fn()
+const useDailyLogScreenMock = vi.fn()
 const useInvalidateDailyLogMock = vi.fn()
 const useAuthMock = vi.fn()
-const useProfileSummaryMock = vi.fn()
-const useRepeatLastMealPreviewMock = vi.fn()
 const repeatLastMealMock = vi.fn()
 const deleteMealMock = vi.fn()
 const deleteMealItemMock = vi.fn()
@@ -20,16 +17,8 @@ const restoreMealFromSnapshotMock = vi.fn()
 const getTodayInTimezoneMock = vi.fn()
 const isTodayMock = vi.fn()
 
-vi.mock('@/features/logging/useDailyLogCore', () => ({
-  useDailyLogCore: (...args: unknown[]) => useDailyLogCoreMock(...args),
-}))
-
-vi.mock('@/features/logging/useDailyLogDerived', () => ({
-  useDailyLogDerived: (...args: unknown[]) => useDailyLogDerivedMock(...args),
-}))
-
-vi.mock('@/features/logging/useLatestFallbackMetrics', () => ({
-  useLatestFallbackMetrics: (...args: unknown[]) => useLatestFallbackMetricsMock(...args),
+vi.mock('@/features/logging/useDailyLogScreen', () => ({
+  useDailyLogScreen: (...args: unknown[]) => useDailyLogScreenMock(...args),
 }))
 
 vi.mock('@/features/logging/useDailyLog', () => ({
@@ -38,14 +27,6 @@ vi.mock('@/features/logging/useDailyLog', () => ({
 
 vi.mock('@/app/providers/auth', () => ({
   useAuth: () => useAuthMock(),
-}))
-
-vi.mock('@/features/profile/useProfileSummary', () => ({
-  useProfileSummary: () => useProfileSummaryMock(),
-}))
-
-vi.mock('@/features/logging/useRepeatLastMealPreview', () => ({
-  useRepeatLastMealPreview: (...args: unknown[]) => useRepeatLastMealPreviewMock(...args),
 }))
 
 vi.mock('@/lib/supabase', () => ({
@@ -257,6 +238,31 @@ const baseMeal: Meal = {
   ],
 }
 
+const defaultEmptyScreen: DailyLogScreenData = {
+  profile: { timezone: 'UTC', calorieTarget: 2000, onboardingCompletedAt: '2026-01-01T00:00:00.000Z' },
+  dailyLog: {
+    id: 'log-1',
+    userId: 'user-1',
+    logDate: '2026-01-05',
+    totalCalories: 0,
+    mealCount: 0,
+    isFinalized: false,
+    finalizedAt: null,
+    createdAt: '2026-01-05T00:00:00.000Z',
+    updatedAt: '2026-01-05T00:00:00.000Z',
+  },
+  meals: [],
+  derived: {
+    evaluation: null,
+    habitMetrics: null,
+    behaviorAttributes: null,
+    creatureStats: null,
+    feedback: null,
+  },
+  latestFallback: { habitMetrics: null, creatureStats: null },
+  repeatLastMeal: null,
+}
+
 function renderPage(initialEntries: Array<string | { pathname: string; state?: unknown }> = ['/app/log/2026-01-05']) {
   return render(
     <MemoryRouter initialEntries={initialEntries}>
@@ -321,62 +327,19 @@ describe('DailyLogPage', () => {
       },
     })
     restoreMealFromSnapshotMock.mockResolvedValue({})
-    useProfileSummaryMock.mockReturnValue({
-      data: {
-        timezone: 'UTC',
-        calorieTarget: 2000,
-        onboardingCompletedAt: '2026-01-01T00:00:00.000Z',
-      },
-      isLoading: false,
-    })
-    useRepeatLastMealPreviewMock.mockReturnValue({ data: null, isLoading: false })
-    useDailyLogDerivedMock.mockReturnValue({
-      data: {
-        evaluation: null,
-        habitMetrics: null,
-        behaviorAttributes: null,
-        creatureStats: null,
-        feedback: null,
-      },
-      isLoading: false,
-    })
-    useLatestFallbackMetricsMock.mockReturnValue({
-      data: {
-        habitMetrics: null,
-        creatureStats: null,
-      },
-      isLoading: false,
-    })
+    useDailyLogScreenMock.mockReturnValue({ data: defaultEmptyScreen, isLoading: false })
   })
 
-  it('shows the static empty-day card without blocking on derived data', () => {
-    useDailyLogCoreMock.mockReturnValue({
-      data: {
-        dailyLog: {
-          id: 'log-1',
-          userId: 'user-1',
-          logDate: '2026-01-05',
-          totalCalories: 0,
-          mealCount: 0,
-          isFinalized: false,
-          finalizedAt: null,
-          createdAt: '2026-01-05T00:00:00.000Z',
-          updatedAt: '2026-01-05T00:00:00.000Z',
-        },
-        meals: [],
-      },
-      isLoading: false,
-    })
-    useDailyLogDerivedMock.mockReturnValue({
-      data: {
-        evaluation: null,
-        habitMetrics: null,
-        behaviorAttributes: null,
-        creatureStats: null,
-        feedback: null,
-      },
-      isLoading: true,
-    })
+  it('shows full-page loading while the daily log screen query is loading', () => {
+    useDailyLogScreenMock.mockReturnValue({ data: undefined, isLoading: true })
+
+    renderPage()
+
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
+  })
+
+  it('shows the static empty-day card when payload is ready', () => {
+    useDailyLogScreenMock.mockReturnValue({ data: defaultEmptyScreen, isLoading: false })
 
     renderPage()
 
@@ -388,8 +351,9 @@ describe('DailyLogPage', () => {
   })
 
   it('shows finalize for past unfinalized days that already have meals', async () => {
-    useDailyLogCoreMock.mockReturnValue({
+    useDailyLogScreenMock.mockReturnValue({
       data: {
+        ...defaultEmptyScreen,
         dailyLog: {
           id: 'log-1',
           userId: 'user-1',
@@ -402,11 +366,8 @@ describe('DailyLogPage', () => {
           updatedAt: '2026-01-05T00:00:00.000Z',
         },
         meals: [baseMeal],
+        repeatLastMeal: { mealName: 'Protein bowl', mealType: 'Lunch', totalCalories: 520 },
       },
-      isLoading: false,
-    })
-    useRepeatLastMealPreviewMock.mockReturnValue({
-      data: { mealName: 'Protein bowl', mealType: 'lunch', totalCalories: 520 },
       isLoading: false,
     })
     getTodayInTimezoneMock.mockReturnValue('2026-01-06')
@@ -418,8 +379,9 @@ describe('DailyLogPage', () => {
   })
 
   it('keeps a persistent compact summary without duplicate detail sections', () => {
-    useDailyLogCoreMock.mockReturnValue({
+    useDailyLogScreenMock.mockReturnValue({
       data: {
+        ...defaultEmptyScreen,
         dailyLog: {
           id: 'log-1',
           userId: 'user-1',
@@ -445,8 +407,9 @@ describe('DailyLogPage', () => {
   })
 
   it('restores a deleted meal from snapshots on undo', async () => {
-    useDailyLogCoreMock.mockReturnValue({
+    useDailyLogScreenMock.mockReturnValue({
       data: {
+        ...defaultEmptyScreen,
         dailyLog: {
           id: 'log-1',
           userId: 'user-1',
@@ -505,23 +468,7 @@ describe('DailyLogPage', () => {
     const invalidate = vi.fn()
     useInvalidateDailyLogMock.mockReturnValue(invalidate)
 
-    useDailyLogCoreMock.mockReturnValue({
-      data: {
-        dailyLog: {
-          id: 'log-1',
-          userId: 'user-1',
-          logDate: '2026-01-05',
-          totalCalories: 0,
-          mealCount: 0,
-          isFinalized: false,
-          finalizedAt: null,
-          createdAt: '2026-01-05T00:00:00.000Z',
-          updatedAt: '2026-01-05T00:00:00.000Z',
-        },
-        meals: [],
-      },
-      isLoading: false,
-    })
+    useDailyLogScreenMock.mockReturnValue({ data: defaultEmptyScreen, isLoading: false })
 
     renderPage()
     fireEvent.click(screen.getByRole('button', { name: 'Add food to Lunch' }))
@@ -537,23 +484,7 @@ describe('DailyLogPage', () => {
     const invalidate = vi.fn()
     useInvalidateDailyLogMock.mockReturnValue(invalidate)
 
-    useDailyLogCoreMock.mockReturnValue({
-      data: {
-        dailyLog: {
-          id: 'log-1',
-          userId: 'user-1',
-          logDate: '2026-01-05',
-          totalCalories: 0,
-          mealCount: 0,
-          isFinalized: false,
-          finalizedAt: null,
-          createdAt: '2026-01-05T00:00:00.000Z',
-          updatedAt: '2026-01-05T00:00:00.000Z',
-        },
-        meals: [],
-      },
-      isLoading: false,
-    })
+    useDailyLogScreenMock.mockReturnValue({ data: defaultEmptyScreen, isLoading: false })
 
     renderPage()
     fireEvent.click(screen.getByRole('button', { name: 'Add food to Lunch' }))

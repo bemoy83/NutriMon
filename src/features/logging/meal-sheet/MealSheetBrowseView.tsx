@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from 'react'
+import { Fragment, useMemo, type ReactNode } from 'react'
 import type { FoodSource, MealTemplate } from '@/types/domain'
 import FoodRow from '@/components/ui/FoodRow'
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
@@ -57,6 +57,19 @@ export default function MealSheetBrowseView({
   onOpenCreateFood,
   footer,
 }: MealSheetBrowseViewProps) {
+  const tabOptions = useMemo(
+    () =>
+      [
+        { value: 'recent' as const, label: 'Recent' },
+        { value: 'saved' as const, label: 'Saved' },
+        {
+          value: 'pending' as const,
+          label: items.length > 0 ? `Pending · ${items.length}` : 'Pending',
+        },
+      ] as const,
+    [items.length],
+  )
+
   return (
     <>
       <div className="flex-none px-4 py-2 bg-white">
@@ -71,11 +84,7 @@ export default function MealSheetBrowseView({
 
       <SegmentedTabs<'recent' | 'saved' | 'pending'>
         value={tab}
-        options={[
-          { value: 'recent', label: 'Recent' },
-          { value: 'saved', label: 'Saved' },
-          { value: 'pending', label: items.length > 0 ? `Pending · ${items.length}` : 'Pending' },
-        ]}
+        options={[...tabOptions]}
         onChange={onTabChange}
         className="!bg-white !shadow-none !pt-1.5 !pb-3 !border-b !border-[var(--app-border-muted)]"
       />

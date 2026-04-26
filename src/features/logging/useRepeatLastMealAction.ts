@@ -5,12 +5,11 @@ import type { MealMutationResult } from '@/types/database'
 
 interface UseRepeatLastMealActionOptions {
   logDate: string
-  loggedAt: string
   mealType: string
   onSuccess: (result: MealMutationResult) => void
 }
 
-export function useRepeatLastMealAction({ logDate, loggedAt, mealType, onSuccess }: UseRepeatLastMealActionOptions) {
+export function useRepeatLastMealAction({ logDate, mealType, onSuccess }: UseRepeatLastMealActionOptions) {
   const { user } = useAuth()
   const [repeating, setRepeating] = useState(false)
   const [repeatError, setRepeatError] = useState<string | null>(null)
@@ -21,7 +20,7 @@ export function useRepeatLastMealAction({ logDate, loggedAt, mealType, onSuccess
     setRepeatError(null)
 
     try {
-      const result = await repeatLastMealOfType(user.id, logDate, loggedAt, mealType)
+      const result = await repeatLastMealOfType(user.id, logDate, new Date().toISOString(), mealType)
       onSuccess(result)
     } catch (error) {
       setRepeatError(error instanceof Error ? error.message : 'Unable to repeat last meal')

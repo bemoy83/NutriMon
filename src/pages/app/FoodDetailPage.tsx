@@ -2,7 +2,8 @@ import { useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/app/providers/auth'
-import { getUserProducts, deleteProduct } from '@/features/foods/api'
+import { getProductByIdForUser, deleteProduct } from '@/features/foods/api'
+import { queryKeys } from '@/lib/queryKeys'
 import { useInvalidateProductQueries } from '@/features/logging/queryInvalidation'
 import LoadingState from '@/components/ui/LoadingState'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
@@ -84,13 +85,13 @@ export default function FoodDetailPage() {
 
   const invalidateProducts = useInvalidateProductQueries()
 
-  const productsQuery = useQuery({
-    queryKey: ['my-food-products', user?.id],
-    enabled: !!user,
-    queryFn: () => getUserProducts(user!.id),
+  const productQuery = useQuery({
+    queryKey: queryKeys.myFood.product(user?.id, id),
+    enabled: !!user && !!id,
+    queryFn: () => getProductByIdForUser(user!.id, id!),
   })
 
-  const product = isNew ? null : (productsQuery.data ?? []).find((p) => p.id === id) ?? null
+  const product = isNew ? null : productQuery.data ?? null
 
   function onSaved() {
     invalidateProducts()
@@ -125,8 +126,8 @@ export default function FoodDetailPage() {
     }
   }
 
-  if (!isNew && productsQuery.isLoading) return <LoadingState fullScreen />
-  if (!isNew && !productsQuery.isLoading && !product) return <Navigate to="/app/my-food" replace />
+  if (!isNew && productQuery.isLoading) return <LoadingState fullScreen />
+  if (!isNew && !productQuery.isLoading && !product) return <Navigate to="/app/my-food" replace />
 
   const kind = isNew
     ? editorType

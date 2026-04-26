@@ -7,6 +7,32 @@ import type {
 } from '@/types/database'
 import type { CompositeProduct, Product, RecipeIngredient } from '@/types/domain'
 
+/** Narrow list for `mapProduct` — keep in sync with products table. */
+export const PRODUCT_LIST_SELECT = [
+  'id',
+  'user_id',
+  'name',
+  'calories',
+  'protein_g',
+  'carbs_g',
+  'fat_g',
+  'label_portion_grams',
+  'default_serving_amount',
+  'default_serving_unit',
+  'use_count',
+  'last_used_at',
+  'created_at',
+  'updated_at',
+  'kind',
+  'total_mass_g',
+  'calories_per_100g',
+  'protein_per_100g',
+  'carbs_per_100g',
+  'fat_per_100g',
+  'piece_count',
+  'piece_label',
+].join(', ')
+
 export interface UpsertCompositeProductParams {
   productId: string | null
   name: string
@@ -73,15 +99,100 @@ export async function getCompositeProduct(
   return mapCompositeResult(data as unknown as CompositeProductResult)
 }
 
+/** All composites in one RPC (see `get_composite_products_batch`). */
+export async function getCompositeProductsBatch(
+  productIds: string[],
+): Promise<Map<string, CompositeProduct>> {
+  const out = new Map<string, CompositeProduct>()
+  if (productIds.length === 0) return out
+
+  const { data, error } = await supabase.rpc('get_composite_products_batch', {
+    p_product_ids: productIds,
+  })
+  if (error) throw error
+
+  const raw = data as unknown
+  if (!Array.isArray(raw)) return out
+  for (const el of raw) {
+    if (!el) continue
+    const cp = mapCompositeResult(el as unknown as CompositeProductResult)
+    out.set(cp.id, cp)
+  }
+  return out
+}
+
+export async function getProductByIdForUser(
+  userId: string,
+  productId: string,
+): Promise<Product | null> {
+  const { data, error } = await supabase
+    .from('products')
+    .select(PRODUCT_LIST_SELECT)
+    .eq('user_id', userId)
+    .eq('id', productId)
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) return null
+  return mapProduct(data as unknown as ProductRow)
+}
+
+export interface ListUserProductsPageParams {
+  userId: string
+  offset: number
+  limit: number
+  kind: 'all' | 'simple' | 'recipe'
+  query: string
+}
+
+export interface ListUserProductsPageResult {
+  products: Product[]
+  hasMore: boolean
+  total: number
+}
+
+/**
+ * Paged, server-filtered my-food list. Uses {@link kind} and optional {@link query} (ILIKE).
+ * Full-library exports can still use {@link getUserProducts}.
+ */
+export async function listUserProductsPage(
+  params: ListUserProductsPageParams,
+): Promise<ListUserProductsPageResult> {
+  const { userId, offset, limit, kind, query } = params
+  const q = query.trim()
+  let req = supabase
+    .from('products')
+    .select(PRODUCT_LIST_SELECT, { count: 'exact' })
+    .eq('user_id', userId)
+  if (kind === 'simple') {
+    req = req.eq('kind', 'simple')
+  } else if (kind === 'recipe') {
+    req = req.eq('kind', 'composite')
+  }
+  if (q) {
+    req = req.ilike('name', `%${q}%`)
+  }
+  const { data, error, count } = await req
+    .order('use_count', { ascending: false })
+    .range(offset, offset + limit - 1)
+
+  if (error) throw error
+  const rows = (data as unknown as ProductRow[] | null) ?? []
+  const products = rows.map(mapProduct)
+  const total = count ?? 0
+  const hasMore = offset + products.length < total
+  return { products, hasMore, total }
+}
+
 export async function getUserProducts(userId: string): Promise<Product[]> {
   const { data, error } = await supabase
     .from('products')
-    .select('*')
+    .select(PRODUCT_LIST_SELECT)
     .eq('user_id', userId)
     .order('use_count', { ascending: false })
 
   if (error) throw error
-  return (data as ProductRow[]).map(mapProduct)
+  return (data as unknown as ProductRow[]).map(mapProduct)
 }
 
 export interface InsertSimpleProductParams {

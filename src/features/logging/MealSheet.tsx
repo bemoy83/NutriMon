@@ -1,7 +1,7 @@
-import { useState, useDeferredValue, useEffect, useMemo, useRef } from 'react'
+import { useState, useDeferredValue, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useInvalidateDailyLog } from './useDailyLog'
 import { createMealWithItems, deleteMealTemplate } from './api'
-import type { FoodSource, MealTemplate } from '@/types/domain'
+import type { FoodSource, MealTemplate, Product } from '@/types/domain'
 import type { MealMutationResult } from '@/types/database'
 import { useFoodSourceSearch, useRecentFoodSources } from './useFoodSources'
 import { useInvalidateMealTemplates, useInvalidateProductQueries } from './queryInvalidation'
@@ -78,7 +78,7 @@ export default function MealSheet({
   const templatesQuery = useMealTemplates()
 
   const mealTheme = getMealTypeTheme(mealType)
-  const totalKcal = items.reduce((sum, i) => sum + getItemKcal(i), 0)
+  const totalKcal = useMemo(() => items.reduce((sum, i) => sum + getItemKcal(i), 0), [items])
 
   useEffect(() => {
     if (sheetView === 'browse') return
@@ -119,23 +119,25 @@ export default function MealSheet({
 
   const isSearching = deferredSearchQuery.trim().length > 0
 
-  const activeFoodSources: FoodSource[] = tab === 'recent'
-    ? isSearching
-      ? (searchResults.data ?? [])
-      : (recentQuery.data ?? [])
-    : []
-
-  const visibleTemplates = (templatesQuery.data ?? []).filter((t) =>
-    !isSearching || t.name.toLowerCase().includes(deferredSearchQuery.trim().toLowerCase()),
+  const activeFoodSources: FoodSource[] = useMemo(
+    () => (tab === 'recent' ? (isSearching ? (searchResults.data ?? []) : (recentQuery.data ?? [])) : []),
+    [tab, isSearching, searchResults.data, recentQuery.data],
   )
 
-  function isItemPending(fs: FoodSource): boolean {
+  const visibleTemplates = useMemo(
+    () => (templatesQuery.data ?? []).filter((t) =>
+      !isSearching || t.name.toLowerCase().includes(deferredSearchQuery.trim().toLowerCase()),
+    ),
+    [templatesQuery.data, isSearching, deferredSearchQuery],
+  )
+
+  const isItemPending = useCallback((fs: FoodSource) => {
     return items.some((i) =>
       fs.sourceType === 'user_product' ? i.productId === fs.sourceId : i.catalogItemId === fs.sourceId,
     )
-  }
+  }, [items])
 
-  function handleFoodTap(foodSource: FoodSource) {
+  const handleFoodTap = useCallback((foodSource: FoodSource) => {
     const existing = items.find((i) =>
       foodSource.sourceType === 'user_product'
         ? i.productId === foodSource.sourceId
@@ -145,9 +147,9 @@ export default function MealSheet({
     reinitializeServingDraft(foodSource, existing)
     setServingTarget(foodSource)
     setSheetView('serving')
-  }
+  }, [items, reinitializeServingDraft])
 
-  function confirmServing() {
+  const confirmServing = useCallback(() => {
     if (!servingTarget) return
 
     const payload = buildConfirmPayloadFromFood(servingTarget, {
@@ -188,9 +190,9 @@ export default function MealSheet({
       ]
     })
     setSheetView('browse')
-  }
+  }, [servingTarget, pendingMode, massInputMode, pendingGrams, pendingPortions])
 
-  function handleServingRemove() {
+  const handleServingRemove = useCallback(() => {
     if (!servingTarget) return
     setItems((prev) => prev.filter((i) =>
       servingTarget.sourceType === 'user_product'
@@ -198,9 +200,9 @@ export default function MealSheet({
         : i.catalogItemId !== servingTarget.sourceId,
     ))
     setSheetView('browse')
-  }
+  }, [servingTarget])
 
-  async function handleLogTemplate(template: MealTemplate) {
+  const handleLogTemplate = useCallback(async (template: MealTemplate) => {
     setSubmitting(true)
     setSubmitError(null)
     try {
@@ -229,18 +231,18 @@ export default function MealSheet({
     } finally {
       setSubmitting(false)
     }
-  }
+  }, [logDate, loggedAt, mealType, invalidateDailyLog, invalidateProducts, invalidateTemplates, onAdded, onClose])
 
-  async function handleDeleteTemplate(templateId: string) {
+  const handleDeleteTemplate = useCallback(async (templateId: string) => {
     try {
       await deleteMealTemplate(templateId)
       invalidateTemplates()
     } catch {
       // silently ignore
     }
-  }
+  }, [invalidateTemplates])
 
-  async function handleSubmit() {
+  const handleSubmit = useCallback(async () => {
     if (items.length === 0 || submitting) return
     setSubmitting(true)
     setSubmitError(null)
@@ -267,7 +269,7 @@ export default function MealSheet({
     } finally {
       setSubmitting(false)
     }
-  }
+  }, [items, submitting, onItemsSelected, logDate, loggedAt, mealType, invalidateDailyLog, invalidateProducts, onAdded, onClose])
 
   const browseTranslate = sheetView === 'browse' ? 'translateX(0)' : 'translateX(-100%)'
   const detailTranslate = sheetView !== 'browse' ? 'translateX(0)' : 'translateX(100%)'
@@ -285,43 +287,125 @@ export default function MealSheet({
     [servingTarget, pendingMode, massInputMode, pendingGrams, pendingPortions],
   )
 
-  const isEditingExisting = servingTarget
-    ? items.some((i) =>
-        servingTarget.sourceType === 'user_product'
-          ? i.productId === servingTarget.sourceId
-          : i.catalogItemId === servingTarget.sourceId,
-      )
-    : false
-  const browseSubmitDisabled = items.length === 0 || submitting
-  const isCompositeWithPieces = Boolean(servingTarget && isCompositeWithPiecesForFood(servingTarget))
-  const servingConfirmDisabled = servingTarget
-    ? isConfirmDisabledForFood(servingTarget, {
-        pendingMode,
-        massInputMode,
-        pendingGrams,
-        pendingPortions,
-      })
-    : true
-  const mealCtaStyle = mealTheme
-    ? {
-        background: mealTheme.accent,
-        boxShadow: `0 10px 24px ${mealTheme.buttonShadow}`,
-      }
-    : undefined
-  const mealCtaDisabledStyle = mealTheme
-    ? {
-        background: mealTheme.bg,
-        color: mealTheme.text,
-        boxShadow: 'none',
-      }
-    : undefined
+  const isEditingExisting = useMemo(
+    () =>
+      servingTarget
+        ? items.some((i) =>
+            servingTarget.sourceType === 'user_product'
+              ? i.productId === servingTarget.sourceId
+              : i.catalogItemId === servingTarget.sourceId,
+          )
+        : false,
+    [servingTarget, items],
+  )
+  const browseSubmitDisabled = useMemo(() => items.length === 0 || submitting, [items.length, submitting])
+  const isCompositeWithPieces = useMemo(
+    () => Boolean(servingTarget && isCompositeWithPiecesForFood(servingTarget)),
+    [servingTarget],
+  )
+  const servingConfirmDisabled = useMemo(
+    () =>
+      servingTarget
+        ? isConfirmDisabledForFood(servingTarget, {
+            pendingMode,
+            massInputMode,
+            pendingGrams,
+            pendingPortions,
+          })
+        : true,
+    [servingTarget, pendingMode, massInputMode, pendingGrams, pendingPortions],
+  )
+  const mealCtaStyle = useMemo(
+    () =>
+      mealTheme
+        ? {
+            background: mealTheme.accent,
+            boxShadow: `0 10px 24px ${mealTheme.buttonShadow}`,
+          }
+        : undefined,
+    [mealTheme],
+  )
+  const mealCtaDisabledStyle = useMemo(
+    () =>
+      mealTheme
+        ? {
+            background: mealTheme.bg,
+            color: mealTheme.text,
+            boxShadow: 'none',
+          }
+        : undefined,
+    [mealTheme],
+  )
 
-  function getPendingItemServingLabel(item: Item): string {
+  const getPendingItemServingLabel = useCallback((item: Item): string => {
     if (item.compositeQuantityMode === 'pieces') {
       return `${item.quantity} ${item.foodSource?.pieceLabel ?? 'pc'}`
     }
     return `${Math.round(item.quantity * getItemServingAmount())}g`
-  }
+  }, [])
+
+  const onMassInputModeChange = useCallback(
+    (mode: 'grams' | 'portions') => {
+      setMassInputMode(mode)
+      if (!servingTarget) return
+      const { pendingGrams: g, pendingPortions: p } = applyMassInputModeForLabel(
+        servingTarget.labelPortionGrams,
+        mode,
+        pendingGrams,
+        pendingPortions,
+      )
+      setPendingGrams(g)
+      setPendingPortions(p)
+    },
+    [servingTarget, pendingGrams, pendingPortions, setMassInputMode, setPendingGrams, setPendingPortions],
+  )
+
+  const onOpenCreateFood = useCallback(() => {
+    setSheetView('create')
+  }, [])
+
+  const onServingBack = useCallback(() => {
+    setSheetView('browse')
+  }, [])
+
+  const onProductSave = useCallback(() => {
+    invalidateProducts()
+    setSheetView('browse')
+  }, [invalidateProducts])
+
+  const onProductSaveAndAdd = useCallback(
+    (product: Product) => {
+      const cal100 = product.caloriesPer100g ?? product.calories
+      const foodSource: FoodSource = {
+        sourceType: 'user_product',
+        sourceId: product.id,
+        name: product.name,
+        calories: product.calories,
+        caloriesPer100g: cal100,
+        proteinG: product.proteinG,
+        carbsG: product.carbsG,
+        fatG: product.fatG,
+        defaultServingAmount: product.defaultServingAmount,
+        defaultServingUnit: product.defaultServingUnit,
+        labelPortionGrams: product.labelPortionGrams,
+        useCount: 0,
+        lastUsedAt: null,
+        kind: 'simple',
+        pieceCount: null,
+        pieceLabel: null,
+        totalMassG: null,
+      }
+      invalidateProducts()
+      reinitializeServingDraft(foodSource)
+      setServingTarget(foodSource)
+      setSheetView('serving')
+    },
+    [invalidateProducts, reinitializeServingDraft],
+  )
+
+  const onProductCancel = useCallback(() => {
+    setSheetView('browse')
+  }, [])
 
   return (
     <BottomSheet
@@ -362,7 +446,7 @@ export default function MealSheet({
             getPendingItemServingLabel={getPendingItemServingLabel}
             onLogTemplate={handleLogTemplate}
             onDeleteTemplate={handleDeleteTemplate}
-            onOpenCreateFood={() => setSheetView('create')}
+            onOpenCreateFood={onOpenCreateFood}
             footer={(
               <MealSheetBrowseFooter
                 submitError={submitError}
@@ -392,56 +476,17 @@ export default function MealSheet({
             pendingPortions={pendingPortions}
             onPendingPortionsChange={setPendingPortions}
             massInputMode={massInputMode}
-            onMassInputModeChange={(mode) => {
-              setMassInputMode(mode)
-              if (!servingTarget) return
-              const { pendingGrams: g, pendingPortions: p } = applyMassInputModeForLabel(
-                servingTarget.labelPortionGrams,
-                mode,
-                pendingGrams,
-                pendingPortions,
-              )
-              setPendingGrams(g)
-              setPendingPortions(p)
-            }}
+            onMassInputModeChange={onMassInputModeChange}
             pendingMode={pendingMode}
             onPendingModeChange={setPendingMode}
             servingEstimate={servingEstimate}
             isCompositeWithPieces={isCompositeWithPieces}
             isEditingExisting={isEditingExisting}
-            onServingBack={() => setSheetView('browse')}
+            onServingBack={onServingBack}
             onServingRemove={handleServingRemove}
-            onProductSave={() => {
-              invalidateProducts()
-              setSheetView('browse')
-            }}
-            onProductSaveAndAdd={(product) => {
-              const cal100 = product.caloriesPer100g ?? product.calories
-              const foodSource: FoodSource = {
-                sourceType: 'user_product',
-                sourceId: product.id,
-                name: product.name,
-                calories: product.calories,
-                caloriesPer100g: cal100,
-                proteinG: product.proteinG,
-                carbsG: product.carbsG,
-                fatG: product.fatG,
-                defaultServingAmount: product.defaultServingAmount,
-                defaultServingUnit: product.defaultServingUnit,
-                labelPortionGrams: product.labelPortionGrams,
-                useCount: 0,
-                lastUsedAt: null,
-                kind: 'simple',
-                pieceCount: null,
-                pieceLabel: null,
-                totalMassG: null,
-              }
-              invalidateProducts()
-              reinitializeServingDraft(foodSource)
-              setServingTarget(foodSource)
-              setSheetView('serving')
-            }}
-            onProductCancel={() => setSheetView('browse')}
+            onProductSave={onProductSave}
+            onProductSaveAndAdd={onProductSaveAndAdd}
+            onProductCancel={onProductCancel}
             servingFooter={(
               <MealSheetServingFooter
                 servingConfirmDisabled={servingConfirmDisabled}

@@ -8,6 +8,7 @@ import { useAuth } from '@/app/providers/auth'
 import { getTodayInTimezone, guessTimezone, formatShortDate } from '@/lib/date'
 import { lbToKg, kgToLb } from '@/lib/tdee'
 import { useWeightEntries } from '@/features/weight/useWeightEntries'
+import { queryKeys } from '@/lib/queryKeys'
 import EmptyState from '@/components/ui/EmptyState'
 import { PageTitle, SectionHeader } from '@/components/ui/AppHeadings'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
@@ -77,7 +78,7 @@ export default function WeightPage() {
       return
     }
 
-    qc.invalidateQueries({ queryKey: ['weight-entries', user.id] })
+    qc.invalidateQueries({ queryKey: queryKeys.weight.prefix(user.id) })
     reset({ entryDate: today })
   }
 

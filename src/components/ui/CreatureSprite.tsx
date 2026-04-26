@@ -42,12 +42,15 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
     const [activeAnimation, setActiveAnimation] = useState<{ type: 'hurt' | 'faint' | 'attack'; isCrit: boolean } | null>(null)
     const [hasFainted, setHasFainted] = useState(false)
     const descriptorKey = descriptor ? `${descriptor.url}:${descriptor.facing}` : 'placeholder'
-    const [prevDescriptorKey, setPrevDescriptorKey] = useState(descriptorKey)
-    if (descriptorKey !== prevDescriptorKey) {
-      setPrevDescriptorKey(descriptorKey)
-      setHasFainted(false)
-    }
     const [frameState, setFrameState] = useState({ descriptorKey, currentFrame: 0 })
+
+    useEffect(() => {
+      const id = requestAnimationFrame(() => {
+        setHasFainted(false)
+        setFrameState({ descriptorKey, currentFrame: 0 })
+      })
+      return () => cancelAnimationFrame(id)
+    }, [descriptorKey])
     const animClearRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const frameIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const currentFrame = frameState.descriptorKey === descriptorKey ? frameState.currentFrame : 0

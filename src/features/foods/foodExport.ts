@@ -1,4 +1,4 @@
-import { getUserProducts, getCompositeProduct } from '@/features/foods/api'
+import { getUserProducts, getCompositeProductsBatch } from '@/features/foods/api'
 
 interface ExportSimpleFood {
   kind: 'simple'
@@ -38,10 +38,7 @@ export async function exportUserFoods(userId: string): Promise<void> {
   const products = await getUserProducts(userId)
 
   const compositeIds = products.filter((p) => p.kind === 'composite').map((p) => p.id)
-  const compositeDetails = await Promise.all(compositeIds.map((id) => getCompositeProduct(id)))
-  const compositeMap = new Map(
-    compositeDetails.filter(Boolean).map((c) => [c!.id, c!]),
-  )
+  const compositeMap = await getCompositeProductsBatch(compositeIds)
 
   const foods: FoodExportPayload['foods'] = products.map((product) => {
     if (product.kind === 'composite') {

@@ -5,6 +5,7 @@ import GramInput from '@/components/ui/GramInput'
 import LoadingState from '@/components/ui/LoadingState'
 import ServingEstimateBlock from '@/features/logging/ServingEstimateBlock'
 import { getCompositeProduct, upsertCompositeProduct } from '@/features/foods/api'
+import { queryKeys } from '@/lib/queryKeys'
 import { computeRollup } from '@/features/foods/compositeRollup'
 import type { CompositeIngredientInput } from '@/types/database'
 import IngredientPickerSheet from './IngredientPickerSheet'
@@ -94,7 +95,7 @@ export default function RecipeEditor({
   // ─── Edit mode: fetch existing composite ──────────────────────────────────
 
   const editQuery = useQuery({
-    queryKey: ['composite-product', editProductId],
+    queryKey: queryKeys.compositeFood.product(editProductId ?? undefined),
     enabled: isEditMode,
     queryFn: () => getCompositeProduct(editProductId!),
   })

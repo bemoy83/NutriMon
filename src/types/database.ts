@@ -184,6 +184,10 @@ export interface Database {
         Args: { p_product_id: string }
         Returns: CompositeProductResult | null
       }
+      get_composite_products_batch: {
+        Args: { p_product_ids: string[] }
+        Returns: unknown
+      }
       get_battle_hub: {
         Args: { p_battle_date: string }
         Returns: BattleHubRow

@@ -7,7 +7,8 @@ import GramInput from '@/components/ui/GramInput'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import ServingEstimateBlock from '@/features/logging/ServingEstimateBlock'
-import { getUserProducts } from '@/features/foods/api'
+import { listUserProductsPage } from '@/features/foods/api'
+import { queryKeys } from '@/lib/queryKeys'
 import { useFoodSourceSearch } from '@/features/logging/useFoodSources'
 import type { FoodSource, Product } from '@/types/domain'
 import type { DraftIngredientRow } from './RecipeEditor'
@@ -124,22 +125,28 @@ export default function IngredientPickerSheet({
   // ─── Data sources ─────────────────────────────────────────────────────────
 
   const myProductsQuery = useQuery({
-    queryKey: ['my-food-products', user?.id],
+    queryKey: queryKeys.myFood.productsPicker(user?.id, deferredQuery.trim()),
     enabled: !!user,
-    queryFn: () => getUserProducts(user!.id),
+    queryFn: () =>
+      listUserProductsPage({
+        userId: user!.id,
+        offset: 0,
+        limit: 300,
+        kind: 'all',
+        query: deferredQuery,
+      }),
   })
 
   const myFoodsFiltered = useMemo(() => {
-    const all = (myProductsQuery.data ?? []).filter(
+    const all = (myProductsQuery.data?.products ?? []).filter(
       (p) =>
         p.kind === 'simple' &&
         p.defaultServingUnit === 'g' &&
         p.defaultServingAmount != null &&
         p.defaultServingAmount > 0,
     )
-    const q = deferredQuery.trim().toLowerCase()
-    return q ? all.filter((p) => p.name.toLowerCase().includes(q)) : all
-  }, [myProductsQuery.data, deferredQuery])
+    return all
+  }, [myProductsQuery.data])
 
   const catalogSearch = useFoodSourceSearch(tab === 'catalog' ? deferredQuery : '')
 
