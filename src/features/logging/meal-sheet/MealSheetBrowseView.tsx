@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import type { FoodSource, MealTemplate } from '@/types/domain'
 import FoodRow from '@/components/ui/FoodRow'
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
@@ -11,6 +11,10 @@ import {
 } from '../itemHelpers'
 import type { Item } from '../types'
 import { MealTemplateRow } from './MealTemplateRow'
+
+function InsetRowDivider() {
+  return <div aria-hidden className="mx-4 h-px bg-[var(--app-border-muted)]" />
+}
 
 export interface MealSheetBrowseViewProps {
   searchQuery: string
@@ -88,28 +92,30 @@ export default function MealSheetBrowseView({
               <p className="mt-1 text-xs text-[var(--app-text-subtle)]">Tap a food from Recent to get started.</p>
             </div>
           ) : (
-            items.map((item) => (
-              <FoodRow
-                key={getItemKey(item)}
-                name={getItemLabel(item)}
-                subtitle={`${getItemKcal(item)} kcal · ${getPendingItemServingLabel(item)}`}
-                leading={
-                  item.foodSource?.kind === 'composite' ? (
-                    <svg className="w-4 h-4 text-[var(--app-warning)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 6h14M5 10h14M5 14h10" />
-                    </svg>
-                  ) : (
-                    <FoodSourceBadge sourceType={getItemSourceType(item) ?? 'user_product'} />
-                  )
-                }
-                isChecked
-                onTap={() => item.foodSource && onFoodTap(item.foodSource)}
-                macroChips={
-                  item.snapshotProteinG != null || item.snapshotCarbsG != null || item.snapshotFatG != null
-                    ? { p: item.snapshotProteinG, c: item.snapshotCarbsG, f: item.snapshotFatG }
-                    : undefined
-                }
-              />
+            items.map((item, idx) => (
+              <Fragment key={getItemKey(item)}>
+                {idx > 0 && <InsetRowDivider />}
+                <FoodRow
+                  name={getItemLabel(item)}
+                  subtitle={`${getItemKcal(item)} kcal · ${getPendingItemServingLabel(item)}`}
+                  leading={
+                    item.foodSource?.kind === 'composite' ? (
+                      <svg className="w-4 h-4 text-[var(--app-warning)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 6h14M5 10h14M5 14h10" />
+                      </svg>
+                    ) : (
+                      <FoodSourceBadge sourceType={getItemSourceType(item) ?? 'user_product'} />
+                    )
+                  }
+                  isChecked
+                  onTap={() => item.foodSource && onFoodTap(item.foodSource)}
+                  macroChips={
+                    item.snapshotProteinG != null || item.snapshotCarbsG != null || item.snapshotFatG != null
+                      ? { p: item.snapshotProteinG, c: item.snapshotCarbsG, f: item.snapshotFatG }
+                      : undefined
+                  }
+                />
+              </Fragment>
             ))
           )
         ) : tab === 'saved' ? (
@@ -152,40 +158,45 @@ export default function MealSheetBrowseView({
               </div>
             ) : (
               <>
-                {activeFoodSources.map((fs) => (
-                  <FoodRow
-                    key={`${fs.sourceType}:${fs.sourceId}`}
-                    name={fs.name}
-                    subtitle={`${Math.round(fs.caloriesPer100g)} kcal / 100g${fs.labelPortionGrams ? ` · label portion ${fs.labelPortionGrams}g` : ''}`}
-                    leading={
-                      fs.kind === 'composite' ? (
-                        <svg className="w-4 h-4 text-[var(--app-warning)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 6h14M5 10h14M5 14h10" />
-                        </svg>
-                      ) : (
-                        <FoodSourceBadge sourceType={fs.sourceType} />
-                      )
-                    }
-                    isChecked={isItemPending(fs)}
-                    onTap={() => onFoodTap(fs)}
-                    macroChips={
-                      fs.proteinG != null || fs.carbsG != null || fs.fatG != null
-                        ? { p: fs.proteinG, c: fs.carbsG, f: fs.fatG }
-                        : undefined
-                    }
-                  />
+                {activeFoodSources.map((fs, idx) => (
+                  <Fragment key={`${fs.sourceType}:${fs.sourceId}`}>
+                    {idx > 0 && <InsetRowDivider />}
+                    <FoodRow
+                      name={fs.name}
+                      subtitle={`${Math.round(fs.caloriesPer100g)} kcal / 100g${fs.labelPortionGrams ? ` · serving ${fs.labelPortionGrams}g` : ''}`}
+                      leading={
+                        fs.kind === 'composite' ? (
+                          <svg className="w-4 h-4 text-[var(--app-warning)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 6h14M5 10h14M5 14h10" />
+                          </svg>
+                        ) : (
+                          <FoodSourceBadge sourceType={fs.sourceType} />
+                        )
+                      }
+                      isChecked={isItemPending(fs)}
+                      onTap={() => onFoodTap(fs)}
+                      macroChips={
+                        fs.proteinG != null || fs.carbsG != null || fs.fatG != null
+                          ? { p: fs.proteinG, c: fs.carbsG, f: fs.fatG }
+                          : undefined
+                      }
+                    />
+                  </Fragment>
                 ))}
                 {!isSearching && (
-                  <button
-                    type="button"
-                    onClick={onOpenCreateFood}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-[var(--app-text-muted)] hover:text-[var(--app-brand)] hover:bg-[var(--app-hover-overlay)] transition-colors border-t border-[var(--app-border-muted)]"
-                  >
-                    <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl border border-dashed border-[var(--app-border)] text-lg leading-none">
-                      +
-                    </span>
-                    <span>Create new food</span>
-                  </button>
+                  <>
+                    {activeFoodSources.length > 0 && <InsetRowDivider />}
+                    <button
+                      type="button"
+                      onClick={onOpenCreateFood}
+                      className="flex w-full items-center gap-3 px-4 py-3 text-sm text-[var(--app-text-muted)] hover:text-[var(--app-brand)] hover:bg-[var(--app-hover-overlay)] transition-colors"
+                    >
+                      <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl border border-dashed border-[var(--app-border)] text-lg leading-none">
+                        +
+                      </span>
+                      <span>Create new food</span>
+                    </button>
+                  </>
                 )}
               </>
             )}

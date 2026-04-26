@@ -270,7 +270,7 @@ export default function IngredientPickerSheet({
                           name={product.name}
                           subtitle={`${productCaloriesPer100gLabel(product)} kcal / 100g${
                             product.labelPortionGrams
-                              ? ` · label portion ${product.labelPortionGrams}g`
+                              ? ` · serving ${product.labelPortionGrams}g`
                               : ''
                           }`}
                           leading={<FoodSourceBadge sourceType="user_product" />}
@@ -304,7 +304,7 @@ export default function IngredientPickerSheet({
                       key={`${fs.sourceType}:${fs.sourceId}`}
                       name={fs.name}
                       subtitle={`${Math.round(fs.caloriesPer100g)} kcal / 100g${
-                        fs.labelPortionGrams ? ` · label portion ${fs.labelPortionGrams}g` : ''
+                        fs.labelPortionGrams ? ` · serving ${fs.labelPortionGrams}g` : ''
                       }`}
                       leading={
                         fs.kind === 'composite' ? (

@@ -119,7 +119,7 @@ export function servingStepTargetFromItem(item: Item): ServingStepTarget {
 }
 
 /**
- * When switching grams ⟷ label portions, keep the displayed mass consistent.
+ * When switching grams ⟷ saved serving sizes, keep the displayed mass consistent.
  * Used by MealSheet and ServingEditSheet.
  */
 export function applyMassInputModeForLabel(

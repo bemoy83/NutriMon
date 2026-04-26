@@ -70,7 +70,7 @@ export default function ServingStep({
       : 'grams'
   const amountModeOptions: Array<{ value: ServingAmountMode; label: string }> = [
     { value: 'grams', label: 'Weight' },
-    ...(canUseLabelPortions ? [{ value: 'portions' as const, label: 'Label serving' }] : []),
+    ...(canUseLabelPortions ? [{ value: 'portions' as const, label: 'Serving' }] : []),
     ...(showModeToggle ? [{ value: 'pieces' as const, label: 'Pieces' }] : []),
   ]
   const portionStepperSuffix =
@@ -124,7 +124,7 @@ export default function ServingStep({
         ? `Unit: ${target.pieceLabel}`
         : null
     : selectedAmountMode === 'portions' && labelPortionG
-      ? `1 ${portionStepperSuffix} = ${Math.round(labelPortionG)}g from label`
+      ? `1 ${portionStepperSuffix} = ${Math.round(labelPortionG)}g`
       : target.defaultServingUnit &&
           target.defaultServingUnit !== 'g' &&
           target.defaultServingAmount != null
@@ -219,7 +219,7 @@ export default function ServingStep({
                   step={1}
                   showSteppers
                   unitSuffix={portionStepperSuffix}
-                  quantityAriaLabel="Label servings"
+                  quantityAriaLabel="Servings"
                   size="large"
                 />
               ) : (

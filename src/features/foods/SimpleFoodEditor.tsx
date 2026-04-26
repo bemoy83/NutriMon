@@ -218,7 +218,7 @@ export default function SimpleFoodEditor({
 
         <div>
           <label htmlFor="sfe-portion" className="mb-1 block text-sm text-[var(--app-text-secondary)]">
-            Portion on label (g, optional)
+            Serving size (g, optional)
           </label>
           <input
             id="sfe-portion"
@@ -226,12 +226,12 @@ export default function SimpleFoodEditor({
             step="0.1"
             {...register('labelPortionGrams', { valueAsNumber: true, setValueAs: v => v === '' ? null : Number(v) })}
             className="app-input px-3 py-2 text-sm"
-            placeholder="e.g. 30 — if the label lists one serving size"
+            placeholder="e.g. 30 — define any portion you use"
             onFocus={selectAllOnFocus}
           />
           {portionKcalPreview != null && (
             <p className="mt-1 text-xs text-[var(--app-text-muted)]">
-              ≈ {portionKcalPreview} kcal per that portion (derived from per 100g values).
+              ≈ {portionKcalPreview} kcal per serving (derived from per 100g values).
             </p>
           )}
         </div>

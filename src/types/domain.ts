@@ -37,7 +37,7 @@ export interface Product {
   proteinG: number | null
   carbsG: number | null
   fatG: number | null
-  /** Manufacturer portion grams from label (optional UX); logging uses per-100g density. */
+  /** Optional user-facing serving size in grams; logging uses per-100g density. */
   labelPortionGrams: number | null
   defaultServingAmount: number | null
   defaultServingUnit: string | null
@@ -92,7 +92,7 @@ export interface FoodSource {
   fatG: number | null
   defaultServingAmount: number | null
   defaultServingUnit: string | null
-  /** Optional label portion mass in grams — enables “log by portions” UX only. */
+  /** Optional user-facing serving size in grams — enables “log by servings” UX only. */
   labelPortionGrams: number | null
   useCount: number
   lastUsedAt: string | null
