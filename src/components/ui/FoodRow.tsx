@@ -58,7 +58,7 @@ export default function FoodRow({
           onClick={onTap}
         >
           {leading && <div className="mb-0.5">{leading}</div>}
-          <p className="text-sm text-[var(--app-text-primary)] truncate">{name}</p>
+          <p className="text-sm font-semibold text-[var(--app-text-primary)] truncate">{name}</p>
           <p className="text-xs text-[var(--app-text-muted)]">{subtitle}</p>
           {macroChips && (
             <MacroPills chips={macroChips} className="mt-1" formatGrams={macroFormatGrams} />
@@ -89,7 +89,7 @@ export default function FoodRow({
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <p className="text-[var(--app-text-primary)] text-sm truncate">{name}</p>
+        <p className="text-[var(--app-text-primary)] text-sm font-semibold truncate">{name}</p>
         <p className="text-[var(--app-text-muted)] text-xs">{subtitle}</p>
         {macroChips && (
           <MacroPills chips={macroChips} className="mt-1" formatGrams={macroFormatGrams} />
