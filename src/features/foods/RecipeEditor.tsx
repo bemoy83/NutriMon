@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useImperativeHandle } from 'react'
+import { Fragment, useEffect, useMemo, useState, useImperativeHandle } from 'react'
 import type { Ref } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import GramInput from '@/components/ui/GramInput'
@@ -9,6 +9,10 @@ import { computeRollup } from '@/features/foods/compositeRollup'
 import type { CompositeIngredientInput } from '@/types/database'
 import IngredientPickerSheet from './IngredientPickerSheet'
 import { RecipeIngredientRow } from './RecipeIngredientRow'
+
+function InsetRowDivider() {
+  return <div aria-hidden className="mx-4 h-px bg-[var(--app-border-muted)]" />
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -390,26 +394,29 @@ export default function RecipeEditor({
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto">
-              {ingredients.map((row) => {
+              {ingredients.map((row, idx) => {
                   const scale = row.massG / 100
                   return (
-                    <RecipeIngredientRow
-                      key={row.key}
-                      name={row.name}
-                      massG={row.massG}
-                      kcal={Math.round((row.caloriesPer100g * row.massG) / 100)}
-                      proteinG={row.proteinPer100g != null ? row.proteinPer100g * scale : null}
-                      carbsG={row.carbsPer100g != null ? row.carbsPer100g * scale : null}
-                      fatG={row.fatPer100g != null ? row.fatPer100g * scale : null}
-                      onTap={() => setSelectedKey(row.key)}
-                    />
+                    <Fragment key={row.key}>
+                      {idx > 0 && <InsetRowDivider />}
+                      <RecipeIngredientRow
+                        name={row.name}
+                        massG={row.massG}
+                        kcal={Math.round((row.caloriesPer100g * row.massG) / 100)}
+                        proteinG={row.proteinPer100g != null ? row.proteinPer100g * scale : null}
+                        carbsG={row.carbsPer100g != null ? row.carbsPer100g * scale : null}
+                        fatG={row.fatPer100g != null ? row.fatPer100g * scale : null}
+                        onTap={() => setSelectedKey(row.key)}
+                      />
+                    </Fragment>
                   )
                 })}
 
+              {ingredients.length > 0 && <InsetRowDivider />}
               <button
                 type="button"
                 onClick={() => setShowPicker(true)}
-                className="flex w-full items-center gap-3 border-t border-[var(--app-border-muted)] px-4 py-3 text-sm text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-hover-overlay)] hover:text-[var(--app-brand)]"
+                className="flex w-full items-center gap-3 px-4 py-3 text-sm text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-hover-overlay)] hover:text-[var(--app-brand)]"
               >
                 <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl border border-dashed border-[var(--app-border)] text-lg leading-none">
                   +

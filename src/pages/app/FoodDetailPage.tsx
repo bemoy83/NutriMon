@@ -15,6 +15,28 @@ const TYPE_OPTIONS = [
   { value: 'recipe' as const, label: 'Recipe' },
 ] as const
 
+type FoodKind = 'simple' | 'recipe'
+
+function FoodKindIcon({ kind }: { kind: FoodKind }) {
+  if (kind === 'recipe') {
+    return (
+      <svg className="h-4 w-4 text-[var(--app-warning)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 6h14M5 10h14M5 14h10" />
+      </svg>
+    )
+  }
+
+  return <span className="h-2 w-2 rounded-full bg-[var(--app-warning)]" aria-hidden="true" />
+}
+
+function FoodKindBadge({ kind }: { kind: FoodKind }) {
+  return (
+    <span className="inline-flex items-center rounded-full bg-[var(--app-warning-soft)] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--app-warning-soft-text)]">
+      {kind === 'recipe' ? 'Recipe' : 'Simple food'}
+    </span>
+  )
+}
+
 export default function FoodDetailPage() {
   const { id } = useParams<{ id?: string }>()
   const navigate = useNavigate()
@@ -82,8 +104,6 @@ export default function FoodDetailPage() {
     ? (editorType === 'recipe' ? 'New recipe' : 'New food')
     : (product?.name ?? 'Edit food')
 
-  const kindLabel = kind === 'recipe' ? 'Recipe' : 'Simple food'
-
   return (
     <div className="flex min-h-full flex-col bg-[var(--app-bg)]">
       {/* Sheet panel — fill main height so footer stays at bottom; editors scroll inside */}
@@ -126,10 +146,9 @@ export default function FoodDetailPage() {
               </button>
             </div>
             {!isNew && (
-              <div className="mt-2 flex pr-4 pl-11">
-                <span className="inline-flex items-center rounded-full bg-[var(--app-surface-muted)] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--app-text-muted)]">
-                  {kindLabel}
-                </span>
+              <div className="mt-1 flex items-center gap-1.5 px-4 pb-2">
+                <FoodKindIcon kind={kind} />
+                <FoodKindBadge kind={kind} />
               </div>
             )}
           </header>
