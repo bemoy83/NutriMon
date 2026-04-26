@@ -35,7 +35,8 @@ interface KassalappApiProduct {
   store: unknown
 }
 
-function getNutrient(nutrition: KassalappNutrient[], ...codes: string[]): number | null {
+function getNutrient(nutrition: KassalappNutrient[] | null | undefined, ...codes: string[]): number | null {
+  if (!nutrition?.length) return null
   for (const code of codes) {
     const found = nutrition.find((n) => n.code.toLowerCase() === code.toLowerCase())
     if (found != null) return found.amount
@@ -44,7 +45,8 @@ function getNutrient(nutrition: KassalappNutrient[], ...codes: string[]): number
 }
 
 function mapProduct(ean: string, raw: KassalappApiProduct): KassalappProduct {
-  const kcal = getNutrient(raw.nutrition, 'energi_kcal', 'energy_kcal', 'calories', 'energi') ?? 0
+  const nutrition = Array.isArray(raw.nutrition) ? raw.nutrition : []
+  const kcal = getNutrient(nutrition, 'energi_kcal', 'energy_kcal', 'calories', 'energi') ?? 0
   const portionG =
     raw.weight && raw.weight_unit?.toLowerCase() === 'g' ? raw.weight : null
 
@@ -54,9 +56,9 @@ function mapProduct(ean: string, raw: KassalappApiProduct): KassalappProduct {
     brand: raw.brand ?? null,
     imageUrl: raw.image ?? null,
     caloriesPer100g: kcal,
-    proteinPer100g: getNutrient(raw.nutrition, 'protein'),
-    carbsPer100g: getNutrient(raw.nutrition, 'karbohydrat', 'carbohydrates', 'carbs'),
-    fatPer100g: getNutrient(raw.nutrition, 'fett', 'fat'),
+    proteinPer100g: getNutrient(nutrition, 'protein'),
+    carbsPer100g: getNutrient(nutrition, 'karbohydrater', 'karbohydrat', 'carbohydrates'),
+    fatPer100g: getNutrient(nutrition, 'fett_totalt', 'fett', 'fat'),
     labelPortionGrams: portionG,
   }
 }
