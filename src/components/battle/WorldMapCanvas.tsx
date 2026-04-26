@@ -1,9 +1,11 @@
+import { useEffect, useRef, useState } from 'react'
+import type { RefObject } from 'react'
 import { getArenaTerrain, getPlayerBattleSpriteDescriptor } from '@/lib/sprites'
 import type { ArenaListArena, CreatureCompanion } from '@/types/domain'
 import { WorldMapArenaNode } from './WorldMapArenaNode'
 import { WorldMapPathSegment } from './WorldMapPathSegment'
-import { MAP_CANVAS_H, MAP_CANVAS_W, resolveNodePosition } from './worldMapGeometry'
-import type { NodePosition } from './worldMapGeometry'
+import { DEFAULT_WORLD_MAP_LAYOUT, resolveNodePosition } from './worldMapGeometry'
+import type { NodePosition, WorldMapLayout } from './worldMapGeometry'
 
 interface WorldMapCanvasProps {
   arenas: ArenaListArena[]
@@ -27,6 +29,7 @@ interface Band {
 function computeBands(
   sorted: ArenaListArena[],
   positions: NodePosition[],
+  layout: WorldMapLayout,
 ): Band[] {
   return sorted.map((arena, i) => {
     const pos = positions[i]
@@ -34,14 +37,14 @@ function computeBands(
     const below = positions[i - 1] // lower y index = lower on screen (larger y)
 
     const top = above ? (pos.y + above.y) / 2 : 0
-    const bottom = below ? (pos.y + below.y) / 2 : MAP_CANVAS_H
+    const bottom = below ? (pos.y + below.y) / 2 : layout.height
 
     const terrain = getArenaTerrain(arena.id)
     return { arenaId: arena.id, accent: terrain.accentColor ?? '#6b7280', nodePos: pos, top, bottom }
   })
 }
 
-function TerrainBands({ bands }: { bands: Band[] }) {
+function TerrainBands({ bands, layout }: { bands: Band[]; layout: WorldMapLayout }) {
   return (
     <g>
       <defs>
@@ -51,8 +54,8 @@ function TerrainBands({ bands }: { bands: Band[] }) {
           const topFade = Math.max(0, top - feather)
           const topBody = top + Math.min(feather, (nodePos.y - top) * 0.75)
           const bottomBody = bottom - Math.min(feather, (bottom - nodePos.y) * 0.75)
-          const bottomFade = Math.min(MAP_CANVAS_H, bottom + feather)
-          const toOffset = (y: number) => `${(y / MAP_CANVAS_H) * 100}%`
+          const bottomFade = Math.min(layout.height, bottom + feather)
+          const toOffset = (y: number) => `${(y / layout.height) * 100}%`
 
           return (
             <linearGradient
@@ -61,7 +64,7 @@ function TerrainBands({ bands }: { bands: Band[] }) {
               x1={0}
               y1={0}
               x2={0}
-              y2={MAP_CANVAS_H}
+              y2={layout.height}
               gradientUnits="userSpaceOnUse"
             >
               <stop offset="0%" stopColor={accent} stopOpacity={0} />
@@ -82,8 +85,8 @@ function TerrainBands({ bands }: { bands: Band[] }) {
           key={arenaId}
           x={0}
           y={0}
-          width={MAP_CANVAS_W}
-          height={MAP_CANVAS_H}
+          width={layout.width}
+          height={layout.height}
           fill={`url(#zone-${arenaId})`}
         />
       ))}
@@ -91,10 +94,64 @@ function TerrainBands({ bands }: { bands: Band[] }) {
   )
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max)
+}
+
+function useMobileWorldMapLayout(wrapperRef: RefObject<HTMLDivElement | null>) {
+  const [layout, setLayout] = useState<WorldMapLayout>(DEFAULT_WORLD_MAP_LAYOUT)
+
+  useEffect(() => {
+    let frame = 0
+
+    const updateLayout = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const visualViewport = window.visualViewport
+        const viewportWidth = visualViewport?.width ?? window.innerWidth
+        const viewportHeight = visualViewport?.height ?? window.innerHeight
+        const top = wrapperRef.current?.getBoundingClientRect().top ?? 0
+
+        const width = Math.round(Math.min(viewportWidth, 480))
+        const availableHeight = viewportHeight - top - 88
+        const height = Math.round(clamp(availableHeight, 500, 760))
+        const nodeScale = Number(clamp(Math.min(width / 390, height / 620), 0.9, 1.22).toFixed(3))
+
+        setLayout((current) => {
+          if (
+            current.width === width &&
+            current.height === height &&
+            current.nodeScale === nodeScale
+          ) {
+            return current
+          }
+          return { width, height, nodeScale }
+        })
+      })
+    }
+
+    updateLayout()
+    window.addEventListener('resize', updateLayout)
+    window.addEventListener('orientationchange', updateLayout)
+    window.visualViewport?.addEventListener('resize', updateLayout)
+
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener('resize', updateLayout)
+      window.removeEventListener('orientationchange', updateLayout)
+      window.visualViewport?.removeEventListener('resize', updateLayout)
+    }
+  }, [wrapperRef])
+
+  return layout
+}
+
 export function WorldMapCanvas({ arenas, companion, onSelectArena }: WorldMapCanvasProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const layout = useMobileWorldMapLayout(wrapperRef)
   const sorted = [...arenas].sort((a, b) => a.sortOrder - b.sortOrder)
-  const positions = sorted.map((arena, i) => resolveNodePosition(arena, i, sorted.length))
-  const bands = computeBands(sorted, positions)
+  const positions = sorted.map((arena, i) => resolveNodePosition(arena, i, sorted.length, layout))
+  const bands = computeBands(sorted, positions, layout)
 
   const currentArena = sorted.find(
     (a) => a.isUnlocked && (a.opponentCount === 0 || a.defeatedCount < a.opponentCount),
@@ -118,15 +175,17 @@ export function WorldMapCanvas({ arenas, companion, onSelectArena }: WorldMapCan
       `}</style>
 
       <div
+        ref={wrapperRef}
         style={{
           position: 'relative',
           width: '100vw',
+          height: layout.height,
           marginLeft: 'calc(50% - 50vw)',
           marginRight: 'calc(50% - 50vw)',
         }}
       >
         <svg
-          viewBox={`0 0 ${MAP_CANVAS_W} ${MAP_CANVAS_H}`}
+          viewBox={`0 0 ${layout.width} ${layout.height}`}
           preserveAspectRatio="none"
           width="100%"
           height="100%"
@@ -138,18 +197,18 @@ export function WorldMapCanvas({ arenas, companion, onSelectArena }: WorldMapCan
             pointerEvents: 'none',
           }}
         >
-          <TerrainBands bands={bands} />
+          <TerrainBands bands={bands} layout={layout} />
         </svg>
 
         <svg
-          viewBox={`0 0 ${MAP_CANVAS_W} ${MAP_CANVAS_H}`}
-          width="100%"
+          viewBox={`0 0 ${layout.width} ${layout.height}`}
+          width={layout.width}
+          height={layout.height}
           style={{
             position: 'relative',
             zIndex: 1,
             display: 'block',
             overflow: 'visible',
-            maxWidth: MAP_CANVAS_W,
             margin: '0 auto',
           }}
           aria-label="Arena world map"
@@ -164,6 +223,8 @@ export function WorldMapCanvas({ arenas, companion, onSelectArena }: WorldMapCan
                 key={`path-${arena.id}`}
                 from={positions[i - 1]}
                 to={positions[i]}
+                layoutWidth={layout.width}
+                nodeScale={layout.nodeScale}
                 isUnlocked={arena.isUnlocked}
                 accentColor={terrain.accentColor ?? '#6b7280'}
               />
@@ -177,6 +238,7 @@ export function WorldMapCanvas({ arenas, companion, onSelectArena }: WorldMapCan
               arena={arena}
               position={positions[i]}
               isCurrent={arena.id === currentArena?.id}
+              nodeScale={layout.nodeScale}
               onClick={
                 arena.isUnlocked
                   ? () => onSelectArena(arena.id, arena.name)
@@ -190,10 +252,10 @@ export function WorldMapCanvas({ arenas, companion, onSelectArena }: WorldMapCan
             const idx = sorted.findIndex((a) => a.id === currentArena.id)
             const pos = positions[idx]
             if (!pos) return null
-            const MARKER_SIZE = 40
+            const MARKER_SIZE = 40 * layout.nodeScale
             // Platform is 96×45px centred on pos. Surface sits at ovalSurfaceY≈97/240
             // from the platform's top edge. Land the companion's feet there.
-            const PLATFORM_W = 96
+            const PLATFORM_W = 96 * layout.nodeScale
             const PLATFORM_H = Math.round(PLATFORM_W * 240 / 512)
             const platformTop = pos.y - PLATFORM_H / 2
             const surfaceY = platformTop + PLATFORM_H * (97 / 240)
