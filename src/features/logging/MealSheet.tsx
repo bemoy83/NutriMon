@@ -287,7 +287,8 @@ export default function MealSheet({
   const browseTranslate = sheetView === 'browse' ? 'translateX(0)' : 'translateX(-100%)'
   const isDetailView = sheetView === 'serving' || sheetView === 'create'
   const detailSheetView: DetailSheetView = sheetView === 'scan' ? 'browse' : sheetView
-  const detailTranslate = isDetailView ? 'translateX(0)' : 'translateX(100%)'
+  // detail pane stays at 0% during scan so create form is already in place when scan slides away
+  const detailTranslate = (isDetailView || sheetView === 'scan') ? 'translateX(0)' : 'translateX(100%)'
   const scanTranslate = sheetView === 'scan' ? 'translateX(0)' : 'translateX(100%)'
 
   const servingEstimate = useMemo(
@@ -451,11 +452,6 @@ export default function MealSheet({
     [invalidateUserFoodLibrary, invalidateFoodSources, reinitializeServingDraft],
   )
 
-  const onProductCancel = useCallback(() => {
-    setProductFormPrefill(undefined)
-    setSheetView('browse')
-  }, [])
-
   return (
     <BottomSheet
       onClose={onClose}
@@ -514,21 +510,6 @@ export default function MealSheet({
         </div>
 
         <div
-          className="absolute inset-0 transition-transform duration-[250ms] ease-out"
-          aria-hidden={sheetView !== 'scan'}
-          style={{ transform: scanTranslate }}
-        >
-          <BarcodeScannerView
-            key={scanKey}
-            active={sheetView === 'scan'}
-            onEan={handleBarcodeEan}
-            barcodeLoading={scanLoading}
-            barcodeError={scanError}
-            onCancel={() => setSheetView('browse')}
-          />
-        </div>
-
-        <div
           className="absolute inset-0 flex flex-col transition-transform duration-[250ms] ease-out"
           aria-hidden={!isDetailView}
           style={{ transform: detailTranslate }}
@@ -551,7 +532,6 @@ export default function MealSheet({
             onServingRemove={handleServingRemove}
             onProductSave={onProductSave}
             onProductSaveAndAdd={onProductSaveAndAdd}
-            onProductCancel={onProductCancel}
             productFormPrefill={productFormPrefill}
             servingFooter={(
               <MealSheetServingFooter
@@ -563,6 +543,22 @@ export default function MealSheet({
                 onConfirm={confirmServing}
               />
             )}
+          />
+        </div>
+
+        {/* scan panel last in DOM so it renders on top of the detail pane during the transition */}
+        <div
+          className="absolute inset-0 transition-transform duration-[250ms] ease-out"
+          aria-hidden={sheetView !== 'scan'}
+          style={{ transform: scanTranslate }}
+        >
+          <BarcodeScannerView
+            key={scanKey}
+            active={sheetView === 'scan'}
+            onEan={handleBarcodeEan}
+            barcodeLoading={scanLoading}
+            barcodeError={scanError}
+            onCancel={() => setSheetView('browse')}
           />
         </div>
       </div>

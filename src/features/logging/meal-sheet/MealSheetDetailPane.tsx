@@ -25,7 +25,6 @@ export interface MealSheetDetailPaneProps {
   onServingRemove: () => void
   onProductSave: () => void
   onProductSaveAndAdd: (product: Product) => void
-  onProductCancel: () => void
   productFormPrefill?: ProductFormPrefill
   servingFooter: ReactNode
 }
@@ -48,7 +47,6 @@ export default function MealSheetDetailPane({
   onServingRemove,
   onProductSave,
   onProductSaveAndAdd,
-  onProductCancel,
   productFormPrefill,
   servingFooter,
 }: MealSheetDetailPaneProps) {
@@ -79,7 +77,6 @@ export default function MealSheetDetailPane({
             initialValues={productFormPrefill}
             onSave={onProductSave}
             onSaveAndAdd={onProductSaveAndAdd}
-            onCancel={onProductCancel}
           />
         </div>
       )}

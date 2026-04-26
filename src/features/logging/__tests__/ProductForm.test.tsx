@@ -93,7 +93,6 @@ describe('ProductForm', () => {
       <ProductForm
         initialProduct={initialProduct}
         onSave={onSave}
-        onCancel={vi.fn()}
       />,
     )
 
