@@ -118,8 +118,8 @@ function useMobileWorldMapLayout(wrapperRef: RefObject<HTMLDivElement | null>) {
 
         const width = Math.round(Math.min(viewportWidth, 480))
         const availableHeight = viewportHeight - top - 88
-        const height = Math.round(clamp(availableHeight, 500, 760))
-        const nodeScale = Number(clamp(Math.min(width / 390, height / 620), 0.9, 1.22).toFixed(3))
+        const height = Math.round(clamp(availableHeight, 320, 760))
+        const nodeScale = Number(clamp(Math.min(width / 390, height / 620), 0.72, 1.22).toFixed(3))
 
         setLayout((current) => {
           if (
