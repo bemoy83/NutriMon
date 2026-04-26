@@ -37,6 +37,7 @@ export interface MealSheetBrowseViewProps {
   onDeleteTemplate: (id: string) => void
   onOpenCreateFood: () => void
   onBarcodeProduct: (product: KassalappProduct) => void
+  onOpenCameraScanner: () => void
   footer: ReactNode
 }
 
@@ -59,6 +60,7 @@ export default function MealSheetBrowseView({
   onDeleteTemplate,
   onOpenCreateFood,
   onBarcodeProduct,
+  onOpenCameraScanner,
   footer,
 }: MealSheetBrowseViewProps) {
   const tabOptions = useMemo(
@@ -80,7 +82,7 @@ export default function MealSheetBrowseView({
         <BarcodeSearchInput
           searchQuery={searchQuery}
           onSearchQueryChange={onSearchQueryChange}
-          onProduct={onBarcodeProduct}
+          onOpenCameraScanner={onOpenCameraScanner}
         />
       </div>
 

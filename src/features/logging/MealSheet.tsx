@@ -30,7 +30,8 @@ import MealTypeTitleMenu from './meal-sheet/MealTypeTitleMenu'
 import MealSheetBrowseView from './meal-sheet/MealSheetBrowseView'
 import MealSheetDetailPane from './meal-sheet/MealSheetDetailPane'
 import { MealSheetBrowseFooter, MealSheetServingFooter } from './meal-sheet/MealSheetFooters'
-import type { KassalappProduct } from '@/lib/kassalapp'
+import { lookupBarcode, type KassalappProduct } from '@/lib/kassalapp'
+import BarcodeScannerView from './meal-sheet/BarcodeScannerView'
 import type { ProductFormPrefill } from './ProductForm'
 
 interface MealSheetProps {
@@ -42,7 +43,7 @@ interface MealSheetProps {
   onItemsSelected?: (items: Item[]) => void
 }
 
-type SheetView = 'browse' | 'serving' | 'create'
+type SheetView = 'browse' | 'serving' | 'create' | 'scan'
 
 export default function MealSheet({
   logDate,
@@ -73,6 +74,8 @@ export default function MealSheet({
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [productFormPrefill, setProductFormPrefill] = useState<ProductFormPrefill | undefined>()
+  const [scanLoading, setScanLoading] = useState(false)
+  const [scanError, setScanError] = useState<string | null>(null)
   const mealMenuRef = useRef<HTMLDivElement | null>(null)
 
   const invalidateDailyLog = useInvalidateDailyLog()
@@ -280,7 +283,8 @@ export default function MealSheet({
   }, [items, submitting, onItemsSelected, logDate, loggedAt, mealType, invalidateDailyLog, invalidateFoodSources, onAdded, onClose])
 
   const browseTranslate = sheetView === 'browse' ? 'translateX(0)' : 'translateX(-100%)'
-  const detailTranslate = sheetView !== 'browse' ? 'translateX(0)' : 'translateX(100%)'
+  const detailTranslate = (sheetView === 'serving' || sheetView === 'create') ? 'translateX(0)' : 'translateX(100%)'
+  const scanTranslate = sheetView === 'scan' ? 'translateX(0)' : 'translateX(100%)'
 
   const servingEstimate = useMemo(
     () =>
@@ -385,6 +389,23 @@ export default function MealSheet({
     setSheetView('create')
   }, [])
 
+  const handleBarcodeEan = useCallback(async (ean: string) => {
+    setScanLoading(true)
+    setScanError(null)
+    try {
+      const product = await lookupBarcode(ean)
+      if (product) {
+        onBarcodeProduct(product)
+      } else {
+        setScanError('No product found for this barcode')
+      }
+    } catch (e) {
+      setScanError(e instanceof Error ? e.message : 'Lookup failed')
+    } finally {
+      setScanLoading(false)
+    }
+  }, [onBarcodeProduct])
+
   const onServingBack = useCallback(() => {
     setSheetView('browse')
   }, [])
@@ -472,6 +493,7 @@ export default function MealSheet({
             onDeleteTemplate={handleDeleteTemplate}
             onOpenCreateFood={onOpenCreateFood}
             onBarcodeProduct={onBarcodeProduct}
+            onOpenCameraScanner={() => { setScanError(null); setSheetView('scan') }}
             footer={(
               <MealSheetBrowseFooter
                 submitError={submitError}
@@ -485,6 +507,20 @@ export default function MealSheet({
                 onSubmit={handleSubmit}
               />
             )}
+          />
+        </div>
+
+        <div
+          className="absolute inset-0 transition-transform duration-[250ms] ease-out"
+          aria-hidden={sheetView !== 'scan'}
+          style={{ transform: scanTranslate }}
+        >
+          <BarcodeScannerView
+            active={sheetView === 'scan'}
+            onEan={handleBarcodeEan}
+            barcodeLoading={scanLoading}
+            barcodeError={scanError}
+            onCancel={() => setSheetView('browse')}
           />
         </div>
 
