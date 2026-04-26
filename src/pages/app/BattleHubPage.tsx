@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArenaCard } from '@/components/battle/ArenaCard'
+import { WorldMapCanvas } from '@/components/battle/WorldMapCanvas'
 import LoadingState from '@/components/ui/LoadingState'
 import { useArenaList } from '@/features/battle/useArenaList'
 import { useProfileSummary } from '@/features/profile/useProfileSummary'
@@ -88,7 +88,7 @@ export default function BattleHubPage() {
         </div>
       ) : null}
 
-      {/* Arena list */}
+      {/* World map */}
       {arenaListQuery.isLoading ? (
         <LoadingState label="Loading arenas…" />
       ) : arenaListQuery.error ? (
@@ -96,25 +96,18 @@ export default function BattleHubPage() {
           <p className="text-sm text-[var(--app-text-primary)]">Arena data unavailable right now.</p>
           <p className="mt-1 text-xs text-[var(--app-text-muted)]">Try refreshing the page.</p>
         </div>
-      ) : (
-        <div className="space-y-3">
-          {arenas.map((arena) => (
-            <ArenaCard
-              key={arena.id}
-              arena={arena}
-              onClick={
-                arena.isUnlocked
-                  ? () => navigate(`/app/battle/arenas/${arena.id}`, { state: { arenaName: arena.name } })
-                  : undefined
-              }
-            />
-          ))}
-          {arenas.length === 0 ? (
-            <div className="app-card p-5">
-              <p className="text-sm text-[var(--app-text-muted)]">No arenas available right now.</p>
-            </div>
-          ) : null}
+      ) : arenas.length === 0 ? (
+        <div className="app-card p-5">
+          <p className="text-sm text-[var(--app-text-muted)]">No arenas available right now.</p>
         </div>
+      ) : (
+        <WorldMapCanvas
+          arenas={arenas}
+          companion={companion}
+          onSelectArena={(id, name) =>
+            navigate(`/app/battle/arenas/${id}`, { state: { arenaName: name } })
+          }
+        />
       )}
     </div>
   )

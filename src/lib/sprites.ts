@@ -261,6 +261,13 @@ const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
     opponentCalibration: ARENA_2_CALIBRATION,
     accentColor: '#f97316', // arena_2 — ember orange
   },
+  'a353973e-46fe-4757-a90d-a409beddc644': {
+    playerPlatformUrl: s('/terrain/arena_3_player_platform.png'),
+    playerPlatformRenderedWidth: 320,
+    opponentPlatformUrl: s('/terrain/arena_3_opponent_platform.png'),
+    opponentPlatformWidth: 224,
+    accentColor: '#818cf8', // arena_3 Crystalspire Vault — crystal indigo
+  },
 }
 
 export function getArenaTerrain(arenaId: string): TerrainDescriptor {
