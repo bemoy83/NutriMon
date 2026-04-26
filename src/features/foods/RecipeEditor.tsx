@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState, useImperativeHandle } from 'react'
-import type { Ref } from 'react'
+import type { ReactNode, Ref } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import GramInput from '@/components/ui/GramInput'
 import LoadingState from '@/components/ui/LoadingState'
@@ -37,6 +37,7 @@ interface RecipeEditorProps {
   onSaved: () => void
   saveRef: Ref<SaveHandle>
   onCanSaveChange: (canSave: boolean) => void
+  dangerZone?: ReactNode
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -75,6 +76,7 @@ export default function RecipeEditor({
   onSaved,
   saveRef,
   onCanSaveChange,
+  dangerZone,
 }: RecipeEditorProps) {
   const isEditMode = editProductId != null
 
@@ -426,6 +428,11 @@ export default function RecipeEditor({
 
               {serverError && (
                 <p className="px-4 pb-3 text-sm text-[var(--app-danger)]">{serverError}</p>
+              )}
+              {dangerZone && (
+                <div className="px-4 pb-4">
+                  {dangerZone}
+                </div>
               )}
             </div>
           </div>

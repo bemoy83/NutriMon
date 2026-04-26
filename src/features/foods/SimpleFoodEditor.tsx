@@ -1,5 +1,5 @@
 import { useEffect, useImperativeHandle, useState } from 'react'
-import type { Ref } from 'react'
+import type { ReactNode, Ref } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -35,6 +35,7 @@ interface SimpleFoodEditorProps {
   onSaved: () => void
   saveRef: Ref<SaveHandle>
   onCanSaveChange: (canSave: boolean) => void
+  dangerZone?: ReactNode
 }
 
 export default function SimpleFoodEditor({
@@ -42,6 +43,7 @@ export default function SimpleFoodEditor({
   onSaved,
   saveRef,
   onCanSaveChange,
+  dangerZone,
 }: SimpleFoodEditorProps) {
   const { user } = useAuth()
   const [serverError, setServerError] = useState<string | null>(null)
@@ -239,6 +241,7 @@ export default function SimpleFoodEditor({
         {serverError && (
           <p className="text-[var(--app-danger)] text-sm">{serverError}</p>
         )}
+        {dangerZone}
       </form>
     </div>
   )

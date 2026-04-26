@@ -37,6 +37,38 @@ function FoodKindBadge({ kind }: { kind: FoodKind }) {
   )
 }
 
+function DeleteFoodDangerZone({
+  deleting,
+  deleteError,
+  onDelete,
+}: {
+  deleting: boolean
+  deleteError: string | null
+  onDelete: () => void
+}) {
+  return (
+    <section className="mt-6 border-t border-[var(--app-border-muted)] pt-4">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--app-text-subtle)]">
+        Danger zone
+      </p>
+      <p className="mt-1 text-xs leading-snug text-[var(--app-text-muted)]">
+        Delete this food from My food. Logged meals keep their historical snapshots.
+      </p>
+      {deleteError && (
+        <p className="mt-2 text-xs text-[var(--app-danger)]">{deleteError}</p>
+      )}
+      <button
+        type="button"
+        disabled={deleting}
+        onClick={onDelete}
+        className="mt-3 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--app-danger)] transition-colors hover:bg-[var(--app-danger-soft)] hover:text-[var(--app-danger)] disabled:opacity-50"
+      >
+        {deleting ? 'Deleting…' : 'Delete food'}
+      </button>
+    </section>
+  )
+}
+
 export default function FoodDetailPage() {
   const { id } = useParams<{ id?: string }>()
   const navigate = useNavigate()
@@ -103,6 +135,15 @@ export default function FoodDetailPage() {
   const title = isNew
     ? (editorType === 'recipe' ? 'New recipe' : 'New food')
     : (product?.name ?? 'Edit food')
+  const dangerZone = !isNew && product
+    ? (
+        <DeleteFoodDangerZone
+          deleting={deleting}
+          deleteError={deleteError}
+          onDelete={handleDelete}
+        />
+      )
+    : null
 
   return (
     <div className="flex min-h-full flex-col bg-[var(--app-bg)]">
@@ -112,12 +153,7 @@ export default function FoodDetailPage() {
         role="region"
         aria-label={title}
       >
-        {/* Drag handle cue — matches BottomSheet */}
         <div className="flex flex-none flex-col rounded-t-2xl bg-white">
-          <div className="flex justify-center pt-2" aria-hidden>
-            <div className="h-1 w-10 rounded-full bg-slate-300" />
-          </div>
-
           {/* Header — same title row padding + title typography as BottomSheet */}
           <header className="flex flex-none flex-col">
             <div className="flex items-center gap-2 px-4 py-3">
@@ -175,6 +211,7 @@ export default function FoodDetailPage() {
               onSaved={onSaved}
               saveRef={saveRef}
               onCanSaveChange={setCanSave}
+              dangerZone={dangerZone}
             />
           ) : (
             <RecipeEditor
@@ -183,15 +220,13 @@ export default function FoodDetailPage() {
               onSaved={onSaved}
               saveRef={saveRef}
               onCanSaveChange={setCanSave}
+              dangerZone={dangerZone}
             />
           )}
         </div>
 
         {/* Action bar — MealSheet footer pattern; pb clears fixed bottom nav */}
-        <footer className="flex-none space-y-3 border-t border-[var(--app-border-muted)] bg-white px-4 py-5 pb-[max(5rem,calc(4.5rem+env(safe-area-inset-bottom,0px)))]">
-          {deleteError && (
-            <p className="text-center text-xs text-[var(--app-danger)]">{deleteError}</p>
-          )}
+        <footer className="flex-none border-t border-[var(--app-border-muted)] bg-white px-4 py-5 pb-[max(5rem,calc(4.5rem+env(safe-area-inset-bottom,0px)))]">
           <button
             type="button"
             disabled={!canSave || saving}
@@ -200,16 +235,6 @@ export default function FoodDetailPage() {
           >
             {saving ? 'Saving\u2026' : isNew ? 'Save' : 'Save changes'}
           </button>
-          {!isNew && product && (
-            <button
-              type="button"
-              disabled={deleting}
-              onClick={handleDelete}
-              className="w-full py-2 text-center text-sm font-medium text-[var(--app-danger)] transition-colors hover:text-[var(--app-danger)]/90 disabled:opacity-50"
-            >
-              {deleting ? 'Deleting\u2026' : 'Delete food'}
-            </button>
-          )}
         </footer>
       </div>
     </div>
