@@ -20,8 +20,8 @@ export const DEFAULT_WORLD_MAP_LAYOUT: WorldMapLayout = {
   nodeScale: 1,
 }
 
-/** Center-to-side route pattern keeps adjacent arena segments visually even. */
-const X_PATTERN = [0.50, 0.30, 0.50, 0.70, 0.50, 0.30]
+/** Center-to-side route pattern with a mild rightward climb after the first side step. */
+const X_PATTERN = [0.50, 0.30, 0.58, 0.70, 0.50, 0.30]
 
 export function resolveNodePosition(
   arena: ArenaListArena,

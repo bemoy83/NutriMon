@@ -51,42 +51,29 @@ export default function BattleHubPage() {
       className="app-page min-h-screen px-4 py-6 pb-24"
       style={{ background: 'linear-gradient(165deg, #0c1a10 0%, #111c16 100%)' }}
     >
-      <h1 className="mb-6 text-xl font-bold text-white">Battle Hub</h1>
-
-      {/* Compact creature + readiness card */}
-      {companion ? (
-        <div className="app-card mb-4 px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="truncate font-semibold text-[var(--app-text-primary)]">
-                {companion.name}
-              </p>
-              <div className="mt-1 flex flex-wrap gap-2">
-                <span className="text-xs capitalize text-[var(--app-text-muted)]">
-                  Lv{companion.level} {companion.stage}
-                </span>
-                <span
-                  className={`text-xs font-medium capitalize ${getConditionTone(companion.currentCondition)}`}
-                >
-                  {companion.currentCondition}
-                </span>
-              </div>
-            </div>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h1 className="text-xl font-bold text-white">Battle Hub</h1>
+        {companion ? (
+          <button
+            type="button"
+            className="flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1.5 text-left shadow-sm backdrop-blur-md"
+            onClick={() => navigate('/app/creature')}
+            aria-label="View creature readiness"
+          >
             {snapshot ? (
-              <div className="flex-shrink-0 text-right">
-                <div className="rounded-full bg-[var(--app-brand-soft)] px-3 py-1 text-sm font-semibold text-[var(--app-brand)]">
-                  {snapshot.readinessScore}/100
-                </div>
-                <p className="mt-1 text-xs capitalize text-[var(--app-text-muted)]">
-                  {snapshot.readinessBand}
-                </p>
-              </div>
+              <>
+                <span className="text-sm font-bold text-white">{snapshot.readinessScore}</span>
+                <span className="text-xs capitalize text-white/55">{snapshot.readinessBand}</span>
+              </>
             ) : (
-              <p className="flex-shrink-0 text-xs text-[var(--app-text-muted)]">No battle prep</p>
+              <span className="text-xs text-white/55">No battle prep</span>
             )}
-          </div>
-        </div>
-      ) : null}
+            <span className={`text-xs font-semibold capitalize ${getConditionTone(companion.currentCondition)}`}>
+              {companion.currentCondition}
+            </span>
+          </button>
+        ) : null}
+      </div>
 
       {/* World map */}
       {arenaListQuery.isLoading ? (
