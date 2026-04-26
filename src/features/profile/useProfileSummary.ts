@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/app/providers/auth'
-import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
+import { fetchProfile } from './api'
 
 interface ProfileSummary {
   timezone: string | null
@@ -13,17 +13,10 @@ export function useProfileSummary() {
   const { user } = useAuth()
 
   return useQuery({
-    queryKey: queryKeys.profile.summary(user?.id),
+    queryKey: queryKeys.profile.detail(user?.id),
     enabled: !!user,
-    queryFn: async (): Promise<ProfileSummary> => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('timezone, calorie_target, onboarding_completed_at')
-        .eq('user_id', user!.id)
-        .single()
-
-      if (error) throw error
-
+    queryFn: () => fetchProfile(user!.id),
+    select: (data): ProfileSummary => {
       return {
         timezone: data.timezone,
         calorieTarget: data.calorie_target,

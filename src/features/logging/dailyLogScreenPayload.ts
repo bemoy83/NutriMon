@@ -128,7 +128,7 @@ export function mapDailyLogScreenPayload(raw: unknown): DailyLogScreenData {
   return { profile, dailyLog, meals, derived, latestFallback, repeatLastMeal }
 }
 
-/** Streak source aligned with previous useLatestFallback + useDailyLogDerived behavior. */
+/** Streak source from the screen RPC, including same-day derived data and latest fallback metrics. */
 export function habitMetricsForStreak(
   dailyLog: DailyLog | null,
   derived: DailyLogDerivedData,

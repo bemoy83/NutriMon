@@ -4,7 +4,11 @@ import { createMealWithItems, deleteMealTemplate } from './api'
 import type { FoodSource, MealTemplate, Product } from '@/types/domain'
 import type { MealMutationResult } from '@/types/database'
 import { useFoodSourceSearch, useRecentFoodSources } from './useFoodSources'
-import { useInvalidateMealTemplates, useInvalidateProductQueries } from './queryInvalidation'
+import {
+  useInvalidateFoodSourceLists,
+  useInvalidateMealTemplates,
+  useInvalidateUserFoodLibrary,
+} from './queryInvalidation'
 import { useMealTemplates } from './useMealTemplates'
 import BottomSheet from '@/components/ui/BottomSheet'
 import {
@@ -69,7 +73,8 @@ export default function MealSheet({
   const mealMenuRef = useRef<HTMLDivElement | null>(null)
 
   const invalidateDailyLog = useInvalidateDailyLog()
-  const invalidateProducts = useInvalidateProductQueries()
+  const invalidateFoodSources = useInvalidateFoodSourceLists()
+  const invalidateUserFoodLibrary = useInvalidateUserFoodLibrary()
   const invalidateTemplates = useInvalidateMealTemplates()
 
   const deferredSearchQuery = useDeferredValue(searchQuery)
@@ -222,7 +227,7 @@ export default function MealSheet({
         template.id,
       )
       invalidateDailyLog(logDate)
-      invalidateProducts()
+      invalidateFoodSources()
       invalidateTemplates()
       onAdded?.(result)
       onClose()
@@ -231,7 +236,7 @@ export default function MealSheet({
     } finally {
       setSubmitting(false)
     }
-  }, [logDate, loggedAt, mealType, invalidateDailyLog, invalidateProducts, invalidateTemplates, onAdded, onClose])
+  }, [logDate, loggedAt, mealType, invalidateDailyLog, invalidateFoodSources, invalidateTemplates, onAdded, onClose])
 
   const handleDeleteTemplate = useCallback(async (templateId: string) => {
     try {
@@ -261,7 +266,7 @@ export default function MealSheet({
       }))
       const result = await createMealWithItems(logDate, loggedAt, apiItems, mealType)
       invalidateDailyLog(logDate)
-      invalidateProducts()
+      invalidateFoodSources()
       onAdded?.(result)
       onClose()
     } catch (error) {
@@ -269,7 +274,7 @@ export default function MealSheet({
     } finally {
       setSubmitting(false)
     }
-  }, [items, submitting, onItemsSelected, logDate, loggedAt, mealType, invalidateDailyLog, invalidateProducts, onAdded, onClose])
+  }, [items, submitting, onItemsSelected, logDate, loggedAt, mealType, invalidateDailyLog, invalidateFoodSources, onAdded, onClose])
 
   const browseTranslate = sheetView === 'browse' ? 'translateX(0)' : 'translateX(-100%)'
   const detailTranslate = sheetView !== 'browse' ? 'translateX(0)' : 'translateX(100%)'
@@ -369,9 +374,10 @@ export default function MealSheet({
   }, [])
 
   const onProductSave = useCallback(() => {
-    invalidateProducts()
+    invalidateUserFoodLibrary()
+    invalidateFoodSources({ includeSearch: true })
     setSheetView('browse')
-  }, [invalidateProducts])
+  }, [invalidateUserFoodLibrary, invalidateFoodSources])
 
   const onProductSaveAndAdd = useCallback(
     (product: Product) => {
@@ -395,12 +401,13 @@ export default function MealSheet({
         pieceLabel: null,
         totalMassG: null,
       }
-      invalidateProducts()
+      invalidateUserFoodLibrary()
+      invalidateFoodSources({ includeSearch: true })
       reinitializeServingDraft(foodSource)
       setServingTarget(foodSource)
       setSheetView('serving')
     },
-    [invalidateProducts, reinitializeServingDraft],
+    [invalidateUserFoodLibrary, invalidateFoodSources, reinitializeServingDraft],
   )
 
   const onProductCancel = useCallback(() => {

@@ -4,16 +4,16 @@
  */
 export const queryKeys = {
   profile: {
-    summary: (userId: string | undefined) => ['profile', userId] as const,
-    full: (userId: string | undefined) => ['profile-full', userId] as const,
+    /** Full profile row; callers can use React Query `select` for smaller view models. */
+    detail: (userId: string | undefined) => ['profile', userId] as const,
   },
   foodSources: {
-    prefix: () => ['food-sources'] as const,
+    recentPrefix: (userId: string | undefined) => ['food-sources', 'recent', userId] as const,
     recent: (userId: string | undefined) => ['food-sources', 'recent', userId] as const,
+    frequentPrefix: (userId: string | undefined) => ['food-sources', 'frequent', userId] as const,
     frequent: (userId: string | undefined) => ['food-sources', 'frequent', userId] as const,
+    searchPrefix: (userId: string | undefined) => ['food-sources', 'search', userId] as const,
     search: (userId: string | undefined, q: string) => ['food-sources', 'search', userId, q] as const,
-    map: (userId: string | undefined, productIds: string[], catalogIds: string[]) =>
-      ['food-sources', 'map', userId, productIds, catalogIds] as const,
   },
   myFood: {
     prefix: () => ['my-food-products'] as const,

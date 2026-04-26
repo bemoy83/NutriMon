@@ -30,9 +30,6 @@ export interface LatestFallbackMetricsData {
   creatureStats: CreatureStats | null
 }
 
-export const DAILY_LOG_CORE_QUERY_KEY = 'daily-log-core'
-export const DAILY_LOG_DERIVED_QUERY_KEY = 'daily-log-derived'
-export const LATEST_FALLBACK_METRICS_QUERY_KEY = 'latest-fallback-metrics'
 /** Replaces most per-screen keys when using `get_daily_log_screen_payload` RPC. */
 export const DAILY_LOG_SCREEN_QUERY_KEY = 'daily-log-screen'
 
@@ -41,20 +38,10 @@ export function useInvalidateDailyLog() {
   const { user } = useAuth()
 
   return (date?: string) => {
-    const coreQueryKey = date
-      ? [DAILY_LOG_CORE_QUERY_KEY, user?.id, date]
-      : [DAILY_LOG_CORE_QUERY_KEY, user?.id]
-    const derivedQueryKey = date
-      ? [DAILY_LOG_DERIVED_QUERY_KEY, user?.id, date]
-      : [DAILY_LOG_DERIVED_QUERY_KEY, user?.id]
-
-    qc.invalidateQueries({ queryKey: coreQueryKey })
-    qc.invalidateQueries({ queryKey: derivedQueryKey })
     const screenQueryKey = date
       ? [DAILY_LOG_SCREEN_QUERY_KEY, user?.id, date]
       : [DAILY_LOG_SCREEN_QUERY_KEY, user?.id]
     qc.invalidateQueries({ queryKey: screenQueryKey })
-    qc.invalidateQueries({ queryKey: [LATEST_FALLBACK_METRICS_QUERY_KEY, user?.id] })
     qc.invalidateQueries({ queryKey: queryKeys.creature.statsLatest(user?.id) })
     qc.invalidateQueries({ queryKey: [BATTLE_HUB_QUERY_KEY, user?.id] })
   }

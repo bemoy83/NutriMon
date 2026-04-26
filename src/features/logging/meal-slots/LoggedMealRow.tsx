@@ -5,7 +5,7 @@ import { initItemsFromMeal } from '../itemHelpers'
 import { buildMealUpdateItemsFromEditableItems } from '../mealPayloads'
 import { updateMealWithItems } from '../api'
 import { useInvalidateDailyLog } from '../useDailyLog'
-import { useInvalidateProductQueries } from '../queryInvalidation'
+import { useInvalidateFoodSourceLists } from '../queryInvalidation'
 import type { Item } from '../types'
 import type { MealMutationResult } from '@/types/database'
 import ServingEditSheet from '../ServingEditSheet'
@@ -24,7 +24,7 @@ export function LoggedMealRow({
 }) {
   const [servingEditTarget, setServingEditTarget] = useState<{ item: Item; idx: number } | null>(null)
   const invalidateDailyLog = useInvalidateDailyLog()
-  const invalidateProducts = useInvalidateProductQueries()
+  const invalidateFoodSources = useInvalidateFoodSourceLists()
 
   const items = meal.items ?? []
   const editableItems = initItemsFromMeal(meal)
@@ -43,7 +43,7 @@ export function LoggedMealRow({
       meal.mealName,
     )
     invalidateDailyLog(logDate)
-    invalidateProducts()
+    invalidateFoodSources()
     onUpdateSuccess(result)
     setServingEditTarget(null)
   }
@@ -58,7 +58,7 @@ export function LoggedMealRow({
       meal.mealName,
     )
     invalidateDailyLog(logDate)
-    invalidateProducts()
+    invalidateFoodSources()
     onUpdateSuccess(result)
     setServingEditTarget(null)
   }

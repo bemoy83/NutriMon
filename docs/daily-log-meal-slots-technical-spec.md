@@ -269,7 +269,7 @@ No change expected if `daily_logs.total_calories` remains correct.
 
 | Area | File(s) |
 | --- | --- |
-| Core fetch | `src/features/logging/useDailyLogCore.ts` — order: slot order then `Other`/NULL by `logged_at`. |
+| Core fetch | `src/features/logging/useDailyLogScreen.ts` / `get_daily_log_screen_payload` — order is applied by `compareMealsForDailyLog`. |
 | List UI | `src/features/logging/MealSlots.tsx` (+ `meal-slots/*`) — fixed Breakfast–Snack cards; expand for logged meals. |
 | Page | `src/pages/app/DailyLogPage.tsx` — toast **undo only after delete meal** (restore snapshot); no undo on add/append; `loggedMealTypes` / repeat CTA logic — **audit**. |
 | API | `src/features/logging/api.ts` — new `deleteMealItem`, response typing. |

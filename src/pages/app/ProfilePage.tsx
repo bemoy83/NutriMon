@@ -3,13 +3,12 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import type { ProfileRow } from '@/types/database'
 import { useAuth } from '@/app/providers/auth'
 import { useNavigate, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { CALORIE_TARGET_MIN, CALORIE_TARGET_MAX } from '@/lib/constants'
 import { queryKeys } from '@/lib/queryKeys'
-import { PROFILE_FULL_SELECT } from '@/lib/supabaseSelect'
+import { fetchProfile } from '@/features/profile/api'
 import LoadingState from '@/components/ui/LoadingState'
 import { PageTitle, SectionHeader } from '@/components/ui/AppHeadings'
 
@@ -39,17 +38,9 @@ export default function ProfilePage() {
   const [serverError, setServerError] = useState<string | null>(null)
 
   const profileQuery = useQuery({
-    queryKey: queryKeys.profile.full(user?.id),
+    queryKey: queryKeys.profile.detail(user?.id),
     enabled: !!user,
-    queryFn: async (): Promise<ProfileRow> => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(PROFILE_FULL_SELECT)
-        .eq('user_id', user!.id)
-        .single()
-      if (error) throw error
-      return data as unknown as ProfileRow
-    },
+    queryFn: () => fetchProfile(user!.id),
   })
 
   const profile = profileQuery.data
@@ -89,8 +80,7 @@ export default function ProfilePage() {
       return
     }
 
-    qc.invalidateQueries({ queryKey: queryKeys.profile.summary(user.id) })
-    qc.invalidateQueries({ queryKey: queryKeys.profile.full(user.id) })
+    qc.invalidateQueries({ queryKey: queryKeys.profile.detail(user.id) })
     setSaveSuccess(true)
     setTimeout(() => setSaveSuccess(false), 3000)
   }

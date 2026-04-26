@@ -3,7 +3,7 @@ import type { Meal } from '@/types/domain'
 import { MacroPills } from '@/components/ui/MacroPills'
 import { getMealTypeTheme, type MealType } from '@/lib/mealType'
 import { useInvalidateDailyLog } from '../useDailyLog'
-import { useInvalidateMealTemplates, useInvalidateProductQueries } from '../queryInvalidation'
+import { useInvalidateFoodSourceLists, useInvalidateMealTemplates } from '../queryInvalidation'
 import { deleteMeal, saveMealAsTemplate } from '../api'
 import type { DeleteMealResult, MealMutationResult } from '@/types/database'
 import { MealSlotGlyph } from './MealSlotGlyph'
@@ -35,7 +35,7 @@ export function SlotCard({
   const accentColor = theme?.text ?? 'var(--app-brand)'
   const accentBg = theme?.bg ?? 'var(--app-brand-soft)'
   const invalidateDailyLog = useInvalidateDailyLog()
-  const invalidateProducts = useInvalidateProductQueries()
+  const invalidateFoodSources = useInvalidateFoodSourceLists()
   const invalidateTemplates = useInvalidateMealTemplates()
 
   const totalCal = meals.reduce((s, m) => s + m.totalCalories, 0)
@@ -82,7 +82,7 @@ export function SlotCard({
         onDeleteSuccess(meal, r)
       }
       invalidateDailyLog(logDate)
-      invalidateProducts()
+      invalidateFoodSources()
       setExpanded(false)
     } finally {
       setDeleting(false)

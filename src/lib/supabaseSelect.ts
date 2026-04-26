@@ -2,17 +2,6 @@
  * Explicit PostgREST `select` lists — avoids `select('*')` and documents mapper expectations.
  */
 
-export const FOOD_CATALOG_ITEM_MAP_SELECT = [
-  'id',
-  'name',
-  'calories',
-  'protein_g',
-  'carbs_g',
-  'fat_g',
-  'default_serving_amount',
-  'default_serving_unit',
-].join(', ')
-
 export const HABIT_METRICS_LATEST_SELECT = [
   'id',
   'user_id',

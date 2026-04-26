@@ -140,11 +140,11 @@ You are implementing Slice F only for NutriMon Daily Log client.
 Read first:
 - docs/daily-log-meal-slots-technical-spec.md — §10 (files), §10.4 (always-visible kcal + P/C/F per meal), §9 undo (toast only for delete meal → restore snapshot)
 - docs/daily-log-meal-centric-scope.md — §7.1 Q3–Q4
-- src/features/logging/MealSlots.tsx, DailyLogPage.tsx, MealSheet.tsx, useDailyLogCore.ts, api.ts
+- src/features/logging/MealSlots.tsx, DailyLogPage.tsx, MealSheet.tsx, useDailyLogScreen.ts, dailyLogScreenPayload.ts, api.ts
 
 Goal:
 1. MealSlots / slot card: show meal total calories AND protein/carbs/fat in the default (non-expanded) view per §10.4 (adjust layout; line list can still expand).
-2. useDailyLogCore: order meals predictably (e.g. Breakfast → Lunch → Dinner → Snack → then Other/null by logged_at).
+2. Daily log screen payload mapping: order meals predictably (e.g. Breakfast → Lunch → Dinner → Snack → then Other/null by logged_at).
 3. DailyLogPage: **no** toast undo after add/append/edit. **Do** offer toast undo after **delete entire meal** using `restore_meal_from_snapshot` + client-held meal snapshot (§9, §7.5).
 4. Copy/labels: FAB/sheet should read as adding to the meal slot (minimal string changes OK).
 

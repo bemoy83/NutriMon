@@ -20,7 +20,7 @@ vi.mock('../useDailyLog', () => ({
 
 vi.mock('../queryInvalidation', () => ({
   useInvalidateMealTemplates: () => invalidateTemplatesMock,
-  useInvalidateProductQueries: () => invalidateProductsMock,
+  useInvalidateFoodSourceLists: () => invalidateProductsMock,
 }))
 
 const meal: Meal = {

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { createMealWithItems } from '@/features/logging/api'
-import { useInvalidateProductQueries } from '@/features/logging/queryInvalidation'
+import { useInvalidateFoodSourceLists } from '@/features/logging/queryInvalidation'
 import type { MealMutationResult } from '@/types/database'
 import type { FoodSource } from '@/types/domain'
 import { useFrequentFoodSources, useRecentFoodSources } from './useFoodSources'
@@ -43,7 +43,7 @@ function ProductButton({
 export default function InlineQuickAdd({ logDate, loggedAt, onCreated }: Props) {
   const recentQuery = useRecentFoodSources()
   const frequentQuery = useFrequentFoodSources()
-  const invalidateProducts = useInvalidateProductQueries()
+  const invalidateFoodSources = useInvalidateFoodSourceLists()
   const [addingProductId, setAddingProductId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -65,7 +65,7 @@ export default function InlineQuickAdd({ logDate, loggedAt, onCreated }: Props) 
         ],
         getDefaultMealType(loggedAt),
       )
-      invalidateProducts()
+      invalidateFoodSources()
       onCreated(result)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to add meal')

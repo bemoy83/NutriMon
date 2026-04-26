@@ -39,8 +39,7 @@ export interface Meal {
 ## 2. Page composition (`DailyLogPage`)
 
 - **Route:** `/app/log/:date` → `DailyLogPage` reads `date`, loads profile (timezone, calorie target).
-- **Core data:** `useDailyLogCore(logDate)` → `dailyLog` + `meals[]`.
-- **Derived data:** `useDailyLogDerived(logDate)` → evaluations, feedback, creature stats, habit metrics (separate from the meal list).
+- **Screen data:** `useDailyLogScreen(logDate)` → profile summary, `dailyLog`, ordered `meals[]`, derived metrics, latest fallback metrics, and repeat-last-meal preview from the `get_daily_log_screen_payload` RPC.
 - **Header:** `DailyLogHeader` — day navigation, calorie ring vs target, streak, **day-level** macro sums (computed on the page by flattening **all** items across **all** meals).
 
 ```113:117:src/pages/app/DailyLogPage.tsx
@@ -60,34 +59,11 @@ export interface Meal {
 
 ---
 
-## 3. Loading and ordering (`useDailyLogCore`)
+## 3. Loading and ordering (`useDailyLogScreen`)
 
-- Loads `daily_logs` for user + `log_date` (or returns empty if missing).
-- Loads **all** `meals` for that `daily_log_id`, ordered by **`logged_at` descending** (newest cards first).
-- Loads **all** `meal_items` for those meal IDs, groups in memory, maps to `Meal[]`.
-
-```31:49:src/features/logging/useDailyLogCore.ts
-      const { data: mealRows } = await supabase
-        .from('meals')
-        .select('*')
-        .eq('user_id', uid)
-        .eq('daily_log_id', logRow.id)
-        .order('logged_at', { ascending: false })
-
-      const mealIds = (mealRows ?? []).map((meal) => meal.id)
-      const { data: itemRows } = mealIds.length > 0
-        ? await supabase
-            .from('meal_items')
-            .select('*')
-            .in('meal_id', mealIds)
-        : { data: [] }
-      const itemsByMealId = groupMealItemsByMealId(itemRows)
-
-      return {
-        dailyLog: mapDailyLog(logRow),
-        meals: (mealRows ?? []).map((meal) => mapMeal(meal, itemsByMealId[meal.id] ?? [])),
-      }
-```
+- Loads the full daily log screen payload through `get_daily_log_screen_payload`.
+- Maps meals and meal items in `dailyLogScreenPayload.ts`.
+- Applies `compareMealsForDailyLog` so slot order is predictable before rendering.
 
 **Gap anchor:** No `GROUP BY meal_type`, no “open meal session,” no merge of rows—**flat list of meal entities**.
 
@@ -180,7 +156,7 @@ export async function createMealWithItems(
 
 ## 9. Tests and related surfaces
 
-- **`src/pages/app/__tests__/DailyLogPage.test.tsx`** — mocks `useDailyLogCore` / `useDailyLogDerived`; extend when grouping or CTAs change.
+- **`src/pages/app/__tests__/DailyLogPage.test.tsx`** — mocks daily-log screen hooks; extend when grouping or CTAs change.
 - **Finalize / creature preview** — tied to mutations and day finalization, not to meal-slot grouping.
 
 ---

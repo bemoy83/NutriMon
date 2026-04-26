@@ -4,7 +4,10 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/app/providers/auth'
 import { getProductByIdForUser, deleteProduct } from '@/features/foods/api'
 import { queryKeys } from '@/lib/queryKeys'
-import { useInvalidateProductQueries } from '@/features/logging/queryInvalidation'
+import {
+  useInvalidateFoodSourceLists,
+  useInvalidateUserFoodLibrary,
+} from '@/features/logging/queryInvalidation'
 import LoadingState from '@/components/ui/LoadingState'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
 import RecipeEditor from '@/features/foods/RecipeEditor'
@@ -83,7 +86,8 @@ export default function FoodDetailPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const saveRef = useRef<SaveHandle>(null)
 
-  const invalidateProducts = useInvalidateProductQueries()
+  const invalidateUserFoodLibrary = useInvalidateUserFoodLibrary()
+  const invalidateFoodSources = useInvalidateFoodSourceLists()
 
   const productQuery = useQuery({
     queryKey: queryKeys.myFood.product(user?.id, id),
@@ -94,7 +98,8 @@ export default function FoodDetailPage() {
   const product = isNew ? null : productQuery.data ?? null
 
   function onSaved() {
-    invalidateProducts()
+    invalidateUserFoodLibrary()
+    invalidateFoodSources({ includeSearch: true })
     navigate('/app/my-food')
   }
 
@@ -117,7 +122,8 @@ export default function FoodDetailPage() {
     setDeleteError(null)
     try {
       await deleteProduct(product.id)
-      invalidateProducts()
+      invalidateUserFoodLibrary()
+      invalidateFoodSources({ includeSearch: true })
       navigate('/app/my-food')
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : 'Failed to delete')
