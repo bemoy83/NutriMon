@@ -8,6 +8,7 @@ import {
 } from '@/features/logging/DailyLogHeader'
 import DailyLogFinalizeCta from '@/features/logging/DailyLogFinalizeCta'
 import DailyLogRepeatCta from '@/features/logging/DailyLogRepeatCta'
+import WaterTracker from '@/features/logging/WaterTracker'
 import UndoToast from '@/features/logging/UndoToast'
 import LoadingState from '@/components/ui/LoadingState'
 import { CardTitle, SectionHeader } from '@/components/ui/AppHeadings'
@@ -102,6 +103,10 @@ export default function DailyLogPage() {
           onUpdateSuccess={p.onUpdateSuccess}
           onDeleteSuccess={p.onDeleteSuccess}
         />
+      </div>
+
+      <div className="px-4 mt-3">
+        <WaterTracker date={date} />
       </div>
 
       {!p.isFinalized && (
