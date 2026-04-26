@@ -45,47 +45,46 @@ function TerrainBands({ bands }: { bands: Band[] }) {
   return (
     <g>
       <defs>
-        {bands.map(({ arenaId, accent, nodePos }) => (
-          <radialGradient
-            key={arenaId}
-            id={`zone-${arenaId}`}
-            cx={nodePos.x}
-            cy={nodePos.y}
-            r={200}
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop offset="0%"   stopColor={accent} stopOpacity={0.22} />
-            <stop offset="55%"  stopColor={accent} stopOpacity={0.07} />
-            <stop offset="100%" stopColor={accent} stopOpacity={0} />
-          </radialGradient>
-        ))}
-        {bands.map(({ arenaId, top, bottom }) => (
-          <clipPath key={arenaId} id={`clip-zone-${arenaId}`}>
-            <rect x={0} y={top} width={MAP_CANVAS_W} height={bottom - top} />
-          </clipPath>
-        ))}
+        {bands.map(({ arenaId, accent, nodePos, top, bottom }) => {
+          const height = Math.max(bottom - top, 1)
+          const feather = Math.min(86, height * 0.62)
+          const topFade = Math.max(0, top - feather)
+          const topBody = top + Math.min(feather, (nodePos.y - top) * 0.75)
+          const bottomBody = bottom - Math.min(feather, (bottom - nodePos.y) * 0.75)
+          const bottomFade = Math.min(MAP_CANVAS_H, bottom + feather)
+          const toOffset = (y: number) => `${(y / MAP_CANVAS_H) * 100}%`
+
+          return (
+            <linearGradient
+              key={arenaId}
+              id={`zone-${arenaId}`}
+              x1={0}
+              y1={0}
+              x2={0}
+              y2={MAP_CANVAS_H}
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop offset="0%" stopColor={accent} stopOpacity={0} />
+              <stop offset={toOffset(topFade)} stopColor={accent} stopOpacity={0} />
+              <stop offset={toOffset(topBody)} stopColor={accent} stopOpacity={0.09} />
+              <stop offset={toOffset(nodePos.y)} stopColor={accent} stopOpacity={0.18} />
+              <stop offset={toOffset(bottomBody)} stopColor={accent} stopOpacity={0.09} />
+              <stop offset={toOffset(bottomFade)} stopColor={accent} stopOpacity={0} />
+              <stop offset="100%" stopColor={accent} stopOpacity={0} />
+            </linearGradient>
+          )
+        })}
       </defs>
 
-      {/* Zone fill rects — each clipped to its vertical band */}
+      {/* Full-width feathered terrain zones. Adjacent zones overlap to avoid hard seams. */}
       {bands.map(({ arenaId }) => (
         <rect
           key={arenaId}
-          x={0} y={0}
+          x={0}
+          y={0}
           width={MAP_CANVAS_W}
           height={MAP_CANVAS_H}
           fill={`url(#zone-${arenaId})`}
-          clipPath={`url(#clip-zone-${arenaId})`}
-        />
-      ))}
-
-      {/* Subtle divider lines at band boundaries */}
-      {bands.slice(0, -1).map(({ arenaId, bottom }) => (
-        <line
-          key={`div-${arenaId}`}
-          x1={0} y1={bottom}
-          x2={MAP_CANVAS_W} y2={bottom}
-          stroke="rgba(255,255,255,0.06)"
-          strokeWidth={1}
         />
       ))}
     </g>
@@ -118,16 +117,43 @@ export function WorldMapCanvas({ arenas, companion, onSelectArena }: WorldMapCan
         }
       `}</style>
 
-      <div style={{ width: '100%', maxWidth: MAP_CANVAS_W, margin: '0 auto' }}>
+      <div
+        style={{
+          position: 'relative',
+          width: '100vw',
+          marginLeft: 'calc(50% - 50vw)',
+          marginRight: 'calc(50% - 50vw)',
+        }}
+      >
+        <svg
+          viewBox={`0 0 ${MAP_CANVAS_W} ${MAP_CANVAS_H}`}
+          preserveAspectRatio="none"
+          width="100%"
+          height="100%"
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'block',
+            pointerEvents: 'none',
+          }}
+        >
+          <TerrainBands bands={bands} />
+        </svg>
+
         <svg
           viewBox={`0 0 ${MAP_CANVAS_W} ${MAP_CANVAS_H}`}
           width="100%"
-          style={{ display: 'block', overflow: 'visible' }}
+          style={{
+            position: 'relative',
+            zIndex: 1,
+            display: 'block',
+            overflow: 'visible',
+            maxWidth: MAP_CANVAS_W,
+            margin: '0 auto',
+          }}
           aria-label="Arena world map"
         >
-          {/* Layer 1: terrain zone bands */}
-          <TerrainBands bands={bands} />
-
           {/* Layer 2: path connectors */}
           {sorted.map((arena, i) => {
             if (i === 0) return null
