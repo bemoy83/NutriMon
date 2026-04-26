@@ -79,15 +79,22 @@ export default function ProductForm({ initialProduct = null, initialValues, onSa
   const calPer100 = useWatch({ control, name: 'caloriesPer100g' })
   const portionG = useWatch({ control, name: 'labelPortionGrams' })
 
+  const ivName = initialValues?.name
+  const ivCal = initialValues?.caloriesPer100g
+  const ivProtein = initialValues?.proteinPer100g
+  const ivCarbs = initialValues?.carbsPer100g
+  const ivFat = initialValues?.fatPer100g
+  const ivPortion = initialValues?.labelPortionGrams
+
   useEffect(() => {
     if (!initialProduct) {
       reset({
-        name: initialValues?.name ?? '',
-        caloriesPer100g: initialValues?.caloriesPer100g ?? 0,
-        proteinPer100g: initialValues?.proteinPer100g ?? null,
-        carbsPer100g: initialValues?.carbsPer100g ?? null,
-        fatPer100g: initialValues?.fatPer100g ?? null,
-        labelPortionGrams: initialValues?.labelPortionGrams ?? null,
+        name: ivName ?? '',
+        caloriesPer100g: ivCal ?? 0,
+        proteinPer100g: ivProtein ?? null,
+        carbsPer100g: ivCarbs ?? null,
+        fatPer100g: ivFat ?? null,
+        labelPortionGrams: ivPortion ?? null,
       })
       return
     }
@@ -103,7 +110,7 @@ export default function ProductForm({ initialProduct = null, initialValues, onSa
       fatPer100g: initialProduct.fatPer100g ?? initialProduct.fatG ?? null,
       labelPortionGrams: initialProduct.labelPortionGrams,
     })
-  }, [initialProduct, reset])
+  }, [initialProduct, reset, ivName, ivCal, ivProtein, ivCarbs, ivFat, ivPortion])
 
   async function save(data: FormData): Promise<Product | null> {
     if (!user) return null
