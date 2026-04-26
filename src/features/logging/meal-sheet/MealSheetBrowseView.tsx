@@ -12,7 +12,6 @@ import {
 import type { Item } from '../types'
 import { MealTemplateRow } from './MealTemplateRow'
 import BarcodeSearchInput from './BarcodeSearchInput'
-import type { KassalappProduct } from '@/lib/kassalapp'
 
 function InsetRowDivider() {
   return <div aria-hidden className="mx-4 h-px bg-[var(--app-border-muted)]" />
@@ -36,7 +35,6 @@ export interface MealSheetBrowseViewProps {
   onLogTemplate: (t: MealTemplate) => void
   onDeleteTemplate: (id: string) => void
   onOpenCreateFood: () => void
-  onBarcodeProduct: (product: KassalappProduct) => void
   onOpenCameraScanner: () => void
   footer: ReactNode
 }
@@ -59,7 +57,6 @@ export default function MealSheetBrowseView({
   onLogTemplate,
   onDeleteTemplate,
   onOpenCreateFood,
-  onBarcodeProduct,
   onOpenCameraScanner,
   footer,
 }: MealSheetBrowseViewProps) {

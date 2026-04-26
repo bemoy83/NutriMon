@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useBarcodeScanner } from './useBarcodeScanner'
 
 const EAN_RE = /^\d{8,14}$/
@@ -21,12 +21,6 @@ export default function BarcodeScannerView({
   const { videoRef, status, errorMessage: cameraError } = useBarcodeScanner({ active, onDetect: onEan })
   const [ean, setEan] = useState('')
   const [manualError, setManualError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!active) return
-    setEan('')
-    setManualError(null)
-  }, [active])
 
   function handleEanChange(e: React.ChangeEvent<HTMLInputElement>) {
     const digits = e.target.value.replace(/\D/g, '')

@@ -20,21 +20,16 @@ export function useBarcodeScanner({
   useEffect(() => { onDetectRef.current = onDetect })
 
   useEffect(() => {
-    if (!active) {
-      setStatus('idle')
-      setErrorMessage(null)
-      return
-    }
+    if (!active) return
 
     const reader = new BrowserMultiFormatReader()
     let stopped = false
     let controls: { stop: () => void } | null = null
     let lastEan: string | null = null
 
-    setStatus('requesting')
-    setErrorMessage(null)
-
     async function start() {
+      setStatus('requesting')
+      setErrorMessage(null)
       try {
         if (!videoRef.current) return
         controls = await reader.decodeFromConstraints(
@@ -80,5 +75,10 @@ export function useBarcodeScanner({
     }
   }, [active])
 
-  return { videoRef, status, errorMessage }
+  // when inactive, always surface idle/null regardless of internal state
+  return {
+    videoRef,
+    status: active ? status : 'idle' as ScanStatus,
+    errorMessage: active ? errorMessage : null,
+  }
 }

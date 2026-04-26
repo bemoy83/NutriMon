@@ -76,6 +76,7 @@ export default function MealSheet({
   const [productFormPrefill, setProductFormPrefill] = useState<ProductFormPrefill | undefined>()
   const [scanLoading, setScanLoading] = useState(false)
   const [scanError, setScanError] = useState<string | null>(null)
+  const [scanKey, setScanKey] = useState(0)
   const mealMenuRef = useRef<HTMLDivElement | null>(null)
 
   const invalidateDailyLog = useInvalidateDailyLog()
@@ -492,8 +493,7 @@ export default function MealSheet({
             onLogTemplate={handleLogTemplate}
             onDeleteTemplate={handleDeleteTemplate}
             onOpenCreateFood={onOpenCreateFood}
-            onBarcodeProduct={onBarcodeProduct}
-            onOpenCameraScanner={() => { setScanError(null); setSheetView('scan') }}
+            onOpenCameraScanner={() => { setScanError(null); setScanKey(k => k + 1); setSheetView('scan') }}
             footer={(
               <MealSheetBrowseFooter
                 submitError={submitError}
@@ -516,6 +516,7 @@ export default function MealSheet({
           style={{ transform: scanTranslate }}
         >
           <BarcodeScannerView
+            key={scanKey}
             active={sheetView === 'scan'}
             onEan={handleBarcodeEan}
             barcodeLoading={scanLoading}
