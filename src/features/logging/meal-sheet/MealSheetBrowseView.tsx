@@ -61,7 +61,7 @@ export default function MealSheetBrowseView({
           value={searchQuery}
           onChange={(e) => onSearchQueryChange(e.target.value)}
           placeholder="Search foods…"
-          className="corner-squircle app-input box-border h-10 w-full px-4 text-sm leading-snug !rounded-[var(--app-radius-lg)]"
+          className="app-input box-border h-10 w-full px-4 text-sm leading-snug !rounded-[var(--app-radius-lg)]"
         />
       </div>
 
@@ -95,7 +95,7 @@ export default function MealSheetBrowseView({
                 subtitle={`${getItemKcal(item)} kcal · ${getPendingItemServingLabel(item)}`}
                 leading={
                   item.foodSource?.kind === 'composite' ? (
-                    <svg className="w-4 h-4 text-[var(--app-brand)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4 text-[var(--app-warning)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 6h14M5 10h14M5 14h10" />
                     </svg>
                   ) : (
@@ -159,7 +159,7 @@ export default function MealSheetBrowseView({
                     subtitle={`${Math.round(fs.caloriesPer100g)} kcal / 100g${fs.labelPortionGrams ? ` · label portion ${fs.labelPortionGrams}g` : ''}`}
                     leading={
                       fs.kind === 'composite' ? (
-                        <svg className="w-4 h-4 text-[var(--app-brand)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-4 h-4 text-[var(--app-warning)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 6h14M5 10h14M5 14h10" />
                         </svg>
                       ) : (

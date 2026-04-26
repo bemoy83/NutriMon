@@ -21,6 +21,10 @@ export function MealSheetBrowseFooter({
   mealCtaDisabledStyle: CSSProperties | undefined
   onSubmit: () => void
 }) {
+  const disabledStyle = mealCtaDisabledStyle
+    ? { ...mealCtaDisabledStyle, color: 'var(--app-input-placeholder)' }
+    : undefined
+
   return (
     <div className="flex-none border-t border-[var(--app-border-muted)] bg-white px-4 py-5">
       {submitError && <p className="pb-2 text-xs text-[var(--app-danger)]">{submitError}</p>}
@@ -34,7 +38,7 @@ export function MealSheetBrowseFooter({
         onClick={onSubmit}
         disabled={browseSubmitDisabled}
         className="app-button-primary w-full py-3 !rounded-xl"
-        style={browseSubmitDisabled ? mealCtaDisabledStyle : mealCtaStyle}
+        style={browseSubmitDisabled ? disabledStyle : mealCtaStyle}
       >
         {submitting
           ? 'Adding…'
@@ -61,6 +65,10 @@ export function MealSheetServingFooter({
   mealType: string
   onConfirm: () => void
 }) {
+  const disabledStyle = mealCtaDisabledStyle
+    ? { ...mealCtaDisabledStyle, color: 'var(--app-input-placeholder)' }
+    : undefined
+
   return (
     <div className="flex-none border-t border-[var(--app-border-muted)] bg-white px-4 py-5">
       <button
@@ -68,7 +76,7 @@ export function MealSheetServingFooter({
         onClick={onConfirm}
         disabled={servingConfirmDisabled}
         className="app-button-primary w-full py-3 !rounded-xl"
-        style={servingConfirmDisabled ? mealCtaDisabledStyle : mealCtaStyle}
+        style={servingConfirmDisabled ? disabledStyle : mealCtaStyle}
       >
         {isEditingExisting ? 'Update' : `Add to ${mealType}`}
       </button>

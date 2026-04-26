@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import LoadingState from '@/components/ui/LoadingState'
 import EmptyState from '@/components/ui/EmptyState'
+import { PageTitle } from '@/components/ui/AppHeadings'
 import { StatBar } from '@/components/ui/StatBar'
 import CreatureSprite from '@/components/ui/CreatureSprite'
 import { ReadinessPanel } from '@/components/battle/ReadinessPanel'
@@ -63,7 +64,7 @@ export default function CreaturePage() {
 
   return (
     <div className="app-page min-h-full px-4 py-6 pb-24">
-      <h1 className="mb-6 text-xl font-bold text-[var(--app-text-primary)]">Your Companion</h1>
+      <PageTitle>Your Companion</PageTitle>
 
       <div className="app-card overflow-hidden">
         <div className="bg-gradient-to-br from-[var(--app-brand-soft)] via-[var(--app-surface)] to-[var(--app-surface-elevated)] px-5 py-6">

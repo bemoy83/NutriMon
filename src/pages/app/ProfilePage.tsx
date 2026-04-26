@@ -8,6 +8,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { CALORIE_TARGET_MIN, CALORIE_TARGET_MAX } from '@/lib/constants'
 import LoadingState from '@/components/ui/LoadingState'
+import { PageTitle, SectionHeader } from '@/components/ui/AppHeadings'
 
 const schema = z.object({
   calorieTarget: z
@@ -101,11 +102,11 @@ export default function ProfilePage() {
 
   return (
     <div className="app-page min-h-full px-4 py-6 pb-24">
-      <h1 className="text-xl font-bold text-[var(--app-text-primary)] mb-6">Profile</h1>
+      <PageTitle>Profile</PageTitle>
 
       {/* Read-only profile info */}
-      <div className="app-card mb-4 space-y-3 p-4">
-        <h2 className="text-[var(--app-text-primary)] text-base font-semibold">Your stats</h2>
+      <SectionHeader>Your stats</SectionHeader>
+      <div className="app-card mb-5 space-y-3 p-4">
         <ProfileRow label="Email" value={user?.email ?? '—'} />
         <ProfileRow label="Height" value={profile?.height_cm ? `${profile.height_cm} cm` : '—'} />
         <ProfileRow label="Starting weight" value={profile?.starting_weight_kg ? `${profile.starting_weight_kg} kg` : '—'} />
@@ -117,9 +118,8 @@ export default function ProfilePage() {
       </div>
 
       {/* Editable settings */}
-      <form onSubmit={handleSubmit(onSubmit)} className="app-card mb-4 space-y-4 p-4">
-        <h2 className="text-[var(--app-text-primary)] text-base font-semibold">Settings</h2>
-
+      <SectionHeader>Settings</SectionHeader>
+      <form onSubmit={handleSubmit(onSubmit)} className="app-card mb-5 space-y-4 p-4">
         <div>
           <label htmlFor="calorieTarget" className="mb-1 block text-sm text-[var(--app-text-secondary)]">
             Daily calorie target
@@ -166,13 +166,14 @@ export default function ProfilePage() {
         </button>
       </form>
 
+      <SectionHeader>Weight</SectionHeader>
       <Link
         to="/app/weight"
         className="app-card mb-4 flex items-center justify-between p-4 transition-colors hover:bg-[var(--app-hover-overlay)]"
       >
         <div>
-          <h2 className="text-[var(--app-text-primary)] text-base font-semibold">Weight</h2>
-          <p className="text-[var(--app-text-muted)] text-xs mt-1">Log entries and view your trend over time.</p>
+          <p className="text-sm font-medium text-[var(--app-text-primary)]">Log weight</p>
+          <p className="text-[var(--app-text-muted)] text-xs mt-1">Entries and trends over time.</p>
         </div>
         <svg
           className="h-5 w-5 flex-none text-[var(--app-text-muted)]"

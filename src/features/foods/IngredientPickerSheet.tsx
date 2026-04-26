@@ -100,7 +100,7 @@ function productMacroChips(p: Product) {
 
 function CompositeLeadingIcon() {
   return (
-    <svg className="h-4 w-4 text-[var(--app-brand)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className="h-4 w-4 text-[var(--app-warning)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 6h14M5 10h14M5 14h10" />
     </svg>
   )
@@ -225,7 +225,7 @@ export default function IngredientPickerSheet({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search foods…"
-              className="corner-squircle app-input box-border h-10 w-full px-4 text-sm leading-snug !rounded-[var(--app-radius-lg)]"
+              className="app-input box-border h-10 w-full px-4 text-sm leading-snug !rounded-[var(--app-radius-lg)]"
               autoFocus
             />
           </div>

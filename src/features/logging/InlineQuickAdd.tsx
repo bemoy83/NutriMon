@@ -6,6 +6,7 @@ import type { FoodSource } from '@/types/domain'
 import { useFrequentFoodSources, useRecentFoodSources } from './useFoodSources'
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import EmptyState from '@/components/ui/EmptyState'
+import { CardTitle, SectionHeader } from '@/components/ui/AppHeadings'
 import { getDefaultMealType } from '@/lib/mealType'
 
 interface Props {
@@ -79,7 +80,7 @@ export default function InlineQuickAdd({ logDate, loggedAt, onCreated }: Props) 
   return (
     <div className="space-y-4 rounded-2xl border border-[var(--app-border-muted)] bg-[var(--app-surface-muted)] p-4">
       <div>
-        <h2 className="text-base font-semibold text-[var(--app-text-primary)]">Quick add</h2>
+        <CardTitle>Quick add</CardTitle>
         <p className="mt-1 text-xs text-[var(--app-text-muted)]">Tap a recent or frequent food to log it instantly.</p>
       </div>
 
@@ -87,7 +88,9 @@ export default function InlineQuickAdd({ logDate, loggedAt, onCreated }: Props) 
 
       <div className="space-y-3">
         <section>
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--app-text-muted)]">Recent</h3>
+          <SectionHeader as="h3" className="font-medium tracking-wide">
+            Recent
+          </SectionHeader>
           {recentProducts.length === 0 ? (
             <EmptyState title="No recent products yet." className="py-2 text-left" />
           ) : (
@@ -105,7 +108,9 @@ export default function InlineQuickAdd({ logDate, loggedAt, onCreated }: Props) 
         </section>
 
         <section>
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--app-text-muted)]">Frequent</h3>
+          <SectionHeader as="h3" className="font-medium tracking-wide">
+            Frequent
+          </SectionHeader>
           {frequentProducts.length === 0 ? (
             <EmptyState title="No frequent products yet." className="py-2 text-left" />
           ) : (

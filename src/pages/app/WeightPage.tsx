@@ -9,6 +9,8 @@ import { getTodayInTimezone, guessTimezone, formatShortDate } from '@/lib/date'
 import { lbToKg, kgToLb } from '@/lib/tdee'
 import { useWeightEntries } from '@/features/weight/useWeightEntries'
 import EmptyState from '@/components/ui/EmptyState'
+import { PageTitle, SectionHeader } from '@/components/ui/AppHeadings'
+import SegmentedTabs from '@/components/ui/SegmentedTabs'
 
 const schema = z.object({
   entryDate: z.string().min(1),
@@ -19,6 +21,14 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 const WeightHistoryChart = lazy(() => import('@/features/weight/WeightHistoryChart'))
+const WEIGHT_UNIT_OPTIONS = [
+  { label: 'kg', value: 'kg' },
+  { label: 'lb', value: 'lb' },
+] as const
+const CHART_DAYS_OPTIONS = [
+  { label: '30d', value: '30' },
+  { label: '90d', value: '90' },
+] as const
 
 export default function WeightPage() {
   const { user } = useAuth()
@@ -78,60 +88,48 @@ export default function WeightPage() {
 
   return (
     <div className="app-page min-h-full px-4 py-6 pb-24">
-      <h1 className="text-xl font-bold text-[var(--app-text-primary)] mb-6">Weight</h1>
+      <PageTitle>Weight</PageTitle>
 
       {/* Entry form */}
-      <div className="app-card mb-6 p-4">
-        <h2 className="text-[var(--app-text-primary)] text-base font-semibold mb-4">Log weight</h2>
+      <SectionHeader>Log weight</SectionHeader>
+      <div className="app-card mb-5 p-4">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 items-end">
-            <div>
-              <label htmlFor="entryDate" className="block text-xs text-[var(--app-text-muted)] mb-1">
-                Date
+          <div>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <label htmlFor="weightValue" className="text-xs text-[var(--app-text-muted)]">
+                Weight
               </label>
-              <input
-                id="entryDate"
-                type="date"
-                max={today}
-                {...register('entryDate')}
-                className="app-input px-3 py-2 text-sm"
+              <SegmentedTabs
+                options={WEIGHT_UNIT_OPTIONS}
+                value={weightUnit}
+                onChange={setWeightUnit}
+                className="w-24 !bg-transparent !p-0"
               />
             </div>
+            <input
+              id="weightValue"
+              type="number"
+              step="0.1"
+              {...register('weightValue', { valueAsNumber: true })}
+              className="app-input px-3 py-2 text-sm"
+              placeholder={weightUnit === 'kg' ? '75.0' : '165.3'}
+            />
+            {errors.weightValue && (
+              <p className="text-[var(--app-danger)] text-xs mt-1">{errors.weightValue.message}</p>
+            )}
+          </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label htmlFor="weightValue" className="text-xs text-[var(--app-text-muted)]">
-                  Weight
-                </label>
-                <div className="flex rounded-2xl bg-[rgb(0_0_0/0.06)] p-1 shadow-[inset_0_1px_3px_rgb(0_0_0/0.10)]">
-                  {(['kg', 'lb'] as const).map((u) => (
-                    <button
-                      key={u}
-                      type="button"
-                      onClick={() => setWeightUnit(u)}
-                      className={`rounded-xl px-3 py-1 text-xs transition-all duration-150 ${
-                        weightUnit === u
-                          ? 'bg-[var(--app-brand)] text-white shadow-sm'
-                          : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]'
-                      }`}
-                    >
-                      {u}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <input
-                id="weightValue"
-                type="number"
-                step="0.1"
-                {...register('weightValue', { valueAsNumber: true })}
-                className="app-input px-3 py-2 text-sm"
-                placeholder={weightUnit === 'kg' ? '75.0' : '165.3'}
-              />
-              {errors.weightValue && (
-                <p className="text-[var(--app-danger)] text-xs mt-1">{errors.weightValue.message}</p>
-              )}
-            </div>
+          <div>
+            <label htmlFor="entryDate" className="block text-xs text-[var(--app-text-muted)] mb-1">
+              Date
+            </label>
+            <input
+              id="entryDate"
+              type="date"
+              max={today}
+              {...register('entryDate')}
+              className="app-input px-3 py-2 text-sm"
+            />
           </div>
 
           <div>
@@ -160,25 +158,14 @@ export default function WeightPage() {
       </div>
 
       {/* Chart */}
+      <SectionHeader>History</SectionHeader>
       <div className="app-card p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[var(--app-text-primary)] text-base font-semibold">History</h2>
-          <div className="flex rounded-2xl bg-[rgb(0_0_0/0.06)] p-1 shadow-[inset_0_1px_3px_rgb(0_0_0/0.10)]">
-            {([30, 90] as const).map((d) => (
-              <button
-                key={d}
-                onClick={() => setChartDays(d)}
-                className={`rounded-xl px-3 py-1 text-xs transition-all duration-150 ${
-                  chartDays === d
-                    ? 'bg-[var(--app-brand)] text-white shadow-sm'
-                    : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]'
-                }`}
-              >
-                {d}d
-              </button>
-            ))}
-          </div>
-        </div>
+        <SegmentedTabs
+          options={CHART_DAYS_OPTIONS}
+          value={`${chartDays}` as '30' | '90'}
+          onChange={(value) => setChartDays(Number(value) as 30 | 90)}
+          className="mb-4 !bg-transparent !p-0"
+        />
 
         {chartData.length < 2 ? (
           <div className="h-40 flex items-center justify-center">

@@ -101,19 +101,19 @@ export function SlotCard({
   }
 
   return (
-    <div className="corner-squircle app-card overflow-hidden transition-shadow duration-200 hover:shadow-sm">
+    <div className="app-card overflow-hidden transition-shadow duration-200 hover:shadow-sm">
       <div className="flex items-center gap-2.5 px-4 py-3.5">
 
         {/* LEFT ZONE — tappable: expand when collapsed, collapse when expanded, add when empty */}
         <button
           type="button"
-          className="group -ml-1 flex flex-1 min-w-0 items-center gap-3 corner-squircle rounded-[var(--app-radius-lg)] py-1 pl-1 pr-2 text-left transition-colors hover:bg-[var(--app-hover-overlay)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus)]"
+          className="group -ml-1 flex flex-1 min-w-0 items-center gap-3 rounded-[var(--app-radius-lg)] py-1 pl-1 pr-2 text-left transition-colors hover:bg-[var(--app-hover-overlay)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus)]"
           onClick={() => hasMeals ? setExpanded(e => !e) : onAdd()}
           aria-expanded={hasMeals ? expanded : undefined}
           aria-label={hasMeals ? `${expanded ? 'Collapse' : 'Expand'} ${slot.type}` : `Add food to ${slot.type}`}
         >
           <div
-            className="corner-squircle h-10 w-10 flex-none flex items-center justify-center rounded-[var(--app-radius-lg)] transition-transform duration-200 group-active:scale-95"
+            className="h-10 w-10 flex-none flex items-center justify-center rounded-[var(--app-radius-lg)] transition-transform duration-200 group-active:scale-95"
             style={{ background: theme?.bg ?? 'var(--app-surface-muted)' }}
             aria-hidden
           >
@@ -143,7 +143,7 @@ export function SlotCard({
 
         {/* Kcal badge */}
         {totalCal > 0 && (
-          <div className="corner-squircle flex-none rounded-[var(--app-radius-md)] px-2.5 py-1" style={{ background: theme?.bg ?? 'var(--app-surface-muted)' }}>
+          <div className="flex-none rounded-[var(--app-radius-md)] px-2.5 py-1" style={{ background: theme?.bg ?? 'var(--app-surface-muted)' }}>
             <span className="text-sm font-bold tabular-nums" style={{ color: theme?.text ?? 'var(--app-text-primary)' }}>
               {totalCal}
             </span>
@@ -160,7 +160,7 @@ export function SlotCard({
               if (hasMeals && expanded) setMenuOpen(m => !m)
               else onAdd()
             }}
-            className="corner-squircle flex h-[34px] w-[34px] items-center justify-center rounded-[var(--app-radius-md)] transition-all duration-200 active:scale-90"
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-[var(--app-radius-md)] transition-all duration-200 active:scale-90"
             style={{
               background: (hasMeals && expanded) ? 'var(--app-surface-muted)' : accentColor,
               boxShadow: (hasMeals && expanded) ? 'none' : `0 2px 8px ${theme?.buttonShadow ?? 'rgba(124,58,237,0.35)'}`,
@@ -187,7 +187,7 @@ export function SlotCard({
           {menuOpen && (
             <div
               role="menu"
-              className="corner-squircle absolute right-0 z-[500] overflow-hidden"
+              className="absolute right-0 z-[500] overflow-hidden"
               style={{
                 top: 42,
                 width: 224,
@@ -212,7 +212,7 @@ export function SlotCard({
                 style={{ padding: '13px 16px' }}
               >
                 <div
-                  className="corner-squircle flex shrink-0 items-center justify-center rounded-[var(--app-radius-sm)]"
+                  className="flex shrink-0 items-center justify-center rounded-[var(--app-radius-sm)]"
                   style={{ width: 30, height: 30, background: accentBg }}
                 >
                   <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -237,7 +237,7 @@ export function SlotCard({
                 style={{ padding: '13px 16px' }}
               >
                 <div
-                  className="corner-squircle flex shrink-0 items-center justify-center rounded-[var(--app-radius-sm)]"
+                  className="flex shrink-0 items-center justify-center rounded-[var(--app-radius-sm)]"
                   style={{ width: 30, height: 30, background: '#FFF0EE' }}
                 >
                   <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="#FF3B30" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -276,7 +276,7 @@ export function SlotCard({
               <div className="mx-4 h-px" style={{ background: 'var(--app-border-muted)' }} />
               <div className="px-4 py-3">
                 {showSavePrompt ? (
-                  <div className="corner-squircle flex gap-2 rounded-[var(--app-radius-lg)] border border-[var(--app-border-muted)] bg-[var(--app-surface-muted)] p-2">
+                  <div className="flex gap-2 rounded-[var(--app-radius-lg)] border border-[var(--app-border-muted)] bg-[var(--app-surface-muted)] p-2">
                     <input
                       autoFocus
                       type="text"
@@ -318,7 +318,7 @@ export function SlotCard({
                   <button
                     type="button"
                     onClick={onAdd}
-                    className="corner-squircle flex h-10 w-full items-center justify-center gap-2 rounded-[var(--app-radius-lg)] text-sm font-semibold text-white transition-all hover:brightness-95 active:scale-[0.99]"
+                    className="flex h-10 w-full items-center justify-center gap-2 rounded-[var(--app-radius-lg)] text-sm font-semibold text-white transition-all hover:brightness-95 active:scale-[0.99]"
                     style={{
                       background: accentColor,
                       boxShadow: `0 2px 8px ${theme?.buttonShadow ?? 'rgba(124,58,237,0.35)'}`,

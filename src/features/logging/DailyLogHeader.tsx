@@ -65,7 +65,7 @@ export function DailyLogDateHeader({
       <button
         type="button"
         onClick={() => onNavigate(addDays(logDate, -1))}
-        className="corner-squircle rounded-[var(--app-radius-md)] p-2 transition-colors text-[var(--app-text-muted)] hover:bg-[var(--app-surface-elevated)] hover:text-[var(--app-text-primary)]"
+        className="rounded-[var(--app-radius-md)] p-2 transition-colors text-[var(--app-text-muted)] hover:bg-[var(--app-surface-elevated)] hover:text-[var(--app-text-primary)]"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -90,7 +90,7 @@ export function DailyLogDateHeader({
         type="button"
         onClick={() => onNavigate(addDays(logDate, 1))}
         disabled={logDate >= todayDate}
-        className="corner-squircle rounded-[var(--app-radius-md)] p-2 transition-colors text-[var(--app-text-muted)] hover:bg-[var(--app-surface-elevated)] hover:text-[var(--app-text-primary)] disabled:opacity-30"
+        className="rounded-[var(--app-radius-md)] p-2 transition-colors text-[var(--app-text-muted)] hover:bg-[var(--app-surface-elevated)] hover:text-[var(--app-text-primary)] disabled:opacity-30"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -126,7 +126,7 @@ export function DailyLogCompactCard({
   ]
 
   return (
-    <div className="corner-squircle app-card rounded-[var(--app-radius-xl)] px-4 py-3.5">
+    <div className="app-card rounded-[var(--app-radius-xl)] px-4 py-3.5">
       <div className="flex items-center gap-3.5">
         {/* Mini ring with remaining inside */}
         <div className="relative shrink-0" style={{ width: COMPACT_RING_SIZE, height: COMPACT_RING_SIZE }}>

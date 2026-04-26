@@ -5,6 +5,8 @@ import { useAuth } from '@/app/providers/auth'
 import { getUserProducts } from '@/features/foods/api'
 import LoadingState from '@/components/ui/LoadingState'
 import { MacroPills } from '@/components/ui/MacroPills'
+import { CardTitle, SectionHeader } from '@/components/ui/AppHeadings'
+import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
 import type { Product } from '@/types/domain'
 
@@ -59,21 +61,25 @@ export default function MyFoodScreen() {
           ) : null}
         </div>
 
-        <div className="corner-squircle relative z-[1] mt-3 app-card border border-[var(--app-border-muted)] overflow-hidden">
-          <div className="px-4 pt-3 pb-2">
+        <div className="relative z-[1] mt-3 app-card border border-[var(--app-border-muted)] overflow-hidden">
+          <div className="space-y-3 px-4 pt-3 pb-2">
+            <div>
+              <CardTitle>Find food</CardTitle>
+              <p className="mt-1 text-xs text-[var(--app-text-muted)]">Search and filter your saved foods.</p>
+            </div>
             <div className="relative">
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search foods…"
-                className="corner-squircle app-input box-border h-10 w-full px-4 pr-9 text-sm leading-snug !rounded-[var(--app-radius-lg)]"
+                className="app-input box-border h-10 w-full px-4 pr-9 text-sm leading-snug !rounded-[var(--app-radius-lg)]"
               />
               {search !== '' && (
                 <button
                   type="button"
                   onClick={() => setSearch('')}
-                  className="corner-squircle absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-[var(--app-radius-sm)] text-[var(--app-text-muted)] hover:bg-[var(--app-hover-overlay)]"
+                  className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-[var(--app-radius-sm)] text-[var(--app-text-muted)] hover:bg-[var(--app-hover-overlay)]"
                   aria-label="Clear search"
                 >
                   <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -121,20 +127,10 @@ export default function MyFoodScreen() {
         </div>
       ) : (
         <>
-          <div className="mx-4 mb-3 flex items-baseline justify-between gap-2">
-            <h2 className="text-base font-bold" style={{ color: 'var(--app-text-primary)' }}>
-              {foodSectionTitle}
-            </h2>
-            {!isLibraryOverview ? (
-              <span
-                className="text-base font-bold tabular-nums shrink-0"
-                style={{ color: 'var(--app-text-muted)' }}
-              >
-                {filtered.length}
-              </span>
-            ) : null}
-          </div>
-          <div className="corner-squircle app-card overflow-hidden mx-4">
+          <SectionHeader className="mx-4 mb-3" trailing={!isLibraryOverview ? filtered.length : null}>
+            {foodSectionTitle}
+          </SectionHeader>
+          <div className="app-card overflow-hidden mx-4">
           {filtered.map((product, idx) => {
             const isComposite = product.kind === 'composite'
             const p = product.proteinPer100g
@@ -154,11 +150,11 @@ export default function MyFoodScreen() {
                 >
                   <div className="w-8 h-8 flex items-center justify-center shrink-0">
                     {isComposite ? (
-                      <svg className="w-5 h-5" style={{ color: 'var(--app-brand)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-5 h-5" style={{ color: 'var(--app-warning)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 6h14M5 10h14M5 14h10" />
                       </svg>
                     ) : (
-                      <div className="w-2.5 h-2.5 rounded-full opacity-40" style={{ background: 'var(--app-text-muted)' }} />
+                      <FoodSourceBadge sourceType="user_product" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -201,7 +197,7 @@ export default function MyFoodScreen() {
         <button
           type="button"
           onClick={() => navigate('/app/my-food/new')}
-          className="corner-squircle pointer-events-auto app-button-primary flex w-full items-center justify-center gap-2 !rounded-[var(--app-radius-xl)] py-3.5 text-sm font-semibold shadow-[0_4px_16px_rgb(124_58_237/0.28)]"
+          className="pointer-events-auto app-button-primary flex w-full items-center justify-center gap-2 !rounded-[var(--app-radius-xl)] py-3.5 text-sm font-semibold shadow-[0_4px_16px_rgb(124_58_237/0.28)]"
         >
           <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />

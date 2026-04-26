@@ -10,7 +10,7 @@ export default function FoodSourceBadge({ sourceType }: FoodSourceBadgeProps) {
   return (
     <span
       className="inline-block w-2 h-2 rounded-full flex-none"
-      style={{ background: isUserProduct ? 'var(--app-macro-protein)' : 'var(--app-brand)' }}
+      style={{ background: isUserProduct ? 'var(--app-warning)' : 'var(--app-brand)' }}
       title={isUserProduct ? 'My product' : 'Built-in'}
     />
   )
