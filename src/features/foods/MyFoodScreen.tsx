@@ -8,6 +8,7 @@ import { MacroPills } from '@/components/ui/MacroPills'
 import { CardTitle, SectionHeader } from '@/components/ui/AppHeadings'
 import FoodSourceBadge from '@/components/ui/FoodSourceBadge'
 import SegmentedTabs from '@/components/ui/SegmentedTabs'
+import ImportExportSheet from '@/features/foods/ImportExportSheet'
 import type { Product } from '@/types/domain'
 
 function formatPer100Grams(n: number): string {
@@ -19,6 +20,7 @@ export default function MyFoodScreen() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'simple' | 'recipe'>('all')
+  const [showImportExport, setShowImportExport] = useState(false)
 
   const productsQuery = useQuery({
     queryKey: ['my-food-products', user?.id],
@@ -50,15 +52,28 @@ export default function MyFoodScreen() {
   return (
     <div className="app-page min-h-full pb-32">
       <div className="sticky top-0 z-10 px-4 pt-4 pb-3" style={{ background: 'var(--app-bg)' }}>
-        <div className="relative z-[1]">
-          <h1 className="text-[32px] font-bold tracking-tight" style={{ color: 'var(--app-text-primary)' }}>
-            My Food
-          </h1>
-          {isLibraryOverview ? (
-            <p className="mt-0.5 text-xs" style={{ color: 'var(--app-text-muted)' }}>
-              {allProducts.length} saved food{allProducts.length === 1 ? '' : 's'}
-            </p>
-          ) : null}
+        <div className="relative z-[1] flex items-start justify-between">
+          <div>
+            <h1 className="text-[32px] font-bold tracking-tight" style={{ color: 'var(--app-text-primary)' }}>
+              My Food
+            </h1>
+            {isLibraryOverview ? (
+              <p className="mt-0.5 text-xs" style={{ color: 'var(--app-text-muted)' }}>
+                {allProducts.length} saved food{allProducts.length === 1 ? '' : 's'}
+              </p>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowImportExport(true)}
+            aria-label="Import or export foods"
+            className="mt-1 flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:bg-[var(--app-hover-overlay)]"
+            style={{ color: 'var(--app-text-muted)' }}
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+            </svg>
+          </button>
         </div>
 
         <div className="relative z-[1] mt-3 app-card border border-[var(--app-border-muted)] overflow-hidden">
@@ -205,6 +220,8 @@ export default function MyFoodScreen() {
           Add new food
         </button>
       </div>
+
+      {showImportExport && <ImportExportSheet onClose={() => setShowImportExport(false)} />}
     </div>
   )
 }

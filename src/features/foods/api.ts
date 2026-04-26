@@ -84,6 +84,43 @@ export async function getUserProducts(userId: string): Promise<Product[]> {
   return (data as ProductRow[]).map(mapProduct)
 }
 
+export interface InsertSimpleProductParams {
+  userId: string
+  name: string
+  caloriesPer100g: number
+  proteinPer100g: number | null
+  carbsPer100g: number | null
+  fatPer100g: number | null
+  labelPortionGrams: number | null
+}
+
+export async function insertSimpleProduct(params: InsertSimpleProductParams): Promise<string> {
+  const cal = Math.round(params.caloriesPer100g)
+  const { data, error } = await supabase
+    .from('products')
+    .insert({
+      user_id: params.userId,
+      name: params.name,
+      kind: 'simple',
+      calories: cal,
+      protein_g: params.proteinPer100g,
+      carbs_g: params.carbsPer100g,
+      fat_g: params.fatPer100g,
+      calories_per_100g: params.caloriesPer100g,
+      protein_per_100g: params.proteinPer100g,
+      carbs_per_100g: params.carbsPer100g,
+      fat_per_100g: params.fatPer100g,
+      label_portion_grams: params.labelPortionGrams,
+      default_serving_amount: 100,
+      default_serving_unit: 'g',
+    })
+    .select('id')
+    .single()
+
+  if (error) throw error
+  return data.id as string
+}
+
 export async function deleteProduct(productId: string): Promise<void> {
   const { error } = await supabase
     .from('products')
