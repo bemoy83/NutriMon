@@ -77,16 +77,11 @@ export default function MealSheetBrowseView({
   return (
     <>
       <div className="flex-none px-4 py-2 bg-white">
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => onSearchQueryChange(e.target.value)}
-            placeholder="Search foods…"
-            className="app-input box-border h-10 min-w-0 flex-1 px-4 text-sm leading-snug !rounded-[var(--app-radius-lg)]"
-          />
-          <BarcodeSearchInput onProduct={onBarcodeProduct} />
-        </div>
+        <BarcodeSearchInput
+          searchQuery={searchQuery}
+          onSearchQueryChange={onSearchQueryChange}
+          onProduct={onBarcodeProduct}
+        />
       </div>
 
       <SegmentedTabs<'recent' | 'saved' | 'pending'>
