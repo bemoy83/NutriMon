@@ -6,9 +6,11 @@ import type { NodePosition } from './worldMapGeometry'
 // Tap-target radius — still used for companion positioning and path anchoring
 export const NODE_R = 32
 
-// Platform display size (512×240 native → displayed at PLATFORM_W wide)
-const PLATFORM_W = 96
-const PLATFORM_H = Math.round(PLATFORM_W * 240 / 512) // 45px
+// Hub platforms use the battle registry as source of truth, then scale down for map density.
+const HUB_PLATFORM_SCALE = 0.64
+const FALLBACK_PLATFORM_W = 136
+const ARENA_LABEL_FONT_SIZE = 12
+const ARENA_META_FONT_SIZE = 10
 
 interface WorldMapArenaNodeProps {
   arena: ArenaListArena
@@ -31,8 +33,12 @@ export function WorldMapArenaNode({
   const isLocked = !arena.isUnlocked
   const isComplete = !isLocked && arena.opponentCount > 0 && arena.defeatedCount >= arena.opponentCount
   const nodeR = NODE_R * nodeScale
-  const platformW = PLATFORM_W * nodeScale
-  const platformH = PLATFORM_H * nodeScale
+  const platformBaseW = terrain.opponentPlatformWidth
+    ? terrain.opponentPlatformWidth * HUB_PLATFORM_SCALE
+    : FALLBACK_PLATFORM_W
+  const platformW = platformBaseW * nodeScale
+  const platformNativeH = terrain.opponentCalibration?.nativeH ?? 240
+  const platformH = Math.round(platformW * platformNativeH / 512)
 
   // Platform top-left relative to the node's local coordinate origin (nodeR, nodeR)
   const px = nodeR - platformW / 2
@@ -162,7 +168,7 @@ export function WorldMapArenaNode({
         x={nodeR}
         y={nodeR + platformH / 2 + 14 * nodeScale}
         textAnchor="middle"
-        fontSize={10 * nodeScale}
+        fontSize={ARENA_LABEL_FONT_SIZE * nodeScale}
         fontWeight={isCurrent ? 700 : 500}
         fill={isLocked ? 'rgba(255,255,255,0.30)' : 'rgba(255,255,255,0.88)'}
         style={{ fontFamily: 'inherit', letterSpacing: '0.02em' }}
@@ -173,9 +179,9 @@ export function WorldMapArenaNode({
       {!isLocked && !isComplete && arena.opponentCount > 0 && (
         <text
           x={nodeR}
-          y={nodeR + platformH / 2 + 26 * nodeScale}
+          y={nodeR + platformH / 2 + 29 * nodeScale}
           textAnchor="middle"
-          fontSize={8.5 * nodeScale}
+          fontSize={ARENA_META_FONT_SIZE * nodeScale}
           fill="rgba(255,255,255,0.45)"
           style={{ fontFamily: 'inherit' }}
         >
@@ -186,9 +192,9 @@ export function WorldMapArenaNode({
       {isLocked && arena.unlockBossName && (
         <text
           x={nodeR}
-          y={nodeR + platformH / 2 + 26 * nodeScale}
+          y={nodeR + platformH / 2 + 29 * nodeScale}
           textAnchor="middle"
-          fontSize={8.5 * nodeScale}
+          fontSize={ARENA_META_FONT_SIZE * nodeScale}
           fill="rgba(255,255,255,0.22)"
           style={{ fontFamily: 'inherit' }}
         >

@@ -98,6 +98,10 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
 }
 
+const HUB_PLATFORM_SCALE = 0.64
+const FALLBACK_PLATFORM_W = 136
+const COMPANION_MARKER_SIZE = 64
+
 function useMobileWorldMapLayout(wrapperRef: RefObject<HTMLDivElement | null>) {
   const [layout, setLayout] = useState<WorldMapLayout>(DEFAULT_WORLD_MAP_LAYOUT)
 
@@ -252,15 +256,18 @@ export function WorldMapCanvas({ arenas, companion, onSelectArena }: WorldMapCan
             const idx = sorted.findIndex((a) => a.id === currentArena.id)
             const pos = positions[idx]
             if (!pos) return null
-            const MARKER_SIZE = 40 * layout.nodeScale
-            // Platform is 96×45px centred on pos. Surface sits at ovalSurfaceY≈97/240
-            // from the platform's top edge. Land the companion's feet there.
-            const PLATFORM_W = 96 * layout.nodeScale
-            const PLATFORM_H = Math.round(PLATFORM_W * 240 / 512)
-            const platformTop = pos.y - PLATFORM_H / 2
-            const surfaceY = platformTop + PLATFORM_H * (97 / 240)
-            const markerX = pos.x - MARKER_SIZE / 2
-            const markerY = surfaceY - MARKER_SIZE
+            const terrain = getArenaTerrain(currentArena.id)
+            const platformBaseW = terrain.opponentPlatformWidth
+              ? terrain.opponentPlatformWidth * HUB_PLATFORM_SCALE
+              : FALLBACK_PLATFORM_W
+            const platformW = platformBaseW * layout.nodeScale
+            const platformCal = terrain.opponentCalibration ?? { nativeH: 240, ovalSurfaceY: 97 / 240 }
+            const platformH = Math.round(platformW * platformCal.nativeH / 512)
+            const markerSize = COMPANION_MARKER_SIZE * layout.nodeScale
+            const platformTop = pos.y - platformH / 2
+            const surfaceY = platformTop + platformH * platformCal.ovalSurfaceY
+            const markerX = pos.x - markerSize / 2
+            const markerY = surfaceY - markerSize
 
             return (
               <g transform={`translate(${markerX} ${markerY})`}>
@@ -269,24 +276,24 @@ export function WorldMapCanvas({ arenas, companion, onSelectArena }: WorldMapCan
                     <>
                       <image
                         href={companionSprite.url}
-                        width={MARKER_SIZE}
-                        height={MARKER_SIZE}
+                        width={markerSize}
+                        height={markerSize}
                         style={{ imageRendering: 'pixelated' }}
                       />
                       <ellipse
-                        cx={MARKER_SIZE / 2}
-                        cy={MARKER_SIZE + 2}
-                        rx={8} ry={3}
+                        cx={markerSize / 2}
+                        cy={markerSize + 2 * layout.nodeScale}
+                        rx={12 * layout.nodeScale} ry={4 * layout.nodeScale}
                         fill="rgba(0,0,0,0.35)"
                       />
                     </>
                   ) : (
                     <>
-                      <circle cx={MARKER_SIZE / 2} cy={MARKER_SIZE / 2} r={MARKER_SIZE / 2} fill="rgba(124,58,237,0.85)" />
+                      <circle cx={markerSize / 2} cy={markerSize / 2} r={markerSize / 2} fill="rgba(124,58,237,0.85)" />
                       <text
-                        x={MARKER_SIZE / 2} y={MARKER_SIZE / 2}
+                        x={markerSize / 2} y={markerSize / 2}
                         textAnchor="middle" dominantBaseline="central"
-                        fontSize={13} fontWeight={700} fill="white"
+                        fontSize={18 * layout.nodeScale} fontWeight={700} fill="white"
                       >
                         {companion?.name?.[0]?.toUpperCase() ?? '?'}
                       </text>
