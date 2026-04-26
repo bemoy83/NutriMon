@@ -2,15 +2,14 @@ import { getArenaTerrain } from '@/lib/sprites'
 import { deriveTerrainGradient } from '@/lib/arenaTheme'
 import type { ArenaListArena } from '@/types/domain'
 import type { NodePosition } from './worldMapGeometry'
+import {
+  ARENA_LABEL_FONT_SIZE,
+  ARENA_META_FONT_SIZE,
+  getHubPlatformMetrics,
+} from './worldMapLayout'
 
 // Tap-target radius — still used for companion positioning and path anchoring
 export const NODE_R = 32
-
-// Hub platforms use the battle registry as source of truth, then scale down for map density.
-const HUB_PLATFORM_SCALE = 0.64
-const FALLBACK_PLATFORM_W = 136
-const ARENA_LABEL_FONT_SIZE = 12
-const ARENA_META_FONT_SIZE = 10
 
 interface WorldMapArenaNodeProps {
   arena: ArenaListArena
@@ -33,16 +32,11 @@ export function WorldMapArenaNode({
   const isLocked = !arena.isUnlocked
   const isComplete = !isLocked && arena.opponentCount > 0 && arena.defeatedCount >= arena.opponentCount
   const nodeR = NODE_R * nodeScale
-  const platformBaseW = terrain.opponentPlatformWidth
-    ? terrain.opponentPlatformWidth * HUB_PLATFORM_SCALE
-    : FALLBACK_PLATFORM_W
-  const platformW = platformBaseW * nodeScale
-  const platformNativeH = terrain.opponentCalibration?.nativeH ?? 240
-  const platformH = Math.round(platformW * platformNativeH / 512)
+  const platform = getHubPlatformMetrics(terrain, nodeScale)
 
   // Platform top-left relative to the node's local coordinate origin (nodeR, nodeR)
-  const px = nodeR - platformW / 2
-  const py = nodeR - platformH / 2
+  const px = nodeR - platform.width / 2
+  const py = nodeR - platform.height / 2
   const filterId = `arena-glow-${arena.id}`
 
   return (
@@ -68,8 +62,8 @@ export function WorldMapArenaNode({
             href={platformUrl}
             x={px}
             y={py}
-            width={platformW}
-            height={platformH}
+            width={platform.width}
+            height={platform.height}
             style={{ imageRendering: 'pixelated' }}
             filter={isCurrent && !isLocked ? `url(#${filterId})` : undefined}
             opacity={isLocked ? 0.28 : 1}
@@ -88,7 +82,7 @@ export function WorldMapArenaNode({
 
           {/* Complete star badge — sits above top-right of platform */}
           {isComplete && (
-            <g transform={`translate(${px + platformW - 6 * nodeScale} ${py - 10 * nodeScale})`}>
+            <g transform={`translate(${px + platform.width - 6 * nodeScale} ${py - 10 * nodeScale})`}>
               <circle cx={8 * nodeScale} cy={8 * nodeScale} r={8 * nodeScale} fill="#f59e0b" />
               <text
                 x={8 * nodeScale} y={8 * nodeScale}
@@ -103,7 +97,7 @@ export function WorldMapArenaNode({
           {/* Active run pulse — top-right corner of platform */}
           {arena.hasActiveRun && !isLocked && (
             <circle
-              cx={px + platformW}
+              cx={px + platform.width}
               cy={py}
               r={4.5 * nodeScale}
               fill="#f59e0b"
@@ -166,7 +160,7 @@ export function WorldMapArenaNode({
       {/* ── Labels (shared by both platform and fallback) ── */}
       <text
         x={nodeR}
-        y={nodeR + platformH / 2 + 14 * nodeScale}
+        y={nodeR + platform.height / 2 + 14 * nodeScale}
         textAnchor="middle"
         fontSize={ARENA_LABEL_FONT_SIZE * nodeScale}
         fontWeight={isCurrent ? 700 : 500}
@@ -179,7 +173,7 @@ export function WorldMapArenaNode({
       {!isLocked && !isComplete && arena.opponentCount > 0 && (
         <text
           x={nodeR}
-          y={nodeR + platformH / 2 + 29 * nodeScale}
+          y={nodeR + platform.height / 2 + 29 * nodeScale}
           textAnchor="middle"
           fontSize={ARENA_META_FONT_SIZE * nodeScale}
           fill="rgba(255,255,255,0.45)"
@@ -192,7 +186,7 @@ export function WorldMapArenaNode({
       {isLocked && arena.unlockBossName && (
         <text
           x={nodeR}
-          y={nodeR + platformH / 2 + 29 * nodeScale}
+          y={nodeR + platform.height / 2 + 29 * nodeScale}
           textAnchor="middle"
           fontSize={ARENA_META_FONT_SIZE * nodeScale}
           fill="rgba(255,255,255,0.22)"

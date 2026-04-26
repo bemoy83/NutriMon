@@ -1,23 +1,10 @@
 import type { ArenaListArena } from '@/types/domain'
+import { DEFAULT_WORLD_MAP_LAYOUT } from './worldMapLayout'
+import type { WorldMapLayout } from './worldMapLayout'
 
 export interface NodePosition {
   x: number
   y: number
-}
-
-export const MAP_CANVAS_W = 360
-export const MAP_CANVAS_H = 520
-
-export interface WorldMapLayout {
-  width: number
-  height: number
-  nodeScale: number
-}
-
-export const DEFAULT_WORLD_MAP_LAYOUT: WorldMapLayout = {
-  width: MAP_CANVAS_W,
-  height: MAP_CANVAS_H,
-  nodeScale: 1,
 }
 
 /** Center-to-side route pattern with a mild rightward climb after the first side step. */
