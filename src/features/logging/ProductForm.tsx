@@ -25,8 +25,18 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+export interface ProductFormPrefill {
+  name?: string
+  caloriesPer100g?: number
+  proteinPer100g?: number | null
+  carbsPer100g?: number | null
+  fatPer100g?: number | null
+  labelPortionGrams?: number | null
+}
+
 interface Props {
   initialProduct?: Product | null
+  initialValues?: ProductFormPrefill
   onSave: (product: Product) => void
   onSaveAndAdd?: (product: Product) => void
   onCancel: () => void
@@ -50,7 +60,7 @@ function denormalizedPayload(data: FormData) {
   }
 }
 
-export default function ProductForm({ initialProduct = null, onSave, onSaveAndAdd, onCancel }: Props) {
+export default function ProductForm({ initialProduct = null, initialValues, onSave, onSaveAndAdd, onCancel }: Props) {
   const { user } = useAuth()
   const [serverError, setServerError] = useState<string | null>(null)
   const isEditMode = !!initialProduct
@@ -72,12 +82,12 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
   useEffect(() => {
     if (!initialProduct) {
       reset({
-        name: '',
-        caloriesPer100g: 0,
-        proteinPer100g: null,
-        carbsPer100g: null,
-        fatPer100g: null,
-        labelPortionGrams: null,
+        name: initialValues?.name ?? '',
+        caloriesPer100g: initialValues?.caloriesPer100g ?? 0,
+        proteinPer100g: initialValues?.proteinPer100g ?? null,
+        carbsPer100g: initialValues?.carbsPer100g ?? null,
+        fatPer100g: initialValues?.fatPer100g ?? null,
+        labelPortionGrams: initialValues?.labelPortionGrams ?? null,
       })
       return
     }

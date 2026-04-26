@@ -11,6 +11,8 @@ import {
 } from '../itemHelpers'
 import type { Item } from '../types'
 import { MealTemplateRow } from './MealTemplateRow'
+import BarcodeSearchInput from './BarcodeSearchInput'
+import type { KassalappProduct } from '@/lib/kassalapp'
 
 function InsetRowDivider() {
   return <div aria-hidden className="mx-4 h-px bg-[var(--app-border-muted)]" />
@@ -34,6 +36,7 @@ export interface MealSheetBrowseViewProps {
   onLogTemplate: (t: MealTemplate) => void
   onDeleteTemplate: (id: string) => void
   onOpenCreateFood: () => void
+  onBarcodeProduct: (product: KassalappProduct) => void
   footer: ReactNode
 }
 
@@ -55,6 +58,7 @@ export default function MealSheetBrowseView({
   onLogTemplate,
   onDeleteTemplate,
   onOpenCreateFood,
+  onBarcodeProduct,
   footer,
 }: MealSheetBrowseViewProps) {
   const tabOptions = useMemo(
@@ -73,13 +77,16 @@ export default function MealSheetBrowseView({
   return (
     <>
       <div className="flex-none px-4 py-2 bg-white">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => onSearchQueryChange(e.target.value)}
-          placeholder="Search foods…"
-          className="app-input box-border h-10 w-full px-4 text-sm leading-snug !rounded-[var(--app-radius-lg)]"
-        />
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => onSearchQueryChange(e.target.value)}
+            placeholder="Search foods…"
+            className="app-input box-border h-10 min-w-0 flex-1 px-4 text-sm leading-snug !rounded-[var(--app-radius-lg)]"
+          />
+          <BarcodeSearchInput onProduct={onBarcodeProduct} />
+        </div>
       </div>
 
       <SegmentedTabs<'recent' | 'saved' | 'pending'>

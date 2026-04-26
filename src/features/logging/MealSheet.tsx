@@ -30,6 +30,8 @@ import MealTypeTitleMenu from './meal-sheet/MealTypeTitleMenu'
 import MealSheetBrowseView from './meal-sheet/MealSheetBrowseView'
 import MealSheetDetailPane from './meal-sheet/MealSheetDetailPane'
 import { MealSheetBrowseFooter, MealSheetServingFooter } from './meal-sheet/MealSheetFooters'
+import type { KassalappProduct } from '@/lib/kassalapp'
+import type { ProductFormPrefill } from './ProductForm'
 
 interface MealSheetProps {
   logDate: string
@@ -70,6 +72,7 @@ export default function MealSheet({
   const [mealMenuOpen, setMealMenuOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [productFormPrefill, setProductFormPrefill] = useState<ProductFormPrefill | undefined>()
   const mealMenuRef = useRef<HTMLDivElement | null>(null)
 
   const invalidateDailyLog = useInvalidateDailyLog()
@@ -366,6 +369,19 @@ export default function MealSheet({
   )
 
   const onOpenCreateFood = useCallback(() => {
+    setProductFormPrefill(undefined)
+    setSheetView('create')
+  }, [])
+
+  const onBarcodeProduct = useCallback((product: KassalappProduct) => {
+    setProductFormPrefill({
+      name: [product.brand, product.name].filter(Boolean).join(' – '),
+      caloriesPer100g: product.caloriesPer100g,
+      proteinPer100g: product.proteinPer100g,
+      carbsPer100g: product.carbsPer100g,
+      fatPer100g: product.fatPer100g,
+      labelPortionGrams: product.labelPortionGrams,
+    })
     setSheetView('create')
   }, [])
 
@@ -411,6 +427,7 @@ export default function MealSheet({
   )
 
   const onProductCancel = useCallback(() => {
+    setProductFormPrefill(undefined)
     setSheetView('browse')
   }, [])
 
@@ -454,6 +471,7 @@ export default function MealSheet({
             onLogTemplate={handleLogTemplate}
             onDeleteTemplate={handleDeleteTemplate}
             onOpenCreateFood={onOpenCreateFood}
+            onBarcodeProduct={onBarcodeProduct}
             footer={(
               <MealSheetBrowseFooter
                 submitError={submitError}
@@ -494,6 +512,7 @@ export default function MealSheet({
             onProductSave={onProductSave}
             onProductSaveAndAdd={onProductSaveAndAdd}
             onProductCancel={onProductCancel}
+            productFormPrefill={productFormPrefill}
             servingFooter={(
               <MealSheetServingFooter
                 servingConfirmDisabled={servingConfirmDisabled}

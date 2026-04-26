@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import type { FoodSource, Product } from '@/types/domain'
-import ProductForm from '../ProductForm'
+import ProductForm, { type ProductFormPrefill } from '../ProductForm'
 import ServingStep from '../ServingStep'
 import type { ServingStepEstimate } from '../ServingStep'
 import { servingStepTargetFromFood } from '../servingDraftModel'
@@ -26,6 +26,7 @@ export interface MealSheetDetailPaneProps {
   onProductSave: () => void
   onProductSaveAndAdd: (product: Product) => void
   onProductCancel: () => void
+  productFormPrefill?: ProductFormPrefill
   servingFooter: ReactNode
 }
 
@@ -48,6 +49,7 @@ export default function MealSheetDetailPane({
   onProductSave,
   onProductSaveAndAdd,
   onProductCancel,
+  productFormPrefill,
   servingFooter,
 }: MealSheetDetailPaneProps) {
   return (
@@ -74,6 +76,7 @@ export default function MealSheetDetailPane({
       {sheetView === 'create' && (
         <div className="flex-1 overflow-y-auto">
           <ProductForm
+            initialValues={productFormPrefill}
             onSave={onProductSave}
             onSaveAndAdd={onProductSaveAndAdd}
             onCancel={onProductCancel}
