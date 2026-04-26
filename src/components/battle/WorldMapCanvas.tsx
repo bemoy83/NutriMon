@@ -1,13 +1,9 @@
 import { getArenaTerrain, getPlayerBattleSpriteDescriptor } from '@/lib/sprites'
 import type { ArenaListArena, CreatureCompanion } from '@/types/domain'
-import { WorldMapArenaNode, NODE_R } from './WorldMapArenaNode'
-import {
-  WorldMapPathSegment,
-  resolveNodePosition,
-  MAP_CANVAS_W,
-  MAP_CANVAS_H,
-} from './WorldMapPathSegment'
-import type { NodePosition } from './WorldMapPathSegment'
+import { WorldMapArenaNode } from './WorldMapArenaNode'
+import { WorldMapPathSegment } from './WorldMapPathSegment'
+import { MAP_CANVAS_H, MAP_CANVAS_W, resolveNodePosition } from './worldMapGeometry'
+import type { NodePosition } from './worldMapGeometry'
 
 interface WorldMapCanvasProps {
   arenas: ArenaListArena[]

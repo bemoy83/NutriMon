@@ -1,7 +1,7 @@
 import { getArenaTerrain } from '@/lib/sprites'
 import { deriveTerrainGradient } from '@/lib/arenaTheme'
 import type { ArenaListArena } from '@/types/domain'
-import type { NodePosition } from './WorldMapPathSegment'
+import type { NodePosition } from './worldMapGeometry'
 
 // Tap-target radius — still used for companion positioning and path anchoring
 export const NODE_R = 32
