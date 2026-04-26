@@ -8,6 +8,7 @@ import { useAuth } from '@/app/providers/auth'
 import type { Product } from '@/types/domain'
 import type { SaveHandle } from './RecipeEditor'
 import { selectAllOnFocus } from '@/lib/selectAllOnFocus'
+import { userMessageForFailedRequest } from '@/lib/requestErrors'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -107,9 +108,16 @@ export default function SimpleFoodEditor({
 
     const query = initialProduct
       ? supabase.from('products').update(payload).eq('id', initialProduct.id).eq('user_id', user.id)
-      : supabase.from('products').insert({ user_id: user.id, ...payload })
+      : supabase.from('products').insert({ user_id: user.id, kind: 'simple', ...payload })
 
-    const { error } = await query.select().single()
+    let error: { message: string } | null = null
+    try {
+      ;({ error } = await query.select().single())
+    } catch (e) {
+      const msg = userMessageForFailedRequest(e)
+      setServerError(msg)
+      throw e
+    }
 
     if (error) {
       setServerError(error.message)

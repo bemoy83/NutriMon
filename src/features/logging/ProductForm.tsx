@@ -5,8 +5,10 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/app/providers/auth'
 import { useEffect, useState } from 'react'
 import type { Product } from '@/types/domain'
+import type { ProductRow } from '@/types/database'
 import { mapProduct } from '@/lib/domainMappers'
 import { selectAllOnFocus } from '@/lib/selectAllOnFocus'
+import { userMessageForFailedRequest } from '@/lib/requestErrors'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -115,19 +117,21 @@ export default function ProductForm({ initialProduct = null, onSave, onSaveAndAd
           .from('products')
           .insert({
             user_id: user.id,
+            kind: 'simple',
             ...payload,
           })
 
-    const { data: product, error } = await query
-      .select()
-      .single()
-
-    if (error) {
-      setServerError(error.message)
+    try {
+      const { data: row, error } = await query.select().single()
+      if (error) {
+        setServerError(error.message)
+        return null
+      }
+      return mapProduct(row as ProductRow)
+    } catch (e) {
+      setServerError(userMessageForFailedRequest(e))
       return null
     }
-
-    return mapProduct(product)
   }
 
   const portionKcalPreview =
