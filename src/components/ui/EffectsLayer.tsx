@@ -79,6 +79,22 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
       timersRef.current.push(t)
     }
 
+    function addDelayedTimedEffect<T extends { id: number }>(
+      setEffects: Dispatch<SetStateAction<T[]>>,
+      effect: T,
+      delayMs: number,
+      durationMs: number,
+    ) {
+      if (delayMs <= 0) {
+        addTimedEffect(setEffects, effect, durationMs)
+        return
+      }
+      const t = setTimeout(() => {
+        addTimedEffect(setEffects, effect, durationMs)
+      }, delayMs)
+      timersRef.current.push(t)
+    }
+
     useEffect(() => {
       const timersContainer = timersRef
       return () => {
@@ -108,13 +124,18 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
       showFocusedAttackImpact(isCrit = false) {
         if (!hitImpactUrl) return
         const hitOffsets = [
-          { delayMs: 0, xPct: 45, yPct: 52 },
-          { delayMs: 90, xPct: 56, yPct: 44 },
-          { delayMs: 180, xPct: 51, yPct: 57 },
+          { delayMs: 0, xPct: 39, yPct: 57 },
+          { delayMs: BATTLE_ANIM.FOCUSED_HIT_SPACING_MS, xPct: 60, yPct: 39 },
+          { delayMs: BATTLE_ANIM.FOCUSED_HIT_SPACING_MS * 2, xPct: 49, yPct: 62 },
         ]
         hitOffsets.forEach((hit) => {
           const id = nextId()
-          addTimedEffect(setImpacts, { id, isCrit, ...hit }, IMPACT_DURATION_MS + hit.delayMs)
+          addDelayedTimedEffect(
+            setImpacts,
+            { id, isCrit, ...hit, delayMs: 0 },
+            hit.delayMs,
+            IMPACT_DURATION_MS,
+          )
         })
       },
       showHitImpact() {
@@ -195,7 +216,6 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
                 height: '100%',
                 objectFit: 'contain',
                 animation: `hit-impact ${IMPACT_DURATION_MS}ms ease-out forwards`,
-                animationDelay: `${h.delayMs}ms`,
                 filter: h.isCrit ? 'drop-shadow(0 0 7px rgba(251,191,36,0.9)) saturate(1.25)' : undefined,
                 pointerEvents: 'none',
               }}

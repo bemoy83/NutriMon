@@ -39,7 +39,12 @@ function SpritePlaceholder({ size }: { size: number }) {
 const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
   function CreatureSprite({ descriptor, displaySize, flip = false, idleAnimation, className }, ref) {
     const pixelArt = descriptor?.pixelArt ?? false
-    const [activeAnimation, setActiveAnimation] = useState<{ type: 'hurt' | 'faint' | 'attack'; isCrit: boolean } | null>(null)
+    const [activeAnimation, setActiveAnimation] = useState<{
+      id: number
+      type: 'hurt' | 'faint' | 'attack'
+      isCrit: boolean
+      durationMs: number
+    } | null>(null)
     const [hasFainted, setHasFainted] = useState(false)
     const descriptorKey = descriptor ? `${descriptor.url}:${descriptor.facing}` : 'placeholder'
     const [frameState, setFrameState] = useState({ descriptorKey, currentFrame: 0 })
@@ -78,7 +83,7 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
     useImperativeHandle(ref, () => ({
       triggerAnimation(type, durationMs, isCrit = false) {
         if (animClearRef.current) clearTimeout(animClearRef.current)
-        setActiveAnimation({ type, isCrit })
+        setActiveAnimation((prev) => ({ id: (prev?.id ?? 0) + 1, type, isCrit, durationMs }))
         animClearRef.current = setTimeout(() => {
           setActiveAnimation(null)
           if (type === 'faint') setHasFainted(true)
@@ -213,6 +218,7 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
             faint → 3 rapid blinks before the dissolve starts (faint-blink keyframes) */}
         {(activeAnimation?.type === 'hurt' || activeAnimation?.type === 'faint') && (
           <div
+            key={activeAnimation.id}
             aria-hidden="true"
             style={{
               position: 'absolute',
@@ -222,8 +228,8 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
               animation:
                 activeAnimation.type === 'hurt'
                   ? (activeAnimation.isCrit
-                      ? `hit-flash-crit ${BATTLE_ANIM.HURT_CRIT_MS}ms ease-out forwards`
-                      : `hit-flash ${BATTLE_ANIM.HURT_MS}ms ease-out forwards`)
+                      ? `hit-flash-crit ${activeAnimation.durationMs}ms ease-out forwards`
+                      : `hit-flash ${activeAnimation.durationMs}ms ease-out forwards`)
                   : `faint-blink ${BATTLE_ANIM.FAINT_BLINK_MS}ms linear forwards`,
               pointerEvents: 'none',
               ...hitFlashStyle,

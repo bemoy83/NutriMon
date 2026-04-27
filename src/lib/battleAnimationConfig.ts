@@ -14,6 +14,7 @@
  *  DAMAGE_NUMBER_MS — float-up duration for damage numbers
  *  CRIT_BADGE_MS   — "CRIT!" badge pop + fade duration
  *  HIT_IMPACT_MS   — hit impact PNG scale + fade duration
+ *  FOCUSED_HIT_SPACING_MS — delay between focused attack hit beats
  *  DEFEND_GUARD_MS — blue guard ring duration for defend actions
  *  FOCUS_CHARGE_MS — gold charge aura duration for focus actions
  */
@@ -41,6 +42,8 @@ export const BATTLE_ANIM = {
   CRIT_BADGE_MS: 900,
   /** Hit impact PNG scale/rotate animation duration (ms). Must match `hit-impact` @keyframes. */
   HIT_IMPACT_MS: 350,
+  /** Time between focused attack hit starts (ms). Used by both impact sprites and target hit flashes. */
+  FOCUSED_HIT_SPACING_MS: 180,
   /** Defensive guard ring duration (ms). Must match `battle-guard-ring` and `battle-guard-spark` @keyframes. */
   DEFEND_GUARD_MS: 560,
   /** Focus charge aura duration (ms). Must match `battle-focus-aura` and `battle-focus-spark` @keyframes. */

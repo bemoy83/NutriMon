@@ -5,6 +5,7 @@ import type { EffectsLayerHandle } from '@/components/ui/EffectsLayer'
 import type { SpecialActionFlashHandle } from '@/components/ui/SpecialActionFlash'
 import { useBattleLogReveal } from '../useBattleLogReveal'
 import type { BattleLogEntry } from '@/types/domain'
+import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
 
 function entry(overrides: Partial<BattleLogEntry>): BattleLogEntry {
   return {
@@ -111,11 +112,12 @@ describe('useBattleLogReveal', () => {
 
   it('uses focused attack impact when attack consumes a focus charge', () => {
     vi.useFakeTimers()
+    const opponentSprite = { triggerAnimation: vi.fn() } satisfies CreatureSpriteHandle
     const opponentEffects = effectHandle()
     const { result } = renderHook(() =>
       useBattleLogReveal({
         playerSpriteRef: { current: { triggerAnimation: vi.fn() } satisfies CreatureSpriteHandle },
-        opponentSpriteRef: { current: { triggerAnimation: vi.fn() } satisfies CreatureSpriteHandle },
+        opponentSpriteRef: { current: opponentSprite },
         playerEffectsRef: { current: effectHandle() },
         opponentEffectsRef: { current: opponentEffects },
         triggerArenaShake: vi.fn(),
@@ -141,5 +143,18 @@ describe('useBattleLogReveal', () => {
 
     expect(opponentEffects.showFocusedAttackImpact).toHaveBeenCalledWith(true)
     expect(opponentEffects.showAttackImpact).not.toHaveBeenCalled()
+    expect(opponentSprite.triggerAnimation).toHaveBeenCalledTimes(1)
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.FOCUSED_HIT_SPACING_MS)
+    })
+
+    expect(opponentSprite.triggerAnimation).toHaveBeenCalledTimes(2)
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.FOCUSED_HIT_SPACING_MS)
+    })
+
+    expect(opponentSprite.triggerAnimation).toHaveBeenCalledTimes(3)
   })
 })

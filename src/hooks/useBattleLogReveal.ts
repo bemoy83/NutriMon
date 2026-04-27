@@ -29,6 +29,34 @@ export function useBattleLogReveal(opts: {
   } | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
 
+  const triggerHurt = useCallback(
+    (spriteRef: RefObject<CreatureSpriteHandle | null>, isCrit: boolean) => {
+      spriteRef.current?.triggerAnimation(
+        'hurt',
+        isCrit ? BATTLE_ANIM.HURT_CRIT_MS : BATTLE_ANIM.HURT_MS,
+        isCrit,
+      )
+    },
+    [],
+  )
+
+  const triggerFocusedHurtSequence = useCallback(
+    (spriteRef: RefObject<CreatureSpriteHandle | null>, isCrit: boolean) => {
+      for (let hit = 0; hit < 3; hit += 1) {
+        const delayMs = hit * BATTLE_ANIM.FOCUSED_HIT_SPACING_MS
+        if (delayMs === 0) {
+          spriteRef.current?.triggerAnimation('hurt', BATTLE_ANIM.HIT_IMPACT_MS, isCrit)
+          continue
+        }
+        const t = setTimeout(() => {
+          spriteRef.current?.triggerAnimation('hurt', BATTLE_ANIM.HIT_IMPACT_MS, isCrit)
+        }, delayMs)
+        animTimers.current.push(t)
+      }
+    },
+    [],
+  )
+
   const revealEntries = useCallback(
     (sessionId: string, fullLog: BattleLogEntry[], base: BattleLogEntry[]) => {
       animTimers.current.forEach(clearTimeout)
@@ -69,7 +97,11 @@ export function useBattleLogReveal(opts: {
 
           if (entry.phase === 'action' && entry.action === 'attack' && entry.damage > 0) {
             if (entry.target === 'player') {
-              playerSpriteRef.current?.triggerAnimation('hurt', BATTLE_ANIM.HURT_MS, entry.crit)
+              if (entry.consumedNextAttackBonus) {
+                triggerFocusedHurtSequence(playerSpriteRef, entry.crit)
+              } else {
+                triggerHurt(playerSpriteRef, entry.crit)
+              }
               playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
               if (entry.consumedNextAttackBonus) {
                 playerEffectsRef.current?.showFocusedAttackImpact(entry.crit)
@@ -79,7 +111,11 @@ export function useBattleLogReveal(opts: {
               if (entry.crit) playerEffectsRef.current?.showCritBadge()
               triggerArenaShake(entry.crit)
             } else if (entry.target === 'opponent') {
-              opponentSpriteRef.current?.triggerAnimation('hurt', BATTLE_ANIM.HURT_MS, entry.crit)
+              if (entry.consumedNextAttackBonus) {
+                triggerFocusedHurtSequence(opponentSpriteRef, entry.crit)
+              } else {
+                triggerHurt(opponentSpriteRef, entry.crit)
+              }
               opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
               if (entry.consumedNextAttackBonus) {
                 opponentEffectsRef.current?.showFocusedAttackImpact(entry.crit)
@@ -108,6 +144,8 @@ export function useBattleLogReveal(opts: {
     },
     [
       triggerArenaShake,
+      triggerHurt,
+      triggerFocusedHurtSequence,
       playerSpriteRef,
       opponentSpriteRef,
       playerEffectsRef,

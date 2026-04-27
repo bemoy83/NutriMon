@@ -77,8 +77,7 @@ describe('EffectsLayer', () => {
     expect(screen.queryByText('CRIT!')).not.toBeInTheDocument()
   })
 
-  it('renders focused attack as three staggered impacts', () => {
-    vi.useFakeTimers()
+  it('renders focused attack as three staggered impacts', async () => {
     const ref = createRef<EffectsLayerHandle>()
 
     render(<EffectsLayer ref={ref} hitImpactUrl="/impact.png" displaySize={160} />)
@@ -87,10 +86,24 @@ describe('EffectsLayer', () => {
       ref.current?.showFocusedAttackImpact(true)
     })
 
-    expect(screen.getAllByTestId('battle-attack-impact')).toHaveLength(3)
+    expect(screen.getAllByTestId('battle-attack-impact')).toHaveLength(1)
 
-    act(() => {
-      vi.advanceTimersByTime(BATTLE_ANIM.HIT_IMPACT_MS + 180)
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, BATTLE_ANIM.FOCUSED_HIT_SPACING_MS + 10))
+    })
+
+    expect(screen.getAllByTestId('battle-attack-impact')).toHaveLength(2)
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, BATTLE_ANIM.FOCUSED_HIT_SPACING_MS))
+    })
+
+    expect(screen.getAllByTestId('battle-attack-impact')).toHaveLength(2)
+
+    await act(async () => {
+      await new Promise((resolve) =>
+        setTimeout(resolve, BATTLE_ANIM.HIT_IMPACT_MS + 10),
+      )
     })
 
     expect(screen.queryByTestId('battle-attack-impact')).not.toBeInTheDocument()
