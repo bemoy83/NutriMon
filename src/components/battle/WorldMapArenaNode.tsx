@@ -94,16 +94,6 @@ export function WorldMapArenaNode({
             </g>
           )}
 
-          {/* Active run pulse — top-right corner of platform */}
-          {arena.hasActiveRun && !isLocked && (
-            <circle
-              cx={px + platform.width}
-              cy={py}
-              r={4.5 * nodeScale}
-              fill="#f59e0b"
-              style={{ animation: 'worldmap-pulse 1.4s ease-in-out infinite' }}
-            />
-          )}
         </>
       ) : (
         /* ── Fallback circle (no platform art registered) ── */

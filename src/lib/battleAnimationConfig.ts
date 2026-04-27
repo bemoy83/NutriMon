@@ -14,6 +14,8 @@
  *  DAMAGE_NUMBER_MS — float-up duration for damage numbers
  *  CRIT_BADGE_MS   — "CRIT!" badge pop + fade duration
  *  HIT_IMPACT_MS   — hit impact PNG scale + fade duration
+ *  DEFEND_GUARD_MS — blue guard ring duration for defend actions
+ *  FOCUS_CHARGE_MS — gold charge aura duration for focus actions
  */
 export const BATTLE_ANIM = {
   /** Delay between each sequential log entry being shown (ms). */
@@ -39,6 +41,10 @@ export const BATTLE_ANIM = {
   CRIT_BADGE_MS: 900,
   /** Hit impact PNG scale/rotate animation duration (ms). Must match `hit-impact` @keyframes. */
   HIT_IMPACT_MS: 350,
+  /** Defensive guard ring duration (ms). Must match `battle-guard-ring` and `battle-guard-spark` @keyframes. */
+  DEFEND_GUARD_MS: 560,
+  /** Focus charge aura duration (ms). Must match `battle-focus-aura` and `battle-focus-spark` @keyframes. */
+  FOCUS_CHARGE_MS: 650,
 
   /**
    * Full-screen flash duration for special actions (ms). Must match `special-flash` @keyframes.

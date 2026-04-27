@@ -52,17 +52,40 @@ export function useBattleLogReveal(opts: {
             specialFlashRef.current?.triggerFlash()
           }
 
-          if (entry.phase === 'action' && entry.damage > 0) {
+          const actorEffects =
+            entry.actor === 'player'
+              ? playerEffectsRef.current
+              : entry.actor === 'opponent'
+                ? opponentEffectsRef.current
+                : null
+
+          if (entry.phase === 'action' && entry.action === 'defend') {
+            actorEffects?.showDefendGuard()
+          }
+
+          if (entry.phase === 'action' && entry.action === 'focus') {
+            actorEffects?.showFocusCharge()
+          }
+
+          if (entry.phase === 'action' && entry.action === 'attack' && entry.damage > 0) {
             if (entry.target === 'player') {
               playerSpriteRef.current?.triggerAnimation('hurt', BATTLE_ANIM.HURT_MS, entry.crit)
               playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
-              playerEffectsRef.current?.showHitImpact()
+              if (entry.consumedNextAttackBonus) {
+                playerEffectsRef.current?.showFocusedAttackImpact(entry.crit)
+              } else {
+                playerEffectsRef.current?.showAttackImpact(entry.crit)
+              }
               if (entry.crit) playerEffectsRef.current?.showCritBadge()
               triggerArenaShake(entry.crit)
             } else if (entry.target === 'opponent') {
               opponentSpriteRef.current?.triggerAnimation('hurt', BATTLE_ANIM.HURT_MS, entry.crit)
               opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
-              opponentEffectsRef.current?.showHitImpact()
+              if (entry.consumedNextAttackBonus) {
+                opponentEffectsRef.current?.showFocusedAttackImpact(entry.crit)
+              } else {
+                opponentEffectsRef.current?.showAttackImpact(entry.crit)
+              }
               if (entry.crit) opponentEffectsRef.current?.showCritBadge()
               triggerArenaShake(entry.crit)
             }

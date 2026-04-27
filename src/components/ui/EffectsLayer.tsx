@@ -1,10 +1,15 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
 
 export interface EffectsLayerHandle {
   showDamageNumber(value: number, isCrit: boolean): void
   showCritBadge(): void
+  showAttackImpact(isCrit?: boolean): void
+  showFocusedAttackImpact(isCrit?: boolean): void
+  /** @deprecated Use showAttackImpact(). */
   showHitImpact(): void
+  showDefendGuard(): void
+  showFocusCharge(): void
 }
 
 interface FloatingNumber {
@@ -18,6 +23,18 @@ interface CritBadge {
 }
 
 interface HitImpact {
+  id: number
+  isCrit: boolean
+  delayMs: number
+  xPct: number
+  yPct: number
+}
+
+interface GuardEffect {
+  id: number
+}
+
+interface FocusEffect {
   id: number
 }
 
@@ -46,7 +63,21 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
     const [numbers, setNumbers] = useState<FloatingNumber[]>([])
     const [crits, setCrits] = useState<CritBadge[]>([])
     const [impacts, setImpacts] = useState<HitImpact[]>([])
+    const [guards, setGuards] = useState<GuardEffect[]>([])
+    const [focuses, setFocuses] = useState<FocusEffect[]>([])
     const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+
+    function addTimedEffect<T extends { id: number }>(
+      setEffects: Dispatch<SetStateAction<T[]>>,
+      effect: T,
+      durationMs: number,
+    ) {
+      setEffects((prev) => [...prev, effect])
+      const t = setTimeout(() => {
+        setEffects((prev) => prev.filter((item) => item.id !== effect.id))
+      }, durationMs)
+      timersRef.current.push(t)
+    }
 
     useEffect(() => {
       const timersContainer = timersRef
@@ -67,20 +98,37 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
       },
       showCritBadge() {
         const id = nextId()
-        setCrits((prev) => [...prev, { id }])
-        const t = setTimeout(() => {
-          setCrits((prev) => prev.filter((c) => c.id !== id))
-        }, BATTLE_ANIM.CRIT_BADGE_MS)
-        timersRef.current.push(t)
+        addTimedEffect(setCrits, { id }, BATTLE_ANIM.CRIT_BADGE_MS)
+      },
+      showAttackImpact(isCrit = false) {
+        if (!hitImpactUrl) return
+        const id = nextId()
+        addTimedEffect(setImpacts, { id, isCrit, delayMs: 0, xPct: 50, yPct: 50 }, IMPACT_DURATION_MS)
+      },
+      showFocusedAttackImpact(isCrit = false) {
+        if (!hitImpactUrl) return
+        const hitOffsets = [
+          { delayMs: 0, xPct: 45, yPct: 52 },
+          { delayMs: 90, xPct: 56, yPct: 44 },
+          { delayMs: 180, xPct: 51, yPct: 57 },
+        ]
+        hitOffsets.forEach((hit) => {
+          const id = nextId()
+          addTimedEffect(setImpacts, { id, isCrit, ...hit }, IMPACT_DURATION_MS + hit.delayMs)
+        })
       },
       showHitImpact() {
         if (!hitImpactUrl) return
         const id = nextId()
-        setImpacts((prev) => [...prev, { id }])
-        const t = setTimeout(() => {
-          setImpacts((prev) => prev.filter((h) => h.id !== id))
-        }, IMPACT_DURATION_MS)
-        timersRef.current.push(t)
+        addTimedEffect(setImpacts, { id, isCrit: false, delayMs: 0, xPct: 50, yPct: 50 }, IMPACT_DURATION_MS)
+      },
+      showDefendGuard() {
+        const id = nextId()
+        addTimedEffect(setGuards, { id }, BATTLE_ANIM.DEFEND_GUARD_MS)
+      },
+      showFocusCharge() {
+        const id = nextId()
+        addTimedEffect(setFocuses, { id }, BATTLE_ANIM.FOCUS_CHARGE_MS)
       },
     }))
 
@@ -126,10 +174,11 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         {hitImpactUrl && impacts.map((h) => (
           <div
             key={h.id}
+            data-testid="battle-attack-impact"
             style={{
               position: 'absolute',
-              top: '50%',
-              left: '50%',
+              top: `${h.yPct}%`,
+              left: `${h.xPct}%`,
               width: impactPx,
               height: impactPx,
               transform: 'translate(-50%, -50%)',
@@ -146,9 +195,98 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
                 height: '100%',
                 objectFit: 'contain',
                 animation: `hit-impact ${IMPACT_DURATION_MS}ms ease-out forwards`,
+                animationDelay: `${h.delayMs}ms`,
+                filter: h.isCrit ? 'drop-shadow(0 0 7px rgba(251,191,36,0.9)) saturate(1.25)' : undefined,
                 pointerEvents: 'none',
               }}
             />
+          </div>
+        ))}
+
+        {/* Defend guard ring */}
+        {guards.map((g) => (
+          <div
+            key={g.id}
+            data-testid="battle-defend-guard"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              pointerEvents: 'none',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: '47%',
+                left: '50%',
+                width: '72%',
+                height: '58%',
+                border: '3px solid rgba(125, 211, 252, 0.95)',
+                borderRadius: '50%',
+                boxShadow: '0 0 0 2px rgba(30, 64, 175, 0.55), inset 0 0 12px rgba(186, 230, 253, 0.45)',
+                transform: 'translate(-50%, -50%)',
+                animation: `battle-guard-ring ${BATTLE_ANIM.DEFEND_GUARD_MS}ms steps(5, end) forwards`,
+              }}
+            />
+            {[0, 1, 2].map((spark) => (
+              <span
+                key={spark}
+                style={{
+                  position: 'absolute',
+                  top: `${spark === 0 ? 29 : spark === 1 ? 43 : 59}%`,
+                  left: `${spark === 0 ? 31 : spark === 1 ? 70 : 38}%`,
+                  width: 6,
+                  height: 6,
+                  background: '#e0f2fe',
+                  boxShadow: '0 0 0 1px rgba(14, 116, 144, 0.8)',
+                  animation: `battle-guard-spark ${BATTLE_ANIM.DEFEND_GUARD_MS}ms steps(4, end) forwards`,
+                  animationDelay: `${spark * 70}ms`,
+                }}
+              />
+            ))}
+          </div>
+        ))}
+
+        {/* Focus charge aura */}
+        {focuses.map((f) => (
+          <div
+            key={f.id}
+            data-testid="battle-focus-charge"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              pointerEvents: 'none',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                left: '50%',
+                bottom: '7%',
+                width: '78%',
+                height: '42%',
+                borderRadius: '50%',
+                background: 'radial-gradient(ellipse, rgba(253,224,71,0.55) 0%, rgba(251,191,36,0.24) 48%, transparent 72%)',
+                transform: 'translateX(-50%)',
+                animation: `battle-focus-aura ${BATTLE_ANIM.FOCUS_CHARGE_MS}ms steps(6, end) forwards`,
+              }}
+            />
+            {[0, 1, 2, 3].map((spark) => (
+              <span
+                key={spark}
+                style={{
+                  position: 'absolute',
+                  bottom: `${spark % 2 === 0 ? 21 : 28}%`,
+                  left: `${28 + spark * 13}%`,
+                  width: 5,
+                  height: 9,
+                  background: spark % 2 === 0 ? '#fef08a' : '#facc15',
+                  boxShadow: '0 0 0 1px rgba(161, 98, 7, 0.6)',
+                  animation: `battle-focus-spark ${BATTLE_ANIM.FOCUS_CHARGE_MS}ms steps(5, end) forwards`,
+                  animationDelay: `${spark * 55}ms`,
+                }}
+              />
+            ))}
           </div>
         ))}
 
