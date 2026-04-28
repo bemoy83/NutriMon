@@ -208,13 +208,30 @@ function NodeModeCanvas({
           marginRight: 'calc(50% - 50vw)',
         }}
       >
+        <img
+          src="/sprites/worldmap_bg.png"
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: layout.height,
+            objectFit: 'cover',
+            imageRendering: 'pixelated',
+            pointerEvents: 'none',
+            userSelect: 'none',
+          }}
+        />
+
         <svg
           viewBox={`0 0 ${layout.width} ${layout.height}`}
           preserveAspectRatio="none"
           width="100%"
           height={layout.height}
           aria-hidden="true"
-          style={{ position: 'absolute', inset: 0, display: 'block', pointerEvents: 'none' }}
+          style={{ position: 'absolute', inset: 0, display: 'block', opacity: 0.38, pointerEvents: 'none' }}
         >
           <WorldMapTerrainBands nodes={nodes} positions={positions} layout={layout} />
         </svg>
