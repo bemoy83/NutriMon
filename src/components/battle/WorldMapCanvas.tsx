@@ -181,16 +181,28 @@ function NodeModeCanvas({
   wrapperRef,
   onSelectNode,
 }: NodeModeCanvasProps) {
-  // Auto-scroll to current node on mount
+  // Auto-scroll the app page to the current node when the hub is entered.
   useEffect(() => {
     if (!currentNode || !wrapperRef.current) return
     const idx = nodes.findIndex((n) => n.id === currentNode.id)
     const pos = positions[idx]
     if (!pos) return
-    const scrollTop = Math.max(0, pos.y - layout.height * 0.35)
-    wrapperRef.current.scrollTo({ top: scrollTop, behavior: 'instant' })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+
+    const mapEl = wrapperRef.current
+    const scrollEl = mapEl.closest('main')
+    if (!scrollEl) return
+
+    const frame = requestAnimationFrame(() => {
+      const mapRect = mapEl.getBoundingClientRect()
+      const scrollRect = scrollEl.getBoundingClientRect()
+      const mapTopInScroll = scrollEl.scrollTop + mapRect.top - scrollRect.top
+      const viewportOffset = (window.visualViewport?.height ?? window.innerHeight) * 0.35
+      const scrollTop = Math.max(0, mapTopInScroll + pos.y - viewportOffset)
+      scrollEl.scrollTo({ top: scrollTop, behavior: 'instant' })
+    })
+
+    return () => cancelAnimationFrame(frame)
+  }, [currentNode, layout.height, layout.width, nodes, positions, wrapperRef])
 
   return (
     <>
@@ -200,10 +212,7 @@ function NodeModeCanvas({
         style={{
           position: 'relative',
           width: '100vw',
-          height: '80dvh',
-          maxHeight: '80dvh',
-          overflowY: 'auto',
-          overscrollBehavior: 'contain',
+          height: layout.height,
           marginLeft: 'calc(50% - 50vw)',
           marginRight: 'calc(50% - 50vw)',
         }}

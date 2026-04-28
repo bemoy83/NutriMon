@@ -48,10 +48,10 @@ export default function BattleHubPage() {
 
   return (
     <div
-      className="app-page min-h-screen px-4 py-6 pb-24"
+      className="app-page min-h-screen px-4 pt-0 pb-20"
       style={{ background: 'linear-gradient(165deg, #0c1a10 0%, #111c16 100%)' }}
     >
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="sticky top-0 z-10 -mx-4 mb-3 flex items-center justify-between gap-3 border-b border-white/10 bg-[rgb(12_26_16/0.78)] px-4 py-3 backdrop-blur-md">
         <h1 className="text-xl font-bold text-white">Battle Hub</h1>
         {companion ? (
           <button
