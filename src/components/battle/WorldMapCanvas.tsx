@@ -181,11 +181,14 @@ function NodeModeCanvas({
   wrapperRef,
   onSelectNode,
 }: NodeModeCanvasProps) {
+  const currentNodeId = currentNode?.id ?? null
+
   // Auto-scroll the app page to the current node when the hub is entered.
   useEffect(() => {
-    if (!currentNode || !wrapperRef.current) return
-    const idx = nodes.findIndex((n) => n.id === currentNode.id)
-    const pos = positions[idx]
+    if (!currentNodeId || !wrapperRef.current) return
+    const idx = nodes.findIndex((n) => n.id === currentNodeId)
+    if (idx === -1) return
+    const pos = resolveNodePosition(nodes[idx], idx, nodes.length, layout)
     if (!pos) return
 
     const mapEl = wrapperRef.current
@@ -202,7 +205,7 @@ function NodeModeCanvas({
     })
 
     return () => cancelAnimationFrame(frame)
-  }, [currentNode, layout.height, layout.width, nodes, positions, wrapperRef])
+  }, [currentNodeId, layout, nodes, wrapperRef])
 
   return (
     <>
