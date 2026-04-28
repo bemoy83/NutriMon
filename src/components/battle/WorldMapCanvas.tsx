@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { getArenaTerrain } from '@/lib/sprites'
+import { getArenaTerrain, getPublicAssetUrl } from '@/lib/sprites'
 import type { ArenaListArena, CreatureCompanion, WorldMapOpponentNode } from '@/types/domain'
 import { WorldMapArenaNode } from './WorldMapArenaNode'
 import { WorldMapOpponentNodeComponent } from './WorldMapOpponentNode'
@@ -209,7 +209,7 @@ function NodeModeCanvas({
         }}
       >
         <img
-          src="/sprites/worldmap_bg.png"
+          src={getPublicAssetUrl('/sprites/worldmap_bg.png')}
           alt=""
           aria-hidden="true"
           draggable={false}

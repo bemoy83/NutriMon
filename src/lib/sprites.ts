@@ -10,6 +10,10 @@ function s(path: string): string {
   return `${base}${path}`
 }
 
+export function getPublicAssetUrl(path: string): string {
+  return s(path)
+}
+
 export interface SpriteDescriptor {
   url: string
   nativeWidth: number
