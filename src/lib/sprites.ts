@@ -183,7 +183,7 @@ export interface PlatformCalibration {
 
 const ARENA_1_CALIBRATION: PlatformCalibration = {
   nativeH: 240,
-  ovalSurfaceY: 97 / 240,
+  ovalSurfaceY: 128 / 240,
 }
 
 export interface TerrainDescriptor {
@@ -242,11 +242,6 @@ const DEFAULT_TERRAIN: TerrainDescriptor = {
   opponentPlatformWidth: null,
 }
 
-const ARENA_2_CALIBRATION: PlatformCalibration = {
-  nativeH: 240,
-  ovalSurfaceY: 0.38, // TODO: tune visually until sprite feet land on oval
-}
-
 const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
   '37543fca-9f22-41c7-83b5-2ded30d7b063': {
     playerPlatformUrl: s('/terrain/arena_1_player_platform.png'),
@@ -259,10 +254,8 @@ const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
   'ca277fd4-1dd0-4e6e-a50b-c95bbd878395': {
     playerPlatformUrl: s('/terrain/arena_2_player_platform.png'),
     playerPlatformRenderedWidth: 320,
-    playerPlatformCalibration: ARENA_2_CALIBRATION,
     opponentPlatformUrl: s('/terrain/arena_2_opponent_platform.png'),
     opponentPlatformWidth: 224,
-    opponentCalibration: ARENA_2_CALIBRATION,
     accentColor: '#f97316', // arena_2 — ember orange
   },
   'a353973e-46fe-4757-a90d-a409beddc644': {

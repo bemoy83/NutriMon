@@ -34,7 +34,7 @@ export const ARENA_META_FONT_SIZE = 10
 
 export const DEFAULT_PLATFORM_CALIBRATION: PlatformCalibration = {
   nativeH: 240,
-  ovalSurfaceY: 97 / 240,
+  ovalSurfaceY: 128 / 240,
 }
 
 export interface HubPlatformMetrics {
