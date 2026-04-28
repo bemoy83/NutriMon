@@ -25,6 +25,8 @@ import type {
   Product,
   Profile,
   WeightEntry,
+  WorldMap,
+  WorldMapOpponentNode,
 } from '@/types/domain'
 import type {
   ArenaListArenaRow,
@@ -54,6 +56,8 @@ import type {
   ProductRow,
   ProfileRow,
   WeightEntryRow,
+  WorldMapNodeRow,
+  WorldMapRow,
 } from '@/types/database'
 
 export function mapProfile(row: ProfileRow): Profile {
@@ -366,6 +370,35 @@ export function mapArenaList(row: ArenaListRow): ArenaList {
     companion: row.companion ? mapCreatureCompanion(row.companion) : null,
     snapshot: row.snapshot ? mapCreatureBattleSnapshot(row.snapshot) : null,
     arenas: (row.arenas ?? []).map(mapArenaListArena),
+  }
+}
+
+export function mapWorldMapNode(row: WorldMapNodeRow): WorldMapOpponentNode {
+  return {
+    id: row.id,
+    name: row.name,
+    arenaId: row.arena_id,
+    arenaKey: row.arena_key,
+    arenaName: row.arena_name,
+    arenaSortOrder: row.arena_sort_order,
+    sortOrder: row.sort_order,
+    isArenaBoss: row.is_arena_boss,
+    isDefeated: row.is_defeated,
+    isChallengeable: row.is_challengeable,
+    lockReason: row.lock_reason,
+    rewardedWinTurnCount: row.rewarded_win_turn_count,
+    rewardedWinRemainingHpPct: row.rewarded_win_remaining_hp_pct,
+    rewardedWinXpAwarded: row.rewarded_win_xp_awarded,
+    mapX: null,
+    mapY: null,
+  }
+}
+
+export function mapWorldMap(row: WorldMapRow): WorldMap {
+  return {
+    companion: row.companion ? mapCreatureCompanion(row.companion) : null,
+    snapshot: row.snapshot ? mapCreatureBattleSnapshot(row.snapshot) : null,
+    nodes: (row.nodes ?? []).map(mapWorldMapNode),
   }
 }
 

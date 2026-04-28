@@ -196,6 +196,10 @@ export interface Database {
         Args: { p_battle_date: string }
         Returns: ArenaListRow
       }
+      get_world_map: {
+        Args: { p_battle_date: string }
+        Returns: WorldMapRow
+      }
       get_arena_detail: {
         Args: { p_arena_id: string; p_battle_date: string }
         Returns: BattleHubRow
@@ -728,6 +732,29 @@ export interface ArenaListRow {
   companion: CreatureCompanionRow | null
   snapshot: CreatureBattleSnapshotRow | null
   arenas: ArenaListArenaRow[]
+}
+
+export interface WorldMapNodeRow {
+  id: string
+  name: string
+  arena_id: string
+  arena_key: string
+  arena_sort_order: number
+  arena_name: string
+  sort_order: number
+  is_arena_boss: boolean
+  is_defeated: boolean
+  is_challengeable: boolean
+  lock_reason: string | null
+  rewarded_win_turn_count: number | null
+  rewarded_win_remaining_hp_pct: number | null
+  rewarded_win_xp_awarded: number | null
+}
+
+export interface WorldMapRow {
+  companion: CreatureCompanionRow | null
+  snapshot: CreatureBattleSnapshotRow | null
+  nodes: WorldMapNodeRow[]
 }
 
 export interface CompositeIngredientInput {

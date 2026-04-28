@@ -1,5 +1,5 @@
 import { getArenaTerrain } from '@/lib/sprites'
-import type { ArenaListArena } from '@/types/domain'
+import type { ArenaListArena, WorldMapOpponentNode } from '@/types/domain'
 import type { NodePosition } from './worldMapGeometry'
 import type { WorldMapLayout } from './worldMapLayout'
 
@@ -11,21 +11,31 @@ interface Band {
   bottom: number
 }
 
-interface WorldMapTerrainBandsProps {
+interface WorldMapTerrainBandsArenaProps {
   arenas: ArenaListArena[]
   positions: NodePosition[]
   layout: WorldMapLayout
+  nodes?: undefined
 }
 
-function computeBands(
+interface WorldMapTerrainBandsNodeProps {
+  nodes: WorldMapOpponentNode[]
+  positions: NodePosition[]
+  layout: WorldMapLayout
+  arenas?: undefined
+}
+
+type WorldMapTerrainBandsProps = WorldMapTerrainBandsArenaProps | WorldMapTerrainBandsNodeProps
+
+function computeBandsFromArenas(
   sorted: ArenaListArena[],
   positions: NodePosition[],
   layout: WorldMapLayout,
 ): Band[] {
   return sorted.map((arena, i) => {
     const pos = positions[i]
-    const above = positions[i + 1] // higher y index = higher on screen (smaller y)
-    const below = positions[i - 1] // lower y index = lower on screen (larger y)
+    const above = positions[i + 1]
+    const below = positions[i - 1]
 
     const top = above ? (pos.y + above.y) / 2 : 0
     const bottom = below ? (pos.y + below.y) / 2 : layout.height
@@ -35,8 +45,57 @@ function computeBands(
   })
 }
 
-export function WorldMapTerrainBands({ arenas, positions, layout }: WorldMapTerrainBandsProps) {
-  const bands = computeBands(arenas, positions, layout)
+function computeBandsFromNodes(
+  nodes: WorldMapOpponentNode[],
+  positions: NodePosition[],
+  layout: WorldMapLayout,
+): Band[] {
+  // Group nodes by arenaSortOrder, compute one band per biome spanning all its nodes.
+  const biomeMap = new Map<number, { arenaId: string; indices: number[] }>()
+  nodes.forEach((node, i) => {
+    const entry = biomeMap.get(node.arenaSortOrder)
+    if (entry) {
+      entry.indices.push(i)
+    } else {
+      biomeMap.set(node.arenaSortOrder, { arenaId: node.arenaId, indices: [i] })
+    }
+  })
+
+  const sortedBiomes = Array.from(biomeMap.entries()).sort(([a], [b]) => a - b)
+
+  return sortedBiomes.map(([, { arenaId, indices }], biomeIdx) => {
+    const firstIdx = indices[0]
+    const lastIdx = indices[indices.length - 1]
+    const midIdx = indices[Math.floor(indices.length / 2)]
+
+    const firstPos = positions[firstIdx]
+    const lastPos = positions[lastIdx]
+    const midPos = positions[midIdx]
+
+    const prevBiome = sortedBiomes[biomeIdx - 1]
+    const nextBiome = sortedBiomes[biomeIdx + 1]
+
+    const prevLastPos = prevBiome
+      ? positions[prevBiome[1].indices[prevBiome[1].indices.length - 1]]
+      : null
+    const nextFirstPos = nextBiome
+      ? positions[nextBiome[1].indices[0]]
+      : null
+
+    // top = midpoint between previous biome's last node and this biome's first node
+    const top = prevLastPos ? (lastPos.y + prevLastPos.y) / 2 : 0
+    // bottom = midpoint between this biome's last node and next biome's first node
+    const bottom = nextFirstPos ? (firstPos.y + nextFirstPos.y) / 2 : layout.height
+
+    const terrain = getArenaTerrain(arenaId)
+    return { arenaId, accent: terrain.accentColor ?? '#6b7280', nodePos: midPos, top, bottom }
+  })
+}
+
+export function WorldMapTerrainBands({ arenas, nodes, positions, layout }: WorldMapTerrainBandsProps) {
+  const bands = nodes
+    ? computeBandsFromNodes(nodes, positions, layout)
+    : computeBandsFromArenas(arenas!, positions, layout)
 
   return (
     <g>

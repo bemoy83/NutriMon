@@ -336,6 +336,32 @@ export interface ArenaList {
   arenas: ArenaListArena[]
 }
 
+export interface WorldMapOpponentNode {
+  id: string
+  name: string
+  arenaId: string
+  arenaKey: string
+  arenaName: string
+  arenaSortOrder: number
+  sortOrder: number
+  isArenaBoss: boolean
+  isDefeated: boolean
+  isChallengeable: boolean
+  lockReason: string | null
+  rewardedWinTurnCount: number | null
+  rewardedWinRemainingHpPct: number | null
+  rewardedWinXpAwarded: number | null
+  /** Always null — kept for resolveNodePosition compatibility */
+  mapX: null
+  mapY: null
+}
+
+export interface WorldMap {
+  companion: CreatureCompanion | null
+  snapshot: CreatureBattleSnapshot | null
+  nodes: WorldMapOpponentNode[]
+}
+
 export interface BattleOpponent {
   id: string
   arenaId: string

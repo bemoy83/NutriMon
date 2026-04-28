@@ -290,7 +290,7 @@ export default function BattlePage() {
           remainingHpPct={session.remainingHpPct}
           rewardClaimed={session.rewardClaimed}
           xpAwarded={session.xpAwarded}
-          onReturn={() => navigate(`/app/battle/arenas/${session.opponent.arenaId}`)}
+          onReturn={() => navigate('/app/battle')}
         />
       ) : null}
     </div>

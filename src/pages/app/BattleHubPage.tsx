@@ -1,11 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { WorldMapCanvas } from '@/components/battle/WorldMapCanvas'
+import { OpponentNodeSheet } from '@/components/battle/OpponentNodeSheet'
 import LoadingState from '@/components/ui/LoadingState'
-import { useArenaList } from '@/features/battle/useArenaList'
+import { useWorldMap } from '@/features/battle/useWorldMap'
 import { useProfileSummary } from '@/features/profile/useProfileSummary'
 import { getTodayInTimezone } from '@/lib/date'
-import type { CreatureCondition } from '@/types/domain'
+import type { CreatureCondition, WorldMapOpponentNode } from '@/types/domain'
 
 function getConditionTone(condition: CreatureCondition) {
   switch (condition) {
@@ -22,9 +23,8 @@ const HUB_BG = '#0c1a10'
 
 export default function BattleHubPage() {
   const navigate = useNavigate()
+  const [selectedNode, setSelectedNode] = useState<WorldMapOpponentNode | null>(null)
 
-  // Override the fixed body::before background layer for the hub's dark forest theme.
-  // Restored to defaults when navigating away.
   useEffect(() => {
     const root = document.documentElement
     root.style.setProperty('--page-bg-color', HUB_BG)
@@ -38,11 +38,11 @@ export default function BattleHubPage() {
   const profileQuery = useProfileSummary()
   const timezone = profileQuery.data?.timezone ?? 'UTC'
   const battleDate = getTodayInTimezone(timezone)
-  const arenaListQuery = useArenaList(battleDate, timezone)
+  const worldMapQuery = useWorldMap(battleDate, timezone)
 
-  const companion = arenaListQuery.data?.companion ?? null
-  const snapshot = arenaListQuery.data?.snapshot ?? null
-  const arenas = arenaListQuery.data?.arenas ?? []
+  const companion = worldMapQuery.data?.companion ?? null
+  const snapshot = worldMapQuery.data?.snapshot ?? null
+  const nodes = worldMapQuery.data?.nodes ?? []
 
   if (profileQuery.isLoading) return <LoadingState fullScreen />
 
@@ -76,24 +76,33 @@ export default function BattleHubPage() {
       </div>
 
       {/* World map */}
-      {arenaListQuery.isLoading ? (
-        <LoadingState label="Loading arenas…" />
-      ) : arenaListQuery.error ? (
+      {worldMapQuery.isLoading ? (
+        <LoadingState label="Loading world map…" />
+      ) : worldMapQuery.error ? (
         <div className="app-card p-5">
-          <p className="text-sm text-[var(--app-text-primary)]">Arena data unavailable right now.</p>
+          <p className="text-sm text-[var(--app-text-primary)]">World map unavailable right now.</p>
           <p className="mt-1 text-xs text-[var(--app-text-muted)]">Try refreshing the page.</p>
         </div>
-      ) : arenas.length === 0 ? (
+      ) : nodes.length === 0 ? (
         <div className="app-card p-5">
-          <p className="text-sm text-[var(--app-text-muted)]">No arenas available right now.</p>
+          <p className="text-sm text-[var(--app-text-muted)]">No opponents available right now.</p>
         </div>
       ) : (
         <WorldMapCanvas
-          arenas={arenas}
+          nodes={nodes}
           companion={companion}
-          onSelectArena={(id, name) =>
-            navigate(`/app/battle/arenas/${id}`, { state: { arenaName: name } })
-          }
+          onSelectNode={setSelectedNode}
+        />
+      )}
+
+      {/* Opponent bottom sheet */}
+      {selectedNode && (
+        <OpponentNodeSheet
+          node={selectedNode}
+          battleDate={battleDate}
+          timezone={timezone}
+          snapshot={snapshot}
+          onClose={() => setSelectedNode(null)}
         />
       )}
     </div>

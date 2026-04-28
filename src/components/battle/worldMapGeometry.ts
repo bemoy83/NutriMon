@@ -1,4 +1,3 @@
-import type { ArenaListArena } from '@/types/domain'
 import { DEFAULT_WORLD_MAP_LAYOUT } from './worldMapLayout'
 import type { WorldMapLayout } from './worldMapLayout'
 
@@ -7,17 +6,23 @@ export interface NodePosition {
   y: number
 }
 
+/** Minimal shape required for position resolution — accepts ArenaListArena or WorldMapOpponentNode. */
+interface MapNode {
+  mapX: number | null
+  mapY: number | null
+}
+
 /** Center-to-side route pattern with a mild rightward climb after the first side step. */
 const X_PATTERN = [0.50, 0.30, 0.58, 0.70, 0.50, 0.30]
 
 export function resolveNodePosition(
-  arena: ArenaListArena,
+  node: MapNode,
   index: number,
   total: number,
   layout: WorldMapLayout = DEFAULT_WORLD_MAP_LAYOUT,
 ): NodePosition {
-  if (arena.mapX !== null && arena.mapY !== null) {
-    return { x: arena.mapX * layout.width, y: arena.mapY * layout.height }
+  if (node.mapX !== null && node.mapY !== null) {
+    return { x: node.mapX * layout.width, y: node.mapY * layout.height }
   }
   const margin = Math.max(layout.height * 0.07, 50 * layout.nodeScale)
   const span = layout.height - margin * 2

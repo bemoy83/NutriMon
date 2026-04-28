@@ -2,6 +2,8 @@ import type { PlatformCalibration, TerrainDescriptor } from '@/lib/sprites'
 
 export const MAP_CANVAS_W = 360
 export const MAP_CANVAS_H = 520
+/** Vertical spacing per node (px at nodeScale 1) for the scrollable 25-node map. */
+export const WORLD_MAP_VERTICAL_SPACING = 96
 
 export interface WorldMapLayout {
   width: number

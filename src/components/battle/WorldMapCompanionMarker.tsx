@@ -1,5 +1,5 @@
 import { getArenaTerrain, getPlayerBattleSpriteDescriptor } from '@/lib/sprites'
-import type { ArenaListArena, CreatureCompanion } from '@/types/domain'
+import type { CreatureCompanion } from '@/types/domain'
 import type { NodePosition } from './worldMapGeometry'
 import {
   COMPANION_MARKER_SIZE,
@@ -9,21 +9,22 @@ import type { WorldMapLayout } from './worldMapLayout'
 
 interface WorldMapCompanionMarkerProps {
   companion: CreatureCompanion | null
-  currentArena: ArenaListArena
+  /** Arena ID used for terrain lookup — accepts either an ArenaListArena.id or WorldMapOpponentNode.arenaId. */
+  arenaId: string
   position: NodePosition
   layout: WorldMapLayout
 }
 
 export function WorldMapCompanionMarker({
   companion,
-  currentArena,
+  arenaId,
   position,
   layout,
 }: WorldMapCompanionMarkerProps) {
   const companionSprite = companion
     ? getPlayerBattleSpriteDescriptor(companion.stage, companion.currentCondition)
     : null
-  const terrain = getArenaTerrain(currentArena.id)
+  const terrain = getArenaTerrain(arenaId)
   const platform = getHubPlatformMetrics(terrain, layout.nodeScale)
   const markerSize = COMPANION_MARKER_SIZE * layout.nodeScale
   const platformTop = position.y - platform.height / 2
