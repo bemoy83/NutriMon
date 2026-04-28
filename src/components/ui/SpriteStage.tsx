@@ -46,12 +46,12 @@ const SpriteStage = forwardRef<SpriteStageHandle, SpriteStageProps>(
             aria-hidden
             style={{
               position: 'absolute',
-              bottom: '5%',
+              bottom: -1,
               left: '50%',
               transform: 'translateX(-50%)',
               width: '85%',
-              height: '15%',
-              background: 'radial-gradient(ellipse, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.3) 45%, transparent 70%)',
+              height: '20%',
+              background: 'radial-gradient(ellipse, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.58) 48%, transparent 74%)',
               borderRadius: '50%',
               pointerEvents: 'none',
             }}
