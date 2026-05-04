@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { getArenaTerrain, getPublicAssetUrl } from '@/lib/sprites'
+import { getPublicAssetUrl } from '@/lib/sprites'
 import type { ArenaListArena, CreatureCompanion, WorldMapOpponentNode } from '@/types/domain'
 import { WorldMapArenaNode } from './WorldMapArenaNode'
 import { WorldMapOpponentNodeComponent } from './WorldMapOpponentNode'
@@ -37,10 +37,6 @@ const MAP_ANIMATIONS = `
   @keyframes worldmap-float {
     0%, 100% { transform: translateY(0px); }
     50%       { transform: translateY(-4px); }
-  }
-  @keyframes worldmap-trail {
-    from { stroke-dashoffset: 20; }
-    to   { stroke-dashoffset: 0; }
   }
   @keyframes worldmap-glow-pulse {
     0%, 100% { opacity: 0.5; }
@@ -119,8 +115,6 @@ export function WorldMapCanvas(props: WorldMapCanvasProps) {
         >
           {sorted.map((arena, i) => {
             if (i === 0) return null
-            const prevArena = sorted[i - 1]
-            const terrain = getArenaTerrain(prevArena.id)
             return (
               <WorldMapPathSegment
                 key={`path-${arena.id}`}
@@ -129,7 +123,6 @@ export function WorldMapCanvas(props: WorldMapCanvasProps) {
                 layoutWidth={layout.width}
                 nodeScale={layout.nodeScale}
                 isUnlocked={arena.isUnlocked}
-                accentColor={terrain.accentColor ?? '#6b7280'}
               />
             )
           })}
@@ -266,8 +259,6 @@ function NodeModeCanvas({
           {/* Paths */}
           {nodes.map((node, i) => {
             if (i === 0) return null
-            const prevNode = nodes[i - 1]
-            const terrain = getArenaTerrain(prevNode.arenaId)
             return (
               <WorldMapPathSegment
                 key={`path-${node.id}`}
@@ -276,9 +267,7 @@ function NodeModeCanvas({
                 layoutWidth={layout.width}
                 nodeScale={layout.nodeScale}
                 isUnlocked={node.isChallengeable}
-                accentColor={terrain.accentColor ?? '#6b7280'}
-                isDefeated={node.isDefeated}
-                isNext={node.id === currentNode?.id}
+                isDefeated={node.isDefeated || node.id === currentNode?.id}
               />
             )
           })}

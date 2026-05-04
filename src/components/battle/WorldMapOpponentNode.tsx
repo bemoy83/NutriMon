@@ -38,7 +38,6 @@ export function WorldMapOpponentNodeComponent({
       aria-label={isLocked ? `${node.name} — locked` : node.name}
       onClick={isLocked ? undefined : onClick}
     >
-      {/* Sprite-shaped glow for current node */}
       {/* Glow layer — CSS drop-shadow follows sprite alpha, pulsed via opacity */}
       {isCurrent && !isLocked && sprite && (
         <image

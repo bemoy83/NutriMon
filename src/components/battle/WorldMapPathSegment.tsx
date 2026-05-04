@@ -8,9 +8,7 @@ interface WorldMapPathSegmentProps {
   layoutWidth: number
   nodeScale: number
   isUnlocked: boolean
-  accentColor: string
   isDefeated?: boolean
-  isNext?: boolean
 }
 
 export function WorldMapPathSegment({
@@ -19,9 +17,7 @@ export function WorldMapPathSegment({
   layoutWidth,
   nodeScale,
   isUnlocked,
-  accentColor,
   isDefeated = false,
-  isNext = false,
 }: WorldMapPathSegmentProps) {
   const midX = (from.x + to.x) / 2
   const midY = (from.y + to.y) / 2
@@ -43,7 +39,7 @@ export function WorldMapPathSegment({
     )
   }
 
-  if (isDefeated || isNext) {
+  if (isDefeated) {
     return (
       <FootstepMarks
         from={from} to={to} ctrlX={ctrlX} ctrlY={ctrlY}
