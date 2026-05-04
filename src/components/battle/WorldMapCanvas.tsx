@@ -50,7 +50,7 @@ export function WorldMapCanvas(props: WorldMapCanvasProps) {
   // ── Node-mode rendering ────────────────────────────────────────────────────
   if (isNodeMode) {
     const { nodes, companion, onSelectNode } = props
-    const positions = nodes.map((node, i) => resolveNodePosition(node, i, nodes.length, layout))
+    const positions = nodes.map((node, i) => resolveNodePosition(node, i, nodes.length, layout, 5))
 
     const currentNode = nodes.find((n) => !n.isDefeated && n.isChallengeable)
       ?? nodes.filter((n) => n.isChallengeable).at(-1)
@@ -188,7 +188,7 @@ function NodeModeCanvas({
     if (!currentNodeId || !wrapperRef.current) return
     const idx = nodes.findIndex((n) => n.id === currentNodeId)
     if (idx === -1) return
-    const pos = resolveNodePosition(nodes[idx], idx, nodes.length, layout)
+    const pos = resolveNodePosition(nodes[idx], idx, nodes.length, layout, 5)
     if (!pos) return
 
     const mapEl = wrapperRef.current

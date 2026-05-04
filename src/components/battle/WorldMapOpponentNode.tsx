@@ -80,8 +80,11 @@ export function WorldMapOpponentNodeComponent({
           y={nodeR - spriteSize / 2}
           width={spriteSize}
           height={spriteSize}
-          style={{ imageRendering: 'pixelated' }}
-          opacity={isLocked ? 0.22 : isDefeated ? 0.55 : 1}
+          style={{
+            imageRendering: 'pixelated',
+            filter: isLocked ? 'brightness(0)' : undefined,
+          }}
+          opacity={isLocked ? 0.72 : isDefeated ? 0.55 : 1}
         />
       ) : (
         <text
