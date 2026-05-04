@@ -65,9 +65,9 @@ export function WorldMapOpponentNodeComponent({
           height={spriteSize}
           style={{
             imageRendering: 'pixelated',
-            filter: isLocked ? 'brightness(0)' : undefined,
+            filter: isLocked ? 'brightness(0)' : isDefeated ? 'grayscale(1) brightness(0.55)' : undefined,
           }}
-          opacity={isLocked ? 0.72 : isDefeated ? 0.55 : 1}
+          opacity={isLocked ? 0.72 : 1}
         />
       ) : (
         <text
@@ -95,20 +95,6 @@ export function WorldMapOpponentNodeComponent({
         </g>
       )}
 
-      {/* Defeated checkmark badge */}
-      {isDefeated && (
-        <g transform={`translate(${nodeR * 2 - 14 * nodeScale} ${-4 * nodeScale})`}>
-          <circle cx={7 * nodeScale} cy={7 * nodeScale} r={7 * nodeScale} fill="#22c55e" />
-          <text
-            x={7 * nodeScale}
-            y={7 * nodeScale}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize={8 * nodeScale}
-            fill="white"
-          >✓</text>
-        </g>
-      )}
 
       {/* Boss star badge */}
       {isArenaBoss(node) && !isDefeated && !isLocked && (
