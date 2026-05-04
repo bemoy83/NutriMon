@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getPublicAssetUrl } from '@/lib/sprites'
 import type { ArenaListArena, CreatureCompanion, WorldMapOpponentNode } from '@/types/domain'
 import { WorldMapArenaNode } from './WorldMapArenaNode'
@@ -173,6 +173,8 @@ interface NodeModeCanvasProps {
   onSelectNode: (node: WorldMapOpponentNode) => void
 }
 
+const ZOOM_SCALE = 1.65
+
 function NodeModeCanvas({
   nodes,
   companion,
@@ -182,9 +184,15 @@ function NodeModeCanvas({
   wrapperRef,
   onSelectNode,
 }: NodeModeCanvasProps) {
+  const [isZoomed, setIsZoomed] = useState(false)
   const currentNodeId = currentNode?.id ?? null
 
-  // Auto-scroll the app page to the current node when the hub is entered.
+  const currentIdx = currentNode ? nodes.findIndex((n) => n.id === currentNode.id) : -1
+  const currentPos = currentIdx >= 0 ? positions[currentIdx] : null
+  const originX = currentPos ? `${(currentPos.x / layout.width * 100).toFixed(1)}%` : '50%'
+  const originY = currentPos ? `${(currentPos.y / layout.height * 100).toFixed(1)}%` : '50%'
+
+  // Auto-scroll to current node on mount.
   useEffect(() => {
     if (!currentNodeId || !wrapperRef.current) return
     const idx = nodes.findIndex((n) => n.id === currentNodeId)
@@ -206,7 +214,28 @@ function NodeModeCanvas({
     })
 
     return () => cancelAnimationFrame(frame)
-  }, [currentNodeId, layout, nodes, wrapperRef])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentNodeId, layout])
+
+  // Re-center on current node when zooming in.
+  useEffect(() => {
+    if (!isZoomed || !currentPos || !wrapperRef.current) return
+    const mapEl = wrapperRef.current
+    const scrollEl = mapEl.closest('main')
+    if (!scrollEl) return
+
+    const frame = requestAnimationFrame(() => {
+      const mapRect = mapEl.getBoundingClientRect()
+      const scrollRect = scrollEl.getBoundingClientRect()
+      const mapTopInScroll = scrollEl.scrollTop + mapRect.top - scrollRect.top
+      const viewportH = window.visualViewport?.height ?? window.innerHeight
+      const scrollTop = Math.max(0, mapTopInScroll + currentPos.y - viewportH * 0.45)
+      scrollEl.scrollTo({ top: scrollTop, behavior: 'smooth' })
+    })
+
+    return () => cancelAnimationFrame(frame)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isZoomed])
 
   return (
     <>
@@ -219,86 +248,125 @@ function NodeModeCanvas({
           height: layout.height,
           marginLeft: 'calc(50% - 50vw)',
           marginRight: 'calc(50% - 50vw)',
+          overflow: 'hidden',
         }}
       >
-        <img
-          src={getPublicAssetUrl('/sprites/worldmap_bg.png')}
-          alt=""
-          aria-hidden="true"
-          draggable={false}
+        {/* Scaled map content */}
+        <div
           style={{
             position: 'absolute',
             inset: 0,
-            width: '100%',
-            height: layout.height,
-            objectFit: 'cover',
-            imageRendering: 'pixelated',
-            pointerEvents: 'none',
-            userSelect: 'none',
+            transform: isZoomed ? `scale(${ZOOM_SCALE})` : undefined,
+            transformOrigin: `${originX} ${originY}`,
+            transition: 'transform 0.4s ease-out',
+            willChange: 'transform',
           }}
-        />
-
-        <svg
-          viewBox={`0 0 ${layout.width} ${layout.height}`}
-          preserveAspectRatio="none"
-          width="100%"
-          height={layout.height}
-          aria-hidden="true"
-          style={{ position: 'absolute', inset: 0, display: 'block', opacity: 0.38, pointerEvents: 'none' }}
         >
-          <WorldMapTerrainBands nodes={nodes} positions={positions} layout={layout} />
-        </svg>
+          <img
+            src={getPublicAssetUrl('/sprites/worldmap_bg.png')}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: layout.height,
+              objectFit: 'cover',
+              imageRendering: 'pixelated',
+              pointerEvents: 'none',
+              userSelect: 'none',
+            }}
+          />
 
-        <svg
-          viewBox={`0 0 ${layout.width} ${layout.height}`}
-          width={layout.width}
-          height={layout.height}
-          style={{ position: 'relative', zIndex: 1, display: 'block', overflow: 'visible', margin: '0 auto' }}
-          aria-label="Opponent world map"
-        >
-          {/* Paths */}
-          {nodes.map((node, i) => {
-            if (i === 0) return null
-            return (
-              <WorldMapPathSegment
-                key={`path-${node.id}`}
-                from={positions[i - 1]}
-                to={positions[i]}
-                layoutWidth={layout.width}
+          <svg
+            viewBox={`0 0 ${layout.width} ${layout.height}`}
+            preserveAspectRatio="none"
+            width="100%"
+            height={layout.height}
+            aria-hidden="true"
+            style={{ position: 'absolute', inset: 0, display: 'block', opacity: 0.38, pointerEvents: 'none' }}
+          >
+            <WorldMapTerrainBands nodes={nodes} positions={positions} layout={layout} />
+          </svg>
+
+          <svg
+            viewBox={`0 0 ${layout.width} ${layout.height}`}
+            width={layout.width}
+            height={layout.height}
+            style={{ position: 'relative', zIndex: 1, display: 'block', overflow: 'visible', margin: '0 auto' }}
+            aria-label="Opponent world map"
+          >
+            {nodes.map((node, i) => {
+              if (i === 0) return null
+              return (
+                <WorldMapPathSegment
+                  key={`path-${node.id}`}
+                  from={positions[i - 1]}
+                  to={positions[i]}
+                  layoutWidth={layout.width}
+                  nodeScale={layout.nodeScale}
+                  isUnlocked={node.isChallengeable}
+                  isDefeated={node.isDefeated || node.id === currentNode?.id}
+                />
+              )
+            })}
+
+            {nodes.map((node, i) => (
+              <WorldMapOpponentNodeComponent
+                key={node.id}
+                node={node}
+                position={positions[i]}
+                isCurrent={node.id === currentNode?.id}
                 nodeScale={layout.nodeScale}
-                isUnlocked={node.isChallengeable}
-                isDefeated={node.isDefeated || node.id === currentNode?.id}
+                onClick={node.isChallengeable ? () => onSelectNode(node) : undefined}
               />
-            )
-          })}
+            ))}
 
-          {/* Opponent nodes */}
-          {nodes.map((node, i) => (
-            <WorldMapOpponentNodeComponent
-              key={node.id}
-              node={node}
-              position={positions[i]}
-              isCurrent={node.id === currentNode?.id}
-              nodeScale={layout.nodeScale}
-              onClick={node.isChallengeable ? () => onSelectNode(node) : undefined}
-            />
-          ))}
+            {currentNode && (() => {
+              const idx = nodes.findIndex((n) => n.id === currentNode.id)
+              const pos = positions[idx]
+              if (!pos) return null
+              return (
+                <WorldMapCompanionMarker
+                  companion={companion}
+                  arenaId={currentNode.arenaId}
+                  position={pos}
+                  layout={layout}
+                />
+              )
+            })()}
+          </svg>
+        </div>
 
-          {/* Companion marker */}
-          {currentNode && (() => {
-            const idx = nodes.findIndex((n) => n.id === currentNode.id)
-            const pos = positions[idx]
-            if (!pos) return null
-            return (
-              <WorldMapCompanionMarker
-                companion={companion}
-                arenaId={currentNode.arenaId}
-                position={pos}
-                layout={layout}
-              />
-            )
-          })()}
-        </svg>
+        {/* Zoom toggle — sits outside the scaled div so it doesn't scale */}
+        <button
+          type="button"
+          onClick={() => setIsZoomed((z) => !z)}
+          aria-label={isZoomed ? 'Zoom out' : 'Zoom in'}
+          style={{
+            position: 'absolute',
+            bottom: 16,
+            right: 16,
+            zIndex: 10,
+            width: 36,
+            height: 36,
+            borderRadius: '50%',
+            background: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            color: 'white',
+            fontSize: 22,
+            lineHeight: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+          }}
+        >
+          {isZoomed ? '−' : '+'}
+        </button>
       </div>
     </>
   )
