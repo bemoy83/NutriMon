@@ -26,8 +26,9 @@ export function WorldMapOpponentNodeComponent({
   const isLocked = !node.isChallengeable
   const isDefeated = node.isDefeated
   const nodeR = NODE_R * nodeScale
-  const filterId = `opp-glow-${node.id}`
   const spriteSize = nodeR * 2
+  const glowColor = toGlowHex(accent)
+  const glowShadow = `drop-shadow(0 0 ${8 * nodeScale}px ${glowColor}) drop-shadow(0 0 ${22 * nodeScale}px ${glowColor})`
 
   return (
     <g
@@ -37,47 +38,29 @@ export function WorldMapOpponentNodeComponent({
       aria-label={isLocked ? `${node.name} — locked` : node.name}
       onClick={isLocked ? undefined : onClick}
     >
-      {isCurrent && !isLocked && (
-        <defs>
-          <filter id={filterId} x="-60%" y="-60%" width="220%" height="220%">
-            <feDropShadow dx="0" dy="0" stdDeviation={8 * nodeScale} floodColor={accent} floodOpacity="0.75" />
-          </filter>
-        </defs>
-      )}
-
-      {/* Outer ring */}
-      <circle
-        cx={nodeR}
-        cy={nodeR}
-        r={nodeR - nodeScale}
-        fill={isDefeated ? `${accent}22` : isLocked ? 'rgba(255,255,255,0.04)' : `${accent}18`}
-        stroke={isLocked ? 'rgba(255,255,255,0.12)' : isDefeated ? `${accent}66` : accent}
-        strokeWidth={isArenaBoss(node) ? 2 * nodeScale : 1.5 * nodeScale}
-        opacity={isLocked ? 0.45 : 1}
-        filter={isCurrent && !isLocked ? `url(#${filterId})` : undefined}
-        style={isCurrent && !isLocked ? { animation: 'worldmap-pulse 2s ease-in-out infinite' } : undefined}
-      />
-
-      {/* Boss crown ring */}
-      {isArenaBoss(node) && !isLocked && (
-        <circle
-          cx={nodeR}
-          cy={nodeR}
-          r={nodeR + 5 * nodeScale}
-          fill="none"
-          stroke={accent}
-          strokeWidth={1 * nodeScale}
-          strokeDasharray={`${3 * nodeScale} ${3 * nodeScale}`}
-          opacity={0.55}
+      {/* Sprite-shaped glow for current node */}
+      {/* Glow layer — CSS drop-shadow follows sprite alpha, pulsed via opacity */}
+      {isCurrent && !isLocked && sprite && (
+        <image
+          href={sprite.url}
+          x={0}
+          y={0}
+          width={spriteSize}
+          height={spriteSize}
+          style={{
+            imageRendering: 'pixelated',
+            filter: glowShadow,
+            animation: 'worldmap-glow-pulse 2.5s ease-in-out infinite',
+          }}
         />
       )}
 
-      {/* Sprite or fallback */}
+      {/* Sprite */}
       {sprite ? (
         <image
           href={sprite.url}
-          x={nodeR - spriteSize / 2}
-          y={nodeR - spriteSize / 2}
+          x={0}
+          y={0}
           width={spriteSize}
           height={spriteSize}
           style={{
@@ -106,7 +89,7 @@ export function WorldMapOpponentNodeComponent({
         <g transform={`translate(${nodeR - 8 * nodeScale} ${nodeR - 9 * nodeScale}) scale(${nodeScale})`}>
           <path
             d="M8 10V7a5 5 0 0 1 10 0v3h1.5A1.5 1.5 0 0 1 21 11.5v7A1.5 1.5 0 0 1 19.5 20h-13A1.5 1.5 0 0 1 5 18.5v-7A1.5 1.5 0 0 1 6.5 10H8zm2 0h6V7a3 3 0 0 0-6 0v3z"
-            fill="rgba(255,255,255,0.38)"
+            fill="rgba(255,255,255,0.55)"
             transform="scale(0.72)"
           />
         </g>
@@ -174,4 +157,18 @@ export function WorldMapOpponentNodeComponent({
 
 function isArenaBoss(node: WorldMapOpponentNode): boolean {
   return node.isArenaBoss
+}
+
+// Normalize accent color so brightest channel = 255, ensuring the glow
+// is always visible regardless of how dark the raw accent is.
+function toGlowHex(hex: string): string {
+  const clean = hex.replace('#', '')
+  if (clean.length !== 6) return '#ffffff'
+  const r = parseInt(clean.slice(0, 2), 16)
+  const g = parseInt(clean.slice(2, 4), 16)
+  const b = parseInt(clean.slice(4, 6), 16)
+  const max = Math.max(r, g, b, 1)
+  const scale = 255 / max
+  const toHex = (v: number) => Math.round(v * scale).toString(16).padStart(2, '0')
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
 }

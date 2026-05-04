@@ -38,6 +38,14 @@ const MAP_ANIMATIONS = `
     0%, 100% { transform: translateY(0px); }
     50%       { transform: translateY(-4px); }
   }
+  @keyframes worldmap-trail {
+    from { stroke-dashoffset: 20; }
+    to   { stroke-dashoffset: 0; }
+  }
+  @keyframes worldmap-glow-pulse {
+    0%, 100% { opacity: 0.5; }
+    50%       { opacity: 1.0; }
+  }
 `
 
 export function WorldMapCanvas(props: WorldMapCanvasProps) {
@@ -269,6 +277,8 @@ function NodeModeCanvas({
                 nodeScale={layout.nodeScale}
                 isUnlocked={node.isChallengeable}
                 accentColor={terrain.accentColor ?? '#6b7280'}
+                isDefeated={node.isDefeated}
+                isNext={node.id === currentNode?.id}
               />
             )
           })}
