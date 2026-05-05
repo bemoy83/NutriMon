@@ -18,7 +18,7 @@ const X_PATTERN = [0.50, 0.30, 0.58, 0.70, 0.50, 0.30]
 /** 5-step winding pattern used when nodes are grouped into biomes of 5.
  *  Node 0 (biome entry) and node 4 (boss) are near center so cross-biome
  *  path segments stay roughly vertical. */
-const X_PATTERN_5 = [0.50, 0.26, 0.70, 0.28, 0.54]
+const X_PATTERN_5 = [0.50, 0.34, 0.65, 0.55, 0.70]
 
 export function resolveNodePosition(
   node: MapNode,
@@ -40,7 +40,7 @@ export function resolveNodePosition(
     const actualGroupSize = Math.min(groupSize, total - biomeIndex * groupSize)
 
     const biomeH = layout.height / biomeCount
-    const biomePad = biomeH * 0.10
+    const biomePad = biomeH * 0.20
     const biomeBottom = layout.height - biomeIndex * biomeH
     const biomeSpan = biomeH - biomePad * 2
 
