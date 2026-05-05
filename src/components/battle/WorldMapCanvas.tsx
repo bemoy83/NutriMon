@@ -243,9 +243,6 @@ function NodeModeCanvas({
   const currentNodeId = currentNode?.id ?? null
 
   const currentIdx = currentNode ? nodes.findIndex((n) => n.id === currentNode.id) : -1
-  const currentPos = currentIdx >= 0 ? positions[currentIdx] : null
-  const originX = currentPos ? `${(currentPos.x / layout.width * 100).toFixed(1)}%` : '50%'
-  const originY = currentPos ? `${(currentPos.y / layout.height * 100).toFixed(1)}%` : '50%'
 
   // Companion node index — seeded from localStorage, falls back to current progression node.
   const [companionNodeIdx, setCompanionNodeIdx] = useState<number>(() => {
@@ -255,6 +252,11 @@ function NodeModeCanvas({
     }
     return currentIdx >= 0 ? currentIdx : 0
   })
+
+  // Zoom origin tracks the companion, not the progression node.
+  const companionPos = positions[companionNodeIdx] ?? null
+  const originX = companionPos ? `${(companionPos.x / layout.width * 100).toFixed(1)}%` : '50%'
+  const originY = companionPos ? `${(companionPos.y / layout.height * 100).toFixed(1)}%` : '50%'
 
   // Ref to the companion marker's outer <g> — the rAF loop mutates its transform directly.
   const companionGRef = useRef<SVGGElement>(null)
@@ -343,9 +345,9 @@ function NodeModeCanvas({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentNodeId, layout])
 
-  // Re-center on current node when zooming in.
+  // Re-center on companion position when zooming in.
   useEffect(() => {
-    if (!isZoomed || !currentPos || !wrapperRef.current) return
+    if (!isZoomed || !companionPos || !wrapperRef.current) return
     const mapEl = wrapperRef.current
     const scrollEl = mapEl.closest('main')
     if (!scrollEl) return
@@ -355,7 +357,7 @@ function NodeModeCanvas({
       const scrollRect = scrollEl.getBoundingClientRect()
       const mapTopInScroll = scrollEl.scrollTop + mapRect.top - scrollRect.top
       const viewportH = window.visualViewport?.height ?? window.innerHeight
-      const scrollTop = Math.max(0, mapTopInScroll + currentPos.y - viewportH * 0.45)
+      const scrollTop = Math.max(0, mapTopInScroll + companionPos.y - viewportH * 0.45)
       scrollEl.scrollTo({ top: scrollTop, behavior: 'smooth' })
     })
 
