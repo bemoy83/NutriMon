@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   type BattleActionLabel,
@@ -59,6 +59,13 @@ function scaleOpponentPlatformWidth(registeredWidth: number, displaySize: number
 export default function BattlePage() {
   const { battleRunId } = useParams<{ battleRunId: string }>()
   const navigate = useNavigate()
+
+  // Fade in from black — mirrors the fade-out on BattleHubPage.
+  const [fadeVisible, setFadeVisible] = useState(true)
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setFadeVisible(false))
+    return () => cancelAnimationFrame(frame)
+  }, [])
 
   const arenaRef = useRef<HTMLDivElement>(null)
   const playerSpriteRef = useRef<CreatureSpriteHandle>(null)
@@ -293,6 +300,19 @@ export default function BattlePage() {
           onReturn={() => navigate('/app/battle')}
         />
       ) : null}
+
+      {/* Fade from black on mount */}
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 100,
+          background: '#000',
+          opacity: fadeVisible ? 1 : 0,
+          transition: fadeVisible ? undefined : 'opacity 0.35s ease-out',
+          pointerEvents: 'none',
+        }}
+      />
     </div>
   )
 }

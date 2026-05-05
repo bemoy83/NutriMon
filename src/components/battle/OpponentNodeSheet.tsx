@@ -16,6 +16,7 @@ interface OpponentNodeSheetProps {
   timezone: string
   snapshot: CreatureBattleSnapshot | null
   onClose: () => void
+  onBattleStart: (sessionId: string, targetNode: WorldMapOpponentNode) => void
 }
 
 export function OpponentNodeSheet({
@@ -24,6 +25,7 @@ export function OpponentNodeSheet({
   timezone,
   snapshot,
   onClose,
+  onBattleStart,
 }: OpponentNodeSheetProps) {
   const navigate = useNavigate()
   const invalidateAll = useInvalidateBattleQueries()
@@ -54,7 +56,7 @@ export function OpponentNodeSheet({
       const session = await startBattleRun(snapshot.id, opp.id)
       invalidateAll()
       onClose()
-      navigate(`/app/battle/run/${session.id}`)
+      onBattleStart(session.id, node)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to start battle')
     } finally {

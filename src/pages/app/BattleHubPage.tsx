@@ -21,9 +21,14 @@ function getConditionTone(condition: CreatureCondition) {
 
 const HUB_BG = '#0c1a10'
 
+const COMPANION_NODE_KEY = 'nutrimon_companion_node_id'
+
 export default function BattleHubPage() {
   const navigate = useNavigate()
   const [selectedNode, setSelectedNode] = useState<WorldMapOpponentNode | null>(null)
+  const [pendingNav, setPendingNav] = useState<{ sessionId: string; targetNode: WorldMapOpponentNode } | null>(null)
+  const [isFadingOut, setIsFadingOut] = useState(false)
+  const initialCompanionNodeId = useState(() => localStorage.getItem(COMPANION_NODE_KEY))[0]
 
   useEffect(() => {
     const root = document.documentElement
@@ -92,6 +97,14 @@ export default function BattleHubPage() {
           nodes={nodes}
           companion={companion}
           onSelectNode={setSelectedNode}
+          travelTarget={pendingNav?.targetNode ?? null}
+          initialCompanionNodeId={initialCompanionNodeId}
+          onTravelComplete={() => {
+            if (!pendingNav) return
+            const { sessionId } = pendingNav
+            setIsFadingOut(true)
+            setTimeout(() => navigate(`/app/battle/run/${sessionId}`), 350)
+          }}
         />
       )}
 
@@ -103,8 +116,25 @@ export default function BattleHubPage() {
           timezone={timezone}
           snapshot={snapshot}
           onClose={() => setSelectedNode(null)}
+          onBattleStart={(sessionId, targetNode) => {
+            setSelectedNode(null)
+            setPendingNav({ sessionId, targetNode })
+          }}
         />
       )}
+
+      {/* Fade-to-black before battle transition */}
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 100,
+          background: '#000',
+          opacity: isFadingOut ? 1 : 0,
+          transition: 'opacity 0.35s ease-in',
+          pointerEvents: 'none',
+        }}
+      />
     </div>
   )
 }

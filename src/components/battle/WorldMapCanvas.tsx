@@ -23,6 +23,9 @@ interface WorldMapCanvasNodeProps {
   nodes: WorldMapOpponentNode[]
   companion: CreatureCompanion | null
   onSelectNode: (node: WorldMapOpponentNode) => void
+  travelTarget?: WorldMapOpponentNode | null
+  onTravelComplete?: () => void
+  initialCompanionNodeId?: string | null
   arenas?: undefined
   onSelectArena?: undefined
 }
@@ -53,7 +56,7 @@ export function WorldMapCanvas(props: WorldMapCanvasProps) {
 
   // ── Node-mode rendering ────────────────────────────────────────────────────
   if (isNodeMode) {
-    const { nodes, companion, onSelectNode } = props
+    const { nodes, companion, onSelectNode, travelTarget, onTravelComplete, initialCompanionNodeId } = props
     const positions = nodes.map((node, i) => resolveNodePosition(node, i, nodes.length, layout, 5))
 
     const currentNode = nodes.find((n) => !n.isDefeated && n.isChallengeable)
@@ -69,6 +72,9 @@ export function WorldMapCanvas(props: WorldMapCanvasProps) {
         currentNode={currentNode}
         wrapperRef={wrapperRef}
         onSelectNode={onSelectNode}
+        travelTarget={travelTarget ?? null}
+        onTravelComplete={onTravelComplete ?? (() => {})}
+        initialCompanionNodeId={initialCompanionNodeId ?? null}
       />
     )
   }
@@ -171,9 +177,55 @@ interface NodeModeCanvasProps {
   currentNode: WorldMapOpponentNode | null
   wrapperRef: RefObject<HTMLDivElement | null>
   onSelectNode: (node: WorldMapOpponentNode) => void
+  travelTarget: WorldMapOpponentNode | null
+  onTravelComplete: () => void
+  initialCompanionNodeId: string | null
 }
 
 const ZOOM_SCALE = 1.65
+
+// ── Travel animation helpers ──────────────────────────────────────────────────
+
+interface BezierSegment { from: NodePosition; ctrl: NodePosition; to: NodePosition }
+
+function buildTravelSegments(
+  fromIdx: number,
+  toIdx: number,
+  positions: NodePosition[],
+  layoutWidth: number,
+): BezierSegment[] {
+  if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0) return []
+  const step = toIdx > fromIdx ? 1 : -1
+  const segs: BezierSegment[] = []
+  let i = fromIdx
+  while (i !== toIdx) {
+    const from = positions[i]
+    const to = positions[i + step]
+    if (!from || !to) break
+    const midX = (from.x + to.x) / 2
+    const midY = (from.y + to.y) / 2
+    const ctrlX = midX + (layoutWidth / 2 - midX) * 0.28
+    segs.push({ from, ctrl: { x: ctrlX, y: midY }, to })
+    i += step
+  }
+  return segs
+}
+
+function quadBezierPoint(seg: BezierSegment, t: number): NodePosition {
+  const mt = 1 - t
+  return {
+    x: mt * mt * seg.from.x + 2 * mt * t * seg.ctrl.x + t * t * seg.to.x,
+    y: mt * mt * seg.from.y + 2 * mt * t * seg.ctrl.y + t * t * seg.to.y,
+  }
+}
+
+// Smoothstep — slow in/out per segment, gives the SMW "walking" feel.
+function smoothstep(t: number): number {
+  return t * t * (3 - 2 * t)
+}
+
+const TRAVEL_MS_PER_SEG = 420   // ms of actual movement per node
+const NODE_PAUSE_MS     = 120   // ms pause at each intermediate node
 
 function NodeModeCanvas({
   nodes,
@@ -183,6 +235,9 @@ function NodeModeCanvas({
   currentNode,
   wrapperRef,
   onSelectNode,
+  travelTarget,
+  onTravelComplete,
+  initialCompanionNodeId,
 }: NodeModeCanvasProps) {
   const [isZoomed, setIsZoomed] = useState(false)
   const currentNodeId = currentNode?.id ?? null
@@ -191,6 +246,76 @@ function NodeModeCanvas({
   const currentPos = currentIdx >= 0 ? positions[currentIdx] : null
   const originX = currentPos ? `${(currentPos.x / layout.width * 100).toFixed(1)}%` : '50%'
   const originY = currentPos ? `${(currentPos.y / layout.height * 100).toFixed(1)}%` : '50%'
+
+  // Companion node index — seeded from localStorage, falls back to current progression node.
+  const [companionNodeIdx, setCompanionNodeIdx] = useState<number>(() => {
+    if (initialCompanionNodeId) {
+      const idx = nodes.findIndex((n) => n.id === initialCompanionNodeId)
+      if (idx >= 0) return idx
+    }
+    return currentIdx >= 0 ? currentIdx : 0
+  })
+
+  // Ref to the companion marker's outer <g> — the rAF loop mutates its transform directly.
+  const companionGRef = useRef<SVGGElement>(null)
+  const rafRef = useRef<number | null>(null)
+
+  // rAF-driven travel: follows bezier segments with per-node pauses (SMW style).
+  useEffect(() => {
+    if (!travelTarget) return
+    const targetIdx = nodes.findIndex((n) => n.id === travelTarget.id)
+    if (targetIdx === -1) { onTravelComplete(); return }
+
+    const segs = buildTravelSegments(companionNodeIdx, targetIdx, positions, layout.width)
+    if (segs.length === 0) { onTravelComplete(); return }
+
+    const unit = TRAVEL_MS_PER_SEG + NODE_PAUSE_MS
+    const totalDuration = segs.length * TRAVEL_MS_PER_SEG + (segs.length - 1) * NODE_PAUSE_MS
+
+    let startTime: number | null = null
+    let done = false
+
+    function tick(now: number) {
+      if (!startTime) startTime = now
+      const elapsed = Math.min(now - startTime, totalDuration)
+
+      // Map elapsed time to the current segment + local progress within it.
+      let segIdx = segs.length - 1
+      let localT = 1
+      for (let i = 0; i < segs.length; i++) {
+        const segStart = i * unit
+        const segEnd = segStart + TRAVEL_MS_PER_SEG
+        const pauseEnd = segEnd + (i < segs.length - 1 ? NODE_PAUSE_MS : 0)
+        if (elapsed <= segEnd) {
+          segIdx = i
+          localT = (elapsed - segStart) / TRAVEL_MS_PER_SEG
+          break
+        } else if (elapsed <= pauseEnd) {
+          segIdx = i
+          localT = 1
+          break
+        }
+      }
+
+      const pos = quadBezierPoint(segs[segIdx], smoothstep(Math.min(localT, 1)))
+      companionGRef.current?.setAttribute('transform', `translate(${pos.x} ${pos.y})`)
+
+      if (elapsed < totalDuration) {
+        rafRef.current = requestAnimationFrame(tick)
+      } else if (!done) {
+        done = true
+        setCompanionNodeIdx(targetIdx)
+        localStorage.setItem('nutrimon_companion_node_id', travelTarget.id)
+        onTravelComplete()
+      }
+    }
+
+    rafRef.current = requestAnimationFrame(tick)
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [travelTarget])
 
   // Auto-scroll to current node on mount.
   useEffect(() => {
@@ -323,16 +448,17 @@ function NodeModeCanvas({
               />
             ))}
 
-            {currentNode && (() => {
-              const idx = nodes.findIndex((n) => n.id === currentNode.id)
-              const pos = positions[idx]
-              if (!pos) return null
+            {(() => {
+              const companionPos = positions[companionNodeIdx]
+              const companionArenaId = nodes[companionNodeIdx]?.arenaId ?? currentNode?.arenaId
+              if (!companionPos || !companionArenaId) return null
               return (
                 <WorldMapCompanionMarker
                   companion={companion}
-                  arenaId={currentNode.arenaId}
-                  position={pos}
+                  arenaId={companionArenaId}
+                  position={companionPos}
                   layout={layout}
+                  outerRef={companionGRef}
                 />
               )
             })()}
