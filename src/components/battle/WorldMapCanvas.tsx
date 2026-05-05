@@ -263,7 +263,8 @@ function NodeModeCanvas({
   // rAF-driven travel: follows bezier segments with per-node pauses (SMW style).
   useEffect(() => {
     if (!travelTarget) return
-    const targetIdx = nodes.findIndex((n) => n.id === travelTarget.id)
+    const target = travelTarget  // capture for rAF closure — TypeScript can't narrow across async boundaries
+    const targetIdx = nodes.findIndex((n) => n.id === target.id)
     if (targetIdx === -1) { onTravelComplete(); return }
 
     const segs = buildTravelSegments(companionNodeIdx, targetIdx, positions, layout.width)
@@ -305,7 +306,7 @@ function NodeModeCanvas({
       } else if (!done) {
         done = true
         setCompanionNodeIdx(targetIdx)
-        localStorage.setItem('nutrimon_companion_node_id', travelTarget.id)
+        localStorage.setItem('nutrimon_companion_node_id', target.id)
         onTravelComplete()
       }
     }
