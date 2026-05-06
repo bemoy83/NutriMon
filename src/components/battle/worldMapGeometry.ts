@@ -18,7 +18,7 @@ const X_PATTERN = [0.50, 0.30, 0.58, 0.70, 0.50, 0.30]
 /** 5-step winding pattern used when nodes are grouped into biomes of 5.
  *  Node 0 (biome entry) and node 4 (boss) are near center so cross-biome
  *  path segments stay roughly vertical. */
-const X_PATTERN_5 = [0.50, 0.34, 0.65, 0.55, 0.70]
+const X_PATTERN_5 = [0.50, 0.34, 0.60, 0.55, 0.70]
 
 export function resolveNodePosition(
   node: MapNode,
