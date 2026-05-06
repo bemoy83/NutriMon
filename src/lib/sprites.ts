@@ -101,29 +101,29 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // ── Arena 1 — Verdantroot Forest (levels 1–5) ─────────────────────────────
 
   // 001 Bramblin — small — prickly defender (leaf-ball hedgehog)
-  // 'bramblin': {
-  //   battle: { url: s('/sprites/opponents/bramblin.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
-  // },
+  'bramblin': {
+    battle: { url: s('/sprites/opponents/bramblin.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
   // 002 Mushbob — small — unstable brawler (lopsided mushroom cap)
-  // 'mushbob': {
-  //   battle: { url: s('/sprites/opponents/mushbob.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
-  // },
+  'mushbob': {
+    battle: { url: s('/sprites/opponents/mushbob.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
   // 003 Mossboar — medium — heavy charger (moss ridge + tusks)
-  // 'mossboar': {
-  //   battle: { url: s('/sprites/opponents/mossboar.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
-  // },
+  'mossboar': {
+    battle: { url: s('/sprites/opponents/mossboar.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
   // 004 Thornfang — medium — quick predator (raised shoulder ridge)
-  // 'thornfang': {
-  //   battle: { url: s('/sprites/opponents/thornfang.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
-  // },
+  'thornfang': {
+    battle: { url: s('/sprites/opponents/thornfang.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
   // 005 Elderhorn — large (BOSS) — ancient forest guardian (antler crown)
-  // 'elderhorn': {
-  //   battle: { url: s('/sprites/opponents/elderhorn.png'), nativeWidth: 96, nativeHeight: 96, facing: 'right', pixelArt: true },
-  // },
+  'elderhorn': {
+    battle: { url: s('/sprites/opponents/elderhorn.png'), nativeWidth: 96, nativeHeight: 96, facing: 'right', pixelArt: true },
+  },
 
   // ── Arena 2 — Murkmire Wetlands (levels 6–11) ─────────────────────────────
 
@@ -347,28 +347,22 @@ const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
     opponentPlatformWidth: 256,
     accentColor: '#818cf8', // TODO: update to stone/storm tone when Ashrock terrain art lands
   },
-  // ── Arena 4 — Frostveil Peaks (terrain art pending) ───────────────────────
-  // To activate: replace ARENA_4_UUID with output of:
-  //   SELECT id FROM battle_arenas WHERE arena_key = 'arena_4';
-  // Then drop platform PNGs into public/terrain/ and uncomment.
-  // 'ARENA_4_UUID': {
-  //   playerPlatformUrl: s('/terrain/arena_4_player_platform.png'),
-  //   playerPlatformRenderedWidth: 320,
-  //   opponentPlatformUrl: s('/terrain/arena_4_opponent_platform.png'),
-  //   opponentPlatformWidth: 256,
-  //   accentColor: '#7dd3fc', // frost blue
-  // },
-  // ── Arena 5 — Sunforge Summit (terrain art pending) ───────────────────────
-  // To activate: replace ARENA_5_UUID with output of:
-  //   SELECT id FROM battle_arenas WHERE arena_key = 'arena_5';
-  // Then drop platform PNGs into public/terrain/ and uncomment.
-  // 'ARENA_5_UUID': {
-  //   playerPlatformUrl: s('/terrain/arena_5_player_platform.png'),
-  //   playerPlatformRenderedWidth: 320,
-  //   opponentPlatformUrl: s('/terrain/arena_5_opponent_platform.png'),
-  //   opponentPlatformWidth: 256,
-  //   accentColor: '#f87171', // volcanic red
-  // },
+  // ── Arena 4 — Frostveil Peaks ───────────────────────────────────────────────
+  'eae801b3-fac1-4d10-9b40-ea652865c57c': {
+    playerPlatformUrl: s('/terrain/arena_4_player_platform.png'),
+    playerPlatformRenderedWidth: 320,
+    opponentPlatformUrl: s('/terrain/arena_4_opponent_platform.png'),
+    opponentPlatformWidth: 256,
+    accentColor: '#7dd3fc', // TODO: update to ice/frost tone when Frostveil terrain art lands
+  },
+  // ── Arena 5 — Sunforge Summit ───────────────────────────────────────────────
+  'af76c388-9746-4484-8ab5-bfa9f16349f9': {
+    playerPlatformUrl: s('/terrain/arena_5_player_platform.png'),
+    playerPlatformRenderedWidth: 320,
+    opponentPlatformUrl: s('/terrain/arena_5_opponent_platform.png'),
+    opponentPlatformWidth: 256,
+    accentColor: '#f87171', // TODO: update to volcanic/lava tone when Sunforge terrain art lands
+  },
 }
 
 export function getArenaTerrain(arenaId: string): TerrainDescriptor {
