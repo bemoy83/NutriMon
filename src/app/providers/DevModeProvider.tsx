@@ -1,14 +1,9 @@
-import { createContext, useContext, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/app/providers/auth'
+import { DevModeContext } from '@/app/providers/DevModeContext'
 import { fetchProfile } from '@/features/profile/api'
 import { queryKeys } from '@/lib/queryKeys'
-
-interface DevModeContextValue {
-  isDevMode: boolean
-}
-
-const DevModeContext = createContext<DevModeContextValue>({ isDevMode: false })
 
 export function DevModeProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
@@ -21,8 +16,4 @@ export function DevModeProvider({ children }: { children: ReactNode }) {
   })
 
   return <DevModeContext.Provider value={{ isDevMode }}>{children}</DevModeContext.Provider>
-}
-
-export function useDevMode() {
-  return useContext(DevModeContext)
 }

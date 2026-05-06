@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/app/providers/auth'
-import { useDevMode } from '@/app/providers/DevModeProvider'
+import { useDevMode } from '@/app/providers/DevModeContext'
 import { getArenaList } from './api'
 import { ensureBattlePrepSnapshot, ensureDevBattleSnapshot } from '@/lib/battlePrep'
 
