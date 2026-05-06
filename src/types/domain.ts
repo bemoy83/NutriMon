@@ -23,6 +23,7 @@ export interface Profile {
   calorieTarget: number | null
   goalWeightKg: number | null
   onboardingCompletedAt: string | null
+  isDevAccount: boolean
   createdAt: string
   updatedAt: string
 }

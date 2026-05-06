@@ -188,6 +188,10 @@ export interface Database {
         Args: { p_product_ids: string[] }
         Returns: unknown
       }
+      ensure_dev_battle_snapshot: {
+        Args: { p_battle_date: string }
+        Returns: CreatureBattleSnapshotRow
+      }
       get_battle_hub: {
         Args: { p_battle_date: string }
         Returns: BattleHubRow
@@ -238,6 +242,7 @@ export interface ProfileRow {
   calorie_target: number | null
   goal_weight_kg: number | null
   onboarding_completed_at: string | null
+  is_dev_account: boolean
   created_at: string
   updated_at: string
 }

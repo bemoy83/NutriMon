@@ -72,6 +72,7 @@ export function mapProfile(row: ProfileRow): Profile {
     calorieTarget: row.calorie_target,
     goalWeightKg: row.goal_weight_kg,
     onboardingCompletedAt: row.onboarding_completed_at,
+    isDevAccount: row.is_dev_account ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }

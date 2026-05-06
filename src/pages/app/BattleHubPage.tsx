@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { WorldMapCanvas } from '@/components/battle/WorldMapCanvas'
 import { OpponentNodeSheet } from '@/components/battle/OpponentNodeSheet'
 import LoadingState from '@/components/ui/LoadingState'
+import { useDevMode } from '@/app/providers/DevModeProvider'
 import { useWorldMap } from '@/features/battle/useWorldMap'
 import { useProfileSummary } from '@/features/profile/useProfileSummary'
 import { getTodayInTimezone } from '@/lib/date'
@@ -40,6 +41,7 @@ export default function BattleHubPage() {
     }
   }, [])
 
+  const { isDevMode } = useDevMode()
   const profileQuery = useProfileSummary()
   const timezone = profileQuery.data?.timezone ?? 'UTC'
   const battleDate = getTodayInTimezone(timezone)
@@ -57,7 +59,14 @@ export default function BattleHubPage() {
       style={{ background: 'linear-gradient(165deg, #0c1a10 0%, #111c16 100%)' }}
     >
       <div className="sticky top-0 z-10 -mx-4 flex items-center justify-between gap-3 border-b border-white/10 bg-[rgb(12_26_16/0.78)] px-4 py-3 backdrop-blur-md">
-        <h1 className="text-xl font-bold text-white">Battle Hub</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-bold text-white">Battle Hub</h1>
+          {isDevMode && (
+            <span className="rounded bg-amber-400/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-amber-300">
+              Dev
+            </span>
+          )}
+        </div>
         {companion ? (
           <button
             type="button"

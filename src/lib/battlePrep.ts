@@ -1,6 +1,13 @@
 import { supabase } from '@/lib/supabase'
 import { addDays, getTodayInTimezone } from '@/lib/date'
 
+export async function ensureDevBattleSnapshot(battleDate: string) {
+  const { error } = await supabase.rpc('ensure_dev_battle_snapshot', {
+    p_battle_date: battleDate,
+  })
+  if (error) throw error
+}
+
 /**
  * Ensures a battle-prep snapshot exists for `battleDate` by triggering the
  * finalize-day edge function for the previous day if no snapshot is found.

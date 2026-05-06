@@ -49,6 +49,7 @@ export const PROFILE_FULL_SELECT = [
   'timezone',
   'calorie_target',
   'onboarding_completed_at',
+  'is_dev_account',
   'created_at',
   'updated_at',
 ].join(', ')

@@ -1,7 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/app/providers/auth'
+import { useDevMode } from '@/app/providers/DevModeProvider'
 import { getArenaDetail } from './api'
-import { ensureBattlePrepSnapshot } from '@/lib/battlePrep'
+import { ensureBattlePrepSnapshot, ensureDevBattleSnapshot } from '@/lib/battlePrep'
 
 export const ARENA_DETAIL_QUERY_KEY = 'arena-detail'
 
@@ -11,12 +12,17 @@ export function useArenaDetail(
   timezone: string | null,
 ) {
   const { user } = useAuth()
+  const { isDevMode } = useDevMode()
 
   return useQuery({
     queryKey: [ARENA_DETAIL_QUERY_KEY, user?.id, arenaId, battleDate],
     enabled: !!user && !!arenaId && !!battleDate && !!timezone,
     queryFn: async () => {
-      await ensureBattlePrepSnapshot(battleDate!, timezone!)
+      if (isDevMode) {
+        await ensureDevBattleSnapshot(battleDate!)
+      } else {
+        await ensureBattlePrepSnapshot(battleDate!, timezone!)
+      }
       return getArenaDetail(arenaId!, battleDate!)
     },
   })

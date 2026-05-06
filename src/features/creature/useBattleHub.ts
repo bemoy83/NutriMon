@@ -1,18 +1,24 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/app/providers/auth'
+import { useDevMode } from '@/app/providers/DevModeProvider'
 import { getBattleHub } from './api'
-import { ensureBattlePrepSnapshot } from '@/lib/battlePrep'
+import { ensureBattlePrepSnapshot, ensureDevBattleSnapshot } from '@/lib/battlePrep'
 
 export const BATTLE_HUB_QUERY_KEY = 'battle-hub'
 
 export function useBattleHub(battleDate: string | null, timezone: string | null) {
   const { user } = useAuth()
+  const { isDevMode } = useDevMode()
 
   return useQuery({
     queryKey: [BATTLE_HUB_QUERY_KEY, user?.id, battleDate],
     enabled: !!user && !!battleDate && !!timezone,
     queryFn: async () => {
-      await ensureBattlePrepSnapshot(battleDate!, timezone!)
+      if (isDevMode) {
+        await ensureDevBattleSnapshot(battleDate!)
+      } else {
+        await ensureBattlePrepSnapshot(battleDate!, timezone!)
+      }
       return getBattleHub(battleDate!)
     },
   })
