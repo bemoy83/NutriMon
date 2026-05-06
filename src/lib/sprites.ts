@@ -128,9 +128,9 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // ── Arena 2 — Murkmire Wetlands (levels 6–11) ─────────────────────────────
 
   // 006 Boglet — small — gaping ambusher (circle with huge mouth)
-  // 'boglet': {
-  //   battle: { url: s('/sprites/opponents/boglet.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
-  // },
+  'boglet': {
+    battle: { url: s('/sprites/opponents/boglet.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
   // 007 Mudmaul — medium — armoured bulldozer (forward wedge with giant claws)
   // 'mudmaul': {
