@@ -87,73 +87,151 @@ interface OpponentSpriteEntry {
   footOffsetX?: number
 }
 
+// ── Worldspire Dex — Opponent sprite registry ────────────────────────────────
+// 25 creatures across 5 biomes. All entries are commented out pending art delivery.
+// To activate a sprite:
+//   1. Drop the PNG into public/sprites/opponents/
+//   2. Uncomment the entry and confirm nativeWidth / nativeHeight match the PNG.
+//   3. Commons are 64×64 pixel art; bosses are 96×96 pixel art.
+//   4. Tune footOffsetX if the creature's stance is off-centre in the PNG.
+//
+// Slug convention: lowercase, spaces → underscores (matches slugify() below).
 const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
 
-  // ── Arena 1 — Mosshollow Glen ──────────────────────────────────────────────
-  'pebble_pup': {
-    battle:     { url: s('/sprites/opponents/pebble_pup.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    // recovering: { url: s('/sprites/opponents/pebble_pup_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  },
-  'cinder_finch': {
-    battle:     { url: s('/sprites/opponents/cinder_finch.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    // recovering: { url: s('/sprites/opponents/cinder_finch_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  },
-  'mossback_ram': {
-    battle:     { url: s('/sprites/opponents/mossback_ram.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    // recovering: { url: s('/sprites/opponents/mossback_ram_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  },
-  'tide_lynx': {
-    battle:     { url: s('/sprites/opponents/tide_lynx.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    // recovering: { url: s('/sprites/opponents/tide_lynx_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  },
-  'sunscale_drake': {
-    battle:     { url: s('/sprites/opponents/sunscale_drake.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    // recovering: { url: s('/sprites/opponents/sunscale_drake_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  },
+  // ── Arena 1 — Verdantroot Forest (levels 1–5) ─────────────────────────────
 
-  // ── Arena 2 — Ashrock Peaks ────────────────────────────────────────────────
-  'ember_goat': {
-    battle:     { url: s('/sprites/opponents/ember_goat.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    // recovering: { url: s('/sprites/opponents/ember_goat_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  },
-  //'magma_crab': {
-  //  battle:     { url: s('/sprites/opponents/magma_crab.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //  // recovering: { url: s('/sprites/opponents/magma_crab_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //},
-  //'cindertail_fox': {
-  //  battle:     { url: s('/sprites/opponents/cindertail_fox.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //  // recovering: { url: s('/sprites/opponents/cindertail_fox_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //},
-  //'ashwing_hawk': {
-  //  battle:     { url: s('/sprites/opponents/ashwing_hawk.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //  // recovering: { url: s('/sprites/opponents/ashwing_hawk_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //},
-  //'pyrestone_colossus': {
-  //  battle:     { url: s('/sprites/opponents/pyrestone_colossus.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //  // recovering: { url: s('/sprites/opponents/pyrestone_colossus_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //},
+  // 001 Bramblin — small — prickly defender (leaf-ball hedgehog)
+  // 'bramblin': {
+  //   battle: { url: s('/sprites/opponents/bramblin.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
 
-  // ── Arena 3 — Crystalspire Vault ──────────────────────────────────────────
-  //'frostclaw_wolf': {
-  //  battle:     { url: s('/sprites/opponents/frostclaw_wolf.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //  // recovering: { url: s('/sprites/opponents/frostclaw_wolf_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //},
-  //'void_wisp': {
-  //  battle:     { url: s('/sprites/opponents/void_wisp.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //  // recovering: { url: s('/sprites/opponents/void_wisp_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //},
-  //'prism_golem': {
-  //  battle:     { url: s('/sprites/opponents/prism_golem.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //  // recovering: { url: s('/sprites/opponents/prism_golem_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //},
-  //'shatterhorn_dragon': {
-  //  battle:     { url: s('/sprites/opponents/shatterhorn_dragon.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //  // recovering: { url: s('/sprites/opponents/shatterhorn_dragon_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //},
-  //'the_vault_guardian': {
-  //  battle:     { url: s('/sprites/opponents/the_vault_guardian.png'),           nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //  // recovering: { url: s('/sprites/opponents/the_vault_guardian_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //},
+  // 002 Mushbob — small — unstable brawler (lopsided mushroom cap)
+  // 'mushbob': {
+  //   battle: { url: s('/sprites/opponents/mushbob.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 003 Mossboar — medium — heavy charger (moss ridge + tusks)
+  // 'mossboar': {
+  //   battle: { url: s('/sprites/opponents/mossboar.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 004 Thornfang — medium — quick predator (raised shoulder ridge)
+  // 'thornfang': {
+  //   battle: { url: s('/sprites/opponents/thornfang.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 005 Elderhorn — large (BOSS) — ancient forest guardian (antler crown)
+  // 'elderhorn': {
+  //   battle: { url: s('/sprites/opponents/elderhorn.png'), nativeWidth: 96, nativeHeight: 96, facing: 'right', pixelArt: true },
+  // },
+
+  // ── Arena 2 — Murkmire Wetlands (levels 6–11) ─────────────────────────────
+
+  // 006 Boglet — small — gaping ambusher (circle with huge mouth)
+  // 'boglet': {
+  //   battle: { url: s('/sprites/opponents/boglet.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 007 Mudmaul — medium — armoured bulldozer (forward wedge with giant claws)
+  // 'mudmaul': {
+  //   battle: { url: s('/sprites/opponents/mudmaul.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 008 Reedstalker — medium — aerial skirmisher (vertical line with long beak)
+  // 'reedstalker': {
+  //   battle: { url: s('/sprites/opponents/reedstalker.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 009 Mirewidow — medium — patient ambusher (wide radial legs + rear bulb)
+  // 'mirewidow': {
+  //   battle: { url: s('/sprites/opponents/mirewidow.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 010 Leviamire — large (BOSS) — ancient swamp titan (clustered rising heads)
+  // 'leviamire': {
+  //   battle: { url: s('/sprites/opponents/leviamire.png'), nativeWidth: 96, nativeHeight: 96, facing: 'right', pixelArt: true },
+  // },
+
+  // ── Arena 3 — Ashrock Highlands (levels 12–18) ────────────────────────────
+
+  // 011 Pebblit — small — stony sentinel (circle with large side-block ears)
+  // 'pebblit': {
+  //   battle: { url: s('/sprites/opponents/pebblit.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 012 Screechmite — medium — armoured aggressor (arched oval with front jaws)
+  // 'screechmite': {
+  //   battle: { url: s('/sprites/opponents/screechmite.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 013 Flintor — medium — swift blade (serrated back + long axe-tail)
+  // 'flintor': {
+  //   battle: { url: s('/sprites/opponents/flintor.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 014 Shockmantis — medium — storm scythe (wide scythe claws + tail arc)
+  // 'shockmantis': {
+  //   battle: { url: s('/sprites/opponents/shockmantis.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 015 Thunderox — large (BOSS) — storm colossus (heavy mass with fractured horn spread)
+  // 'thunderox': {
+  //   battle: { url: s('/sprites/opponents/thunderox.png'), nativeWidth: 96, nativeHeight: 96, facing: 'right', pixelArt: true },
+  // },
+
+  // ── Arena 4 — Frostveil Peaks (levels 19–26) ──────────────────────────────
+
+  // 016 Frostscarab — small — glacial bulwark (oval shell with central split)
+  // 'frostscarab': {
+  //   battle: { url: s('/sprites/opponents/frostscarab.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 017 Glaciowyrm — medium — relentless tunneler (large head tapering to tail)
+  // 'glaciowyrm': {
+  //   battle: { url: s('/sprites/opponents/glaciowyrm.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 018 Glaciermaw — medium — frozen juggernaut (heavy front-loaded rectangle)
+  // 'glaciermaw': {
+  //   battle: { url: s('/sprites/opponents/glaciermaw.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 019 Frostwraith — medium — frost phantom (vertical taper with flowing bottom)
+  // 'frostwraith': {
+  //   battle: { url: s('/sprites/opponents/frostwraith.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 020 Tuskraal — large (BOSS) — tundra warlord (wide base with tusk cluster)
+  // 'tuskraal': {
+  //   battle: { url: s('/sprites/opponents/tuskraal.png'), nativeWidth: 96, nativeHeight: 96, facing: 'right', pixelArt: true },
+  // },
+
+  // ── Arena 5 — Sunforge Summit (levels 27–35) ──────────────────────────────
+
+  // 021 Pyrobeetle — small — magma vanguard (armoured oval with forward horn)
+  // 'pyrobeetle': {
+  //   battle: { url: s('/sprites/opponents/pyrobeetle.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 022 Magmacrab — medium — crushing brute (flat wide body with one giant claw)
+  // 'magmacrab': {
+  //   battle: { url: s('/sprites/opponents/magmacrab.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 023 Ashraptor — medium — volcanic raider (vertical runner on long legs)
+  // 'ashraptor': {
+  //   battle: { url: s('/sprites/opponents/ashraptor.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 024 Cindershell — medium — basalt titan (dome on column legs)
+  // 'cindershell': {
+  //   battle: { url: s('/sprites/opponents/cindershell.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // },
+
+  // 025 Solgryth — large (BOSS) — solar apex predator (radial wing burst)
+  // 'solgryth': {
+  //   battle: { url: s('/sprites/opponents/solgryth.png'), nativeWidth: 96, nativeHeight: 96, facing: 'right', pixelArt: true },
+  // },
 
 }
 
@@ -242,29 +320,55 @@ const DEFAULT_TERRAIN: TerrainDescriptor = {
   opponentPlatformWidth: null,
 }
 
+// Arena UUIDs are generated by Supabase at migration time.
+// To find a UUID: SELECT id FROM battle_arenas WHERE arena_key = 'arena_N';
 const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
+  // ── Arena 1 — Verdantroot Forest ──────────────────────────────────────────
   '37543fca-9f22-41c7-83b5-2ded30d7b063': {
     playerPlatformUrl: s('/terrain/arena_1_player_platform.png'),
     playerPlatformRenderedWidth: 320,
     opponentPlatformUrl: s('/terrain/arena_1_opponent_platform.png'),
     opponentPlatformWidth: 256,
-    // opponentCalibration omitted → falls back to ARENA_1_CALIBRATION
-    accentColor: '#6aaa30', // Mosshollow Glen — moss green sampled from platform
+    accentColor: '#6aaa30', // moss green
   },
+  // ── Arena 2 — Murkmire Wetlands ───────────────────────────────────────────
   'ca277fd4-1dd0-4e6e-a50b-c95bbd878395': {
     playerPlatformUrl: s('/terrain/arena_2_player_platform.png'),
     playerPlatformRenderedWidth: 320,
     opponentPlatformUrl: s('/terrain/arena_2_opponent_platform.png'),
     opponentPlatformWidth: 256,
-    accentColor: '#f97316', // arena_2 — ember orange
+    accentColor: '#f97316', // TODO: update to swamp tone when Murkmire terrain art lands
   },
+  // ── Arena 3 — Ashrock Highlands ───────────────────────────────────────────
   'a353973e-46fe-4757-a90d-a409beddc644': {
     playerPlatformUrl: s('/terrain/arena_3_player_platform.png'),
     playerPlatformRenderedWidth: 320,
     opponentPlatformUrl: s('/terrain/arena_3_opponent_platform.png'),
     opponentPlatformWidth: 256,
-    accentColor: '#818cf8', // arena_3 Crystalspire Vault — crystal indigo
+    accentColor: '#818cf8', // TODO: update to stone/storm tone when Ashrock terrain art lands
   },
+  // ── Arena 4 — Frostveil Peaks (terrain art pending) ───────────────────────
+  // To activate: replace ARENA_4_UUID with output of:
+  //   SELECT id FROM battle_arenas WHERE arena_key = 'arena_4';
+  // Then drop platform PNGs into public/terrain/ and uncomment.
+  // 'ARENA_4_UUID': {
+  //   playerPlatformUrl: s('/terrain/arena_4_player_platform.png'),
+  //   playerPlatformRenderedWidth: 320,
+  //   opponentPlatformUrl: s('/terrain/arena_4_opponent_platform.png'),
+  //   opponentPlatformWidth: 256,
+  //   accentColor: '#7dd3fc', // frost blue
+  // },
+  // ── Arena 5 — Sunforge Summit (terrain art pending) ───────────────────────
+  // To activate: replace ARENA_5_UUID with output of:
+  //   SELECT id FROM battle_arenas WHERE arena_key = 'arena_5';
+  // Then drop platform PNGs into public/terrain/ and uncomment.
+  // 'ARENA_5_UUID': {
+  //   playerPlatformUrl: s('/terrain/arena_5_player_platform.png'),
+  //   playerPlatformRenderedWidth: 320,
+  //   opponentPlatformUrl: s('/terrain/arena_5_opponent_platform.png'),
+  //   opponentPlatformWidth: 256,
+  //   accentColor: '#f87171', // volcanic red
+  // },
 }
 
 export function getArenaTerrain(arenaId: string): TerrainDescriptor {
