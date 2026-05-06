@@ -23,6 +23,9 @@ export const WORLD_MAP_MIN_HEIGHT = 320
 export const WORLD_MAP_MAX_HEIGHT = 760
 export const WORLD_MAP_WIDTH_SCALE_BASE = 390
 export const WORLD_MAP_HEIGHT_SCALE_BASE = 620
+/** Fraction of total map height kept clear of nodes at the very top and bottom (ocean / sky). */
+export const WORLD_MAP_EDGE_PAD_FRACTION = 0.05
+
 export const WORLD_MAP_MIN_NODE_SCALE = 0.72
 export const WORLD_MAP_MAX_NODE_SCALE = 1.22
 

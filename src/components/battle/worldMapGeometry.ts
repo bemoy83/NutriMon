@@ -1,4 +1,4 @@
-import { DEFAULT_WORLD_MAP_LAYOUT } from './worldMapLayout'
+import { DEFAULT_WORLD_MAP_LAYOUT, WORLD_MAP_EDGE_PAD_FRACTION } from './worldMapLayout'
 import type { WorldMapLayout } from './worldMapLayout'
 
 export interface NodePosition {
@@ -18,7 +18,59 @@ const X_PATTERN = [0.50, 0.30, 0.58, 0.70, 0.50, 0.30]
 /** 5-step winding pattern used when nodes are grouped into biomes of 5.
  *  Node 0 (biome entry) and node 4 (boss) are near center so cross-biome
  *  path segments stay roughly vertical. */
-const X_PATTERN_5 = [0.50, 0.34, 0.60, 0.55, 0.70]
+const X_PATTERN_5 = [0.50, 0.25, 0.50, 0.80, 0.60]
+
+// ── Per-biome node position overrides ────────────────────────────────────────
+// Key: arenaSortOrder (1–5).
+// Value: 5-element array indexed by posInBiome (0 = biome entry / bottom, 4 = boss / top).
+// Each entry is { x, y } as fractions of layout.width / layout.height (0–1).
+// Set a slot to null to fall back to the computed position for that node.
+// Leave a biome's key absent to use the computed layout for the whole biome.
+//
+// To tune: open the world map in the browser, note where a node lands vs. where
+// the terrain feature is, adjust x/y by ±0.02–0.05 and save — HMR updates instantly.
+//
+// Arena sort order → biome name:
+//   1 = Verdantroot Forest   2 = Murkmire Wetlands   3 = Ashrock Highlands
+//   4 = Frostveil Peaks      5 = Sunforge Summit
+const BIOME_NODE_POSITIONS: Partial<Record<number, ReadonlyArray<{ x: number; y: number } | null>>> = {
+  // Example — uncomment and fill to override a biome:
+  1: [
+    { x: 0.50, y: 0.94 },  // posInBiome 0 — Bramblin
+    { x: 0.25, y: 0.90 },  // posInBiome 1 — Mushbob
+    { x: 0.50, y: 0.86 },  // posInBiome 2 — Mossboar
+    { x: 0.80, y: 0.82 },  // posInBiome 3 — Thornfang
+    { x: 0.58, y: 0.78 },  // posInBiome 4 — Elderhorn (boss)
+  ],
+  2: [
+    { x: 0.74, y: 0.72 },  // posInBiome 0 — Boglet
+    { x: 0.65, y: 0.68 },  // posInBiome 1 — Mudmaul
+    { x: 0.35, y: 0.67 },  // posInBiome 2 — Reedstalker
+    { x: 0.60, y: 0.62 },  // posInBiome 3 — Mirewidow
+    { x: 0.72, y: 0.57 },  // posInBiome 4 — Leviamire (boss)
+  ],
+  3: [
+    { x: 0.74, y: 0.52 },  // posInBiome 0 — Pebblit
+    { x: 0.42, y: 0.51 },  // posInBiome 1 — Screechmite
+    { x: 0.18, y: 0.48 },  // posInBiome 2 — Flintor
+    { x: 0.24, y: 0.44 },  // posInBiome 3 — Shockmantis
+    { x: 0.50, y: 0.41 },  // posInBiome 4 — Thunderox (boss)
+  ],
+  4: [
+    { x: 0.55, y: 0.36 },  // posInBiome 0 — Frostscarab
+    { x: 0.46, y: 0.32 },  // posInBiome 1 — Glaciowyrm
+    { x: 0.80, y: 0.30 },  // posInBiome 2 — Glaciermaw
+    { x: 0.80, y: 0.25 },  // posInBiome 3 — Frostwraith
+    { x: 0.58, y: 0.23 },  // posInBiome 4 — Tuskraal (boss)
+  ],
+  5: [
+    { x: 0.55, y: 0.19 },  // posInBiome 0 — Pyrobeetle
+    { x: 0.80, y: 0.17 },  // posInBiome 1 — Magmacrab
+    { x: 0.86, y: 0.12 },  // posInBiome 2 — Ashraptor
+    { x: 0.50, y: 0.09 },  // posInBiome 3 — Cindershell
+    { x: 0.22, y: 0.04 },  // posInBiome 4 — Solgryth (boss)
+  ],
+}
 
 export function resolveNodePosition(
   node: MapNode,
@@ -39,9 +91,17 @@ export function resolveNodePosition(
     const posInBiome = index % groupSize
     const actualGroupSize = Math.min(groupSize, total - biomeIndex * groupSize)
 
-    const biomeH = layout.height / biomeCount
-    const biomePad = biomeH * 0.20
-    const biomeBottom = layout.height - biomeIndex * biomeH
+    // Per-biome override — checked before falling through to the computed layout.
+    const override = BIOME_NODE_POSITIONS[biomeIndex + 1]?.[posInBiome]
+    if (override) {
+      return { x: override.x * layout.width, y: override.y * layout.height }
+    }
+
+    const edgePad = layout.height * WORLD_MAP_EDGE_PAD_FRACTION
+    const usableHeight = layout.height - edgePad * 2
+    const biomeH = usableHeight / biomeCount
+    const biomePad = biomeH * 0.10
+    const biomeBottom = layout.height - edgePad - biomeIndex * biomeH
     const biomeSpan = biomeH - biomePad * 2
 
     // posInBiome 0 = bottom of biome, top = boss

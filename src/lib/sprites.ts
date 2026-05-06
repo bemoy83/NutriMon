@@ -102,40 +102,40 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
 
   // 001 Bramblin — small — prickly defender (leaf-ball hedgehog)
   'bramblin': {
-    battle: { url: s('/sprites/opponents/bramblin.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+    battle: { url: s('/sprites/opponents/bramblin.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
 
   // 002 Mushbob — small — unstable brawler (lopsided mushroom cap)
   'mushbob': {
-    battle: { url: s('/sprites/opponents/mushbob.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+    battle: { url: s('/sprites/opponents/mushbob.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
 
   // 003 Mossboar — medium — heavy charger (moss ridge + tusks)
   'mossboar': {
-    battle: { url: s('/sprites/opponents/mossboar.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+    battle: { url: s('/sprites/opponents/mossboar.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
 
   // 004 Thornfang — medium — quick predator (raised shoulder ridge)
   'thornfang': {
-    battle: { url: s('/sprites/opponents/thornfang.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+    battle: { url: s('/sprites/opponents/thornfang.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
 
   // 005 Elderhorn — large (BOSS) — ancient forest guardian (antler crown)
   'elderhorn': {
-    battle: { url: s('/sprites/opponents/elderhorn.png'), nativeWidth: 96, nativeHeight: 96, facing: 'right', pixelArt: true },
+    battle: { url: s('/sprites/opponents/elderhorn.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
 
   // ── Arena 2 — Murkmire Wetlands (levels 6–11) ─────────────────────────────
 
   // 006 Boglet — small — gaping ambusher (circle with huge mouth)
   'boglet': {
-    battle: { url: s('/sprites/opponents/boglet.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+    battle: { url: s('/sprites/opponents/boglet.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
 
   // 007 Mudmaul — medium — armoured bulldozer (forward wedge with giant claws)
-  // 'mudmaul': {
-  //   battle: { url: s('/sprites/opponents/mudmaul.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
-  // },
+  'mudmaul': {
+    battle: { url: s('/sprites/opponents/mudmaul.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  },
 
   // 008 Reedstalker — medium — aerial skirmisher (vertical line with long beak)
   // 'reedstalker': {
@@ -337,7 +337,7 @@ const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
     playerPlatformRenderedWidth: 320,
     opponentPlatformUrl: s('/terrain/arena_2_opponent_platform.png'),
     opponentPlatformWidth: 256,
-    accentColor: '#f97316', // TODO: update to swamp tone when Murkmire terrain art lands
+    accentColor: '#5f7f3a',
   },
   // ── Arena 3 — Ashrock Highlands ───────────────────────────────────────────
   'a353973e-46fe-4757-a90d-a409beddc644': {
@@ -345,7 +345,7 @@ const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
     playerPlatformRenderedWidth: 320,
     opponentPlatformUrl: s('/terrain/arena_3_opponent_platform.png'),
     opponentPlatformWidth: 256,
-    accentColor: '#818cf8', // TODO: update to stone/storm tone when Ashrock terrain art lands
+    accentColor: '#64748b',
   },
   // ── Arena 4 — Frostveil Peaks ───────────────────────────────────────────────
   'eae801b3-fac1-4d10-9b40-ea652865c57c': {
@@ -353,7 +353,7 @@ const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
     playerPlatformRenderedWidth: 320,
     opponentPlatformUrl: s('/terrain/arena_4_opponent_platform.png'),
     opponentPlatformWidth: 256,
-    accentColor: '#7dd3fc', // TODO: update to ice/frost tone when Frostveil terrain art lands
+    accentColor: '#93c5fd',
   },
   // ── Arena 5 — Sunforge Summit ───────────────────────────────────────────────
   'af76c388-9746-4484-8ab5-bfa9f16349f9': {
@@ -361,7 +361,7 @@ const ARENA_TERRAIN: Partial<Record<string, TerrainDescriptor>> = {
     playerPlatformRenderedWidth: 320,
     opponentPlatformUrl: s('/terrain/arena_5_opponent_platform.png'),
     opponentPlatformWidth: 256,
-    accentColor: '#f87171', // TODO: update to volcanic/lava tone when Sunforge terrain art lands
+    accentColor: '#f97316',
   },
 }
 
