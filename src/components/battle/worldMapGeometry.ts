@@ -43,8 +43,8 @@ const BIOME_NODE_POSITIONS: Partial<Record<number, ReadonlyArray<{ x: number; y:
     { x: 0.58, y: 0.78 },  // posInBiome 4 — Elderhorn (boss)
   ],
   2: [
-    { x: 0.74, y: 0.72 },  // posInBiome 0 — Boglet
-    { x: 0.65, y: 0.68 },  // posInBiome 1 — Mudmaul
+    { x: 0.83, y: 0.73 },  // posInBiome 0 — Boglet
+    { x: 0.68, y: 0.675 },  // posInBiome 1 — Mudmaul
     { x: 0.35, y: 0.67 },  // posInBiome 2 — Reedstalker
     { x: 0.60, y: 0.62 },  // posInBiome 3 — Mirewidow
     { x: 0.72, y: 0.57 },  // posInBiome 4 — Leviamire (boss)
