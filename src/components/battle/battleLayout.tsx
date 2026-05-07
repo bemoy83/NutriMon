@@ -13,6 +13,6 @@ export function battleArenaCmdBarVars(): CSSProperties {
 /** Gameplay band above the overlay command bar */
 export const battleGameplayBandClass = 'absolute inset-x-0 top-0 bottom-[var(--battle-cmd-h)]'
 
-/** Frosted strip over arena bottom; backdrop samples terrain */
+/** Solid dark panel at arena bottom */
 export const battleCommandBarSurfaceClass =
-  'absolute bottom-0 left-0 right-0 z-30 flex h-[var(--battle-cmd-h)] shrink-0 border-t border-white/10 bg-[rgb(15_23_42/0.72)] shadow-sm backdrop-blur-md backdrop-saturate-150'
+  'absolute bottom-0 left-0 right-0 z-30 flex h-[var(--battle-cmd-h)] shrink-0 gap-3 border-t border-white/[0.06] bg-[#0f1018] p-3'

@@ -503,6 +503,16 @@ select {
   }
 }
 
+/* Low-HP bar shimmer — pulses opacity at ≤25% HP to signal danger. */
+@keyframes hp-shimmer {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+.animate-hp-shimmer {
+  animation: hp-shimmer 0.85s ease-in-out infinite;
+}
+
 /* Full-viewport flash for special actions.
    Quick burst (0 → 92% in 12%) → hold → fade out.
    Duration driven by BATTLE_ANIM.SPECIAL_FLASH_MS (450ms). */

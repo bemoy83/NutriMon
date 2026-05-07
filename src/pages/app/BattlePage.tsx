@@ -5,7 +5,7 @@ import {
   battleActionToPayload,
 } from '@/components/battle/battleActionConfig'
 import { BattleCommandBar } from '@/components/battle/BattleCommandBar'
-import { BattleHudCard, BattleHudHpBar } from '@/components/battle/BattleHudCard'
+import { BattleHudCard, BattleHudFocusPips, BattleHudHpBar } from '@/components/battle/BattleHudCard'
 import { battleArenaCmdBarVars, battleGameplayBandClass } from '@/components/battle/battleLayout'
 import { BattleOutcomeModal } from '@/components/battle/BattleOutcomeModal'
 import LoadingState from '@/components/ui/LoadingState'
@@ -139,6 +139,12 @@ export default function BattlePage() {
     if (entry.target === 'player' && entry.targetHpAfter !== null) playerHp = entry.targetHpAfter
   }
 
+  const FOCUS_PIP_MAX = 5
+  const focusPips = Math.min(
+    FOCUS_PIP_MAX,
+    displayedLog.filter(e => e.actor === 'player' && e.action === 'focus' && e.phase === 'action').length,
+  )
+
   const isActive = session.status === 'active'
   const isCompleted = session.status === 'completed'
   const isWin = session.outcome === 'win'
@@ -184,7 +190,7 @@ export default function BattlePage() {
               <p className="ml-2 shrink-0 text-xs text-white/60">Lv{session.opponent.recommendedLevel}</p>
             </div>
             <p className="mt-0.5 text-xs font-semibold uppercase tracking-widest text-white/60">HP</p>
-            <BattleHudHpBar current={opponentHp} max={session.opponentMaxHp} variant="danger" />
+            <BattleHudHpBar current={opponentHp} max={session.opponentMaxHp} />
           </BattleHudCard>
 
           {/* z-stacking (low → high): opponent platform < opponent sprite < player platform < player sprite < HUD (z-10) */}
@@ -271,10 +277,11 @@ export default function BattlePage() {
               <p className="ml-2 shrink-0 text-xs text-white/60">Lv{session.companion.level}</p>
             </div>
             <p className="mt-0.5 text-xs font-semibold uppercase tracking-widest text-white/60">HP</p>
-            <BattleHudHpBar current={playerHp} max={session.playerMaxHp} variant="brand" />
+            <BattleHudHpBar current={playerHp} max={session.playerMaxHp} />
             <p className="mt-1 text-right text-xs tabular-nums text-white/70">
               {playerHp} / {session.playerMaxHp}
             </p>
+            <BattleHudFocusPips count={focusPips} />
           </BattleHudCard>
         </div>
 
