@@ -74,8 +74,23 @@ export function getHitImpactUrl(): string | null {
   return HIT_IMPACT_URL
 }
 
+// ── Player world map sprite registry ────────────────────────────────────────
+// Distinct from battle sprites — overhead/isometric style for the world map.
+// Falls back to PLAYER_BATTLE_SPRITES when not registered.
+// Key format: `${stage}_${condition}`
+const PLAYER_WORLD_MAP_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
+  // Uncomment + add PNG to public/sprites/player_world/ to activate:
+  'baby_steady': { url: s('/sprites/player_world/baby_steady.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  // 'baby_thriving':   { url: s('/sprites/player_world/baby_thriving.png'),   nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  // 'baby_recovering': { url: s('/sprites/player_world/baby_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  // 'adult_steady':    { url: s('/sprites/player_world/adult_steady.png'),    nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  // 'adult_thriving':  { url: s('/sprites/player_world/adult_thriving.png'),  nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  // 'adult_recovering':{ url: s('/sprites/player_world/adult_recovering.png'),nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+}
+
 // ── Opponent sprite registry ─────────────────────────────────────────────────
 // Key format: slugified opponent name e.g. "Pebble Pup" → "pebble_pup"
+// `worldMap` — optional world-map variant; falls back to `battle` when absent.
 // `recovering` is optional — omit it and the sprite stays fainted after defeat.
 // `footOffsetX` — horizontal offset in NATIVE pixels (256px canvas) from the
 //   canvas centre to where the creature's feet actually stand. Positive = feet
@@ -83,6 +98,7 @@ export function getHitImpactUrl(): string | null {
 //   automatically. Set this when a creature's stance is off-centre in the PNG.
 interface OpponentSpriteEntry {
   battle: SpriteDescriptor
+  worldMap?: SpriteDescriptor
   // recovering?: SpriteDescriptor
   footOffsetX?: number
 }
@@ -103,26 +119,31 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 001 Bramblin — small — prickly defender (leaf-ball hedgehog)
   'bramblin': {
     battle: { url: s('/sprites/opponents/bramblin.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // worldMap: { url: s('/sprites/opponents_world/bramblin.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
 
   // 002 Mushbob — small — unstable brawler (lopsided mushroom cap)
   'mushbob': {
     battle: { url: s('/sprites/opponents/mushbob.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // worldMap: { url: s('/sprites/opponents_world/mushbob.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
 
   // 003 Mossboar — medium — heavy charger (moss ridge + tusks)
   'mossboar': {
     battle: { url: s('/sprites/opponents/mossboar.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // worldMap: { url: s('/sprites/opponents_world/mossboar.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
 
   // 004 Thornfang — medium — quick predator (raised shoulder ridge)
   'thornfang': {
     battle: { url: s('/sprites/opponents/thornfang.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // worldMap: { url: s('/sprites/opponents_world/thornfang.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
 
   // 005 Elderhorn — large (BOSS) — ancient forest guardian (antler crown)
   'elderhorn': {
     battle: { url: s('/sprites/opponents/elderhorn.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // worldMap: { url: s('/sprites/opponents_world/elderhorn.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
 
   // ── Arena 2 — Murkmire Wetlands (levels 6–11) ─────────────────────────────
@@ -130,11 +151,13 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 006 Boglet — small — gaping ambusher (circle with huge mouth)
   'boglet': {
     battle: { url: s('/sprites/opponents/boglet.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    worldMap: { url: s('/sprites/opponents_world/boglet.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
 
   // 007 Mudmaul — medium — armoured bulldozer (forward wedge with giant claws)
   'mudmaul': {
     battle: { url: s('/sprites/opponents/mudmaul.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    worldMap: { url: s('/sprites/opponents_world/mudmaul.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
 
   // 008 Reedstalker — medium — aerial skirmisher (vertical line with long beak)
@@ -397,8 +420,24 @@ export function getPlayerBattleSpriteDescriptor(
   return PLAYER_BATTLE_SPRITES[`${stage}_${condition}`] ?? PLAYER_BATTLE_SPRITES[`${stage}_steady`] ?? null
 }
 
+export function getPlayerWorldMapSpriteDescriptor(
+  stage: string,
+  condition: string,
+): SpriteDescriptor | null {
+  return (
+    PLAYER_WORLD_MAP_SPRITES[`${stage}_${condition}`] ??
+    PLAYER_WORLD_MAP_SPRITES[`${stage}_steady`] ??
+    getPlayerBattleSpriteDescriptor(stage, condition)
+  )
+}
+
 export function getOpponentSpriteDescriptor(name: string): SpriteDescriptor | null {
   return OPPONENT_SPRITES[slugify(name)]?.battle ?? null
+}
+
+export function getOpponentWorldMapSpriteDescriptor(name: string): SpriteDescriptor | null {
+  const entry = OPPONENT_SPRITES[slugify(name)]
+  return entry?.worldMap ?? entry?.battle ?? null
 }
 
 // export function getOpponentRecoverySpriteDescriptor(name: string): SpriteDescriptor | null {

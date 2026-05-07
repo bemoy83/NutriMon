@@ -37,11 +37,7 @@ const MAP_ANIMATIONS = `
     0%, 100% { opacity: 0.45; transform: scale(1); }
     50%       { opacity: 0.80; transform: scale(1.12); }
   }
-  @keyframes worldmap-float {
-    0%, 100% { transform: translateY(0px); }
-    50%       { transform: translateY(-4px); }
-  }
-  @keyframes worldmap-glow-pulse {
+@keyframes worldmap-glow-pulse {
     0%, 100% { opacity: 0.5; }
     50%       { opacity: 1.0; }
   }
@@ -151,7 +147,6 @@ export function WorldMapCanvas(props: WorldMapCanvasProps) {
             return (
               <WorldMapCompanionMarker
                 companion={companion}
-                arenaId={currentArena.id}
                 position={pos}
                 layout={layout}
               />
@@ -453,12 +448,10 @@ function NodeModeCanvas({
 
             {(() => {
               const companionPos = positions[companionNodeIdx]
-              const companionArenaId = nodes[companionNodeIdx]?.arenaId ?? currentNode?.arenaId
-              if (!companionPos || !companionArenaId) return null
+              if (!companionPos) return null
               return (
                 <WorldMapCompanionMarker
                   companion={companion}
-                  arenaId={companionArenaId}
                   position={companionPos}
                   layout={layout}
                   outerRef={companionGRef}

@@ -1,4 +1,4 @@
-import { getArenaTerrain, getOpponentSpriteDescriptor } from '@/lib/sprites'
+import { getArenaTerrain, getOpponentWorldMapSpriteDescriptor } from '@/lib/sprites'
 import type { WorldMapOpponentNode } from '@/types/domain'
 import type { NodePosition } from './worldMapGeometry'
 import { ARENA_LABEL_FONT_SIZE, ARENA_META_FONT_SIZE } from './worldMapLayout'
@@ -22,7 +22,7 @@ export function WorldMapOpponentNodeComponent({
 }: WorldMapOpponentNodeProps) {
   const terrain = getArenaTerrain(node.arenaId)
   const accent = terrain.accentColor ?? '#6b7280'
-  const sprite = getOpponentSpriteDescriptor(node.name)
+  const sprite = getOpponentWorldMapSpriteDescriptor(node.name)
   const isLocked = !node.isChallengeable
   const isDefeated = node.isDefeated
   const nodeR = NODE_R * nodeScale

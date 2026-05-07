@@ -29,6 +29,8 @@ export const WORLD_MAP_EDGE_PAD_FRACTION = 0.05
 export const WORLD_MAP_MIN_NODE_SCALE = 0.72
 export const WORLD_MAP_MAX_NODE_SCALE = 1.22
 
+/** Radius of each opponent node in SVG user units (at nodeScale 1). */
+export const WORLD_MAP_NODE_R = 32
 export const HUB_PLATFORM_SCALE = 0.64
 export const FALLBACK_PLATFORM_W = 136
 export const COMPANION_MARKER_SIZE = 64

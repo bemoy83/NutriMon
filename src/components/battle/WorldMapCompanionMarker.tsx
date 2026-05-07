@@ -1,17 +1,15 @@
 import type { RefObject } from 'react'
-import { getArenaTerrain, getPlayerBattleSpriteDescriptor } from '@/lib/sprites'
+import { getPlayerWorldMapSpriteDescriptor } from '@/lib/sprites'
 import type { CreatureCompanion } from '@/types/domain'
 import type { NodePosition } from './worldMapGeometry'
 import {
   COMPANION_MARKER_SIZE,
-  getHubPlatformMetrics,
+  WORLD_MAP_NODE_R,
 } from './worldMapLayout'
 import type { WorldMapLayout } from './worldMapLayout'
 
 interface WorldMapCompanionMarkerProps {
   companion: CreatureCompanion | null
-  /** Arena ID used for terrain lookup — accepts either an ArenaListArena.id or WorldMapOpponentNode.arenaId. */
-  arenaId: string
   position: NodePosition
   layout: WorldMapLayout
   /** Ref forwarded to the outer <g> so the parent can drive the transform during travel. */
@@ -20,30 +18,27 @@ interface WorldMapCompanionMarkerProps {
 
 export function WorldMapCompanionMarker({
   companion,
-  arenaId,
   position,
   layout,
   outerRef,
 }: WorldMapCompanionMarkerProps) {
   const companionSprite = companion
-    ? getPlayerBattleSpriteDescriptor(companion.stage, companion.currentCondition)
+    ? getPlayerWorldMapSpriteDescriptor(companion.stage, companion.currentCondition)
     : null
-  const terrain = getArenaTerrain(arenaId)
-  const platform = getHubPlatformMetrics(terrain, layout.nodeScale)
   const markerSize = COMPANION_MARKER_SIZE * layout.nodeScale
-  const platformTop = position.y - platform.height / 2
-  const surfaceY = platformTop + platform.height * platform.calibration.ovalSurfaceY
+  const nodeR = WORLD_MAP_NODE_R * layout.nodeScale
 
-  // Offsets from node center — consistent with where the rAF travel loop ends.
-  const offsetX = -markerSize / 2
-  const offsetY = surfaceY - markerSize - position.y
+  // Southwest of the opponent node — companion faces right (east), opponent is NE.
+  // Right edge of companion overlaps the opponent's left edge by ~¼ nodeR.
+  const offsetX = -(markerSize + nodeR * 0.75)
+  const offsetY = nodeR * 0.5 - markerSize / 2
 
   return (
     // Outer <g> anchored at the node center in SVG user units.
     // The parent rAF loop animates this element's transform directly.
     <g ref={outerRef} transform={`translate(${position.x} ${position.y})`}>
       <g transform={`translate(${offsetX} ${offsetY})`}>
-        <g style={{ animation: 'worldmap-float 3s ease-in-out infinite' }}>
+        <g>
           {companionSprite ? (
             <>
               <image
