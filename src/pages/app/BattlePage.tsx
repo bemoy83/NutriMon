@@ -46,7 +46,10 @@ const OPPONENT_SIZE_BY_CLASS: Record<string, number> = {
   medium: 144,
   large: 192,
 }
-// Platform art is calibrated for the medium size. Scale proportionally for other sizes.
+// Platform art is calibrated for the medium size.
+// Scale DOWN for small (avoids tiny sprite on huge platform), but cap at baseline for large
+// so the boss fills more of the platform and appears imposing rather than everything scaling
+// proportionally (which also clips the platform's right side at the arena edge).
 const OPPONENT_PLATFORM_BASELINE = OPPONENT_SIZE_BY_CLASS.medium
 
 function getOpponentSize(sizeClass: string): number {
@@ -54,7 +57,8 @@ function getOpponentSize(sizeClass: string): number {
 }
 
 function scaleOpponentPlatformWidth(registeredWidth: number, displaySize: number): number {
-  return Math.round(registeredWidth * (displaySize / OPPONENT_PLATFORM_BASELINE))
+  const scale = Math.min(1, displaySize / OPPONENT_PLATFORM_BASELINE)
+  return Math.round(registeredWidth * scale)
 }
 
 export default function BattlePage() {
