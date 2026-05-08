@@ -11,21 +11,43 @@ export const battleActionToPayload: Record<BattleActionLabel, BattleAction> = {
   Skill:  'skill',
 }
 
-// Skill ID fired when the player selects the Skill action.
-// Hardcoded to triple_hit while only one skill exists; extend to a skill picker
-// when the companion has multiple unlocked skills.
-export const BATTLE_SKILL_ID = 'triple_hit'
+export interface BattleSkillDef {
+  id: string
+  label: string
+  description: string
+  kind: 'attack' | 'heal' | 'buff'
+  pipCost: number
+  icon: string
+}
 
-// Pip cost for each skill — mirrors the server-side constants in migration 055.
-export const BATTLE_SKILL_PIP_COST: Record<string, number> = {
-  triple_hit: 1,
+export const BATTLE_SKILL_CATALOG: BattleSkillDef[] = [
+  {
+    id: 'triple_hit',
+    label: 'Triple Hit',
+    description: '3 hits at 75% power each',
+    kind: 'attack',
+    pipCost: 1,
+    icon: '⚔️',
+  },
+]
+
+// Derived from the catalog — single source of truth for pip costs.
+export const BATTLE_SKILL_PIP_COST: Record<string, number> = Object.fromEntries(
+  BATTLE_SKILL_CATALOG.map(s => [s.id, s.pipCost]),
+)
+
+export const battleActionIcon: Record<BattleActionLabel, string> = {
+  Attack: '⚔️',
+  Defend: '🛡️',
+  Focus:  '✨',
+  Skill:  '💥',
 }
 
 export const battleActionSubLabel: Record<BattleActionLabel, string> = {
   Attack: 'Full power',
   Defend: 'Halve damage',
   Focus:  '+1 focus pip',
-  Skill:  'Triple Hit',
+  Skill:  'Choose…',
 }
 
 /** Shared press/hover feedback for all command buttons (no brand tint). */

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  BATTLE_SKILL_ID,
   type BattleActionLabel,
   battleActionToPayload,
 } from '@/components/battle/battleActionConfig'
 import { BattleCommandBar } from '@/components/battle/BattleCommandBar'
+import { BattleSkillModal } from '@/components/battle/BattleSkillModal'
 import { BattleHudCard, BattleHudFocusPips, BattleHudHpBar } from '@/components/battle/BattleHudCard'
 import { battleArenaCmdBarVars, battleGameplayBandClass } from '@/components/battle/battleLayout'
 import { BattleOutcomeModal } from '@/components/battle/BattleOutcomeModal'
@@ -101,6 +101,7 @@ export default function BattlePage() {
   })
 
   const [pendingAction, setPendingAction] = useState<BattleActionLabel | null>(null)
+  const [skillModalOpen, setSkillModalOpen] = useState(false)
 
   const displayedLog =
     session && displayedLogOverride?.sessionId === session.id
@@ -160,16 +161,12 @@ export default function BattlePage() {
     lastEntry?.message ??
     (isActive ? `Round ${session.currentRound} — what will ${session.companion.name} do?` : null)
 
-  function handleAction(label: BattleActionLabel) {
-    if (!session || !isActive || isPending || isAnimating) return
+  function submitBattleAction(label: BattleActionLabel, skillId?: string) {
+    if (!session) return
     const prevLog = [...displayedLog]
     setPendingAction(label)
     submitAction(
-      {
-        battleRunId: session.id,
-        action: battleActionToPayload[label],
-        skillId: label === 'Skill' ? BATTLE_SKILL_ID : undefined,
-      },
+      { battleRunId: session.id, action: battleActionToPayload[label], skillId },
       {
         onSuccess: (updated) => {
           setPendingAction(null)
@@ -180,6 +177,20 @@ export default function BattlePage() {
         },
       },
     )
+  }
+
+  function handleAction(label: BattleActionLabel) {
+    if (!session || !isActive || isPending || isAnimating) return
+    if (label === 'Skill') {
+      setSkillModalOpen(true)
+      return
+    }
+    submitBattleAction(label)
+  }
+
+  function handleSkillPick(skillId: string) {
+    setSkillModalOpen(false)
+    submitBattleAction('Skill', skillId)
   }
 
   return (
@@ -317,6 +328,13 @@ export default function BattlePage() {
           onReturn={() => navigate('/app/battle')}
         />
       ) : null}
+
+      <BattleSkillModal
+        open={skillModalOpen}
+        focusPips={focusPips}
+        onPick={handleSkillPick}
+        onClose={() => setSkillModalOpen(false)}
+      />
 
       {/* Fade from black on mount */}
       <div

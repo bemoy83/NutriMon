@@ -491,6 +491,15 @@ select {
   animation: slide-up-in 0.15s ease-out both;
 }
 
+@keyframes slide-up-sheet {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.animate-slide-up-sheet {
+  animation: slide-up-sheet 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
 @keyframes popIn {
   from {
     opacity: 0;

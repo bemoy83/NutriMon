@@ -21,7 +21,7 @@ export function BattleHudHpBar({
   const color = hpBarColor(pct)
 
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--app-border)]">
+    <div className="relative h-2 w-full overflow-hidden rounded-full bg-[var(--app-border)]">
       <div
         className={`h-full rounded-full transition-[width,background-color] duration-700${isLow ? ' animate-hp-shimmer' : ''}`}
         style={{
@@ -30,6 +30,13 @@ export function BattleHudHpBar({
           boxShadow: isLow ? '0 0 6px 1px var(--app-danger)' : undefined,
         }}
       />
+      {[25, 50, 75].map((t) => (
+        <div
+          key={t}
+          className="absolute inset-y-0 w-px bg-black/30"
+          style={{ left: `${t}%`, zIndex: 1 }}
+        />
+      ))}
     </div>
   )
 }
@@ -56,6 +63,12 @@ export function BattleHudFocusPips({ count }: { count: number }) {
           )
         })}
       </div>
+      <span
+        className="min-w-[2ch] text-right text-[10px] tabular-nums transition-colors duration-200"
+        style={{ color: count > 0 ? 'var(--app-warning)' : 'rgba(255,255,255,0.25)' }}
+      >
+        {count}/{FOCUS_PIP_MAX}
+      </span>
     </div>
   )
 }

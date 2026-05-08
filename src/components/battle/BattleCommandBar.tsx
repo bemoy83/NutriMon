@@ -1,10 +1,10 @@
 import {
   BATTLE_ACTION_LABELS,
-  BATTLE_SKILL_PIP_COST,
-  BATTLE_SKILL_ID,
+  BATTLE_SKILL_CATALOG,
   type BattleActionLabel,
   battleActionButtonHoverClass,
   battleActionGhostColors,
+  battleActionIcon,
   battleActionSubLabel,
 } from '@/components/battle/battleActionConfig'
 import { battleCommandBarSurfaceClass } from '@/components/battle/battleLayout'
@@ -28,7 +28,8 @@ export function BattleCommandBar({
 }) {
   const isEnabled = isActive && !isPending && !isAnimating
   const isBusy = isAnimating || isPending
-  const skillCost = BATTLE_SKILL_PIP_COST[BATTLE_SKILL_ID] ?? 1
+  // Skill button is locked when the player can't afford any skill in the catalog.
+  const minSkillCost = Math.min(...BATTLE_SKILL_CATALOG.map(s => s.pipCost))
 
   return (
     <div className={battleCommandBarSurfaceClass}>
@@ -53,7 +54,7 @@ export function BattleCommandBar({
           const ghost = battleActionGhostColors[label]
           // Skill is pip-locked when the player doesn't have enough pips,
           // even if the rest of the UI is active.
-          const isPipLocked = label === 'Skill' && isEnabled && playerFocusPips < skillCost
+          const isPipLocked = label === 'Skill' && isEnabled && playerFocusPips < minSkillCost
           const isButtonDisabled = !isEnabled || isPipLocked
 
           return (
@@ -75,6 +76,9 @@ export function BattleCommandBar({
                 color: ghost.text,
               } : undefined}
             >
+              <span className="mb-0.5 block text-base leading-none" aria-hidden>
+                {battleActionIcon[label]}
+              </span>
               <span className="block text-sm font-semibold leading-tight">
                 {isThisPending ? `${label}…` : label}
               </span>
@@ -83,7 +87,7 @@ export function BattleCommandBar({
               </span>
               {label === 'Skill' && (
                 <div className="mt-1.5 flex gap-[3px]">
-                  {Array.from({ length: skillCost }).map((_, i) => (
+                  {Array.from({ length: minSkillCost }).map((_, i) => (
                     <div
                       key={i}
                       className={`h-1.5 w-1.5 rounded-full transition-colors ${
