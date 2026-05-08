@@ -34,7 +34,7 @@ export function BattleHudHpBar({
   )
 }
 
-const FOCUS_PIP_MAX = 5
+const FOCUS_PIP_MAX = 3
 
 export function BattleHudFocusPips({ count }: { count: number }) {
   return (

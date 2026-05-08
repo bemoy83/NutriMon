@@ -1,5 +1,7 @@
 import {
   BATTLE_ACTION_LABELS,
+  BATTLE_SKILL_PIP_COST,
+  BATTLE_SKILL_ID,
   type BattleActionLabel,
   battleActionButtonHoverClass,
   battleActionGhostColors,
@@ -13,6 +15,7 @@ export function BattleCommandBar({
   isPending,
   isAnimating,
   pendingAction,
+  playerFocusPips,
   onAction,
 }: {
   dialogue: string | null
@@ -20,10 +23,12 @@ export function BattleCommandBar({
   isPending: boolean
   isAnimating: boolean
   pendingAction: BattleActionLabel | null
+  playerFocusPips: number
   onAction: (label: BattleActionLabel) => void
 }) {
   const isEnabled = isActive && !isPending && !isAnimating
   const isBusy = isAnimating || isPending
+  const skillCost = BATTLE_SKILL_PIP_COST[BATTLE_SKILL_ID] ?? 1
 
   return (
     <div className={battleCommandBarSurfaceClass}>
@@ -41,21 +46,28 @@ export function BattleCommandBar({
         )}
       </div>
 
-      {/* Action buttons */}
-      <div className="flex w-44 shrink-0 flex-col gap-1">
+      {/* 2×2 action grid: Attack Defend / Focus Skill */}
+      <div className="grid w-44 shrink-0 grid-cols-2 grid-rows-2 gap-1.5">
         {BATTLE_ACTION_LABELS.map((label) => {
           const isThisPending = pendingAction === label
           const ghost = battleActionGhostColors[label]
+          // Skill is pip-locked when the player doesn't have enough pips,
+          // even if the rest of the UI is active.
+          const isPipLocked = label === 'Skill' && isEnabled && playerFocusPips < skillCost
+          const isButtonDisabled = !isEnabled || isPipLocked
+
           return (
             <button
               key={label}
               type="button"
-              disabled={!isEnabled}
+              disabled={isButtonDisabled}
               onClick={() => onAction(label)}
-              className={`flex flex-1 flex-col justify-center rounded-lg border px-3 text-left transition-[filter] ${
-                isEnabled
-                  ? battleActionButtonHoverClass
-                  : 'border-white/[0.06] bg-white/5 opacity-50'
+              className={`flex h-full flex-col justify-center rounded-lg border px-2.5 text-left transition-[filter,opacity] ${
+                !isEnabled
+                  ? 'border-white/[0.06] bg-white/5 opacity-50'
+                  : isPipLocked
+                    ? 'cursor-not-allowed opacity-35'
+                    : battleActionButtonHoverClass
               }`}
               style={isEnabled ? {
                 background: ghost.bg,
@@ -69,6 +81,18 @@ export function BattleCommandBar({
               <span className="mt-0.5 block text-[10px] font-medium leading-tight opacity-60">
                 {battleActionSubLabel[label]}
               </span>
+              {label === 'Skill' && (
+                <div className="mt-1.5 flex gap-[3px]">
+                  {Array.from({ length: skillCost }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                        playerFocusPips > i ? 'bg-current' : 'border border-current opacity-30'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
             </button>
           )
         })}

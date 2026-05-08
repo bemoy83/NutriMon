@@ -7,7 +7,7 @@ export type ReadinessBand = 'recovering' | 'building' | 'ready' | 'peak'
 export type MealRating = 'strong' | 'solid' | 'weak'
 export type BattleLikelyOutcome = 'favored' | 'competitive' | 'risky'
 export type BattleOutcome = 'pending' | 'win' | 'loss'
-export type BattleAction = 'attack' | 'defend' | 'focus'
+export type BattleAction = 'attack' | 'defend' | 'focus' | 'skill'
 export type BattleStatus = 'active' | 'completed'
 export type BattleLogActor = 'player' | 'opponent' | 'system'
 export type WeightUnit = 'kg' | 'lb'
@@ -415,6 +415,7 @@ export interface BattleLogEntry {
   phase: 'initiative' | 'action' | 'result'
   actor: BattleLogActor
   action: string
+  skillId: string | null
   damage: number
   target: 'opponent' | 'player' | null
   targetHpAfter: number | null
@@ -443,6 +444,7 @@ export interface BattleRunSession extends Omit<BattleRun, 'opponent'> {
   enemyMomentumBoost: number
   playerNextAttackBonus: number
   enemyNextAttackBonus: number
+  playerFocusPips: number
 }
 
 export interface BattleHub {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
+  BATTLE_SKILL_ID,
   type BattleActionLabel,
   battleActionToPayload,
 } from '@/components/battle/battleActionConfig'
@@ -139,11 +140,15 @@ export default function BattlePage() {
     if (entry.target === 'player' && entry.targetHpAfter !== null) playerHp = entry.targetHpAfter
   }
 
-  const FOCUS_PIP_MAX = 5
-  const focusPips = Math.min(
-    FOCUS_PIP_MAX,
-    displayedLog.filter(e => e.actor === 'player' && e.action === 'focus' && e.phase === 'action').length,
-  )
+  // Derive pip count from the revealed log so it animates step-by-step
+  // as entries are disclosed. Focus adds 1 (capped at 3); Skill subtracts 1.
+  const FOCUS_PIP_MAX = 3
+  const focusPips = displayedLog.reduce((count, e) => {
+    if (e.actor !== 'player' || e.phase !== 'action') return count
+    if (e.action === 'focus') return Math.min(FOCUS_PIP_MAX, count + 1)
+    if (e.action === 'skill') return Math.max(0, count - 1)
+    return count
+  }, 0)
 
   const isActive = session.status === 'active'
   const isCompleted = session.status === 'completed'
@@ -160,7 +165,11 @@ export default function BattlePage() {
     const prevLog = [...displayedLog]
     setPendingAction(label)
     submitAction(
-      { battleRunId: session.id, action: battleActionToPayload[label] },
+      {
+        battleRunId: session.id,
+        action: battleActionToPayload[label],
+        skillId: label === 'Skill' ? BATTLE_SKILL_ID : undefined,
+      },
       {
         onSuccess: (updated) => {
           setPendingAction(null)
@@ -291,6 +300,7 @@ export default function BattlePage() {
           isPending={isPending}
           isAnimating={isAnimating}
           pendingAction={pendingAction}
+          playerFocusPips={focusPips}
           onAction={handleAction}
         />
 

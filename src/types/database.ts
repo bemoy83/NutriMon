@@ -558,6 +558,7 @@ export interface BattleLogEntryRow {
   consumed_momentum_boost: boolean
   consumed_next_attack_bonus: boolean
   message: string
+  skill_id: string | null
 }
 
 export interface BattleRunRow {
@@ -587,6 +588,7 @@ export interface BattleRunRow {
   enemy_momentum_boost: number
   player_next_attack_bonus: number
   enemy_next_attack_bonus: number
+  player_focus_pips: number
 }
 
 export interface BattleRunSessionRow extends BattleRunRow {

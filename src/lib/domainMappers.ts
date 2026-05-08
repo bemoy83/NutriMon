@@ -472,6 +472,7 @@ export function mapBattleLogEntry(row: BattleLogEntryRow): BattleLogEntry {
     consumedMomentumBoost: row.consumed_momentum_boost ?? false,
     consumedNextAttackBonus: row.consumed_next_attack_bonus ?? false,
     message: row.message,
+    skillId: row.skill_id ?? null,
   }
 }
 
@@ -495,6 +496,7 @@ export function mapBattleRunSession(row: BattleRunSessionRow): BattleRunSession 
     enemyMomentumBoost: row.enemy_momentum_boost ?? 0,
     playerNextAttackBonus: row.player_next_attack_bonus ?? 0,
     enemyNextAttackBonus: row.enemy_next_attack_bonus ?? 0,
+    playerFocusPips: row.player_focus_pips ?? 0,
   }
 }
 

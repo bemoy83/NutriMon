@@ -20,8 +20,8 @@ export function useSubmitBattleAction() {
   const invalidateBattleQueries = useInvalidateBattleQueries()
 
   return useMutation({
-    mutationFn: ({ battleRunId, action }: { battleRunId: string; action: BattleAction }) =>
-      submitBattleAction(battleRunId, action),
+    mutationFn: ({ battleRunId, action, skillId }: { battleRunId: string; action: BattleAction; skillId?: string }) =>
+      submitBattleAction(battleRunId, action, skillId),
     onSuccess: (session) => {
       queryClient.setQueryData([BATTLE_RUN_QUERY_KEY, session.id], session)
       // Arena detail/list cache `activeBattleRun` for up to the global staleTime (1m).

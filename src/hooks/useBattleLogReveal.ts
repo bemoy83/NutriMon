@@ -97,31 +97,31 @@ export function useBattleLogReveal(opts: {
 
           if (entry.phase === 'action' && entry.action === 'attack' && entry.damage > 0) {
             if (entry.target === 'player') {
-              if (entry.consumedNextAttackBonus) {
-                triggerFocusedHurtSequence(playerSpriteRef, entry.crit)
-              } else {
-                triggerHurt(playerSpriteRef, entry.crit)
-              }
+              triggerHurt(playerSpriteRef, entry.crit)
               playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
-              if (entry.consumedNextAttackBonus) {
-                playerEffectsRef.current?.showFocusedAttackImpact(entry.crit)
-              } else {
-                playerEffectsRef.current?.showAttackImpact(entry.crit)
-              }
+              playerEffectsRef.current?.showAttackImpact(entry.crit)
               if (entry.crit) playerEffectsRef.current?.showCritBadge()
               triggerArenaShake(entry.crit)
             } else if (entry.target === 'opponent') {
-              if (entry.consumedNextAttackBonus) {
-                triggerFocusedHurtSequence(opponentSpriteRef, entry.crit)
-              } else {
-                triggerHurt(opponentSpriteRef, entry.crit)
-              }
+              triggerHurt(opponentSpriteRef, entry.crit)
               opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
-              if (entry.consumedNextAttackBonus) {
-                opponentEffectsRef.current?.showFocusedAttackImpact(entry.crit)
-              } else {
-                opponentEffectsRef.current?.showAttackImpact(entry.crit)
-              }
+              opponentEffectsRef.current?.showAttackImpact(entry.crit)
+              if (entry.crit) opponentEffectsRef.current?.showCritBadge()
+              triggerArenaShake(entry.crit)
+            }
+          }
+
+          if (entry.phase === 'action' && entry.action === 'skill' && entry.damage > 0) {
+            if (entry.target === 'player') {
+              triggerFocusedHurtSequence(playerSpriteRef, entry.crit)
+              playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
+              playerEffectsRef.current?.showFocusedAttackImpact(entry.crit)
+              if (entry.crit) playerEffectsRef.current?.showCritBadge()
+              triggerArenaShake(entry.crit)
+            } else if (entry.target === 'opponent') {
+              triggerFocusedHurtSequence(opponentSpriteRef, entry.crit)
+              opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
+              opponentEffectsRef.current?.showFocusedAttackImpact(entry.crit)
               if (entry.crit) opponentEffectsRef.current?.showCritBadge()
               triggerArenaShake(entry.crit)
             }

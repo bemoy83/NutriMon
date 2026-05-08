@@ -26,10 +26,15 @@ export async function getBattleRun(battleRunId: string): Promise<BattleRunSessio
   return mapBattleRunSession(data as BattleRunSessionRow)
 }
 
-export async function submitBattleAction(battleRunId: string, action: BattleAction): Promise<BattleRunSession> {
+export async function submitBattleAction(
+  battleRunId: string,
+  action: BattleAction,
+  skillId?: string,
+): Promise<BattleRunSession> {
   const { data, error } = await supabase.rpc('submit_battle_action', {
     p_battle_run_id: battleRunId,
     p_action: action,
+    ...(skillId !== undefined ? { p_skill_id: skillId } : {}),
   })
   if (error) throw error
   return mapBattleRunSession(data as BattleRunSessionRow)
