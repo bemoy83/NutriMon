@@ -422,7 +422,6 @@ export interface BattleLogEntry {
   crit: boolean
   defended: boolean
   consumedMomentumBoost: boolean
-  consumedNextAttackBonus: boolean
   message: string
 }
 
@@ -442,8 +441,6 @@ export interface BattleRunSession extends Omit<BattleRun, 'opponent'> {
   enemyLastAction: string | null
   playerMomentumBoost: number
   enemyMomentumBoost: number
-  playerNextAttackBonus: number
-  enemyNextAttackBonus: number
   playerFocusPips: number
 }
 

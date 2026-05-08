@@ -14,13 +14,13 @@ function entry(overrides: Partial<BattleLogEntry>): BattleLogEntry {
     phase: 'action',
     actor: 'player',
     action: 'attack',
+    skillId: null,
     damage: 0,
     target: null,
     targetHpAfter: null,
     crit: false,
     defended: false,
     consumedMomentumBoost: false,
-    consumedNextAttackBonus: false,
     message: 'Test entry',
     ...overrides,
   }
@@ -110,7 +110,7 @@ describe('useBattleLogReveal', () => {
     expect(triggerArenaShake).toHaveBeenCalledWith(true)
   })
 
-  it('uses focused attack impact when attack consumes a focus charge', () => {
+  it('uses focused attack impact and 3-hit hurt sequence for skill action', () => {
     vi.useFakeTimers()
     const opponentSprite = { triggerAnimation: vi.fn() } satisfies CreatureSpriteHandle
     const opponentEffects = effectHandle()
@@ -128,14 +128,14 @@ describe('useBattleLogReveal', () => {
     act(() => {
       result.current.revealEntries('run-1', [
         entry({
-          id: 'focused-attack-1',
+          id: 'skill-1',
           actor: 'player',
-          action: 'attack',
+          action: 'skill',
+          skillId: 'triple_hit',
           damage: 42,
           target: 'opponent',
           targetHpAfter: 20,
           crit: true,
-          consumedNextAttackBonus: true,
         }),
       ], [])
       vi.advanceTimersByTime(0)

@@ -296,8 +296,6 @@ describe('domainMappers', () => {
             enemy_last_action: null,
             player_momentum_boost: 0,
             enemy_momentum_boost: 0,
-            player_next_attack_bonus: 0,
-            enemy_next_attack_bonus: 0,
             opponent: {
               id: 'opp-1',
               arena_id: 'arena-1',

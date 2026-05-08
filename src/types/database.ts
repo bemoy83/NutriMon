@@ -556,7 +556,6 @@ export interface BattleLogEntryRow {
   crit: boolean
   defended: boolean
   consumed_momentum_boost: boolean
-  consumed_next_attack_bonus: boolean
   message: string
   skill_id: string | null
 }
@@ -586,8 +585,6 @@ export interface BattleRunRow {
   enemy_last_action: string | null
   player_momentum_boost: number
   enemy_momentum_boost: number
-  player_next_attack_bonus: number
-  enemy_next_attack_bonus: number
   player_focus_pips: number
 }
 
