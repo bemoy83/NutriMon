@@ -26,7 +26,9 @@ export function WorldMapOpponentNodeComponent({
   const isLocked = !node.isChallengeable
   const isDefeated = node.isDefeated
   const nodeR = NODE_R * nodeScale
-  const spriteSize = nodeR * 2
+  const spriteScale = node.sizeClass === 'large' ? 1.28 : node.sizeClass === 'small' ? 0.85 : 1
+  const spriteSize = nodeR * 2 * spriteScale
+  const spriteOffset = -(spriteSize - nodeR * 2) / 2
   const glowColor = toGlowHex(accent)
   const glowShadow = `drop-shadow(0 0 ${8 * nodeScale}px ${glowColor}) drop-shadow(0 0 ${22 * nodeScale}px ${glowColor})`
 
@@ -42,8 +44,8 @@ export function WorldMapOpponentNodeComponent({
       {isCurrent && !isLocked && sprite && (
         <image
           href={sprite.url}
-          x={0}
-          y={0}
+          x={spriteOffset}
+          y={spriteOffset}
           width={spriteSize}
           height={spriteSize}
           style={{
@@ -58,8 +60,8 @@ export function WorldMapOpponentNodeComponent({
       {sprite ? (
         <image
           href={sprite.url}
-          x={0}
-          y={0}
+          x={spriteOffset}
+          y={spriteOffset}
           width={spriteSize}
           height={spriteSize}
           style={{

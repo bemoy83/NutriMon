@@ -346,6 +346,7 @@ export interface WorldMapOpponentNode {
   arenaSortOrder: number
   sortOrder: number
   isArenaBoss: boolean
+  sizeClass: 'small' | 'medium' | 'large'
   isDefeated: boolean
   isChallengeable: boolean
   lockReason: string | null

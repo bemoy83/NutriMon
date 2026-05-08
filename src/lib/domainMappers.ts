@@ -384,6 +384,7 @@ export function mapWorldMapNode(row: WorldMapNodeRow): WorldMapOpponentNode {
     arenaSortOrder: row.arena_sort_order,
     sortOrder: row.sort_order,
     isArenaBoss: row.is_arena_boss,
+    sizeClass: (row.size_class ?? 'medium') as 'small' | 'medium' | 'large',
     isDefeated: row.is_defeated,
     isChallengeable: row.is_challengeable,
     lockReason: row.lock_reason,

@@ -143,7 +143,7 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 005 Elderhorn — large (BOSS) — ancient forest guardian (antler crown)
   'elderhorn': {
     battle: { url: s('/sprites/opponents/elderhorn.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    // worldMap: { url: s('/sprites/opponents_world/elderhorn.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    worldMap: { url: s('/sprites/opponents_world/elderhorn.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   },
 
   // ── Arena 2 — Murkmire Wetlands (levels 6–11) ─────────────────────────────

@@ -747,6 +747,7 @@ export interface WorldMapNodeRow {
   arena_name: string
   sort_order: number
   is_arena_boss: boolean
+  size_class: 'small' | 'medium' | 'large'
   is_defeated: boolean
   is_challengeable: boolean
   lock_reason: string | null
