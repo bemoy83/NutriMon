@@ -130,7 +130,7 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   'mushbob': {
     battle: { url: s('/sprites/opponents/mushbob.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     worldMap: { url: s('/sprites/opponents_world/mushbob.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    // icon: { url: s('/sprites/icons/mushbob.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/mushbob.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
   // 003 Mossboar — medium — heavy charger (moss ridge + tusks)

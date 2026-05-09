@@ -101,7 +101,6 @@ function TurnChip({
     >
       <div
         style={{
-          position: 'relative',
           width: 28,
           height: 28,
           borderRadius: '50%',
@@ -218,7 +217,7 @@ export function BattleTurnTimeline({
 
   const playerLabel = chipLabel('player', companionName, opponentName)
   const opponentLabel = chipLabel('opponent', companionName, opponentName)
-
+  const labelFor = (actor: BattleTurnActor) => actor === 'player' ? playerLabel : opponentLabel
   const descriptorFor = (actor: BattleTurnActor) =>
     actor === 'player' ? playerDescriptor : opponentDescriptor
 
@@ -257,7 +256,7 @@ export function BattleTurnTimeline({
       className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-1.5"
     >
       <TurnChip
-        label={chipLabel(actors[0], companionName, opponentName)}
+        label={labelFor(actors[0])}
         action={chipAction(initiative, actors[0])}
         isActive={activeActor === actors[0]}
         isSkipped={skippedActor === actors[0]}
@@ -266,7 +265,7 @@ export function BattleTurnTimeline({
       />
       <Separator />
       <TurnChip
-        label={chipLabel(actors[1], companionName, opponentName)}
+        label={labelFor(actors[1])}
         action={chipAction(initiative, actors[1])}
         isActive={activeActor === actors[1]}
         isSkipped={skippedActor === actors[1]}
