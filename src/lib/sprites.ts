@@ -41,12 +41,12 @@ const PLAYER_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
   'baby_steady': { url: s('/sprites/player/baby_steady.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   'baby_thriving': { url: s('/sprites/player/baby_thriving.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   'baby_recovering': { url: s('/sprites/player/baby_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // 'adult_steady':       { url: s('/sprites/player/adult_steady.png'),       nativeWidth: 64, nativeHeight: 64, facing: 'right' },
-  // 'adult_thriving':     { url: s('/sprites/player/adult_thriving.png'),     nativeWidth: 64, nativeHeight: 64, facing: 'right' },
-  // 'adult_recovering':   { url: s('/sprites/player/adult_recovering.png'),   nativeWidth: 64, nativeHeight: 64, facing: 'right' },
-  // 'champion_steady':    { url: s('/sprites/player/champion_steady.png'),    nativeWidth: 64, nativeHeight: 64, facing: 'right' },
-  // 'champion_thriving':  { url: s('/sprites/player/champion_thriving.png'),  nativeWidth: 64, nativeHeight: 64, facing: 'right' },
-  // 'champion_recovering':{ url: s('/sprites/player/champion_recovering.png'),nativeWidth: 64, nativeHeight: 64, facing: 'right' },
+  // 'adult_steady':       { url: s('/sprites/player/adult_steady.png'),       nativeWidth: 256, nativeHeight: 256, facing: 'right' },
+  // 'adult_thriving':     { url: s('/sprites/player/adult_thriving.png'),     nativeWidth: 256, nativeHeight: 256, facing: 'right' },
+  // 'adult_recovering':   { url: s('/sprites/player/adult_recovering.png'),   nativeWidth: 256, nativeHeight: 256, facing: 'right' },
+  // 'champion_steady':    { url: s('/sprites/player/champion_steady.png'),    nativeWidth: 256, nativeHeight: 256, facing: 'right' },
+  // 'champion_thriving':  { url: s('/sprites/player/champion_thriving.png'),  nativeWidth: 256, nativeHeight: 256, facing: 'right' },
+  // 'champion_recovering':{ url: s('/sprites/player/champion_recovering.png'),nativeWidth: 256, nativeHeight: 256, facing: 'right' },
 }
 
 // ── Player battle sprite registry ───────────────────────────────────────────
@@ -54,14 +54,14 @@ const PLAYER_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
 // Key format: `${stage}_${condition}`
 const PLAYER_BATTLE_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
   'baby_steady': { url: s('/sprites/player_battle/baby_steady.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // 'baby_thriving':       { url: s('/sprites/player_battle/baby_thriving.png'),       nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
+  // 'baby_thriving':       { url: s('/sprites/player_battle/baby_thriving.png'),       nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: false },
   // 'baby_recovering': { url: s('/sprites/player_battle/baby_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // 'adult_steady':        { url: s('/sprites/player_battle/adult_steady.png'),        nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
-  // 'adult_thriving':      { url: s('/sprites/player_battle/adult_thriving.png'),      nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
-  // 'adult_recovering':    { url: s('/sprites/player_battle/adult_recovering.png'),    nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
-  // 'champion_steady':     { url: s('/sprites/player_battle/champion_steady.png'),     nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
-  // 'champion_thriving':   { url: s('/sprites/player_battle/champion_thriving.png'),   nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
-  // 'champion_recovering': { url: s('/sprites/player_battle/champion_recovering.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: false },
+  // 'adult_steady':        { url: s('/sprites/player_battle/adult_steady.png'),        nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: false },
+  // 'adult_thriving':      { url: s('/sprites/player_battle/adult_thriving.png'),      nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: false },
+  // 'adult_recovering':    { url: s('/sprites/player_battle/adult_recovering.png'),    nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: false },
+  // 'champion_steady':     { url: s('/sprites/player_battle/champion_steady.png'),     nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: false },
+  // 'champion_thriving':   { url: s('/sprites/player_battle/champion_thriving.png'),   nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: false },
+  // 'champion_recovering': { url: s('/sprites/player_battle/champion_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: false },
 }
 
 // ── Hit impact registry ──────────────────────────────────────────────────────
@@ -91,6 +91,7 @@ const PLAYER_WORLD_MAP_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
 // ── Opponent sprite registry ─────────────────────────────────────────────────
 // Key format: slugified opponent name e.g. "Pebble Pup" → "pebble_pup"
 // `worldMap` — optional world-map variant; falls back to `battle` when absent.
+// `icon` — optional turn-order/timeline portrait; falls back to initials when absent.
 // `recovering` is optional — omit it and the sprite stays fainted after defeat.
 // `footOffsetX` — horizontal offset in NATIVE pixels (256px canvas) from the
 //   canvas centre to where the creature's feet actually stand. Positive = feet
@@ -99,6 +100,7 @@ const PLAYER_WORLD_MAP_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
 interface OpponentSpriteEntry {
   battle: SpriteDescriptor
   worldMap?: SpriteDescriptor
+  icon?: SpriteDescriptor
   // recovering?: SpriteDescriptor
   footOffsetX?: number
 }
@@ -108,8 +110,9 @@ interface OpponentSpriteEntry {
 // To activate a sprite:
 //   1. Drop the PNG into public/sprites/opponents/
 //   2. Uncomment the entry and confirm nativeWidth / nativeHeight match the PNG.
-//   3. Commons are 64×64 pixel art; bosses are 96×96 pixel art.
+//   3. All opponent battle and world-map sprites are 256×256 pixel art.
 //   4. Tune footOffsetX if the creature's stance is off-centre in the PNG.
+//   5. Add optional worldMap/icon variants in the same creature entry.
 //
 // Slug convention: lowercase, spaces → underscores (matches slugify() below).
 const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
@@ -120,30 +123,35 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   'bramblin': {
     battle: { url: s('/sprites/opponents/bramblin.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     worldMap: { url: s('/sprites/opponents_world/bramblin.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/bramblin.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
   // 002 Mushbob — small — unstable brawler (lopsided mushroom cap)
   'mushbob': {
     battle: { url: s('/sprites/opponents/mushbob.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     worldMap: { url: s('/sprites/opponents_world/mushbob.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // icon: { url: s('/sprites/icons/mushbob.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
   // 003 Mossboar — medium — heavy charger (moss ridge + tusks)
   'mossboar': {
     battle: { url: s('/sprites/opponents/mossboar.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     worldMap: { url: s('/sprites/opponents_world/mossboar.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // icon: { url: s('/sprites/icons/mossboar.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
   // 004 Thornfang — medium — quick predator (raised shoulder ridge)
   'thornfang': {
     battle: { url: s('/sprites/opponents/thornfang.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     worldMap: { url: s('/sprites/opponents_world/thornfang.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // icon: { url: s('/sprites/icons/thornfang.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
   // 005 Elderhorn — large (BOSS) — ancient forest guardian (antler crown)
   'elderhorn': {
     battle: { url: s('/sprites/opponents/elderhorn.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     worldMap: { url: s('/sprites/opponents_world/elderhorn.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // icon: { url: s('/sprites/icons/elderhorn.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
   // ── Arena 2 — Murkmire Wetlands (levels 6–11) ─────────────────────────────
@@ -152,110 +160,113 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   'boglet': {
     battle: { url: s('/sprites/opponents/boglet.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     worldMap: { url: s('/sprites/opponents_world/boglet.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // icon: { url: s('/sprites/icons/boglet.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
   // 007 Mudmaul — medium — armoured bulldozer (forward wedge with giant claws)
   'mudmaul': {
     battle: { url: s('/sprites/opponents/mudmaul.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     worldMap: { url: s('/sprites/opponents_world/mudmaul.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // icon: { url: s('/sprites/icons/mudmaul.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
   // 008 Reedstalker — medium — aerial skirmisher (vertical line with long beak)
   'reedstalker': {
     battle: { url: s('/sprites/opponents/reedstalker.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     worldMap: { url: s('/sprites/opponents_world/reedstalker.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    // icon: { url: s('/sprites/icons/reedstalker.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
   // },
 
   // 009 Mirewidow — medium — patient ambusher (wide radial legs + rear bulb)
   // 'mirewidow': {
-  //   battle: { url: s('/sprites/opponents/mirewidow.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  //   battle: { url: s('/sprites/opponents/mirewidow.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // },
 
   // 010 Leviamire — large (BOSS) — ancient swamp titan (clustered rising heads)
   // 'leviamire': {
-  //   battle: { url: s('/sprites/opponents/leviamire.png'), nativeWidth: 96, nativeHeight: 96, facing: 'right', pixelArt: true },
+  //   battle: { url: s('/sprites/opponents/leviamire.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // },
 
   // ── Arena 3 — Ashrock Highlands (levels 12–18) ────────────────────────────
 
   // 011 Pebblit — small — stony sentinel (circle with large side-block ears)
   // 'pebblit': {
-  //   battle: { url: s('/sprites/opponents/pebblit.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  //   battle: { url: s('/sprites/opponents/pebblit.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // },
 
   // 012 Screechmite — medium — armoured aggressor (arched oval with front jaws)
   // 'screechmite': {
-  //   battle: { url: s('/sprites/opponents/screechmite.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  //   battle: { url: s('/sprites/opponents/screechmite.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // },
 
   // 013 Flintor — medium — swift blade (serrated back + long axe-tail)
   // 'flintor': {
-  //   battle: { url: s('/sprites/opponents/flintor.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  //   battle: { url: s('/sprites/opponents/flintor.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // },
 
   // 014 Shockmantis — medium — storm scythe (wide scythe claws + tail arc)
   // 'shockmantis': {
-  //   battle: { url: s('/sprites/opponents/shockmantis.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  //   battle: { url: s('/sprites/opponents/shockmantis.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // },
 
   // 015 Thunderox — large (BOSS) — storm colossus (heavy mass with fractured horn spread)
   // 'thunderox': {
-  //   battle: { url: s('/sprites/opponents/thunderox.png'), nativeWidth: 96, nativeHeight: 96, facing: 'right', pixelArt: true },
+  //   battle: { url: s('/sprites/opponents/thunderox.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // },
 
   // ── Arena 4 — Frostveil Peaks (levels 19–26) ──────────────────────────────
 
   // 016 Frostscarab — small — glacial bulwark (oval shell with central split)
   // 'frostscarab': {
-  //   battle: { url: s('/sprites/opponents/frostscarab.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  //   battle: { url: s('/sprites/opponents/frostscarab.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // },
 
   // 017 Glaciowyrm — medium — relentless tunneler (large head tapering to tail)
   // 'glaciowyrm': {
-  //   battle: { url: s('/sprites/opponents/glaciowyrm.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  //   battle: { url: s('/sprites/opponents/glaciowyrm.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // },
 
   // 018 Glaciermaw — medium — frozen juggernaut (heavy front-loaded rectangle)
   // 'glaciermaw': {
-  //   battle: { url: s('/sprites/opponents/glaciermaw.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  //   battle: { url: s('/sprites/opponents/glaciermaw.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // },
 
   // 019 Frostwraith — medium — frost phantom (vertical taper with flowing bottom)
   // 'frostwraith': {
-  //   battle: { url: s('/sprites/opponents/frostwraith.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  //   battle: { url: s('/sprites/opponents/frostwraith.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // },
 
   // 020 Tuskraal — large (BOSS) — tundra warlord (wide base with tusk cluster)
   // 'tuskraal': {
-  //   battle: { url: s('/sprites/opponents/tuskraal.png'), nativeWidth: 96, nativeHeight: 96, facing: 'right', pixelArt: true },
+  //   battle: { url: s('/sprites/opponents/tuskraal.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // },
 
   // ── Arena 5 — Sunforge Summit (levels 27–35) ──────────────────────────────
 
   // 021 Pyrobeetle — small — magma vanguard (armoured oval with forward horn)
   // 'pyrobeetle': {
-  //   battle: { url: s('/sprites/opponents/pyrobeetle.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  //   battle: { url: s('/sprites/opponents/pyrobeetle.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // },
 
   // 022 Magmacrab — medium — crushing brute (flat wide body with one giant claw)
   // 'magmacrab': {
-  //   battle: { url: s('/sprites/opponents/magmacrab.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  //   battle: { url: s('/sprites/opponents/magmacrab.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // },
 
   // 023 Ashraptor — medium — volcanic raider (vertical runner on long legs)
   // 'ashraptor': {
-  //   battle: { url: s('/sprites/opponents/ashraptor.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  //   battle: { url: s('/sprites/opponents/ashraptor.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // },
 
   // 024 Cindershell — medium — basalt titan (dome on column legs)
   // 'cindershell': {
-  //   battle: { url: s('/sprites/opponents/cindershell.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  //   battle: { url: s('/sprites/opponents/cindershell.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // },
 
   // 025 Solgryth — large (BOSS) — solar apex predator (radial wing burst)
   // 'solgryth': {
-  //   battle: { url: s('/sprites/opponents/solgryth.png'), nativeWidth: 96, nativeHeight: 96, facing: 'right', pixelArt: true },
+  //   battle: { url: s('/sprites/opponents/solgryth.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
   // },
 
 }
@@ -394,6 +405,24 @@ export function getArenaTerrain(arenaId: string): TerrainDescriptor {
   return ARENA_TERRAIN[arenaId] ?? DEFAULT_TERRAIN
 }
 
+// ── Turn-order timeline icon registry ───────────────────────────────────────
+// Small portrait icons used in the battle HUD turn-order chips (renders at 28px).
+// Distinct from full battle/world-map sprites — these are face/bust crops or
+// dedicated icon art designed to read clearly at very small sizes.
+//
+// To activate an icon:
+//   1. Drop a square PNG into public/sprites/icons/
+//   2. Uncomment the entry below and confirm nativeSize matches the PNG.
+//   3. Icon sprites are 64×64 pixel art.
+//
+// Player icons are keyed by stage. Opponent icons live beside battle/worldMap in OPPONENT_SPRITES.
+
+const PLAYER_ICONS: Partial<Record<string, SpriteDescriptor>> = {
+  'baby': { url: s('/sprites/icons/player_baby.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // 'adult':    { url: s('/sprites/icons/player_adult.png'),    nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  // 'champion': { url: s('/sprites/icons/player_champion.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+}
+
 // ── Animation registry ───────────────────────────────────────────────────────
 // Key format: `${stage}_${condition}_${animationType}`
 const ANIMATIONS: Partial<Record<string, AnimationDescriptor>> = {
@@ -431,6 +460,14 @@ export function getPlayerWorldMapSpriteDescriptor(
     PLAYER_WORLD_MAP_SPRITES[`${stage}_steady`] ??
     getPlayerBattleSpriteDescriptor(stage, condition)
   )
+}
+
+export function getPlayerTimelineIcon(stage: string): SpriteDescriptor | null {
+  return PLAYER_ICONS[stage] ?? null
+}
+
+export function getOpponentTimelineIcon(name: string): SpriteDescriptor | null {
+  return OPPONENT_SPRITES[slugify(name)]?.icon ?? null
 }
 
 export function getOpponentSpriteDescriptor(name: string): SpriteDescriptor | null {

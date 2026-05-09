@@ -28,49 +28,46 @@ function entry(overrides: Partial<BattleLogEntry>): BattleLogEntry {
   }
 }
 
-describe('BattleTurnTimeline', () => {
-  it('shows unresolved order before initiative is revealed', () => {
-    render(<BattleTurnTimeline entries={[]} companionName="Sprout" opponentName="Pebble Pup" />)
+const initiativeEntry = entry({
+  id: 'initiative-1',
+  phase: 'initiative',
+  actor: 'system',
+  action: 'initiative',
+  firstActor: 'player',
+  playerInitiative: 17,
+  opponentInitiative: 12,
+  playerAction: 'attack',
+  opponentAction: 'defend',
+})
 
-    expect(screen.getByLabelText('Turn order')).toHaveTextContent('Player')
-    expect(screen.getByLabelText('Turn order')).toHaveTextContent('?')
-    expect(screen.getByLabelText('Turn order')).toHaveTextContent('Opponent')
+describe('BattleTurnTimeline', () => {
+  it('shows both chips with ? connector before initiative is revealed', () => {
+    render(<BattleTurnTimeline entries={[]} companionName="Sprout" opponentName="Pebble Pup" />)
+    const el = screen.getByLabelText('Turn order')
+    expect(el).toHaveTextContent('SP')
+    expect(el).toHaveTextContent('PP')
+    expect(el).toHaveTextContent('?')
   })
 
-  it('renders player-first initiative order', () => {
+  it('renders player-first initiative order with initials', () => {
     render(
       <BattleTurnTimeline
         companionName="Sprout"
         opponentName="Pebble Pup"
-        entries={[
-          entry({
-            id: 'initiative-1',
-            phase: 'initiative',
-            actor: 'system',
-            action: 'initiative',
-            firstActor: 'player',
-            playerInitiative: 17,
-            opponentInitiative: 12,
-            playerAction: 'attack',
-            opponentAction: 'defend',
-          }),
-        ]}
+        entries={[initiativeEntry]}
       />,
     )
-
-    expect(screen.getByLabelText('Turn order')).toHaveTextContent('Sprout')
-    expect(screen.getByLabelText('Turn order')).toHaveTextContent('Attack')
-    expect(screen.getByLabelText('Turn order')).toHaveTextContent('17')
-    expect(screen.getByLabelText('Turn order')).toHaveTextContent('Pebble Pup')
-    expect(screen.getByLabelText('Turn order')).toHaveTextContent('Defend')
-    expect(screen.getByLabelText('Turn order')).toHaveTextContent('12')
+    const el = screen.getByLabelText('Turn order')
+    // player = "SP", opponent = "PP"
+    expect(el).toHaveTextContent('SP')
+    expect(el).toHaveTextContent('PP')
   })
 
   it('renders opponent-first initiative order', () => {
     render(
       <BattleTurnTimeline
         companionName="Sprout"
-        opponentName="Pebble Pup"
+        opponentName="Cinder Finch"
         entries={[
           entry({
             id: 'initiative-1',
@@ -86,32 +83,79 @@ describe('BattleTurnTimeline', () => {
         ]}
       />,
     )
-
-    expect(screen.getByLabelText('Turn order')).toHaveTextContent('Pebble Pup')
-    expect(screen.getByLabelText('Turn order')).toHaveTextContent('Special')
-    expect(screen.getByLabelText('Turn order')).toHaveTextContent('14')
-    expect(screen.getByLabelText('Turn order')).toHaveTextContent('Sprout')
-    expect(screen.getByLabelText('Turn order')).toHaveTextContent('Focus')
-    expect(screen.getByLabelText('Turn order')).toHaveTextContent('9')
+    const el = screen.getByLabelText('Turn order')
+    // "Cinder Finch" → "CF", "Sprout" → "SP"
+    expect(el).toHaveTextContent('CF')
+    expect(el).toHaveTextContent('SP')
   })
 
-  it('derives state from revealed entries only', () => {
-    const revealedEntries = [
-      entry({
-        id: 'initiative-1',
-        phase: 'initiative',
-        actor: 'system',
-        action: 'initiative',
-        firstActor: 'player',
-        playerInitiative: 17,
-        opponentInitiative: 12,
-      }),
-      entry({ id: 'action-1', actor: 'player', action: 'attack' }),
-    ]
-
-    expect(getBattleTurnTimelineState(revealedEntries)).toEqual({
-      initiative: revealedEntries[0],
+  it('highlights first actor before any action this round', () => {
+    expect(getBattleTurnTimelineState([initiativeEntry])).toMatchObject({
+      initiative: initiativeEntry,
       activeActor: 'player',
     })
+  })
+
+  it('shifts highlight to second actor once first has acted', () => {
+    const opponentAction = entry({ id: 'action-2', round: 1, phase: 'action', actor: 'opponent' })
+    const displayed = [
+      initiativeEntry,
+      entry({ id: 'action-1', round: 1, phase: 'action', actor: 'player' }),
+    ]
+    const full = [...displayed, opponentAction]
+    expect(getBattleTurnTimelineState(displayed, full)).toMatchObject({ activeActor: 'opponent' })
+  })
+
+  it('resets to null after both actors have acted', () => {
+    const entries = [
+      initiativeEntry,
+      entry({ id: 'action-1', round: 1, phase: 'action', actor: 'player' }),
+      entry({ id: 'action-2', round: 1, phase: 'action', actor: 'opponent' }),
+    ]
+    expect(getBattleTurnTimelineState(entries).activeActor).toBeNull()
+  })
+
+  it('highlights new first actor at start of next round', () => {
+    const round2Initiative = entry({
+      id: 'initiative-2',
+      round: 2,
+      phase: 'initiative',
+      actor: 'system',
+      action: 'initiative',
+      firstActor: 'opponent',
+      playerInitiative: 11,
+      opponentInitiative: 14,
+      playerAction: 'defend',
+      opponentAction: 'attack',
+    })
+    const entries = [
+      initiativeEntry,
+      entry({ id: 'action-1', round: 1, phase: 'action', actor: 'player' }),
+      entry({ id: 'action-2', round: 1, phase: 'action', actor: 'opponent' }),
+      round2Initiative,
+    ]
+    const state = getBattleTurnTimelineState(entries)
+    expect(state.activeActor).toBe('opponent')
+    expect(state.initiative?.id).toBe('initiative-2')
+  })
+
+  it('detects skipped actor when fullLog has no second-actor action', () => {
+    // displayed log shows player acted, full log has no opponent action in round 1
+    const displayed = [initiativeEntry, entry({ id: 'action-1', actor: 'player', round: 1 })]
+    const full = [...displayed] // no opponent action
+
+    const state = getBattleTurnTimelineState(displayed, full)
+    expect(state.skippedActor).toBe('opponent')
+  })
+
+  it('does not mark skipped when fullLog has second-actor action', () => {
+    const displayed = [initiativeEntry, entry({ id: 'action-1', actor: 'player', round: 1 })]
+    const full = [
+      ...displayed,
+      entry({ id: 'action-2', actor: 'opponent', round: 1, phase: 'action' }),
+    ]
+
+    const state = getBattleTurnTimelineState(displayed, full)
+    expect(state.skippedActor).toBeNull()
   })
 })

@@ -590,6 +590,15 @@ select {
   }
 }
 
+@keyframes timeline-arrow-nudge {
+  0%, 100% { transform: translateX(0); }
+  50%       { transform: translateX(3px); }
+}
+
+.animate-timeline-arrow-nudge {
+  animation: timeline-arrow-nudge 0.55s ease-in-out infinite;
+}
+
 /* ── App utilities ───────────────────────────────────────────────────────── */
 
 .app-page {

@@ -29,6 +29,8 @@ import {
   getOpponentFootOffsetX,
   getOpponentSpriteDescriptor,
   getPlayerBattleSpriteDescriptor,
+  getPlayerTimelineIcon,
+  getOpponentTimelineIcon,
 } from '@/lib/sprites'
 
 // Player display size scales with companion stage (closer perspective = larger).
@@ -200,8 +202,11 @@ export default function BattlePage() {
         <BattleParticles arenaId={session.opponent.arenaId} />
         <BattleTurnTimeline
           entries={displayedLog}
+          fullLog={session.battleLog}
           companionName={session.companion.name}
           opponentName={session.opponent.name}
+          playerDescriptor={getPlayerTimelineIcon(session.companion.stage)}
+          opponentDescriptor={getOpponentTimelineIcon(session.opponent.name)}
         />
 
         <div className={battleGameplayBandClass}>
