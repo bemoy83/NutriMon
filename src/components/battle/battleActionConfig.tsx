@@ -31,6 +31,13 @@ export const BATTLE_SKILL_CATALOG: BattleSkillDef[] = [
   },
 ]
 
+export const battleActionFromPayload: Record<BattleAction, BattleActionLabel> = {
+  attack: 'Attack',
+  defend: 'Defend',
+  focus:  'Focus',
+  skill:  'Skill',
+}
+
 // Derived from the catalog — single source of truth for pip costs.
 export const BATTLE_SKILL_PIP_COST: Record<string, number> = Object.fromEntries(
   BATTLE_SKILL_CATALOG.map(s => [s.id, s.pipCost]),

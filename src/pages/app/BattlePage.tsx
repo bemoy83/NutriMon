@@ -49,7 +49,7 @@ function getPlayerSize(stage: string): number {
 const OPPONENT_SIZE_BY_CLASS: Record<string, number> = {
   small: 96,
   medium: 144,
-  large: 192,
+  large: 256,
 }
 
 function getOpponentSize(sizeClass: string): number {

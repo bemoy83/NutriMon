@@ -179,14 +179,18 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // },
 
   // 009 Mirewidow — medium — patient ambusher (wide radial legs + rear bulb)
-  // 'mirewidow': {
-  //   battle: { url: s('/sprites/opponents/mirewidow.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // },
+  'mirewidow': {
+    battle: { url: s('/sprites/opponents/mirewidow.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    worldMap: { url: s('/sprites/opponents_world/mirewidow.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/mirewidow.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
   // 010 Leviamire — large (BOSS) — ancient swamp titan (clustered rising heads)
-  // 'leviamire': {
-  //   battle: { url: s('/sprites/opponents/leviamire.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // },
+  'leviamire': {
+    battle: { url: s('/sprites/opponents/leviamire.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    worldMap: { url: s('/sprites/opponents_world/leviamire.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/leviamire.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
   // ── Arena 3 — Ashrock Highlands (levels 12–18) ────────────────────────────
 
