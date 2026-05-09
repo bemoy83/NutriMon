@@ -84,7 +84,7 @@ function TurnChip({
         display: 'flex',
         alignItems: 'center',
         gap: 5,
-        padding: '3px 8px 3px 3px',
+        padding: isActive ? '3px 8px 3px 3px' : '3px',
         borderRadius: 999,
         background: isActive
           ? 'linear-gradient(180deg, rgba(240,192,40,0.18), rgba(240,192,40,0.07))'
