@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  mapBattleLogEntry,
   mapBattleHub,
   mapCreaturePreview,
   mapDailyLog,
@@ -10,6 +11,61 @@ import {
 } from '../domainMappers'
 
 describe('domainMappers', () => {
+  it('maps battle initiative metadata and tolerates old log entries', () => {
+    expect(
+      mapBattleLogEntry({
+        id: 'initiative-1',
+        round: 2,
+        phase: 'initiative',
+        actor: 'system',
+        action: 'initiative',
+        first_actor: 'opponent',
+        player_initiative: 12,
+        opponent_initiative: 16,
+        player_action: 'defend',
+        opponent_action: 'attack',
+        damage: 0,
+        target: null,
+        target_hp_after: null,
+        crit: false,
+        defended: false,
+        consumed_momentum_boost: false,
+        message: 'Pebble Pup acts first!',
+        skill_id: null,
+      }),
+    ).toEqual(expect.objectContaining({
+      firstActor: 'opponent',
+      playerInitiative: 12,
+      opponentInitiative: 16,
+      playerAction: 'defend',
+      opponentAction: 'attack',
+    }))
+
+    expect(
+      mapBattleLogEntry({
+        id: 'old-action-1',
+        round: 1,
+        phase: 'action',
+        actor: 'player',
+        action: 'attack',
+        damage: 8,
+        target: 'opponent',
+        target_hp_after: 22,
+        crit: false,
+        defended: false,
+        consumed_momentum_boost: false,
+        message: 'Sprout attacks for 8 damage!',
+        skill_id: null,
+      }),
+    ).toEqual(expect.objectContaining({
+      firstActor: null,
+      playerInitiative: null,
+      opponentInitiative: null,
+      playerAction: null,
+      opponentAction: null,
+    }))
+  })
+
   it('maps product and food-source rows into domain shapes', () => {
     expect(
       mapProduct({

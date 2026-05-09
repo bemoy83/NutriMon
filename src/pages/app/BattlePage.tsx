@@ -6,6 +6,7 @@ import {
 } from '@/components/battle/battleActionConfig'
 import { BattleCommandBar } from '@/components/battle/BattleCommandBar'
 import { BattleSkillModal } from '@/components/battle/BattleSkillModal'
+import { BattleTurnTimeline } from '@/components/battle/BattleTurnTimeline'
 import { BattleHudCard, BattleHudFocusPips, BattleHudHpBar } from '@/components/battle/BattleHudCard'
 import { BattleParticles } from '@/components/battle/BattleParticles'
 import { battleArenaCmdBarVars, battleGameplayBandClass } from '@/components/battle/battleLayout'
@@ -197,6 +198,11 @@ export default function BattlePage() {
         style={{ background: arenaBackground, ...battleArenaCmdBarVars() }}
       >
         <BattleParticles arenaId={session.opponent.arenaId} />
+        <BattleTurnTimeline
+          entries={displayedLog}
+          companionName={session.companion.name}
+          opponentName={session.opponent.name}
+        />
 
         <div className={battleGameplayBandClass}>
           <BattleHudCard

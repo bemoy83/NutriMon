@@ -10,6 +10,7 @@ export type BattleOutcome = 'pending' | 'win' | 'loss'
 export type BattleAction = 'attack' | 'defend' | 'focus' | 'skill'
 export type BattleStatus = 'active' | 'completed'
 export type BattleLogActor = 'player' | 'opponent' | 'system'
+export type BattleTurnActor = 'player' | 'opponent'
 export type WeightUnit = 'kg' | 'lb'
 
 export interface Profile {
@@ -417,6 +418,11 @@ export interface BattleLogEntry {
   actor: BattleLogActor
   action: string
   skillId: string | null
+  firstActor: BattleTurnActor | null
+  playerInitiative: number | null
+  opponentInitiative: number | null
+  playerAction: BattleAction | null
+  opponentAction: string | null
   damage: number
   target: 'opponent' | 'player' | null
   targetHpAfter: number | null

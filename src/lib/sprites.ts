@@ -161,8 +161,10 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   },
 
   // 008 Reedstalker — medium — aerial skirmisher (vertical line with long beak)
-  // 'reedstalker': {
-  //   battle: { url: s('/sprites/opponents/reedstalker.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  'reedstalker': {
+    battle: { url: s('/sprites/opponents/reedstalker.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    worldMap: { url: s('/sprites/opponents_world/reedstalker.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  },
   // },
 
   // 009 Mirewidow — medium — patient ambusher (wide radial legs + rear bulb)

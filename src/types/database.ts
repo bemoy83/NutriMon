@@ -550,6 +550,11 @@ export interface BattleLogEntryRow {
   phase: 'initiative' | 'action' | 'result'
   actor: 'player' | 'opponent' | 'system'
   action: string
+  first_actor?: 'player' | 'opponent' | null
+  player_initiative?: number | null
+  opponent_initiative?: number | null
+  player_action?: 'attack' | 'defend' | 'focus' | 'skill' | null
+  opponent_action?: string | null
   damage: number
   target: 'opponent' | 'player' | null
   target_hp_after: number | null
