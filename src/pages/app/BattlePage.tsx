@@ -209,46 +209,48 @@ export default function BattlePage() {
           </BattleHudCard>
 
           {/* z-stacking (low → high): opponent platform < opponent sprite < player platform < player sprite < HUD (z-10) */}
-          <div
-            className="pointer-events-none absolute top-[28%] right-6 z-[1]"
-            style={{ width: opponentDisplaySize, height: opponentDisplaySize, overflow: 'visible' }}
-          >
-            {terrain.opponentPlatformUrl && terrain.opponentPlatformWidth && (
-              <img
-                src={terrain.opponentPlatformUrl}
-                alt=""
-                draggable={false}
-                style={{
-                  ...getCoLocatedPlatformStyle(
-                    terrain.opponentPlatformWidth,
-                    opponentDisplaySize,
-                    getOpponentFootOffsetX(session.opponent.name),
-                    terrain.opponentCalibration,
-                  ),
-                  zIndex: 0,
-                }}
-              />
-            )}
+          {/* Opponent platform + sprite share one container so they bob as a unit */}
+          <div className="absolute top-[28%] right-6 z-[1] animate-battle-float-opponent" style={{ overflow: 'visible' }}>
+            <div
+              className="pointer-events-none"
+              style={{ width: opponentDisplaySize, height: opponentDisplaySize, overflow: 'visible' }}
+            >
+              {terrain.opponentPlatformUrl && terrain.opponentPlatformWidth && (
+                <img
+                  src={terrain.opponentPlatformUrl}
+                  alt=""
+                  draggable={false}
+                  style={{
+                    ...getCoLocatedPlatformStyle(
+                      terrain.opponentPlatformWidth,
+                      opponentDisplaySize,
+                      getOpponentFootOffsetX(session.opponent.name),
+                      terrain.opponentCalibration,
+                    ),
+                    zIndex: 0,
+                  }}
+                />
+              )}
+            </div>
+            <div className="absolute inset-0 z-[3]" style={{ overflow: 'visible' }}>
+              <SpriteStage displaySize={opponentDisplaySize} contactShadow>
+                <CreatureSprite
+                  ref={opponentSpriteRef}
+                  descriptor={getOpponentSpriteDescriptor(session.opponent.name)}
+                  displaySize={opponentDisplaySize}
+                  flip={false}
+                />
+                <EffectsLayer
+                  ref={opponentEffectsRef}
+                  hitImpactUrl={hitImpactUrl ?? undefined}
+                  displaySize={opponentDisplaySize}
+                />
+              </SpriteStage>
+            </div>
           </div>
 
-          <div className="absolute top-[28%] right-6 z-[3]" style={{ overflow: 'visible' }}>
-            <SpriteStage displaySize={opponentDisplaySize} contactShadow>
-              <CreatureSprite
-                ref={opponentSpriteRef}
-                descriptor={getOpponentSpriteDescriptor(session.opponent.name)}
-                displaySize={opponentDisplaySize}
-                flip={false}
-              />
-              <EffectsLayer
-                ref={opponentEffectsRef}
-                hitImpactUrl={hitImpactUrl ?? undefined}
-                displaySize={opponentDisplaySize}
-              />
-            </SpriteStage>
-          </div>
-
           <div
-            className="absolute bottom-4 left-6 z-[4]"
+            className="absolute bottom-4 left-6 z-[4] animate-battle-float-player"
             style={{ width: playerDisplaySize, height: playerDisplaySize, overflow: 'visible' }}
           >
             {terrain.playerPlatformUrl && terrain.playerPlatformRenderedWidth != null && (

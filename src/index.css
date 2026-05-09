@@ -500,6 +500,22 @@ select {
   animation: slide-up-sheet 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
+/* Battle arena float bob — entire platform+sprite unit bobs as one */
+@keyframes battle-float-player {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-7px); }
+}
+@keyframes battle-float-opponent {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}
+.animate-battle-float-player {
+  animation: battle-float-player 3.2s ease-in-out infinite;
+}
+.animate-battle-float-opponent {
+  animation: battle-float-opponent 3s ease-in-out infinite;
+}
+
 @keyframes popIn {
   from {
     opacity: 0;
