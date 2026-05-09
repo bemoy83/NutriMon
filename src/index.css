@@ -516,6 +516,37 @@ select {
   animation: battle-float-opponent 3s ease-in-out infinite;
 }
 
+/* ── Biome particle animations ───────────────────────────── */
+@keyframes particle-snow-fall {
+  0%   { transform: translate(0, -20vh); }
+  100% { transform: translate(20px, 120vh); }
+}
+@keyframes particle-ember-rise {
+  0%   { transform: translate(0, 40vh) scale(0.6); opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 0.8; }
+  100% { transform: translate(-30px, -30vh) scale(0.2); opacity: 0; }
+}
+@keyframes particle-leaf-fall {
+  0%   { transform: translate(0, -20vh) rotate(0deg); }
+  50%  { transform: translate(30px, 40vh) rotate(180deg); }
+  100% { transform: translate(-20px, 120vh) rotate(360deg); }
+}
+@keyframes particle-ash-drift {
+  0%   { transform: translate(-10vw, 0); }
+  100% { transform: translate(110vw, 30px); }
+}
+@keyframes particle-firefly-float {
+  0%, 100% { transform: translate(0, 0); }
+  25%       { transform: translate(20px, -15px); }
+  50%       { transform: translate(-15px, 10px); }
+  75%       { transform: translate(10px, -5px); }
+}
+@keyframes particle-firefly-blink {
+  0%, 100% { opacity: 0.2; }
+  40%, 60%  { opacity: 1; }
+}
+
 @keyframes popIn {
   from {
     opacity: 0;

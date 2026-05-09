@@ -7,6 +7,7 @@ import {
 import { BattleCommandBar } from '@/components/battle/BattleCommandBar'
 import { BattleSkillModal } from '@/components/battle/BattleSkillModal'
 import { BattleHudCard, BattleHudFocusPips, BattleHudHpBar } from '@/components/battle/BattleHudCard'
+import { BattleParticles } from '@/components/battle/BattleParticles'
 import { battleArenaCmdBarVars, battleGameplayBandClass } from '@/components/battle/battleLayout'
 import { BattleOutcomeModal } from '@/components/battle/BattleOutcomeModal'
 import LoadingState from '@/components/ui/LoadingState'
@@ -195,6 +196,8 @@ export default function BattlePage() {
         className="relative flex-1 overflow-hidden"
         style={{ background: arenaBackground, ...battleArenaCmdBarVars() }}
       >
+        <BattleParticles arenaId={session.opponent.arenaId} />
+
         <div className={battleGameplayBandClass}>
           <BattleHudCard
             className="left-4 max-sm:max-w-[calc(100vw-3.5rem-128px)]"
