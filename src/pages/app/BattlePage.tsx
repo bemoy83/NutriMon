@@ -39,26 +39,17 @@ function getPlayerSize(stage: string): number {
   return PLAYER_DISPLAY_SIZE[stage] ?? PLAYER_DISPLAY_SIZE.baby
 }
 
-// Opponent display size is driven by the opponent's size_class (creature type),
-// not by the player's stage — a Colossus is always large regardless of who fights it.
+// Opponent sprite size scales with size_class. The platform is always rendered
+// at its registered width (fixed depth), so size_class reads as physical creature
+// size rather than camera distance.
 const OPPONENT_SIZE_BY_CLASS: Record<string, number> = {
   small: 96,
   medium: 144,
   large: 192,
 }
-// Platform art is calibrated for the medium size.
-// Scale DOWN for small (avoids tiny sprite on huge platform), but cap at baseline for large
-// so the boss fills more of the platform and appears imposing rather than everything scaling
-// proportionally (which also clips the platform's right side at the arena edge).
-const OPPONENT_PLATFORM_BASELINE = OPPONENT_SIZE_BY_CLASS.medium
 
 function getOpponentSize(sizeClass: string): number {
   return OPPONENT_SIZE_BY_CLASS[sizeClass] ?? OPPONENT_SIZE_BY_CLASS.medium
-}
-
-function scaleOpponentPlatformWidth(registeredWidth: number, displaySize: number): number {
-  const scale = Math.min(1, displaySize / OPPONENT_PLATFORM_BASELINE)
-  return Math.round(registeredWidth * scale)
 }
 
 export default function BattlePage() {
@@ -229,7 +220,7 @@ export default function BattlePage() {
                 draggable={false}
                 style={{
                   ...getCoLocatedPlatformStyle(
-                    scaleOpponentPlatformWidth(terrain.opponentPlatformWidth, opponentDisplaySize),
+                    terrain.opponentPlatformWidth,
                     opponentDisplaySize,
                     getOpponentFootOffsetX(session.opponent.name),
                     terrain.opponentCalibration,

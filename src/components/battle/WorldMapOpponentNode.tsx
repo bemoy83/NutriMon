@@ -26,7 +26,7 @@ export function WorldMapOpponentNodeComponent({
   const isLocked = !node.isChallengeable
   const isDefeated = node.isDefeated
   const nodeR = NODE_R * nodeScale
-  const spriteScale = node.sizeClass === 'large' ? 1.28 : node.sizeClass === 'small' ? 0.85 : 1
+  const spriteScale = node.sizeClass === 'large' ? 1.3 : node.sizeClass === 'small' ? 0.80 : 1
   const spriteSize = nodeR * 2 * spriteScale
   const spriteOffset = -(spriteSize - nodeR * 2) / 2
   const glowColor = toGlowHex(accent)
