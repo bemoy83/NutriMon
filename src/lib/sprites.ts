@@ -186,8 +186,8 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 009 Mirewidow — medium — patient ambusher (wide radial legs + rear bulb)
   'mirewidow': {
     battle: { url: s('/sprites/opponents/mirewidow.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    footOffsetX: 0,  // shift platform left 8 native px
-    footOffsetY: 32,  // shift platform up 24 native px
+    footOffsetX: 0,
+    footOffsetY: 32,
     worldMap: { url: s('/sprites/opponents_world/mirewidow.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     icon: { url: s('/sprites/icons/mirewidow.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
@@ -195,8 +195,8 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 010 Leviamire — large (BOSS) — ancient swamp titan (clustered rising heads)
   'leviamire': {
     battle: { url: s('/sprites/opponents/leviamire.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    footOffsetX: 6,  // shift platform left 8 native px
-    footOffsetY: 20,  // shift platform up 24 native px
+    footOffsetX: 6,
+    footOffsetY: 20,
     worldMap: { url: s('/sprites/opponents_world/leviamire.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     icon: { url: s('/sprites/icons/leviamire.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
@@ -345,10 +345,10 @@ export interface TerrainDescriptor {
 export function getCoLocatedPlatformStyle(
   platformWidth: number,
   spriteSize: number,
-  /** Horizontal foot offset in native pixels (256px canvas). From getOpponentFootOffsetX(). */
+  /** Horizontal foot offset in native pixels (256px canvas). From getOpponentFootOffsets(). */
   nativeFootOffsetX: number = 0,
   cal: PlatformCalibration = ARENA_1_CALIBRATION,
-  /** Vertical foot offset in native pixels (256px canvas). Positive = feet higher in canvas → platform moves up. From getOpponentFootOffsetY(). */
+  /** Vertical foot offset in native pixels (256px canvas). Positive = feet higher in canvas → platform moves up. From getOpponentFootOffsets(). */
   nativeFootOffsetY: number = 0,
 ): { position: 'absolute'; width: number; maxWidth: string; left: number; top: number; zIndex: number; pointerEvents: 'none' } {
   const platformH = Math.round(platformWidth * cal.nativeH / 512)
@@ -505,12 +505,9 @@ export function getOpponentWorldMapSpriteDescriptor(name: string): SpriteDescrip
  * Positive = feet are to the right of canvas centre.
  * Returns 0 if no offset is registered.
  */
-export function getOpponentFootOffsetX(name: string): number {
-  return OPPONENT_SPRITES[slugify(name)]?.footOffsetX ?? 0
-}
-
-export function getOpponentFootOffsetY(name: string): number {
-  return OPPONENT_SPRITES[slugify(name)]?.footOffsetY ?? 0
+export function getOpponentFootOffsets(name: string): { x: number; y: number } {
+  const entry = OPPONENT_SPRITES[slugify(name)]
+  return { x: entry?.footOffsetX ?? 0, y: entry?.footOffsetY ?? 0 }
 }
 
 export function getAnimationDescriptor(

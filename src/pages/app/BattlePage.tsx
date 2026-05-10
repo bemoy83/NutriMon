@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   type BattleActionLabel,
@@ -26,8 +26,7 @@ import {
   getArenaTerrain,
   getCoLocatedPlatformStyle,
   getHitImpactUrl,
-  getOpponentFootOffsetX,
-  getOpponentFootOffsetY,
+  getOpponentFootOffsets,
   getOpponentSpriteDescriptor,
   getPlayerBattleSpriteDescriptor,
   getPlayerTimelineIcon,
@@ -43,6 +42,11 @@ const PLAYER_DISPLAY_SIZE: Record<string, number> = {
 function getPlayerSize(stage: string): number {
   return PLAYER_DISPLAY_SIZE[stage] ?? PLAYER_DISPLAY_SIZE.baby
 }
+
+// Vertical layout constants — keep opponent anchored to player, not to the top.
+// Extra screen height floats above the opponent (between HUD and opponent).
+const PLAYER_BOTTOM_PAD = 16  // matches bottom-4 on the player wrapper
+const SPRITE_GAP = 40         // preserved gap between opponent bottom and player top
 
 // Opponent sprite size scales with size_class. The platform is always rendered
 // at its registered width (fixed depth), so size_class reads as physical creature
@@ -133,6 +137,8 @@ export default function BattlePage() {
   const hitImpactUrl = getHitImpactUrl()
   const playerDisplaySize = getPlayerSize(session.companion.stage)
   const opponentDisplaySize = getOpponentSize(session.opponent.sizeClass)
+  const oppUnitBottom = playerDisplaySize + PLAYER_BOTTOM_PAD + SPRITE_GAP
+  const oppFootOffsets = getOpponentFootOffsets(session.opponent.name)
 
   let opponentHp = session.opponentMaxHp
   let playerHp = session.playerMaxHp
@@ -197,8 +203,13 @@ export default function BattlePage() {
     <div className="flex h-screen flex-col overflow-hidden bg-[var(--app-bg)]">
       <div
         ref={arenaRef}
-        className="battle-arena relative flex-1 overflow-hidden"
-        style={{ background: arenaBackground, ...battleArenaCmdBarVars() }}
+        className="relative flex-1 overflow-hidden"
+        style={{
+          background: arenaBackground,
+          ...battleArenaCmdBarVars(),
+          '--opp-bottom': `${oppUnitBottom}px`,
+          '--opp-h': `${opponentDisplaySize}px`,
+        } as CSSProperties}
       >
         <BattleParticles arenaId={session.opponent.arenaId} />
         <BattleTurnTimeline
@@ -213,7 +224,7 @@ export default function BattlePage() {
         <div className={battleGameplayBandClass}>
           <BattleHudCard
             className="left-4 max-sm:max-w-[calc(100vw-3.5rem-128px)]"
-            style={{ top: 'calc(var(--battle-opp-top) - 8px)' }}
+            style={{ top: 'calc(100% - var(--opp-bottom) - var(--opp-h) - 8px)' }}
           >
             <div className="flex min-w-0 items-baseline justify-between">
               <p className="truncate text-sm font-bold text-white">{session.opponent.name}</p>
@@ -225,7 +236,7 @@ export default function BattlePage() {
 
           {/* z-stacking (low → high): opponent platform < opponent sprite < player platform < player sprite < HUD (z-10) */}
           {/* Opponent platform + sprite share one container so they bob as a unit */}
-          <div className="absolute right-6 z-[1] animate-battle-float-opponent" style={{ top: 'var(--battle-opp-top)', overflow: 'visible' }}>
+          <div className="absolute right-6 z-[1] animate-battle-float-opponent" style={{ bottom: 'var(--opp-bottom)', overflow: 'visible' }}>
             <div
               className="pointer-events-none"
               style={{ width: opponentDisplaySize, height: opponentDisplaySize, overflow: 'visible' }}
@@ -239,9 +250,9 @@ export default function BattlePage() {
                     ...getCoLocatedPlatformStyle(
                       terrain.opponentPlatformWidth,
                       opponentDisplaySize,
-                      getOpponentFootOffsetX(session.opponent.name),
+                      oppFootOffsets.x,
                       terrain.opponentCalibration,
-                      getOpponentFootOffsetY(session.opponent.name),
+                      oppFootOffsets.y,
                     ),
                     zIndex: 0,
                   }}

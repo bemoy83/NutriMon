@@ -516,13 +516,6 @@ select {
   animation: battle-float-opponent 3s ease-in-out infinite;
 }
 
-/* ── Battle opponent vertical position ───────────────────── */
-/* max(3rem, 10vh): 3rem floor ensures the opponent always clears the turn-order
-   HUD chip (~2.875rem); 10vh scales proportionally on taller screens so there's
-   natural breathing room without dead space on short screens. No breakpoints. */
-.battle-arena {
-  --battle-opp-top: max(3rem, 10vh);
-}
 
 /* ── Biome particle animations ───────────────────────────── */
 @keyframes particle-snow-fall {
