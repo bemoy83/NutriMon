@@ -183,7 +183,7 @@ export function BattleTurnTimeline({
     return (
       <div
         aria-label="Turn order"
-        className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-1.5"
+        className="flex items-center gap-1.5"
       >
         <TurnChip
           label={playerLabel}

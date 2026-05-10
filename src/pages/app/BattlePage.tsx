@@ -9,7 +9,6 @@ import { BattleSkillModal } from '@/components/battle/BattleSkillModal'
 import { BattleTurnTimeline } from '@/components/battle/BattleTurnTimeline'
 import { BattleHudCard, BattleHudFocusPips, BattleHudHpBar } from '@/components/battle/BattleHudCard'
 import { BattleParticles } from '@/components/battle/BattleParticles'
-import { battleArenaCmdBarVars, battleGameplayBandClass } from '@/components/battle/battleLayout'
 import { BattleOutcomeModal } from '@/components/battle/BattleOutcomeModal'
 import LoadingState from '@/components/ui/LoadingState'
 import CreatureSprite from '@/components/ui/CreatureSprite'
@@ -43,10 +42,10 @@ function getPlayerSize(stage: string): number {
   return PLAYER_DISPLAY_SIZE[stage] ?? PLAYER_DISPLAY_SIZE.baby
 }
 
-// Vertical layout constants — keep opponent anchored to player, not to the top.
-// Extra screen height floats above the opponent (between HUD and opponent).
+// Preferred gap between the bottom of the opponent sprite and the top of the player sprite.
+// CSS min() compresses this before either sprite clips a HUD zone.
+const SPRITE_GAP = 40
 const PLAYER_BOTTOM_PAD = 16  // matches bottom-4 on the player wrapper
-const SPRITE_GAP = 40         // preserved gap between opponent bottom and player top
 
 // Opponent sprite size scales with size_class. The platform is always rendered
 // at its registered width (fixed depth), so size_class reads as physical creature
@@ -137,7 +136,6 @@ export default function BattlePage() {
   const hitImpactUrl = getHitImpactUrl()
   const playerDisplaySize = getPlayerSize(session.companion.stage)
   const opponentDisplaySize = getOpponentSize(session.opponent.sizeClass)
-  const oppUnitBottom = playerDisplaySize + PLAYER_BOTTOM_PAD + SPRITE_GAP
   const oppFootOffsets = getOpponentFootOffsets(session.opponent.name)
 
   let opponentHp = session.opponentMaxHp
@@ -203,28 +201,39 @@ export default function BattlePage() {
     <div className="flex h-screen flex-col overflow-hidden bg-[var(--app-bg)]">
       <div
         ref={arenaRef}
-        className="relative flex-1 overflow-hidden"
-        style={{
-          background: arenaBackground,
-          ...battleArenaCmdBarVars(),
-          '--opp-bottom': `${oppUnitBottom}px`,
-          '--opp-h': `${opponentDisplaySize}px`,
-        } as CSSProperties}
+        className="relative flex flex-1 flex-col overflow-hidden"
+        style={{ background: arenaBackground }}
       >
+        {/* Particles sit behind all three zones */}
         <BattleParticles arenaId={session.opponent.arenaId} />
-        <BattleTurnTimeline
-          entries={displayedLog}
-          fullLog={session.battleLog}
-          companionName={session.companion.name}
-          opponentName={session.opponent.name}
-          playerDescriptor={getPlayerTimelineIcon(session.companion.stage)}
-          opponentDescriptor={getOpponentTimelineIcon(session.opponent.name)}
-        />
 
-        <div className={battleGameplayBandClass}>
+        {/* ── Zone 1: Turn order HUD — fixed top strip ── */}
+        <div className="relative z-10 flex shrink-0 justify-center py-2">
+          <BattleTurnTimeline
+            entries={displayedLog}
+            fullLog={session.battleLog}
+            companionName={session.companion.name}
+            opponentName={session.opponent.name}
+            playerDescriptor={getPlayerTimelineIcon(session.companion.stage)}
+            opponentDescriptor={getOpponentTimelineIcon(session.opponent.name)}
+          />
+        </div>
+
+        {/* ── Zone 2: Battle zone — flex-1, sprites live here ── */}
+        {/* --opp-bottom uses min() so the gap compresses before sprites clip a HUD zone */}
+        <div
+          className="relative min-h-0 flex-1"
+          style={{
+            '--player-h': `${playerDisplaySize}px`,
+            '--opp-h': `${opponentDisplaySize}px`,
+            '--sprite-gap': `${SPRITE_GAP}px`,
+            '--player-pad': `${PLAYER_BOTTOM_PAD}px`,
+          } as CSSProperties}
+        >
+          {/* z-stacking (low → high): opponent platform < opponent sprite < player platform < player sprite < HUD (z-10) */}
           <BattleHudCard
             className="left-4 max-sm:max-w-[calc(100vw-3.5rem-128px)]"
-            style={{ top: 'calc(100% - var(--opp-bottom) - var(--opp-h) - 8px)' }}
+            style={{ top: 'calc(100% - min(calc(var(--player-h) + var(--player-pad) + var(--sprite-gap)), calc(100% - var(--opp-h))) - var(--opp-h) - 8px)' }}
           >
             <div className="flex min-w-0 items-baseline justify-between">
               <p className="truncate text-sm font-bold text-white">{session.opponent.name}</p>
@@ -234,9 +243,14 @@ export default function BattlePage() {
             <BattleHudHpBar current={opponentHp} max={session.opponentMaxHp} />
           </BattleHudCard>
 
-          {/* z-stacking (low → high): opponent platform < opponent sprite < player platform < player sprite < HUD (z-10) */}
           {/* Opponent platform + sprite share one container so they bob as a unit */}
-          <div className="absolute right-6 z-[1] animate-battle-float-opponent" style={{ bottom: 'var(--opp-bottom)', overflow: 'visible' }}>
+          <div
+            className="absolute right-6 z-[1] animate-battle-float-opponent"
+            style={{
+              bottom: 'min(calc(var(--player-h) + var(--player-pad) + var(--sprite-gap)), calc(100% - var(--opp-h)))',
+              overflow: 'visible',
+            }}
+          >
             <div
               className="pointer-events-none"
               style={{ width: opponentDisplaySize, height: opponentDisplaySize, overflow: 'visible' }}
@@ -329,6 +343,7 @@ export default function BattlePage() {
           </BattleHudCard>
         </div>
 
+        {/* ── Zone 3: Command bar — fixed bottom strip ── */}
         <BattleCommandBar
           dialogue={dialogue}
           isActive={isActive}
@@ -339,6 +354,7 @@ export default function BattlePage() {
           onAction={handleAction}
         />
 
+        {/* Full-arena overlay for special action flashes */}
         <SpecialActionFlash ref={specialFlashRef} />
       </div>
 
