@@ -97,12 +97,17 @@ const PLAYER_WORLD_MAP_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
 //   canvas centre to where the creature's feet actually stand. Positive = feet
 //   are to the right of canvas centre. The renderer converts to display pixels
 //   automatically. Set this when a creature's stance is off-centre in the PNG.
+// `footOffsetY` — vertical offset in NATIVE pixels from the canvas bottom to
+//   where the creature's feet actually land. Positive = feet are higher in the
+//   canvas (platform moves up); negative = feet are lower (platform moves down).
+//   Use this when a creature floats or is grounded above/below the canvas edge.
 interface OpponentSpriteEntry {
   battle: SpriteDescriptor
   worldMap?: SpriteDescriptor
   icon?: SpriteDescriptor
   // recovering?: SpriteDescriptor
   footOffsetX?: number
+  footOffsetY?: number
 }
 
 // ── Worldspire Dex — Opponent sprite registry ────────────────────────────────
@@ -137,21 +142,21 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   'mossboar': {
     battle: { url: s('/sprites/opponents/mossboar.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     worldMap: { url: s('/sprites/opponents_world/mossboar.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    // icon: { url: s('/sprites/icons/mossboar.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/mossboar.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
   // 004 Thornfang — medium — quick predator (raised shoulder ridge)
   'thornfang': {
     battle: { url: s('/sprites/opponents/thornfang.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     worldMap: { url: s('/sprites/opponents_world/thornfang.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    // icon: { url: s('/sprites/icons/thornfang.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/thornfang.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
   // 005 Elderhorn — large (BOSS) — ancient forest guardian (antler crown)
   'elderhorn': {
     battle: { url: s('/sprites/opponents/elderhorn.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     worldMap: { url: s('/sprites/opponents_world/elderhorn.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    // icon: { url: s('/sprites/icons/elderhorn.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/elderhorn.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
   // ── Arena 2 — Murkmire Wetlands (levels 6–11) ─────────────────────────────
@@ -160,14 +165,14 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   'boglet': {
     battle: { url: s('/sprites/opponents/boglet.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     worldMap: { url: s('/sprites/opponents_world/boglet.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    // icon: { url: s('/sprites/icons/boglet.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/boglet.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
   // 007 Mudmaul — medium — armoured bulldozer (forward wedge with giant claws)
   'mudmaul': {
     battle: { url: s('/sprites/opponents/mudmaul.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     worldMap: { url: s('/sprites/opponents_world/mudmaul.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    // icon: { url: s('/sprites/icons/mudmaul.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/mudmaul.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
   // 008 Reedstalker — medium — aerial skirmisher (vertical line with long beak)
@@ -181,6 +186,8 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 009 Mirewidow — medium — patient ambusher (wide radial legs + rear bulb)
   'mirewidow': {
     battle: { url: s('/sprites/opponents/mirewidow.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 0,  // shift platform left 8 native px
+    footOffsetY: 32,  // shift platform up 24 native px
     worldMap: { url: s('/sprites/opponents_world/mirewidow.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     icon: { url: s('/sprites/icons/mirewidow.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
@@ -188,6 +195,8 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 010 Leviamire — large (BOSS) — ancient swamp titan (clustered rising heads)
   'leviamire': {
     battle: { url: s('/sprites/opponents/leviamire.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 6,  // shift platform left 8 native px
+    footOffsetY: 20,  // shift platform up 24 native px
     worldMap: { url: s('/sprites/opponents_world/leviamire.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     icon: { url: s('/sprites/icons/leviamire.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
@@ -336,18 +345,22 @@ export interface TerrainDescriptor {
 export function getCoLocatedPlatformStyle(
   platformWidth: number,
   spriteSize: number,
-  /** Foot offset in native pixels (256px canvas). From getOpponentFootOffsetX(). */
+  /** Horizontal foot offset in native pixels (256px canvas). From getOpponentFootOffsetX(). */
   nativeFootOffsetX: number = 0,
   cal: PlatformCalibration = ARENA_1_CALIBRATION,
+  /** Vertical foot offset in native pixels (256px canvas). Positive = feet higher in canvas → platform moves up. From getOpponentFootOffsetY(). */
+  nativeFootOffsetY: number = 0,
 ): { position: 'absolute'; width: number; maxWidth: string; left: number; top: number; zIndex: number; pointerEvents: 'none' } {
   const platformH = Math.round(platformWidth * cal.nativeH / 512)
-  const displayFootOffsetX = Math.round(nativeFootOffsetX * (spriteSize / 256))
+  const scale = spriteSize / 256
+  const displayFootOffsetX = Math.round(nativeFootOffsetX * scale)
+  const displayFootOffsetY = Math.round(nativeFootOffsetY * scale)
   return {
     position: 'absolute',
     width: platformWidth,
     maxWidth: 'none',
     left: Math.round((spriteSize - platformWidth) / 2 + displayFootOffsetX),
-    top: Math.round(spriteSize - cal.ovalSurfaceY * platformH),
+    top: Math.round(spriteSize - cal.ovalSurfaceY * platformH - displayFootOffsetY),
     zIndex: -1,
     pointerEvents: 'none',
   }
@@ -494,6 +507,10 @@ export function getOpponentWorldMapSpriteDescriptor(name: string): SpriteDescrip
  */
 export function getOpponentFootOffsetX(name: string): number {
   return OPPONENT_SPRITES[slugify(name)]?.footOffsetX ?? 0
+}
+
+export function getOpponentFootOffsetY(name: string): number {
+  return OPPONENT_SPRITES[slugify(name)]?.footOffsetY ?? 0
 }
 
 export function getAnimationDescriptor(
