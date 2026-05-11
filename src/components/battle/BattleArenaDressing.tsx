@@ -28,8 +28,8 @@ export function BattleArenaDressing({ accentColor = '#6aaa30' }: BattleArenaDres
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
 
       {/* ── Ground bloom ──────────────────────────────────────────────────────
-          Soft arena-tinted glow rising from the bottom half. Gives the ground
-          colour and depth — reads as ambient light bouncing off the terrain.
+          Arena-tinted glow rising from the base. Two layers: a wide spread for
+          the overall ground hue, and a tighter core for the floor contact zone.
           z-2: behind particles (z-5) and sprites (z-1…z-4 in Zone 2). */}
       <div
         style={{
@@ -37,40 +37,24 @@ export function BattleArenaDressing({ accentColor = '#6aaa30' }: BattleArenaDres
           bottom: 0,
           left: 0,
           right: 0,
-          height: '50%',
-          background: `radial-gradient(ellipse 80% 100% at 50% 100%, rgba(${rgb},0.20) 0%, transparent 70%)`,
-          zIndex: 2,
-        }}
-      />
-
-      {/* ── Horizon line ──────────────────────────────────────────────────────
-          Thin glowing accent at exactly 50% of arenaRef height — matches the
-          sky-to-ground boundary in the stepped gradient from useTerrainBackground.
-          z-2: decorative, sits behind sprites. */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: 0,
-          right: 0,
-          height: 1,
-          background: `rgba(${rgb},0.45)`,
-          boxShadow: `0 0 8px 2px rgba(${rgb},0.25), 0 0 22px 6px rgba(${rgb},0.10)`,
+          height: '55%',
+          background: `radial-gradient(ellipse 90% 100% at 50% 100%, rgba(${rgb},0.38) 0%, rgba(${rgb},0.12) 55%, transparent 75%)`,
           zIndex: 2,
         }}
       />
 
       {/* ── Vignette ──────────────────────────────────────────────────────────
-          Darkens the corners and edges to frame the battlefield. The ellipse is
-          intentionally wide (150% of container width) so the transparent centre
-          covers most of the sprite area — only the outermost sprite edges get a
-          ~8–16% tint, which helps blend them into the scene.
+          Darkens the corners and edges to frame the battlefield. Four stops
+          instead of two so the falloff is gradual — no visible ring.
+          The ellipse is 160% wide so the left/right screen edges stay inside the
+          gradient zone (never hit the hard 100% cap), and 110% tall so darkness
+          feathers all the way to the bottom of the arena.
           z-6: above particles (z-5) so the framing covers everything. */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'radial-gradient(ellipse 150% 90% at 50% 45%, transparent 50%, rgba(0,0,0,0.52) 100%)',
+          background: 'radial-gradient(ellipse 160% 110% at 50% 48%, transparent 38%, rgba(0,0,0,0.18) 58%, rgba(0,0,0,0.38) 78%, rgba(0,0,0,0.52) 100%)',
           zIndex: 6,
         }}
       />

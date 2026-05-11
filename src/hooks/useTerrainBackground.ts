@@ -94,7 +94,7 @@ function deriveCss(r: number, g: number, b: number): string {
       h, s, l,
       0,                     // no sky shift in ground zone
       lerp(0.04, +0.13, t), // saturate toward bottom
-      lerp(-0.06, -0.46, t), // darken toward bottom
+      lerp(-0.04, -0.30, t), // darken toward bottom
     )
     bands.push([color, pct(N + i), pct(N + i + 1)])
   }
