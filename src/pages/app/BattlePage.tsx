@@ -212,7 +212,7 @@ export default function BattlePage() {
         <BattleArenaDressing accentColor={terrain.accentColor} />
 
         {/* ── Zone 1: Turn order HUD — fixed top strip ── */}
-        <div className="relative z-10 flex shrink-0 justify-center py-2">
+        <div className="relative z-10 flex min-h-[50px] shrink-0 justify-center py-2">
           <BattleTurnTimeline
             entries={displayedLog}
             fullLog={session.battleLog}
