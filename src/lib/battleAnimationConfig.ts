@@ -25,7 +25,7 @@ export const BATTLE_ANIM = {
    */
   ENTRY_DELAY_INITIATIVE_MS: 1200,   // quick context-setter — just names who goes first
   ENTRY_DELAY_ACTION_HIT_MS: 2600,  // attack / skill / special with damage — read + process effect
-  ENTRY_DELAY_ACTION_MS: 2200,      // defend / focus — no damage number competing for attention
+  ENTRY_DELAY_ACTION_MS: 2000,      // defend / focus — no damage number competing for attention
   ENTRY_DELAY_RESULT_MS: 1800,      // victory / defeat hold before outcome modal
 
   /** Normal hit flash duration (ms). Must match `hit-flash` @keyframes. */
