@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 // ── Colour helpers ────────────────────────────────────────────────────────────
 
@@ -147,9 +147,19 @@ async function samplePlatform(url: string): Promise<string> {
 /**
  * Derives the arena background by sampling the dominant terrain colour from the
  * player platform image and building a GBA-style stepped sky/ground gradient.
- * Falls back to the default green gradient if image loading or sampling fails.
+ * accentHex is used to compute a synchronous initial gradient so the arena has
+ * the correct biome colour immediately — before PNG sampling completes.
  */
-export function useTerrainBackground(playerPlatformUrl: string | null): string {
+export function useTerrainBackground(playerPlatformUrl: string | null, accentHex?: string): string {
+  const initialBg = useMemo(() => {
+    if (!accentHex) return DEFAULT_BG
+    const h = accentHex.replace('#', '')
+    const r = parseInt(h.slice(0, 2), 16)
+    const g = parseInt(h.slice(2, 4), 16)
+    const b = parseInt(h.slice(4, 6), 16)
+    return isNaN(r) ? DEFAULT_BG : deriveCss(r, g, b)
+  }, [accentHex])
+
   const [sampledBg, setSampledBg] = useState<{ url: string; css: string } | null>(null)
 
   useEffect(() => {
@@ -165,5 +175,5 @@ export function useTerrainBackground(playerPlatformUrl: string | null): string {
     return () => { cancelled = true }
   }, [playerPlatformUrl])
 
-  return playerPlatformUrl && sampledBg?.url === playerPlatformUrl ? sampledBg.css : DEFAULT_BG
+  return playerPlatformUrl && sampledBg?.url === playerPlatformUrl ? sampledBg.css : initialBg
 }

@@ -229,14 +229,16 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   },
 
   // 014 Shockmantis — medium — storm scythe (wide scythe claws + tail arc)
-  // 'shockmantis': {
-  //   battle: { url: s('/sprites/opponents/shockmantis.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // },
+  //'shockmantis': {
+  //battle: { url: s('/sprites/opponents/shockmantis.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  //},
 
   // 015 Thunderox — large (BOSS) — storm colossus (heavy mass with fractured horn spread)
-  // 'thunderox': {
-  //   battle: { url: s('/sprites/opponents/thunderox.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // },
+  'thunderox': {
+    battle: { url: s('/sprites/opponents/thunderox.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    worldMap: { url: s('/sprites/opponents_world/thunderox.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/thunderox.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
   // ── Arena 4 — Frostveil Peaks (levels 19–26) ──────────────────────────────
 

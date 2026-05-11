@@ -83,7 +83,8 @@ export default function BattlePage() {
   const { mutate: submitAction, isPending } = useSubmitBattleAction()
 
   const terrainPlatformUrl = session ? getArenaTerrain(session.opponent.arenaId).playerPlatformUrl : null
-  const arenaBackground = useTerrainBackground(terrainPlatformUrl)
+  const terrainAccentHex = session ? getArenaTerrain(session.opponent.arenaId).accentColor : undefined
+  const arenaBackground = useTerrainBackground(terrainPlatformUrl, terrainAccentHex)
 
   const triggerArenaShake = useCallback((heavy = false) => {
     const el = arenaRef.current
