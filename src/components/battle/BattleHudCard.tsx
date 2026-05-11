@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 
 const hudShellClass =
   'w-44 max-sm:min-w-[10.25rem] max-sm:w-auto rounded-xl border border-white/10 bg-[rgba(10,12,20,0.82)] px-3 py-2 backdrop-blur-lg max-sm:px-2.5'
@@ -21,36 +21,56 @@ export function BattleHudHpBar({
   const color = hpBarColor(pct)
 
   // Ghost bar — lingers at the previous HP position, then slowly drains.
-  const prevPctRef = useRef(pct)
-  const [ghostPct, setGhostPct] = useState(pct)
-  const [ghostDraining, setGhostDraining] = useState(false)
-  const drainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [ghostState, setGhostState] = useState(() => ({
+    displayedPct: pct,
+    ghostPct: pct,
+    isDraining: false,
+    drainTargetPct: null as number | null,
+  }))
 
-  useEffect(() => {
-    const prev = prevPctRef.current
-    prevPctRef.current = pct
-
-    if (pct < prev) {
-      // Damage taken — freeze ghost at old position, then drain after a pause.
-      setGhostDraining(false)
-      if (drainTimerRef.current) clearTimeout(drainTimerRef.current)
-      drainTimerRef.current = setTimeout(() => {
-        setGhostPct(pct)
-        setGhostDraining(true)
-      }, 500)
+  if (ghostState.displayedPct !== pct) {
+    if (pct < ghostState.displayedPct) {
+      // Damage taken — freeze ghost at the old position, then drain after a pause.
+      setGhostState({
+        displayedPct: pct,
+        ghostPct: Math.max(ghostState.ghostPct, ghostState.displayedPct),
+        isDraining: false,
+        drainTargetPct: pct,
+      })
     } else {
       // Heal or no change — snap ghost immediately, no animation.
-      if (drainTimerRef.current) clearTimeout(drainTimerRef.current)
-      setGhostDraining(false)
-      setGhostPct(pct)
+      setGhostState({
+        displayedPct: pct,
+        ghostPct: pct,
+        isDraining: false,
+        drainTargetPct: null,
+      })
     }
+  }
 
-    return () => {
-      if (drainTimerRef.current) clearTimeout(drainTimerRef.current)
-    }
-  }, [pct])
+  useEffect(() => {
+    if (ghostState.drainTargetPct === null) return
 
-  const showGhost = ghostPct > pct
+    const drainTargetPct = ghostState.drainTargetPct
+    const drainTimer = setTimeout(() => {
+      setGhostState((currentGhostState) => {
+        if (currentGhostState.drainTargetPct !== drainTargetPct) {
+          return currentGhostState
+        }
+
+        return {
+          ...currentGhostState,
+          ghostPct: drainTargetPct,
+          isDraining: true,
+          drainTargetPct: null,
+        }
+      })
+    }, 500)
+
+    return () => clearTimeout(drainTimer)
+  }, [ghostState.drainTargetPct])
+
+  const showGhost = ghostState.ghostPct > pct
 
   return (
     <div className="relative h-2 w-full overflow-hidden rounded-full bg-[var(--app-border)]">
@@ -59,9 +79,9 @@ export function BattleHudHpBar({
         <div
           className="absolute inset-y-0 left-0 rounded-full"
           style={{
-            width: `${Math.round(ghostPct * 100)}%`,
+            width: `${Math.round(ghostState.ghostPct * 100)}%`,
             background: 'rgba(255,255,255,0.35)',
-            transition: ghostDraining ? 'width 950ms ease-out' : 'none',
+            transition: ghostState.isDraining ? 'width 950ms ease-out' : 'none',
           }}
         />
       )}

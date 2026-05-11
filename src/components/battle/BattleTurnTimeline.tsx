@@ -262,7 +262,7 @@ export function BattleTurnTimeline({
           descriptor={descriptorFor(actors[1])}
         />
       </div>
-      <RoundBadge round={currentRound} />
+      <RoundBadge round={round} />
     </div>
   )
 }
