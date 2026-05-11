@@ -68,7 +68,7 @@ describe('useBattleLogReveal', () => {
         entry({ id: 'defend-1', actor: 'player', action: 'defend' }),
         entry({ id: 'focus-1', actor: 'opponent', action: 'focus' }),
       ], [])
-      vi.advanceTimersByTime(1200)
+      vi.advanceTimersByTime(BATTLE_ANIM.ENTRY_DELAY_ACTION_MS)
     })
 
     expect(playerEffects.showDefendGuard).toHaveBeenCalledTimes(1)
