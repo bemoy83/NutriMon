@@ -171,6 +171,8 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 007 Mudmaul — medium — armoured bulldozer (forward wedge with giant claws)
   'mudmaul': {
     battle: { url: s('/sprites/opponents/mudmaul.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 0,
+    footOffsetY: 24,
     worldMap: { url: s('/sprites/opponents_world/mudmaul.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     icon: { url: s('/sprites/icons/mudmaul.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },

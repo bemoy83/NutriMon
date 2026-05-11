@@ -6,8 +6,8 @@
  * these constants so timing stays in sync as the system grows.
  *
  * Tuning guide:
- *  ENTRY_DELAY_MS  — gap between battle log entries being revealed (drives pacing feel)
- *  HURT_MS         — white flash duration on a normal hit
+ *  ENTRY_DELAY_*_MS — per-type hold times before the next entry appears (drives pacing feel)
+ *  HURT_MS          — white flash duration on a normal hit
  *  HURT_CRIT_MS    — gold flash duration on a critical hit (slightly longer for drama)
  *  FAINT_BLINK_MS  — blink phase before the dissolve on faint
  *  FAINT_MS        — total faint animation (blink + SVG dissolve; blink starts at 0, dissolve at 400 ms)
@@ -19,8 +19,14 @@
  *  FOCUS_CHARGE_MS — gold charge aura duration for focus actions
  */
 export const BATTLE_ANIM = {
-  /** Delay between each sequential log entry being shown (ms). */
-  ENTRY_DELAY_MS: 1200,
+  /**
+   * Time (ms) each entry type is held on screen before the next entry appears.
+   * Used as cumulative offsets so fast entries don't slow down impactful ones.
+   */
+  ENTRY_DELAY_INITIATIVE_MS: 900,   // quick context-setter — just names who goes first
+  ENTRY_DELAY_ACTION_HIT_MS: 2200,  // attack / skill / special with damage — read + process effect
+  ENTRY_DELAY_ACTION_MS: 1500,      // defend / focus — no damage number competing for attention
+  ENTRY_DELAY_RESULT_MS: 1800,      // victory / defeat hold before outcome modal
 
   /** Normal hit flash duration (ms). Must match `hit-flash` @keyframes. */
   HURT_MS: 500,

@@ -87,14 +87,19 @@ export function BattleCommandBar({
               </span>
               {label === 'Skill' && (
                 <div className="mt-1.5 flex gap-[3px]">
-                  {Array.from({ length: minSkillCost }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                        playerFocusPips > i ? 'bg-current' : 'border border-current opacity-30'
-                      }`}
-                    />
-                  ))}
+                  {Array.from({ length: minSkillCost }).map((_, i) => {
+                    const dotFilled = playerFocusPips > i
+                    return (
+                      <div
+                        key={`${i}-${dotFilled}`}
+                        className={`h-1.5 w-1.5 rounded-full transition-colors ${dotFilled ? 'animate-pip-fill' : 'opacity-25'}`}
+                        style={dotFilled
+                          ? { background: 'currentColor', boxShadow: '0 0 4px currentColor' }
+                          : { border: '1px solid currentColor' }
+                        }
+                      />
+                    )
+                  })}
                 </div>
               )}
             </button>

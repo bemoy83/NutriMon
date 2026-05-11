@@ -32,6 +32,7 @@ import {
   getPlayerTimelineIcon,
   getOpponentTimelineIcon,
 } from '@/lib/sprites'
+import { getBattleDialogue } from '@/lib/battleMessages'
 
 // Player display size scales with companion stage (closer perspective = larger).
 const PLAYER_DISPLAY_SIZE: Record<string, number> = {
@@ -163,9 +164,18 @@ export default function BattlePage() {
   const allEntriesShown = displayedLog.length === session.battleLog.length
   const lastEntry = displayedLog[displayedLog.length - 1] ?? null
 
-  const dialogue =
-    lastEntry?.message ??
-    (isActive ? `Round ${session.currentRound} — what will ${session.companion.name} do?` : null)
+  // Show the "what will X do?" prompt once animation finishes and it's the player's turn.
+  // During animation, show the last revealed action message instead.
+  const isWaitingForInput = !isAnimating && isActive && allEntriesShown
+  const displayedRound = isWaitingForInput
+    ? session.currentRound
+    : (lastEntry?.round ?? session.currentRound)
+
+  const dialogue = isWaitingForInput
+    ? `Round ${session.currentRound} — what will ${session.companion.name} do?`
+    : lastEntry
+      ? getBattleDialogue(lastEntry, session.companion.name, session.opponent.name, session.playerMaxHp, session.opponentMaxHp)
+      : null
 
   function submitBattleAction(label: BattleActionLabel, skillId?: string) {
     if (!session) return
@@ -216,6 +226,7 @@ export default function BattlePage() {
           <BattleTurnTimeline
             entries={displayedLog}
             fullLog={session.battleLog}
+            currentRound={displayedRound}
             companionName={session.companion.name}
             opponentName={session.opponent.name}
             playerDescriptor={getPlayerTimelineIcon(session.companion.stage)}

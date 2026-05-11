@@ -69,7 +69,19 @@ export function useBattleLogReveal(opts: {
 
       setIsAnimating(true)
 
+      let cumulativeMs = 0
       newEntries.forEach((entry, i) => {
+        const entryMs = cumulativeMs
+        if (entry.phase === 'initiative') {
+          cumulativeMs += BATTLE_ANIM.ENTRY_DELAY_INITIATIVE_MS
+        } else if (entry.phase === 'result') {
+          cumulativeMs += BATTLE_ANIM.ENTRY_DELAY_RESULT_MS
+        } else if (entry.damage > 0) {
+          cumulativeMs += BATTLE_ANIM.ENTRY_DELAY_ACTION_HIT_MS
+        } else {
+          cumulativeMs += BATTLE_ANIM.ENTRY_DELAY_ACTION_MS
+        }
+
         const t = setTimeout(() => {
           setDisplayedLogOverride({
             sessionId,
@@ -136,9 +148,15 @@ export function useBattleLogReveal(opts: {
           }
 
           if (i === newEntries.length - 1) {
-            setIsAnimating(false)
+            const lingerMs =
+              entry.phase === 'initiative' ? BATTLE_ANIM.ENTRY_DELAY_INITIATIVE_MS
+              : entry.phase === 'result'   ? BATTLE_ANIM.ENTRY_DELAY_RESULT_MS
+              : entry.damage > 0           ? BATTLE_ANIM.ENTRY_DELAY_ACTION_HIT_MS
+              :                              BATTLE_ANIM.ENTRY_DELAY_ACTION_MS
+            const finishTimer = setTimeout(() => setIsAnimating(false), lingerMs)
+            animTimers.current.push(finishTimer)
           }
-        }, i * BATTLE_ANIM.ENTRY_DELAY_MS)
+        }, entryMs)
         animTimers.current.push(t)
       })
     },

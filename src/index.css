@@ -570,6 +570,48 @@ select {
   animation: hp-shimmer 0.85s ease-in-out infinite;
 }
 
+/* Round badge — fades in and slides up slightly when the round number changes */
+@keyframes round-badge-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-round-badge-in {
+  animation: round-badge-in 0.35s ease-out both;
+}
+
+/* Turn chip — pulses a gold glow ring on the actor whose turn it is */
+@keyframes turn-chip-glow {
+  0%, 100% { box-shadow: 0 0 4px 0    rgba(240,192,40,0.15); }
+  50%       { box-shadow: 0 0 14px 4px rgba(240,192,40,0.55); }
+}
+
+.animate-turn-chip-glow {
+  animation: turn-chip-glow 1.8s ease-in-out infinite;
+}
+
+/* Focus pip — plays once when a pip element is (re)mounted in the filled state */
+@keyframes pip-fill {
+  0%   { transform: scaleY(0.5) scaleX(0.85); opacity: 0.4; filter: brightness(2.5); }
+  45%  { transform: scaleY(1.25) scaleX(0.97); opacity: 1;   filter: brightness(1.8); }
+  70%  { transform: scaleY(0.92) scaleX(1.02); }
+  100% { transform: scaleY(1)    scaleX(1);    filter: brightness(1); }
+}
+
+.animate-pip-fill {
+  animation: pip-fill 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Max-pip pulse — runs on all filled pips when player is at capacity */
+@keyframes pip-max-pulse {
+  0%, 100% { box-shadow: 0 0 4px 1px rgba(245,158,11,0.55); }
+  50%       { box-shadow: 0 0 10px 3px rgba(245,158,11,0.85), 0 0 2px 0 rgba(255,220,80,0.9) inset; }
+}
+
+.animate-pip-max {
+  animation: pip-max-pulse 1.4s ease-in-out infinite;
+}
+
 /* Full-viewport flash for special actions.
    Quick burst (0 → 92% in 12%) → hold → fade out.
    Duration driven by BATTLE_ANIM.SPECIAL_FLASH_MS (450ms). */

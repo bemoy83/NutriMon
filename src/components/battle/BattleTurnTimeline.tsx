@@ -28,6 +28,7 @@ function TurnChip({
   action,
   isActive,
   isSkipped,
+  isFirst,
   flip,
   descriptor,
 }: {
@@ -35,11 +36,13 @@ function TurnChip({
   action: BattleAction | string | null
   isActive: boolean
   isSkipped: boolean
+  isFirst?: boolean
   flip?: boolean
   descriptor?: SpriteDescriptor | null
 }) {
   return (
     <div
+      className={isActive ? 'animate-turn-chip-glow' : undefined}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -48,6 +51,8 @@ function TurnChip({
         borderRadius: 999,
         background: 'rgba(14,16,24,0.75)',
         border: `1px solid ${isActive ? 'rgba(240,192,40,0.65)' : 'rgba(255,255,255,0.10)'}`,
+        outline: isFirst ? '2px solid rgba(240,192,40,0.85)' : undefined,
+        outlineOffset: isFirst ? '2px' : undefined,
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',
         opacity: isSkipped ? 0.35 : 1,
@@ -57,69 +62,72 @@ function TurnChip({
         flexDirection: flip ? 'row' : 'row-reverse',
       }}
     >
-      <div
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: '50%',
-          overflow: 'hidden',
-          ...(descriptor
-            ? {}
-            : {
-                background:
-                  'repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 5px, transparent 5px, transparent 10px)',
-                border: '1.5px dashed rgba(255,255,255,0.22)',
-              }),
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}
-      >
-        {descriptor ? (
-          <img
-            src={descriptor.url}
-            alt=""
-            draggable={false}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              imageRendering: descriptor.pixelArt ? 'pixelated' : 'auto',
-              transform: descriptor.facing === 'left' && !flip ? 'scaleX(-1)' : undefined,
-            }}
-          />
-        ) : (
-          <span
-            style={{
-              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-              fontSize: 9,
-              fontWeight: 700,
-              color: 'rgba(255,255,255,0.5)',
-              letterSpacing: 0.3,
-            }}
-          >
-            {label}
-          </span>
-        )}
+      {/* Wrapper needed so the badge can escape the avatar's overflow:hidden */}
+      <div style={{ position: 'relative', flexShrink: 0 }}>
+        <div
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: '50%',
+            overflow: 'hidden',
+            ...(descriptor
+              ? {}
+              : {
+                  background:
+                    'repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 5px, transparent 5px, transparent 10px)',
+                  border: '1.5px dashed rgba(255,255,255,0.22)',
+                }),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {descriptor ? (
+            <img
+              src={descriptor.url}
+              alt=""
+              draggable={false}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                imageRendering: descriptor.pixelArt ? 'pixelated' : 'auto',
+                transform: descriptor.facing === 'left' && !flip ? 'scaleX(-1)' : undefined,
+              }}
+            />
+          ) : (
+            <span
+              style={{
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                fontSize: 9,
+                fontWeight: 700,
+                color: 'rgba(255,255,255,0.5)',
+                letterSpacing: 0.3,
+              }}
+            >
+              {label}
+            </span>
+          )}
+        </div>
       </div>
       <ActionBadge action={isActive ? action : null} />
     </div>
   )
 }
 
-function Separator() {
+function TurnArrow() {
   return (
     <span
       style={{
-        fontSize: 14,
+        fontSize: 17,
         lineHeight: 1,
-        color: 'rgba(255,255,255,0.22)',
+        color: 'rgba(240,192,40,0.9)',
         flexShrink: 0,
         userSelect: 'none',
+        textShadow: '0 0 8px rgba(240,192,40,0.6)',
       }}
     >
-      ·
+      →
     </span>
   )
 }
@@ -156,9 +164,29 @@ function chipAction(
   return actor === 'player' ? entry.playerAction : entry.opponentAction
 }
 
+function RoundBadge({ round }: { round: number }) {
+  return (
+    <div
+      className="animate-round-badge-in"
+      style={{
+        fontSize: 9,
+        fontWeight: 700,
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
+        color: 'rgba(240,192,40,0.7)',
+        lineHeight: 1,
+        userSelect: 'none',
+      }}
+    >
+      Round {round}
+    </div>
+  )
+}
+
 export function BattleTurnTimeline({
   entries,
   fullLog,
+  currentRound,
   companionName,
   opponentName,
   playerDescriptor,
@@ -166,12 +194,14 @@ export function BattleTurnTimeline({
 }: {
   entries: BattleLogEntry[]
   fullLog?: BattleLogEntry[]
+  currentRound?: number
   companionName: string
   opponentName: string
   playerDescriptor?: SpriteDescriptor | null
   opponentDescriptor?: SpriteDescriptor | null
 }) {
   const { initiative, activeActor, skippedActor } = getBattleTurnTimelineState(entries, fullLog)
+  const round = currentRound ?? entries[entries.length - 1]?.round ?? 1
 
   const playerLabel = chipLabel('player', companionName, opponentName)
   const opponentLabel = chipLabel('opponent', companionName, opponentName)
@@ -181,26 +211,26 @@ export function BattleTurnTimeline({
 
   if (!initiative?.firstActor) {
     return (
-      <div
-        aria-label="Turn order"
-        className="flex items-center gap-1.5"
-      >
-        <TurnChip
-          label={playerLabel}
-          action={null}
-          isActive={false}
-          isSkipped={false}
-          flip
-          descriptor={playerDescriptor}
-        />
-        <PendingConnector />
-        <TurnChip
-          label={opponentLabel}
-          action={null}
-          isActive={false}
-          isSkipped={false}
-          descriptor={opponentDescriptor}
-        />
+      <div aria-label="Turn order" className="flex flex-col items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          <TurnChip
+            label={playerLabel}
+            action={null}
+            isActive={false}
+            isSkipped={false}
+            flip
+            descriptor={playerDescriptor}
+          />
+          <PendingConnector />
+          <TurnChip
+            label={opponentLabel}
+            action={null}
+            isActive={false}
+            isSkipped={false}
+            descriptor={opponentDescriptor}
+          />
+        </div>
+        <RoundBadge key={round} round={round} />
       </div>
     )
   }
@@ -211,24 +241,28 @@ export function BattleTurnTimeline({
   return (
     <div
       aria-label="Turn order"
-      className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-1.5"
+      className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 flex-col items-center gap-1"
     >
-      <TurnChip
-        label={labelFor(actors[0])}
-        action={chipAction(initiative, actors[0])}
-        isActive={activeActor === actors[0]}
-        isSkipped={skippedActor === actors[0]}
-        flip={actors[0] === 'player'}
-        descriptor={descriptorFor(actors[0])}
-      />
-      <Separator />
-      <TurnChip
-        label={labelFor(actors[1])}
-        action={chipAction(initiative, actors[1])}
-        isActive={activeActor === actors[1]}
-        isSkipped={skippedActor === actors[1]}
-        descriptor={descriptorFor(actors[1])}
-      />
+      <div className="flex items-center gap-1.5">
+        <TurnChip
+          label={labelFor(actors[0])}
+          action={chipAction(initiative, actors[0])}
+          isActive={activeActor === actors[0]}
+          isSkipped={skippedActor === actors[0]}
+          isFirst
+          flip={actors[0] === 'player'}
+          descriptor={descriptorFor(actors[0])}
+        />
+        <TurnArrow />
+        <TurnChip
+          label={labelFor(actors[1])}
+          action={chipAction(initiative, actors[1])}
+          isActive={activeActor === actors[1]}
+          isSkipped={skippedActor === actors[1]}
+          descriptor={descriptorFor(actors[1])}
+        />
+      </div>
+      <RoundBadge round={currentRound} />
     </div>
   )
 }
