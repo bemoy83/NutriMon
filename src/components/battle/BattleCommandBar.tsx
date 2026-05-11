@@ -8,6 +8,7 @@ import {
   battleActionSubLabel,
 } from '@/components/battle/battleActionConfig'
 import { battleCommandBarSurfaceClass } from '@/components/battle/battleLayout'
+import { useTypewriter } from '@/hooks/useTypewriter'
 
 export function BattleCommandBar({
   dialogue,
@@ -28,8 +29,8 @@ export function BattleCommandBar({
 }) {
   const isEnabled = isActive && !isPending && !isAnimating
   const isBusy = isAnimating || isPending
-  // Skill button is locked when the player can't afford any skill in the catalog.
   const minSkillCost = Math.min(...BATTLE_SKILL_CATALOG.map(s => s.pipCost))
+  const { displayed, isDone } = useTypewriter(dialogue)
 
   return (
     <div className={battleCommandBarSurfaceClass}>
@@ -39,10 +40,15 @@ export function BattleCommandBar({
         style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}
       >
         <p className="text-sm leading-relaxed text-white/90">
-          {dialogue}
-          {isBusy && <span className="ml-0.5 animate-pulse text-white/50">···</span>}
+          {displayed}
+          {!isDone && (
+            <span className="animate-pulse text-white/60">▮</span>
+          )}
+          {isDone && isBusy && (
+            <span className="ml-0.5 animate-pulse text-white/50">···</span>
+          )}
         </p>
-        {isEnabled && (
+        {isEnabled && isDone && (
           <div className="mt-2 h-1.5 w-1.5 animate-pulse rounded-sm bg-white/40" />
         )}
       </div>

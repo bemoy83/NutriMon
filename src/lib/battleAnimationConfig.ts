@@ -23,9 +23,9 @@ export const BATTLE_ANIM = {
    * Time (ms) each entry type is held on screen before the next entry appears.
    * Used as cumulative offsets so fast entries don't slow down impactful ones.
    */
-  ENTRY_DELAY_INITIATIVE_MS: 900,   // quick context-setter — just names who goes first
-  ENTRY_DELAY_ACTION_HIT_MS: 2200,  // attack / skill / special with damage — read + process effect
-  ENTRY_DELAY_ACTION_MS: 1500,      // defend / focus — no damage number competing for attention
+  ENTRY_DELAY_INITIATIVE_MS: 1200,   // quick context-setter — just names who goes first
+  ENTRY_DELAY_ACTION_HIT_MS: 2600,  // attack / skill / special with damage — read + process effect
+  ENTRY_DELAY_ACTION_MS: 2200,      // defend / focus — no damage number competing for attention
   ENTRY_DELAY_RESULT_MS: 1800,      // victory / defeat hold before outcome modal
 
   /** Normal hit flash duration (ms). Must match `hit-flash` @keyframes. */
