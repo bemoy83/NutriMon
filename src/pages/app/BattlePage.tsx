@@ -9,6 +9,7 @@ import { BattleSkillModal } from '@/components/battle/BattleSkillModal'
 import { BattleTurnTimeline } from '@/components/battle/BattleTurnTimeline'
 import { BattleHudCard, BattleHudFocusPips, BattleHudHpBar } from '@/components/battle/BattleHudCard'
 import { BattleParticles } from '@/components/battle/BattleParticles'
+import { BattleArenaDressing } from '@/components/battle/BattleArenaDressing'
 import { BattleOutcomeModal } from '@/components/battle/BattleOutcomeModal'
 import LoadingState from '@/components/ui/LoadingState'
 import CreatureSprite from '@/components/ui/CreatureSprite'
@@ -206,6 +207,8 @@ export default function BattlePage() {
       >
         {/* Particles sit behind all three zones */}
         <BattleParticles arenaId={session.opponent.arenaId} />
+        {/* Arena atmosphere — remove by deleting this one line (and the import above) */}
+        <BattleArenaDressing accentColor={terrain.accentColor} />
 
         {/* ── Zone 1: Turn order HUD — fixed top strip ── */}
         <div className="relative z-10 flex shrink-0 justify-center py-2">

@@ -179,7 +179,7 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   'reedstalker': {
     battle: { url: s('/sprites/opponents/reedstalker.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     worldMap: { url: s('/sprites/opponents_world/reedstalker.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    // icon: { url: s('/sprites/icons/reedstalker.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/reedstalker.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
   // },
 
@@ -204,19 +204,29 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // ── Arena 3 — Ashrock Highlands (levels 12–18) ────────────────────────────
 
   // 011 Pebblit — small — stony sentinel (circle with large side-block ears)
-  // 'pebblit': {
-  //   battle: { url: s('/sprites/opponents/pebblit.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // },
+  'pebblit': {
+    battle: { url: s('/sprites/opponents/pebblit.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    worldMap: { url: s('/sprites/opponents_world/pebblit.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/pebblit.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
   // 012 Screechmite — medium — armoured aggressor (arched oval with front jaws)
-  // 'screechmite': {
-  //   battle: { url: s('/sprites/opponents/screechmite.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // },
+  'screechmite': {
+    battle: { url: s('/sprites/opponents/screechmite.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 8,
+    footOffsetY: 18,
+    worldMap: { url: s('/sprites/opponents_world/screechmite.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/screechmite.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
   // 013 Flintor — medium — swift blade (serrated back + long axe-tail)
-  // 'flintor': {
-  //   battle: { url: s('/sprites/opponents/flintor.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // },
+  'flintor': {
+    battle: { url: s('/sprites/opponents/flintor.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 10,
+    footOffsetY: 18,
+    worldMap: { url: s('/sprites/opponents_world/flintor.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/flintor.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
   // 014 Shockmantis — medium — storm scythe (wide scythe claws + tail arc)
   // 'shockmantis': {
