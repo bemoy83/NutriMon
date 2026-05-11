@@ -35,7 +35,7 @@ export function BattleCommandBar({
     <div className={battleCommandBarSurfaceClass}>
       {/* Dialogue card */}
       <div
-        className="flex flex-1 flex-col justify-center rounded-xl border border-white/[0.08] bg-[rgba(10,12,20,0.82)] px-4 py-3"
+        className="flex min-h-0 flex-1 flex-col justify-center overflow-hidden rounded-xl border border-white/[0.08] bg-[rgba(10,12,20,0.82)] px-4 py-3"
         style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}
       >
         <p className="text-sm leading-relaxed text-white/90">

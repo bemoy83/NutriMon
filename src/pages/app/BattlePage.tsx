@@ -237,7 +237,7 @@ export default function BattlePage() {
           {/* z-stacking (low → high): opponent platform < opponent sprite < player platform < player sprite < HUD (z-10) */}
           <BattleHudCard
             className="left-4 max-sm:max-w-[calc(100vw-3.5rem-128px)]"
-            style={{ top: 'calc(100% - min(calc(var(--player-h) + var(--player-pad) + var(--sprite-gap)), calc(100% - var(--opp-h))) - var(--opp-h) - 8px)' }}
+            style={{ top: 'max(4px, calc(100% - min(calc(var(--player-h) + var(--player-pad) + var(--sprite-gap)), calc(100% - var(--opp-h))) - var(--opp-h) - 8px))' }}
           >
             <div className="flex min-w-0 items-baseline justify-between">
               <p className="truncate text-sm font-bold text-white">{session.opponent.name}</p>
