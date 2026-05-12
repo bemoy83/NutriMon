@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import {
   type BattleActionLabel,
   battleActionToPayload,
+  BATTLE_SKILL_PIP_COST,
 } from '@/components/battle/battleActionConfig'
 import { BattleCommandBar } from '@/components/battle/BattleCommandBar'
 import { BattleSkillModal } from '@/components/battle/BattleSkillModal'
@@ -154,7 +155,7 @@ export default function BattlePage() {
   const focusPips = displayedLog.reduce((count, e) => {
     if (e.actor !== 'player' || e.phase !== 'action') return count
     if (e.action === 'focus') return Math.min(FOCUS_PIP_MAX, count + 1)
-    if (e.action === 'skill') return Math.max(0, count - 1)
+    if (e.action === 'skill') return Math.max(0, count - (BATTLE_SKILL_PIP_COST[e.skillId ?? ''] ?? 1))
     return count
   }, 0)
 
