@@ -500,6 +500,7 @@ export function mapBattleRunSession(row: BattleRunSessionRow): BattleRunSession 
     playerMomentumBoost: row.player_momentum_boost ?? 0,
     enemyMomentumBoost: row.enemy_momentum_boost ?? 0,
     playerFocusPips: row.player_focus_pips ?? 0,
+    totalXp: row.total_xp ?? 0,
   }
 }
 

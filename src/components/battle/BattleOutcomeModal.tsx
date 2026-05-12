@@ -1,5 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import confetti from 'canvas-confetti'
+import { BATTLE_SKILL_CATALOG } from '@/components/battle/battleActionConfig'
+
+const XP_PER_LEVEL = 100
+
+function levelForXp(xp: number) {
+  return Math.floor(Math.max(0, xp) / XP_PER_LEVEL) + 1
+}
 
 export function BattleOutcomeModal({
   isWin,
@@ -7,6 +14,7 @@ export function BattleOutcomeModal({
   remainingHpPct,
   rewardClaimed,
   xpAwarded,
+  totalXp,
   onReturn,
 }: {
   isWin: boolean
@@ -14,12 +22,29 @@ export function BattleOutcomeModal({
   remainingHpPct: number | null
   rewardClaimed: boolean
   xpAwarded: number
+  totalXp: number
   onReturn: () => void
 }) {
+  const levelUpFired = useRef(false)
+
+  const preBattleXp = rewardClaimed ? totalXp - xpAwarded : totalXp
+  const preLevel    = levelForXp(preBattleXp)
+  const postLevel   = levelForXp(totalXp)
+  const leveledUp   = rewardClaimed && postLevel > preLevel
+
+  const xpIntoLevel = totalXp % XP_PER_LEVEL
+  const xpBarPct    = (xpIntoLevel / XP_PER_LEVEL) * 100
+
+  // Skills unlocked by crossing into postLevel (any level between preLevel+1 and postLevel)
+  const newlyUnlockedSkills = rewardClaimed
+    ? BATTLE_SKILL_CATALOG.filter(
+        s => s.unlockLevel > preLevel && s.unlockLevel <= postLevel
+      )
+    : []
+
   useEffect(() => {
     if (!isWin) return
 
-    // Initial burst
     confetti({
       particleCount: 90,
       spread: 80,
@@ -29,13 +54,11 @@ export function BattleOutcomeModal({
       ticks: 200,
     })
 
-    // Flanking bursts after a short delay
     const t1 = setTimeout(() => {
-      confetti({ particleCount: 40, angle: 60, spread: 55, origin: { x: 0, y: 0.5 }, colors: ['#FFD700', '#A78BFA', '#34D399'] })
+      confetti({ particleCount: 40, angle: 60,  spread: 55, origin: { x: 0, y: 0.5 }, colors: ['#FFD700', '#A78BFA', '#34D399'] })
       confetti({ particleCount: 40, angle: 120, spread: 55, origin: { x: 1, y: 0.5 }, colors: ['#FFD700', '#60A5FA', '#FF6B6B'] })
     }, 220)
 
-    // Gentle trickle for a couple seconds
     let trickleCount = 0
     const trickle = setInterval(() => {
       confetti({
@@ -56,6 +79,23 @@ export function BattleOutcomeModal({
       clearInterval(trickle)
     }
   }, [isWin])
+
+  // Second confetti burst for level-up, fired once after a short delay
+  useEffect(() => {
+    if (!leveledUp || levelUpFired.current) return
+    levelUpFired.current = true
+    const t = setTimeout(() => {
+      confetti({
+        particleCount: 120,
+        spread: 100,
+        origin: { x: 0.5, y: 0.6 },
+        colors: ['#A78BFA', '#818CF8', '#C4B5FD', '#FFD700', '#FFF'],
+        scalar: 1.3,
+        ticks: 260,
+      })
+    }, 900)
+    return () => clearTimeout(t)
+  }, [leveledUp])
 
   return (
     <div
@@ -94,9 +134,9 @@ export function BattleOutcomeModal({
         {/* Stats row */}
         <div className="mt-5 grid grid-cols-3 gap-2">
           {[
-            { label: 'Rounds', value: turnCount ?? '—' },
+            { label: 'Rounds',  value: turnCount ?? '—' },
             { label: 'HP Left', value: remainingHpPct != null ? `${remainingHpPct}%` : '—' },
-            { label: 'XP', value: rewardClaimed ? `+${xpAwarded}` : '—' },
+            { label: 'XP',      value: rewardClaimed ? `+${xpAwarded}` : '—' },
           ].map(({ label, value }) => (
             <div
               key={label}
@@ -112,6 +152,84 @@ export function BattleOutcomeModal({
             </div>
           ))}
         </div>
+
+        {/* XP progress + level-up section */}
+        {rewardClaimed && (
+          <div className="mt-4 space-y-3">
+            {/* Level-up banner */}
+            {leveledUp && (
+              <div
+                className="rounded-xl px-4 py-3"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(99,102,241,0.12) 100%)',
+                  border: '1px solid rgba(139,92,246,0.35)',
+                  boxShadow: '0 0 20px rgba(139,92,246,0.15)',
+                }}
+              >
+                <p
+                  className="text-xs font-semibold uppercase tracking-widest"
+                  style={{ color: 'rgba(196,181,253,0.7)' }}
+                >
+                  Level up
+                </p>
+                <p
+                  className="mt-0.5 text-xl font-extrabold tracking-tight"
+                  style={{ color: '#C4B5FD', textShadow: '0 0 16px rgba(167,139,250,0.5)' }}
+                >
+                  {preLevel} → {postLevel}
+                </p>
+              </div>
+            )}
+
+            {/* Newly unlocked skills */}
+            {newlyUnlockedSkills.map(skill => (
+              <div
+                key={skill.id}
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left"
+                style={{
+                  background: 'rgba(245,158,11,0.07)',
+                  border: '1px solid rgba(245,158,11,0.22)',
+                }}
+              >
+                <span className="text-xl">{skill.icon}</span>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-amber-400/70">
+                    Skill unlocked
+                  </p>
+                  <p className="text-sm font-bold text-white">{skill.label}</p>
+                  <p className="text-xs text-white/45">{skill.description}</p>
+                </div>
+              </div>
+            ))}
+
+            {/* XP bar */}
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="text-xs font-semibold text-white/50">Level {postLevel}</span>
+                <span className="text-xs tabular-nums text-white/35">
+                  {xpIntoLevel} / {XP_PER_LEVEL} XP
+                </span>
+              </div>
+              <div
+                className="h-2 w-full overflow-hidden rounded-full"
+                style={{ background: 'rgba(255,255,255,0.08)' }}
+              >
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{
+                    width: `${xpBarPct}%`,
+                    background: leveledUp
+                      ? 'linear-gradient(90deg, #A78BFA, #818CF8)'
+                      : 'linear-gradient(90deg, #34D399, #059669)',
+                    boxShadow: leveledUp
+                      ? '0 0 8px rgba(167,139,250,0.5)'
+                      : '0 0 8px rgba(52,211,153,0.4)',
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         <button
           type="button"

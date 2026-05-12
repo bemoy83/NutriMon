@@ -597,6 +597,7 @@ export interface BattleRunSessionRow extends BattleRunRow {
   snapshot: CreatureBattleSnapshotRow
   opponent: BattleOpponentRow
   companion: CreatureCompanionRow
+  total_xp?: number
 }
 
 export interface MealItemInput {

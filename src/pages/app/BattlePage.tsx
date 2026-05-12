@@ -381,6 +381,7 @@ export default function BattlePage() {
           remainingHpPct={session.remainingHpPct}
           rewardClaimed={session.rewardClaimed}
           xpAwarded={session.xpAwarded}
+          totalXp={session.totalXp}
           onReturn={() => navigate('/app/battle')}
         />
       ) : null}

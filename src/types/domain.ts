@@ -449,6 +449,7 @@ export interface BattleRunSession extends Omit<BattleRun, 'opponent'> {
   playerMomentumBoost: number
   enemyMomentumBoost: number
   playerFocusPips: number
+  totalXp: number
 }
 
 export interface BattleHub {
