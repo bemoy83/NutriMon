@@ -197,7 +197,7 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 010 Leviamire — large (BOSS) — ancient swamp titan (clustered rising heads)
   'leviamire': {
     battle: { url: s('/sprites/opponents/leviamire.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    footOffsetX: 6,
+    footOffsetX: 8,
     footOffsetY: 20,
     worldMap: { url: s('/sprites/opponents_world/leviamire.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     icon: { url: s('/sprites/icons/leviamire.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
@@ -208,6 +208,8 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 011 Pebblit — small — stony sentinel (circle with large side-block ears)
   'pebblit': {
     battle: { url: s('/sprites/opponents/pebblit.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 24,
+    footOffsetY: 18,
     worldMap: { url: s('/sprites/opponents_world/pebblit.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     icon: { url: s('/sprites/icons/pebblit.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
@@ -215,7 +217,7 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 012 Screechmite — medium — armoured aggressor (arched oval with front jaws)
   'screechmite': {
     battle: { url: s('/sprites/opponents/screechmite.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    footOffsetX: 8,
+    footOffsetX: 24,
     footOffsetY: 18,
     worldMap: { url: s('/sprites/opponents_world/screechmite.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     icon: { url: s('/sprites/icons/screechmite.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
@@ -231,13 +233,19 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   },
 
   // 014 Shockmantis — medium — storm scythe (wide scythe claws + tail arc)
-  //'shockmantis': {
-  //battle: { url: s('/sprites/opponents/shockmantis.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  //},
+  'shockmantis': {
+    battle: { url: s('/sprites/opponents/shockmantis.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 0,
+    footOffsetY: 18,
+    worldMap: { url: s('/sprites/opponents_world/shockmantis.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/shockmantis.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
   // 015 Thunderox — large (BOSS) — storm colossus (heavy mass with fractured horn spread)
   'thunderox': {
     battle: { url: s('/sprites/opponents/thunderox.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 0,
+    footOffsetY: 18,
     worldMap: { url: s('/sprites/opponents_world/thunderox.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     icon: { url: s('/sprites/icons/thunderox.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },

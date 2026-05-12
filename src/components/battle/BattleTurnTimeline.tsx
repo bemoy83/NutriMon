@@ -23,6 +23,27 @@ function ActionBadge({ action }: { action: BattleAction | string | null }) {
   )
 }
 
+function FirstMoverChevron() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: -13,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        fontSize: 10,
+        lineHeight: 1,
+        color: 'rgba(240,192,40,0.9)',
+        textShadow: '0 0 6px rgba(240,192,40,0.7)',
+        userSelect: 'none',
+        pointerEvents: 'none',
+      }}
+    >
+      ▼
+    </div>
+  )
+}
+
 function TurnChip({
   label,
   action,
@@ -41,27 +62,27 @@ function TurnChip({
   descriptor?: SpriteDescriptor | null
 }) {
   return (
-    <div
-      className={isActive ? 'animate-turn-chip-glow' : undefined}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 3,
-        padding: '3px',
-        borderRadius: 999,
-        background: 'rgba(14,16,24,0.75)',
-        border: `1px solid ${isActive ? 'rgba(240,192,40,0.65)' : 'rgba(255,255,255,0.10)'}`,
-        outline: isFirst ? '2px solid rgba(240,192,40,0.85)' : undefined,
-        outlineOffset: isFirst ? '2px' : undefined,
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-        opacity: isSkipped ? 0.35 : 1,
-        transform: isActive ? 'translateY(-3px)' : 'translateY(0)',
-        transition:
-          'transform 120ms ease-out, border-color 150ms ease, opacity 200ms ease, background 150ms ease',
-        flexDirection: flip ? 'row' : 'row-reverse',
-      }}
-    >
+    <div style={{ position: 'relative' }}>
+      {isFirst && <FirstMoverChevron />}
+      <div
+        className={isActive ? 'animate-turn-chip-glow' : undefined}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 3,
+          padding: '3px',
+          borderRadius: 999,
+          background: 'rgba(14,16,24,0.75)',
+          border: `1px solid ${isActive ? 'rgba(240,192,40,0.65)' : 'rgba(255,255,255,0.10)'}`,
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          opacity: isSkipped ? 0.35 : 1,
+          transform: isActive ? 'translateY(-3px)' : 'translateY(0)',
+          transition:
+            'transform 120ms ease-out, border-color 150ms ease, opacity 200ms ease, background 150ms ease',
+          flexDirection: flip ? 'row' : 'row-reverse',
+        }}
+      >
       {/* Wrapper needed so the badge can escape the avatar's overflow:hidden */}
       <div style={{ position: 'relative', flexShrink: 0 }}>
         <div
@@ -111,6 +132,7 @@ function TurnChip({
         </div>
       </div>
       <ActionBadge action={isActive ? action : null} />
+    </div>
     </div>
   )
 }
@@ -241,7 +263,7 @@ export function BattleTurnTimeline({
   return (
     <div
       aria-label="Turn order"
-      className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 flex-col items-center gap-1"
+      className="absolute left-1/2 top-5 z-10 flex -translate-x-1/2 flex-col items-center gap-1"
     >
       <div className="flex items-center gap-1.5">
         <TurnChip

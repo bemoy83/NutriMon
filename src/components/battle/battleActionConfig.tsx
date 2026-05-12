@@ -17,6 +17,7 @@ export interface BattleSkillDef {
   description: string
   kind: 'attack' | 'heal' | 'buff'
   pipCost: number
+  unlockLevel: number
   icon: string
 }
 
@@ -27,7 +28,26 @@ export const BATTLE_SKILL_CATALOG: BattleSkillDef[] = [
     description: '3 hits at 75% power each',
     kind: 'attack',
     pipCost: 1,
+    unlockLevel: 1,
     icon: '⚔️',
+  },
+  {
+    id: 'power_strike',
+    label: 'Power Strike',
+    description: '1 hit at 200% power',
+    kind: 'attack',
+    pipCost: 1,
+    unlockLevel: 4,
+    icon: '💥',
+  },
+  {
+    id: 'regen',
+    label: 'Regen',
+    description: 'Restore 30% of max HP',
+    kind: 'heal',
+    pipCost: 2,
+    unlockLevel: 8,
+    icon: '💚',
   },
 ]
 

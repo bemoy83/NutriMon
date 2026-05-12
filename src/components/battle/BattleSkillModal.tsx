@@ -23,11 +23,13 @@ const KIND_COLORS: Record<string, { text: string; bg: string; border: string }> 
 export function BattleSkillModal({
   open,
   focusPips,
+  playerLevel,
   onPick,
   onClose,
 }: {
   open: boolean
   focusPips: number
+  playerLevel: number
   onPick: (skillId: string) => void
   onClose: () => void
 }) {
@@ -93,7 +95,8 @@ export function BattleSkillModal({
         {/* Skill list */}
         <div className="flex flex-col gap-2 overflow-y-auto px-4 pb-4">
           {BATTLE_SKILL_CATALOG.map((skill) => {
-            const affordable = focusPips >= skill.pipCost
+            const levelLocked = playerLevel < skill.unlockLevel
+            const affordable = !levelLocked && focusPips >= skill.pipCost
             const kindColor = KIND_COLORS[skill.kind] ?? KIND_COLORS.attack
 
             return (
@@ -103,12 +106,21 @@ export function BattleSkillModal({
                 disabled={!affordable}
                 onClick={() => affordable && onPick(skill.id)}
                 className="flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-[background,opacity] duration-150"
-                style={{
-                  background: affordable ? 'rgba(245,158,11,0.07)' : 'rgba(255,255,255,0.02)',
-                  borderColor: affordable ? 'rgba(245,158,11,0.22)' : 'rgba(255,255,255,0.06)',
-                  opacity: affordable ? 1 : 0.4,
-                  cursor: affordable ? 'pointer' : 'default',
-                }}
+                style={
+                  levelLocked
+                    ? {
+                        background: 'rgba(255,255,255,0.01)',
+                        borderColor: 'rgba(255,255,255,0.04)',
+                        opacity: 0.35,
+                        cursor: 'default',
+                      }
+                    : {
+                        background: affordable ? 'rgba(245,158,11,0.07)' : 'rgba(255,255,255,0.02)',
+                        borderColor: affordable ? 'rgba(245,158,11,0.22)' : 'rgba(255,255,255,0.06)',
+                        opacity: affordable ? 1 : 0.4,
+                        cursor: affordable ? 'pointer' : 'default',
+                      }
+                }
               >
                 {/* Icon */}
                 <div
@@ -121,7 +133,7 @@ export function BattleSkillModal({
                   {skill.icon}
                 </div>
 
-                {/* Name + badge + description */}
+                {/* Name + badges + description */}
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-white">{skill.label}</span>
@@ -135,6 +147,18 @@ export function BattleSkillModal({
                     >
                       {skill.kind}
                     </span>
+                    {levelLocked && (
+                      <span
+                        className="rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                        style={{
+                          color: 'rgba(255,255,255,0.40)',
+                          background: 'rgba(255,255,255,0.06)',
+                          border: '1px solid rgba(255,255,255,0.10)',
+                        }}
+                      >
+                        Lv {skill.unlockLevel}
+                      </span>
+                    )}
                   </div>
                   <span className="text-xs text-white/50">{skill.description}</span>
                 </div>

@@ -55,7 +55,7 @@ const PLAYER_BOTTOM_PAD = 16  // matches bottom-4 on the player wrapper
 const OPPONENT_SIZE_BY_CLASS: Record<string, number> = {
   small: 96,
   medium: 144,
-  large: 256,
+  large: 192,
 }
 
 function getOpponentSize(sizeClass: string): number {
@@ -222,7 +222,7 @@ export default function BattlePage() {
         <BattleArenaDressing accentColor={terrain.accentColor} />
 
         {/* ── Zone 1: Turn order HUD — fixed top strip ── */}
-        <div className="relative z-10 flex min-h-[50px] shrink-0 justify-center py-2">
+        <div className="relative z-10 flex min-h-[80px] shrink-0 justify-center py-3">
           <BattleTurnTimeline
             entries={displayedLog}
             fullLog={session.battleLog}
@@ -387,6 +387,7 @@ export default function BattlePage() {
       <BattleSkillModal
         open={skillModalOpen}
         focusPips={focusPips}
+        playerLevel={session.companion.level}
         onPick={handleSkillPick}
         onClose={() => setSkillModalOpen(false)}
       />
