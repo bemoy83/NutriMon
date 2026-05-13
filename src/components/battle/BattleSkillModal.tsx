@@ -173,7 +173,7 @@ export function BattleSkillModal({
                     className="text-base font-bold tabular-nums"
                     style={{ color: affordable ? 'var(--app-warning)' : 'rgba(255,255,255,0.25)' }}
                   >
-                    {skill.pipCost}
+                    {skill.allPips ? 'ALL' : skill.pipCost}
                   </span>
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-white/35">
                     FP

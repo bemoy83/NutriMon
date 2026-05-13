@@ -17,6 +17,7 @@ export interface BattleSkillDef {
   description: string
   kind: 'attack' | 'heal' | 'buff'
   pipCost: number
+  allPips?: true
   unlockLevel: number
   icon: string
 }
@@ -55,6 +56,7 @@ export const BATTLE_SKILL_CATALOG: BattleSkillDef[] = [
     description: 'Spend all pips — pips × 120% power (min 2)',
     kind: 'attack',
     pipCost: 2,
+    allPips: true,
     unlockLevel: 15,
     icon: '⚡',
   },
