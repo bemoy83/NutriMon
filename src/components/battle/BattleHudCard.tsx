@@ -106,10 +106,8 @@ export function BattleHudHpBar({
   )
 }
 
-const FOCUS_PIP_MAX = 3
-
-export function BattleHudFocusPips({ count }: { count: number }) {
-  const atMax = count >= FOCUS_PIP_MAX
+export function BattleHudFocusPips({ count, pipCap }: { count: number; pipCap: number }) {
+  const atMax = count >= pipCap
   return (
     <div className="mt-2 flex items-center gap-1.5">
       <span
@@ -119,7 +117,7 @@ export function BattleHudFocusPips({ count }: { count: number }) {
         FP
       </span>
       <div className="flex flex-1 gap-1">
-        {Array.from({ length: FOCUS_PIP_MAX }).map((_, i) => {
+        {Array.from({ length: pipCap }).map((_, i) => {
           const filled = i < count
           return (
             <div
@@ -146,7 +144,7 @@ export function BattleHudFocusPips({ count }: { count: number }) {
         className="min-w-[2ch] text-right text-[10px] tabular-nums transition-colors duration-300"
         style={{ color: count > 0 ? 'var(--app-warning)' : 'rgba(255,255,255,0.2)' }}
       >
-        {count}/{FOCUS_PIP_MAX}
+        {count}/{pipCap}
       </span>
     </div>
   )

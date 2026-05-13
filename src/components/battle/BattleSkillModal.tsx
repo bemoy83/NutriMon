@@ -1,6 +1,5 @@
 import { BATTLE_SKILL_CATALOG } from '@/components/battle/battleActionConfig'
 
-const FOCUS_PIP_MAX = 3
 
 const KIND_COLORS: Record<string, { text: string; bg: string; border: string }> = {
   attack: {
@@ -23,12 +22,14 @@ const KIND_COLORS: Record<string, { text: string; bg: string; border: string }> 
 export function BattleSkillModal({
   open,
   focusPips,
+  pipCap,
   playerLevel,
   onPick,
   onClose,
 }: {
   open: boolean
   focusPips: number
+  pipCap: number
   playerLevel: number
   onPick: (skillId: string) => void
   onClose: () => void
@@ -63,7 +64,7 @@ export function BattleSkillModal({
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40">FP</span>
             <div className="flex gap-1">
-              {Array.from({ length: FOCUS_PIP_MAX }).map((_, i) => (
+              {Array.from({ length: pipCap }).map((_, i) => (
                 <div
                   key={i}
                   className="h-2.5 w-1.5 rounded-sm transition-all duration-200"

@@ -5,6 +5,7 @@ import {
   battleActionToPayload,
   BATTLE_SKILL_PIP_COST,
 } from '@/components/battle/battleActionConfig'
+import { getPipCap, getFocusGain } from '@/lib/battlePerks'
 import { BattleCommandBar } from '@/components/battle/BattleCommandBar'
 import { BattleSkillModal } from '@/components/battle/BattleSkillModal'
 import { BattleTurnTimeline } from '@/components/battle/BattleTurnTimeline'
@@ -149,12 +150,14 @@ export default function BattlePage() {
     if (entry.target === 'player' && entry.targetHpAfter !== null) playerHp = entry.targetHpAfter
   }
 
+  const pipCap    = getPipCap(session.snapshot.level)
+  const focusGain = getFocusGain(session.snapshot.level)
+
   // Derive pip count from the revealed log so it animates step-by-step
-  // as entries are disclosed. Focus adds 1 (capped at 3); Skill subtracts 1.
-  const FOCUS_PIP_MAX = 3
+  // as entries are disclosed.
   const focusPips = displayedLog.reduce((count, e) => {
     if (e.actor !== 'player' || e.phase !== 'action') return count
-    if (e.action === 'focus') return Math.min(FOCUS_PIP_MAX, count + 1)
+    if (e.action === 'focus') return Math.min(pipCap, count + focusGain)
     if (e.action === 'skill') return Math.max(0, count - (BATTLE_SKILL_PIP_COST[e.skillId ?? ''] ?? 1))
     return count
   }, 0)
@@ -355,7 +358,7 @@ export default function BattlePage() {
             <p className="mt-1 text-right text-xs tabular-nums text-white/70">
               {playerHp} / {session.playerMaxHp}
             </p>
-            <BattleHudFocusPips count={focusPips} />
+            <BattleHudFocusPips count={focusPips} pipCap={pipCap} />
           </BattleHudCard>
         </div>
 
@@ -389,6 +392,7 @@ export default function BattlePage() {
       <BattleSkillModal
         open={skillModalOpen}
         focusPips={focusPips}
+        pipCap={pipCap}
         playerLevel={session.companion.level}
         onPick={handleSkillPick}
         onClose={() => setSkillModalOpen(false)}
