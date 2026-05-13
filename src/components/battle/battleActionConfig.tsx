@@ -49,6 +49,33 @@ export const BATTLE_SKILL_CATALOG: BattleSkillDef[] = [
     unlockLevel: 8,
     icon: '💚',
   },
+  {
+    id: 'charge_strike',
+    label: 'Charge Strike',
+    description: 'Spend all pips — pips × 120% power (min 2)',
+    kind: 'attack',
+    pipCost: 2,
+    unlockLevel: 15,
+    icon: '⚡',
+  },
+  {
+    id: 'counter_stance',
+    label: 'Counter Stance',
+    description: '50% damage reduction + 80% counter if attacked',
+    kind: 'buff',
+    pipCost: 1,
+    unlockLevel: 18,
+    icon: '🛡️',
+  },
+  {
+    id: 'overdrive',
+    label: 'Overdrive',
+    description: '5 hits at 60% power each',
+    kind: 'attack',
+    pipCost: 3,
+    unlockLevel: 20,
+    icon: '🌀',
+  },
 ]
 
 export const battleActionFromPayload: Record<BattleAction, BattleActionLabel> = {
