@@ -2,10 +2,14 @@ import { useEffect, useRef } from 'react'
 import confetti from 'canvas-confetti'
 import { BATTLE_SKILL_CATALOG } from '@/components/battle/battleActionConfig'
 
-const XP_PER_LEVEL = 100
-
 function levelForXp(xp: number) {
-  return Math.floor(Math.max(0, xp) / XP_PER_LEVEL) + 1
+  return Math.floor(Math.cbrt(Math.max(0, xp))) + 1
+}
+
+function xpBounds(level: number) {
+  const start = Math.pow(level - 1, 3)
+  const end   = Math.pow(level, 3)
+  return { start, width: end - start }
 }
 
 export function BattleOutcomeModal({
@@ -32,8 +36,9 @@ export function BattleOutcomeModal({
   const postLevel   = levelForXp(totalXp)
   const leveledUp   = rewardClaimed && postLevel > preLevel
 
-  const xpIntoLevel = totalXp % XP_PER_LEVEL
-  const xpBarPct    = (xpIntoLevel / XP_PER_LEVEL) * 100
+  const { start: levelStart, width: xpToNextLevel } = xpBounds(postLevel)
+  const xpIntoLevel = totalXp - levelStart
+  const xpBarPct    = Math.min(100, (xpIntoLevel / xpToNextLevel) * 100)
 
   // Skills unlocked by crossing into postLevel (any level between preLevel+1 and postLevel)
   const newlyUnlockedSkills = rewardClaimed
@@ -207,7 +212,7 @@ export function BattleOutcomeModal({
               <div className="mb-1.5 flex items-center justify-between">
                 <span className="text-xs font-semibold text-white/50">Level {postLevel}</span>
                 <span className="text-xs tabular-nums text-white/35">
-                  {xpIntoLevel} / {XP_PER_LEVEL} XP
+                  {xpIntoLevel} / {xpToNextLevel} XP
                 </span>
               </div>
               <div

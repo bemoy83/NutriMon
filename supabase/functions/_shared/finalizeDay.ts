@@ -411,7 +411,7 @@ async function upsertCompanionBattleState(
   )
 
   const stage = getHigherStage(existingCompanion?.stage ?? getUnlockedStage(input.longestStreak), getUnlockedStage(input.longestStreak))
-  const xpGained = getFinalizationXp(input.adjustedAdherence, input.hasMeals ? classifyStatus(input.adjustedAdherence) : 'no_data', input.currentStreak)
+  const xpGained = getFinalizationXp(input.adjustedAdherence, input.hasMeals ? classifyStatus(input.adjustedAdherence) : 'no_data')
   const totalXp = totalSnapshotXpBefore - existingSnapshotXp + xpGained + totalRewardedBattleXp
   const level = getLevelFromXp(totalXp)
   const readinessScore = getReadinessScore(input.creatureStats)

@@ -1,7 +1,6 @@
 export const QUALIFYING_STREAK_DAYS_FOR_ADULT = 7
 export const QUALIFYING_STREAK_DAYS_FOR_CHAMPION = 30
 export const DEFAULT_COMPANION_NAME = 'Sprout'
-export const XP_PER_LEVEL = 100
 
 export type CreatureStage = 'baby' | 'adult' | 'champion'
 export type CreatureCondition = 'thriving' | 'steady' | 'recovering'
@@ -62,7 +61,7 @@ export function getHigherStage(current: CreatureStage, next: CreatureStage): Cre
 }
 
 export function getLevelFromXp(xp: number): number {
-  return Math.floor(Math.max(0, xp) / XP_PER_LEVEL) + 1
+  return Math.floor(Math.cbrt(Math.max(0, xp))) + 1
 }
 
 export function getReadinessScore(stats: Pick<CreatureCombatStats, 'strength' | 'resilience' | 'momentum' | 'vitality'>): number {
@@ -88,9 +87,9 @@ export function getCondition(input: CreatureConditionInput): CreatureCondition {
   return 'steady'
 }
 
-export function getFinalizationXp(adjustedAdherence: number, status: string, currentStreak: number): number {
-  if (status === 'no_data' || adjustedAdherence < 70) return 0
-  return 15 + Math.min(currentStreak, 10) + (adjustedAdherence >= 90 ? 5 : 0)
+export function getFinalizationXp(adjustedAdherence: number, status: string): number {
+  if (status === 'no_data') return 0
+  return 40 + (adjustedAdherence >= 70 ? 30 : 0)
 }
 
 export function getStageBonus(stage: CreatureStage): number {
