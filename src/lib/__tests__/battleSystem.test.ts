@@ -16,11 +16,11 @@ describe('battleSystem', () => {
     expect(getUnlockedStage(7)).toBe('adult')
     expect(getUnlockedStage(30)).toBe('champion')
     expect(getLevelFromXp(0)).toBe(1)
-    expect(getLevelFromXp(250)).toBe(3)
+    expect(getLevelFromXp(250)).toBe(7)
     expect(getReadinessBand(getReadinessScore({ strength: 82, resilience: 76, momentum: 74, vitality: 108 }))).toBe('building')
   })
 
-  it('keeps condition and xp supportive and streak-aware', () => {
+  it('keeps condition supportive and awards nutrition xp from meal and adherence signals', () => {
     expect(
       getCondition({
         hasMeals: false,
@@ -39,8 +39,9 @@ describe('battleSystem', () => {
       }),
     ).toBe('thriving')
 
-    expect(getFinalizationXp(68, 'poor', 2)).toBe(0)
-    expect(getFinalizationXp(92, 'optimal', 6)).toBe(26)
+    expect(getFinalizationXp(68, 'poor')).toBe(40)
+    expect(getFinalizationXp(92, 'optimal')).toBe(70)
+    expect(getFinalizationXp(92, 'no_data')).toBe(0)
   })
 
   it('resolves battles deterministically from locked stats and seed input', () => {
