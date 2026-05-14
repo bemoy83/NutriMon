@@ -50,11 +50,16 @@ export function getBattleDialogue(
   }
 
   if (action === 'skill') {
+    const { skillId } = entry
+    if (skillId === 'counter_stance') return `${companionName} takes Counter Stance — ready to deflect and retaliate!`
+    if (skillId === 'charge_strike' || skillId === 'overdrive') return entry.message
     if (crit && defended) return `${companionName}'s combo cracks through the defense — ${damage} damage!${lowHpTag}`
     if (crit)             return `${companionName}'s rapid combo lands a critical hit — ${damage} damage!${lowHpTag}`
     if (defended)         return `${companionName}'s flurry is partly blocked — ${damage} damage.${lowHpTag}`
     return `${companionName} unleashes a rapid combo — ${damage} damage!${lowHpTag}`
   }
+
+  if (action === 'counter') return entry.message
 
   if (action === 'special') {
     if (crit && defended) return `${opponentName}'s relentless assault cracks through — ${damage} damage!${lowHpTag}`

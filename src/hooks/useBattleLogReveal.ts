@@ -123,6 +123,10 @@ export function useBattleLogReveal(opts: {
             }
           }
 
+          if (entry.phase === 'action' && entry.action === 'skill' && entry.skillId === 'counter_stance') {
+            playerEffectsRef.current?.showDefendGuard()
+          }
+
           if (entry.phase === 'action' && entry.action === 'skill' && entry.damage > 0) {
             if (entry.target === 'player') {
               triggerFocusedHurtSequence(playerSpriteRef, entry.crit)
@@ -137,6 +141,13 @@ export function useBattleLogReveal(opts: {
               if (entry.crit) opponentEffectsRef.current?.showCritBadge()
               triggerArenaShake(entry.crit)
             }
+          }
+
+          if (entry.action === 'counter' && entry.damage > 0) {
+            triggerHurt(opponentSpriteRef, false)
+            opponentEffectsRef.current?.showDamageNumber(entry.damage, false)
+            opponentEffectsRef.current?.showAttackImpact(false)
+            triggerArenaShake(false)
           }
 
           if (entry.targetHpAfter === 0) {
