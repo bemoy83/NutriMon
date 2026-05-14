@@ -93,8 +93,11 @@ export function WorldMapCanvas(props: WorldMapCanvasProps) {
           position: 'relative',
           width: '100vw',
           height: layout.height,
+          minHeight: layout.height,
+          flex: '0 0 auto',
           marginLeft: 'calc(50% - 50vw)',
           marginRight: 'calc(50% - 50vw)',
+          contain: 'layout paint',
         }}
       >
         <svg
@@ -369,9 +372,12 @@ function NodeModeCanvas({
           position: 'relative',
           width: '100vw',
           height: layout.height,
+          minHeight: layout.height,
+          flex: '0 0 auto',
           marginLeft: 'calc(50% - 50vw)',
           marginRight: 'calc(50% - 50vw)',
           overflow: 'hidden',
+          contain: 'layout paint',
         }}
       >
         {/* Scaled map content */}
@@ -389,6 +395,11 @@ function NodeModeCanvas({
             src={getPublicAssetUrl('/sprites/worldmap_bg.png')}
             alt=""
             aria-hidden="true"
+            width={814}
+            height={1933}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
             draggable={false}
             style={{
               position: 'absolute',

@@ -4,7 +4,6 @@ import {
   type BattleActionLabel,
   battleActionToPayload,
   BATTLE_SKILL_CATALOG,
-  BATTLE_SKILL_PIP_COST,
 } from '@/components/battle/battleActionConfig'
 import { getPipCap, getFocusGain } from '@/lib/battlePerks'
 import { BattleCommandBar } from '@/components/battle/BattleCommandBar'
@@ -14,7 +13,6 @@ import { BattleHudCard, BattleHudFocusPips, BattleHudHpBar } from '@/components/
 import { BattleParticles } from '@/components/battle/BattleParticles'
 import { BattleArenaDressing } from '@/components/battle/BattleArenaDressing'
 import { BattleOutcomeModal } from '@/components/battle/BattleOutcomeModal'
-import LoadingState from '@/components/ui/LoadingState'
 import CreatureSprite from '@/components/ui/CreatureSprite'
 import type { CreatureSpriteHandle } from '@/components/ui/CreatureSprite'
 import SpriteStage from '@/components/ui/SpriteStage'
@@ -51,6 +49,10 @@ function getPlayerSize(stage: string): number {
 // CSS min() compresses this before either sprite clips a HUD zone.
 const SPRITE_GAP = 40
 const PLAYER_BOTTOM_PAD = 16  // matches bottom-4 on the player wrapper
+const BATTLE_TOP_HUD_HEIGHT = 80
+const BATTLE_COMMAND_BAR_HEIGHT = 160
+const BATTLE_ARENA_MIN_HEIGHT = 320
+const BATTLE_ARENA_MIN_HEIGHT_STYLE = `min(${BATTLE_ARENA_MIN_HEIGHT}px, calc(100dvh - ${BATTLE_TOP_HUD_HEIGHT + BATTLE_COMMAND_BAR_HEIGHT}px))`
 
 // Opponent sprite size scales with size_class. The platform is always rendered
 // at its registered width (fixed depth), so size_class reads as physical creature
@@ -63,6 +65,49 @@ const OPPONENT_SIZE_BY_CLASS: Record<string, number> = {
 
 function getOpponentSize(sizeClass: string): number {
   return OPPONENT_SIZE_BY_CLASS[sizeClass] ?? OPPONENT_SIZE_BY_CLASS.medium
+}
+
+function BattlePageSkeleton() {
+  return (
+    <div className="flex h-screen min-h-screen flex-col overflow-hidden bg-[var(--app-bg)]">
+      <div
+        className="relative flex min-h-0 flex-1 flex-col overflow-hidden"
+        style={{
+          background: 'linear-gradient(180deg, #172033 0%, #111827 48%, #0f1018 100%)',
+          contain: 'layout paint',
+        }}
+      >
+        <div
+          className="relative z-10 flex shrink-0 justify-center py-3"
+          style={{ height: BATTLE_TOP_HUD_HEIGHT, minHeight: BATTLE_TOP_HUD_HEIGHT }}
+        >
+          <div className="h-10 w-64 rounded-full border border-white/10 bg-white/5" />
+        </div>
+
+        <div className="relative min-h-0 flex-1" style={{ minHeight: BATTLE_ARENA_MIN_HEIGHT_STYLE }}>
+          <div
+            className="absolute right-6"
+            style={{ bottom: 248, width: 144, height: 144 }}
+          >
+            <div className="absolute inset-x-[-56px] bottom-[-6px] h-[120px] rounded-[50%] bg-white/5" />
+            <div className="absolute inset-0 rounded-xl bg-white/5" />
+          </div>
+          <div
+            className="absolute bottom-4 left-6"
+            style={{ width: PLAYER_DISPLAY_SIZE.baby, height: PLAYER_DISPLAY_SIZE.baby }}
+          >
+            <div className="absolute inset-x-[-64px] bottom-0 h-[150px] rounded-[50%] bg-white/5" />
+            <div className="absolute inset-0 rounded-xl bg-white/5" />
+          </div>
+        </div>
+
+        <div
+          className="shrink-0 border-t border-white/[0.06] bg-[#0f1018] p-3"
+          style={{ height: BATTLE_COMMAND_BAR_HEIGHT, minHeight: BATTLE_COMMAND_BAR_HEIGHT }}
+        />
+      </div>
+    </div>
+  )
 }
 
 export default function BattlePage() {
@@ -119,7 +164,7 @@ export default function BattlePage() {
         : session.battleLog
       : session?.battleLog ?? []
 
-  if (isLoading) return <LoadingState fullScreen />
+  if (isLoading) return <BattlePageSkeleton />
 
   if (error || !session) {
     return (
@@ -162,7 +207,7 @@ export default function BattlePage() {
     if (e.action === 'skill') {
       const skillDef = BATTLE_SKILL_CATALOG.find(s => s.id === e.skillId)
       if (skillDef?.allPips) return 0
-      return Math.max(0, count - (BATTLE_SKILL_PIP_COST[e.skillId ?? ''] ?? 1))
+      return Math.max(0, count - (skillDef?.pipCost ?? 1))
     }
     return count
   }, 0)
@@ -219,11 +264,14 @@ export default function BattlePage() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[var(--app-bg)]">
+    <div className="flex h-screen min-h-screen flex-col overflow-hidden bg-[var(--app-bg)]">
       <div
         ref={arenaRef}
         className="relative flex flex-1 flex-col overflow-hidden"
-        style={{ background: arenaBackground }}
+        style={{
+          background: arenaBackground,
+          contain: 'layout paint',
+        }}
       >
         {/* Particles sit behind all three zones */}
         <BattleParticles arenaId={session.opponent.arenaId} />
@@ -231,7 +279,10 @@ export default function BattlePage() {
         <BattleArenaDressing accentColor={terrain.accentColor} />
 
         {/* ── Zone 1: Turn order HUD — fixed top strip ── */}
-        <div className="relative z-10 flex min-h-[80px] shrink-0 justify-center py-3">
+        <div
+          className="relative z-10 flex shrink-0 justify-center py-3"
+          style={{ height: BATTLE_TOP_HUD_HEIGHT, minHeight: BATTLE_TOP_HUD_HEIGHT }}
+        >
           <BattleTurnTimeline
             entries={displayedLog}
             fullLog={session.battleLog}
@@ -248,6 +299,7 @@ export default function BattlePage() {
         <div
           className="relative min-h-0 flex-1"
           style={{
+            minHeight: BATTLE_ARENA_MIN_HEIGHT_STYLE,
             '--player-h': `${playerDisplaySize}px`,
             '--opp-h': `${opponentDisplaySize}px`,
             '--sprite-gap': `${SPRITE_GAP}px`,
@@ -283,6 +335,11 @@ export default function BattlePage() {
                 <img
                   src={terrain.opponentPlatformUrl}
                   alt=""
+                  width={512}
+                  height={240}
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
                   draggable={false}
                   style={{
                     ...getCoLocatedPlatformStyle(
@@ -322,6 +379,11 @@ export default function BattlePage() {
               <img
                 src={terrain.playerPlatformUrl}
                 alt=""
+                width={512}
+                height={240}
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
                 draggable={false}
                 className="pointer-events-none absolute z-[2] object-contain"
                 style={{

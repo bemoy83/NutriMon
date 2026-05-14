@@ -372,7 +372,7 @@ export function getCoLocatedPlatformStyle(
   cal: PlatformCalibration = ARENA_1_CALIBRATION,
   /** Vertical foot offset in native pixels (256px canvas). Positive = feet higher in canvas → platform moves up. From getOpponentFootOffsets(). */
   nativeFootOffsetY: number = 0,
-): { position: 'absolute'; width: number; maxWidth: string; left: number; top: number; zIndex: number; pointerEvents: 'none' } {
+): { position: 'absolute'; width: number; height: number; maxWidth: string; left: number; top: number; zIndex: number; pointerEvents: 'none' } {
   const platformH = Math.round(platformWidth * cal.nativeH / 512)
   const scale = spriteSize / 256
   const displayFootOffsetX = Math.round(nativeFootOffsetX * scale)
@@ -380,6 +380,7 @@ export function getCoLocatedPlatformStyle(
   return {
     position: 'absolute',
     width: platformWidth,
+    height: platformH,
     maxWidth: 'none',
     left: Math.round((spriteSize - platformWidth) / 2 + displayFootOffsetX),
     top: Math.round(spriteSize - cal.ovalSurfaceY * platformH - displayFootOffsetY),

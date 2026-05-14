@@ -3,6 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+    <script>
+      (() => {
+        const basePath = '%BASE_URL%'
+        const normalizedBase = basePath.endsWith('/') ? basePath : `${basePath}/`
+        const routePath = location.hash.startsWith('#/')
+          ? location.hash.slice(1)
+          : location.pathname.startsWith(normalizedBase)
+            ? `/${location.pathname.slice(normalizedBase.length)}`
+            : location.pathname
+
+        const preloads = []
+        if (routePath === '/app/battle' || routePath === '/app/battle/') {
+          preloads.push('sprites/worldmap_bg.png')
+        }
+
+        for (const href of preloads) {
+          const preload = document.createElement('link')
+          preload.rel = 'preload'
+          preload.as = 'image'
+          preload.href = `${normalizedBase}${href}`
+          preload.fetchPriority = 'high'
+          document.head.appendChild(preload)
+        }
+      })()
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>nutrimon-scaffold</title>
   </head>
