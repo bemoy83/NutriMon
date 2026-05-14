@@ -10,12 +10,17 @@ export function getBattleDialogue(
   const { actor, action, phase, damage, crit, defended, target, targetHpAfter, consumedMomentumBoost, firstActor } = entry
 
   const targetMaxHp = target === 'player' ? playerMaxHp : opponentMaxHp
-  const lowHp = targetHpAfter !== null && targetMaxHp > 0 && targetHpAfter / targetMaxHp < 0.15
-  const lowHpTag = lowHp
+  const defeated = targetHpAfter === 0
+  const lowHp = targetHpAfter !== null && !defeated && targetMaxHp > 0 && targetHpAfter / targetMaxHp < 0.15
+  const lowHpTag = defeated
     ? target === 'player'
-      ? ` ${companionName} is barely holding on!`
-      : ` ${opponentName} is almost done!`
-    : ''
+      ? ` ${companionName} has been defeated!`
+      : ` ${opponentName} has been defeated!`
+    : lowHp
+      ? target === 'player'
+        ? ` ${companionName} is barely holding on!`
+        : ` ${opponentName} is almost done!`
+      : ''
 
   if (action === 'initiative') {
     return firstActor === 'player'
