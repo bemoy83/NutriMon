@@ -152,6 +152,7 @@ export default function BattlePage() {
     opponentEffectsRef,
     triggerArenaShake,
     specialFlashRef,
+    playerMaxHp: session?.playerMaxHp ?? 0,
   })
 
   const [pendingAction, setPendingAction] = useState<BattleActionLabel | null>(null)

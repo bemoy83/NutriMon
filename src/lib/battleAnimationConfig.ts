@@ -60,4 +60,7 @@ export const BATTLE_ANIM = {
    * Covers: 0ms burst peak → hold → fade to transparent.
    */
   SPECIAL_FLASH_MS: 450,
+
+  /** Regen heal aura + sparks + floating +HP number duration (ms). Reuses focus-aura/spark keyframes. */
+  HEAL_EFFECT_MS: 900,
 } as const

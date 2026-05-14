@@ -10,6 +10,7 @@ export interface EffectsLayerHandle {
   showHitImpact(): void
   showDefendGuard(): void
   showFocusCharge(): void
+  showHealEffect(value: number): void
 }
 
 interface FloatingNumber {
@@ -36,6 +37,11 @@ interface GuardEffect {
 
 interface FocusEffect {
   id: number
+}
+
+interface HealEffect {
+  id: number
+  value: number
 }
 
 interface EffectsLayerProps {
@@ -65,6 +71,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
     const [impacts, setImpacts] = useState<HitImpact[]>([])
     const [guards, setGuards] = useState<GuardEffect[]>([])
     const [focuses, setFocuses] = useState<FocusEffect[]>([])
+    const [heals, setHeals] = useState<HealEffect[]>([])
     const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
 
     function addTimedEffect<T extends { id: number }>(
@@ -150,6 +157,10 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
       showFocusCharge() {
         const id = nextId()
         addTimedEffect(setFocuses, { id }, BATTLE_ANIM.FOCUS_CHARGE_MS)
+      },
+      showHealEffect(value) {
+        const id = nextId()
+        addTimedEffect(setHeals, { id, value }, BATTLE_ANIM.HEAL_EFFECT_MS)
       },
     }))
 
@@ -307,6 +318,67 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
                 }}
               />
             ))}
+          </div>
+        ))}
+
+        {/* Heal effect — green regen aura + rising sparks + floating +N */}
+        {heals.map((h) => (
+          <div
+            key={h.id}
+            data-testid="battle-heal-effect"
+            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                left: '50%',
+                bottom: '7%',
+                width: '78%',
+                height: '42%',
+                borderRadius: '50%',
+                background: 'radial-gradient(ellipse, rgba(74,222,128,0.55) 0%, rgba(34,197,94,0.24) 48%, transparent 72%)',
+                transform: 'translateX(-50%)',
+                animation: `battle-focus-aura ${BATTLE_ANIM.HEAL_EFFECT_MS}ms steps(6, end) forwards`,
+              }}
+            />
+            {[0, 1, 2, 3].map((spark) => (
+              <span
+                key={spark}
+                style={{
+                  position: 'absolute',
+                  bottom: `${spark % 2 === 0 ? 21 : 28}%`,
+                  left: `${28 + spark * 13}%`,
+                  width: 5,
+                  height: 9,
+                  background: spark % 2 === 0 ? '#bbf7d0' : '#4ade80',
+                  boxShadow: '0 0 0 1px rgba(21,128,61,0.6)',
+                  animation: `battle-focus-spark ${BATTLE_ANIM.HEAL_EFFECT_MS}ms steps(5, end) forwards`,
+                  animationDelay: `${spark * 55}ms`,
+                }}
+              />
+            ))}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '100%',
+                left: '50%',
+                transform: 'translateX(-50%)',
+              }}
+            >
+              <div
+                style={{
+                  animation: `float-up ${BATTLE_ANIM.HEAL_EFFECT_MS}ms ease-out forwards`,
+                  fontWeight: 700,
+                  fontSize: 20,
+                  lineHeight: 1,
+                  color: '#4ade80',
+                  textShadow: '0 2px 5px rgba(0,0,0,0.4)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                +{h.value}
+              </div>
+            </div>
           </div>
         ))}
 

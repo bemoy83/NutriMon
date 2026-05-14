@@ -5,6 +5,16 @@ import type { SpecialActionFlashHandle } from '@/components/ui/SpecialActionFlas
 import type { BattleLogEntry } from '@/types/domain'
 import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
 
+// Colors must be rgba with low alpha — the flash is a full-viewport overlay.
+const SKILL_FLASH_COLOR: Record<string, string> = {
+  triple_hit:    'rgba(251,146,60,0.22)',   // amber
+  power_strike:  'rgba(139,92,246,0.28)',   // violet
+  regen:         'rgba(34,197,94,0.22)',    // emerald
+  charge_strike: 'rgba(250,204,21,0.28)',   // gold
+  counter_stance:'rgba(14,165,233,0.22)',   // sky
+  overdrive:     'rgba(217,70,239,0.30)',   // fuchsia
+}
+
 export function useBattleLogReveal(opts: {
   playerSpriteRef: RefObject<CreatureSpriteHandle | null>
   opponentSpriteRef: RefObject<CreatureSpriteHandle | null>
@@ -12,6 +22,7 @@ export function useBattleLogReveal(opts: {
   opponentEffectsRef: RefObject<EffectsLayerHandle | null>
   triggerArenaShake: (heavy?: boolean) => void
   specialFlashRef: RefObject<SpecialActionFlashHandle | null>
+  playerMaxHp: number
 }) {
   const {
     playerSpriteRef,
@@ -20,6 +31,7 @@ export function useBattleLogReveal(opts: {
     opponentEffectsRef,
     triggerArenaShake,
     specialFlashRef,
+    playerMaxHp,
   } = opts
 
   const animTimers = useRef<ReturnType<typeof setTimeout>[]>([])
@@ -92,6 +104,11 @@ export function useBattleLogReveal(opts: {
             specialFlashRef.current?.triggerFlash()
           }
 
+          if (entry.phase === 'action' && entry.action === 'skill' && entry.actor === 'player') {
+            const skillColor = SKILL_FLASH_COLOR[entry.skillId ?? '']
+            if (skillColor) specialFlashRef.current?.triggerFlash(skillColor)
+          }
+
           const actorEffects =
             entry.actor === 'player'
               ? playerEffectsRef.current
@@ -125,6 +142,16 @@ export function useBattleLogReveal(opts: {
 
           if (entry.phase === 'action' && entry.action === 'skill' && entry.skillId === 'counter_stance') {
             playerEffectsRef.current?.showDefendGuard()
+          }
+
+          if (entry.phase === 'action' && entry.action === 'skill' && entry.skillId === 'regen' && entry.targetHpAfter !== null) {
+            const priorEntries = [...base, ...newEntries.slice(0, i)]
+            const priorHp = priorEntries.reduceRight<number | null>((found, e) => {
+              if (found !== null) return found
+              return e.target === 'player' && e.targetHpAfter !== null ? e.targetHpAfter : null
+            }, null) ?? playerMaxHp
+            const healAmount = Math.max(0, entry.targetHpAfter - priorHp)
+            if (healAmount > 0) playerEffectsRef.current?.showHealEffect(healAmount)
           }
 
           if (entry.phase === 'action' && entry.action === 'skill' && entry.damage > 0) {
