@@ -634,6 +634,40 @@ select {
 }
 
 
+/* Attacker lunge — sprite container slides toward the opponent then snaps back.
+   Player (left side) lunges right; opponent (right side) lunges left.
+   Duration driven by BATTLE_ANIM.LUNGE_MS (320ms).
+   Peak at ~28% (~90ms) aligns with LUNGE_PEAK_MS so target hurt fires at contact. */
+@keyframes battle-lunge-right {
+  0%   { transform: translateX(0);    animation-timing-function: cubic-bezier(0.2, 0, 0.4, 1); }
+  28%  { transform: translateX(14px); animation-timing-function: ease-out; }
+  100% { transform: translateX(0); }
+}
+
+@keyframes battle-lunge-left {
+  0%   { transform: translateX(0);     animation-timing-function: cubic-bezier(0.2, 0, 0.4, 1); }
+  28%  { transform: translateX(-14px); animation-timing-function: ease-out; }
+  100% { transform: translateX(0); }
+}
+
+
+/* Low-HP danger pulse — slow heartbeat radial glow from the arena edges.
+   Applied to an overlay div in BattleArenaDressing when playerHpPct ≤ 0.25. */
+@keyframes battle-danger-pulse {
+  0%, 100% {
+    opacity: 0;
+  }
+
+  40% {
+    opacity: 0.55;
+  }
+
+  60% {
+    opacity: 0.42;
+  }
+}
+
+
 /* ── App utilities ───────────────────────────────────────────────────────── */
 
 .app-page {

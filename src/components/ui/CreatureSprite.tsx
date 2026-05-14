@@ -3,7 +3,7 @@ import type { AnimationDescriptor, SpriteDescriptor } from '@/lib/sprites'
 import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
 
 export interface CreatureSpriteHandle {
-  triggerAnimation(type: 'hurt' | 'faint' | 'attack', durationMs: number, isCrit?: boolean): void
+  triggerAnimation(type: 'hurt' | 'faint' | 'attack', durationMs: number, isCrit?: boolean, lungeDir?: 'right' | 'left'): void
 }
 
 interface CreatureSpriteProps {
@@ -44,6 +44,7 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
       type: 'hurt' | 'faint' | 'attack'
       isCrit: boolean
       durationMs: number
+      lungeDir?: 'right' | 'left'
     } | null>(null)
     const [hasFainted, setHasFainted] = useState(false)
     const descriptorKey = descriptor ? `${descriptor.url}:${descriptor.facing}` : 'placeholder'
@@ -81,9 +82,9 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
     }, [descriptorKey, idleAnimation])
 
     useImperativeHandle(ref, () => ({
-      triggerAnimation(type, durationMs, isCrit = false) {
+      triggerAnimation(type, durationMs, isCrit = false, lungeDir) {
         if (animClearRef.current) clearTimeout(animClearRef.current)
-        setActiveAnimation((prev) => ({ id: (prev?.id ?? 0) + 1, type, isCrit, durationMs }))
+        setActiveAnimation((prev) => ({ id: (prev?.id ?? 0) + 1, type, isCrit, durationMs, lungeDir }))
         animClearRef.current = setTimeout(() => {
           setActiveAnimation(null)
           if (type === 'faint') setHasFainted(true)
@@ -106,6 +107,10 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
 
     const transform = shouldFlip ? 'scaleX(-1)' : undefined
 
+    const lungeAnimation = activeAnimation?.type === 'attack' && activeAnimation.lungeDir
+      ? `battle-lunge-${activeAnimation.lungeDir} ${activeAnimation.durationMs}ms ease-out forwards`
+      : undefined
+
     const containerStyle: React.CSSProperties = {
       position: 'relative',
       width: displaySize,
@@ -113,6 +118,7 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
       display: 'inline-block',
       flexShrink: 0,
       ...(hasFainted ? { visibility: 'hidden' } : {}),
+      ...(lungeAnimation ? { animation: lungeAnimation } : {}),
     }
 
     const imgStyle: React.CSSProperties = {

@@ -63,4 +63,9 @@ export const BATTLE_ANIM = {
 
   /** Regen heal aura + sparks + floating +HP number duration (ms). Reuses focus-aura/spark keyframes. */
   HEAL_EFFECT_MS: 900,
+
+  /** Attacker lunge slide duration (ms). Must match `battle-lunge-*` @keyframes. */
+  LUNGE_MS: 320,
+  /** Time from lunge start to peak forward position (ms) — target hurt fires here. */
+  LUNGE_PEAK_MS: 90,
 } as const

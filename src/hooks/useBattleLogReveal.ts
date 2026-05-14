@@ -125,19 +125,27 @@ export function useBattleLogReveal(opts: {
           }
 
           if (entry.phase === 'action' && entry.action === 'attack' && entry.damage > 0) {
-            if (entry.target === 'player') {
-              triggerHurt(playerSpriteRef, entry.crit)
-              playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
-              playerEffectsRef.current?.showAttackImpact(entry.crit)
-              if (entry.crit) playerEffectsRef.current?.showCritBadge()
-              triggerArenaShake(entry.crit)
-            } else if (entry.target === 'opponent') {
-              triggerHurt(opponentSpriteRef, entry.crit)
-              opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
-              opponentEffectsRef.current?.showAttackImpact(entry.crit)
-              if (entry.crit) opponentEffectsRef.current?.showCritBadge()
-              triggerArenaShake(entry.crit)
+            if (entry.actor === 'player') {
+              playerSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'right')
+            } else if (entry.actor === 'opponent') {
+              opponentSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'left')
             }
+            const impactTimer = setTimeout(() => {
+              if (entry.target === 'player') {
+                triggerHurt(playerSpriteRef, entry.crit)
+                playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
+                playerEffectsRef.current?.showAttackImpact(entry.crit)
+                if (entry.crit) playerEffectsRef.current?.showCritBadge()
+                triggerArenaShake(entry.crit)
+              } else if (entry.target === 'opponent') {
+                triggerHurt(opponentSpriteRef, entry.crit)
+                opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
+                opponentEffectsRef.current?.showAttackImpact(entry.crit)
+                if (entry.crit) opponentEffectsRef.current?.showCritBadge()
+                triggerArenaShake(entry.crit)
+              }
+            }, BATTLE_ANIM.LUNGE_PEAK_MS)
+            animTimers.current.push(impactTimer)
           }
 
           if (entry.phase === 'action' && entry.action === 'skill' && entry.skillId === 'counter_stance') {
@@ -155,19 +163,27 @@ export function useBattleLogReveal(opts: {
           }
 
           if (entry.phase === 'action' && entry.action === 'skill' && entry.damage > 0) {
-            if (entry.target === 'player') {
-              triggerFocusedHurtSequence(playerSpriteRef, entry.crit)
-              playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
-              playerEffectsRef.current?.showFocusedAttackImpact(entry.crit)
-              if (entry.crit) playerEffectsRef.current?.showCritBadge()
-              triggerArenaShake(entry.crit)
-            } else if (entry.target === 'opponent') {
-              triggerFocusedHurtSequence(opponentSpriteRef, entry.crit)
-              opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
-              opponentEffectsRef.current?.showFocusedAttackImpact(entry.crit)
-              if (entry.crit) opponentEffectsRef.current?.showCritBadge()
-              triggerArenaShake(entry.crit)
+            if (entry.actor === 'player') {
+              playerSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'right')
+            } else if (entry.actor === 'opponent') {
+              opponentSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'left')
             }
+            const impactTimer = setTimeout(() => {
+              if (entry.target === 'player') {
+                triggerFocusedHurtSequence(playerSpriteRef, entry.crit)
+                playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
+                playerEffectsRef.current?.showFocusedAttackImpact(entry.crit)
+                if (entry.crit) playerEffectsRef.current?.showCritBadge()
+                triggerArenaShake(entry.crit)
+              } else if (entry.target === 'opponent') {
+                triggerFocusedHurtSequence(opponentSpriteRef, entry.crit)
+                opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
+                opponentEffectsRef.current?.showFocusedAttackImpact(entry.crit)
+                if (entry.crit) opponentEffectsRef.current?.showCritBadge()
+                triggerArenaShake(entry.crit)
+              }
+            }, BATTLE_ANIM.LUNGE_PEAK_MS)
+            animTimers.current.push(impactTimer)
           }
 
           const playerAlreadyDead = newEntries
