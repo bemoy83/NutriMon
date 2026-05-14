@@ -272,6 +272,7 @@ export function useBattleLogReveal(opts: {
     },
     [
       triggerArenaShake,
+      triggerArenaFlash,
       triggerHurt,
       triggerFocusedHurtSequence,
       triggerFaint,

@@ -54,6 +54,7 @@ const BATTLE_ARENA_MIN_HEIGHT = 320
 const BATTLE_ARENA_MIN_HEIGHT_STYLE = `min(${BATTLE_ARENA_MIN_HEIGHT}px, calc(100dvh - ${BATTLE_TOP_HUD_HEIGHT + BATTLE_COMMAND_BAR_HEIGHT}px))`
 const BATTLE_FADE_MS = 350
 const BATTLE_ENTRANCE_MS = 380
+const BATTLE_HIT_VIGNETTE_MS = 360
 
 // Opponent sprite size scales with size_class. The platform is always rendered
 // at its registered width (fixed depth), so size_class reads as physical creature
@@ -246,7 +247,7 @@ export default function BattlePage() {
     el.classList.remove('animate-arena-hit-flash')
     void el.offsetWidth
     el.classList.add('animate-arena-hit-flash')
-    setTimeout(() => el.classList.remove('animate-arena-hit-flash'), 280)
+    setTimeout(() => el.classList.remove('animate-arena-hit-flash'), BATTLE_HIT_VIGNETTE_MS)
   }, [])
 
   const triggerArenaShake = useCallback((heavy = false) => {
@@ -396,10 +397,20 @@ export default function BattlePage() {
           contain: 'layout paint',
         }}
       >
-        {/* Hit flash — darkens arena briefly on each damage hit */}
+        {/* Hit flash — red arena vignette on each damage hit */}
         <div
           ref={arenaFlashRef}
-          style={{ position: 'absolute', inset: 0, background: '#000', opacity: 0, pointerEvents: 'none', zIndex: 6 }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: [
+              'radial-gradient(ellipse at center, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 28%, rgba(185,28,28,0.14) 52%, rgba(127,29,29,0.72) 100%)',
+              'linear-gradient(90deg, rgba(127,29,29,0.42) 0%, transparent 18%, transparent 82%, rgba(127,29,29,0.42) 100%)',
+            ].join(', '),
+            opacity: 0,
+            pointerEvents: 'none',
+            zIndex: 6,
+          }}
         />
         {/* Particles sit behind all three zones */}
         <BattleParticles arenaId={session.opponent.arenaId} />

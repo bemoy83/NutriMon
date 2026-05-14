@@ -71,7 +71,7 @@ export function BattleArenaDressing({ accentColor = '#6aaa30', playerHpPct = 1 }
           style={{
             position: 'absolute',
             inset: 0,
-            background: 'radial-gradient(ellipse 140% 120% at 50% 50%, transparent 35%, rgba(220,38,38,0.55) 80%, rgba(185,28,28,0.75) 100%)',
+            background: 'radial-gradient(ellipse 140% 120% at 50% 50%, transparent 35%, rgba(220,38,38,0.62) 80%, rgba(185,28,28,0.82) 100%)',
             animation: 'battle-danger-pulse 1.6s ease-in-out infinite',
             zIndex: 8,
           }}
