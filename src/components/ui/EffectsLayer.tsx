@@ -1,11 +1,13 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
+import { ImpactGraphic, type ImpactVariant } from './ImpactGraphic'
 
 export interface EffectsLayerHandle {
   showDamageNumber(value: number, isCrit: boolean): void
   showCritBadge(): void
   showAttackImpact(isCrit?: boolean): void
   showFocusedAttackImpact(isCrit?: boolean): void
+  showGroundShockwave(): void
   /** @deprecated Use showAttackImpact(). */
   showHitImpact(): void
   showDefendGuard(): void
@@ -29,6 +31,8 @@ interface HitImpact {
   delayMs: number
   xPct: number
   yPct: number
+  variant: ImpactVariant
+  angle: number
 }
 
 interface GuardEffect {
@@ -44,9 +48,11 @@ interface HealEffect {
   value: number
 }
 
+interface ShockwaveEffect {
+  id: number
+}
+
 interface EffectsLayerProps {
-  /** URL of the hit impact PNG. If omitted, showHitImpact() is a no-op. */
-  hitImpactUrl?: string
   /** Sprite stage box size (same as SpriteStage `displaySize`) — scales hit impact and keeps floated UI centred. */
   displaySize?: number
 }
@@ -64,7 +70,7 @@ function impactGraphicSize(displaySize: number | undefined): number {
 }
 
 const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
-  function EffectsLayer({ hitImpactUrl, displaySize }, ref) {
+  function EffectsLayer({ displaySize }, ref) {
     const impactPx = impactGraphicSize(displaySize)
     const [numbers, setNumbers] = useState<FloatingNumber[]>([])
     const [crits, setCrits] = useState<CritBadge[]>([])
@@ -72,6 +78,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
     const [guards, setGuards] = useState<GuardEffect[]>([])
     const [focuses, setFocuses] = useState<FocusEffect[]>([])
     const [heals, setHeals] = useState<HealEffect[]>([])
+    const [shockwaves, setShockwaves] = useState<ShockwaveEffect[]>([])
     const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
 
     function addTimedEffect<T extends { id: number }>(
@@ -124,31 +131,32 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         addTimedEffect(setCrits, { id }, BATTLE_ANIM.CRIT_BADGE_MS)
       },
       showAttackImpact(isCrit = false) {
-        if (!hitImpactUrl) return
         const id = nextId()
-        addTimedEffect(setImpacts, { id, isCrit, delayMs: 0, xPct: 50, yPct: 50 }, IMPACT_DURATION_MS)
+        addTimedEffect(setImpacts, {
+          id, isCrit, delayMs: 0, xPct: 50, yPct: 50,
+          variant: 'slash',
+          angle: Math.round((Math.random() - 0.5) * 40),
+        }, IMPACT_DURATION_MS)
       },
       showFocusedAttackImpact(isCrit = false) {
-        if (!hitImpactUrl) return
         const hitOffsets = [
-          { delayMs: 0, xPct: 39, yPct: 57 },
-          { delayMs: BATTLE_ANIM.FOCUSED_HIT_SPACING_MS, xPct: 60, yPct: 39 },
+          { delayMs: 0,                                    xPct: 39, yPct: 57 },
+          { delayMs: BATTLE_ANIM.FOCUSED_HIT_SPACING_MS,  xPct: 60, yPct: 39 },
           { delayMs: BATTLE_ANIM.FOCUSED_HIT_SPACING_MS * 2, xPct: 49, yPct: 62 },
         ]
         hitOffsets.forEach((hit) => {
           const id = nextId()
           addDelayedTimedEffect(
             setImpacts,
-            { id, isCrit, ...hit, delayMs: 0 },
+            { id, isCrit, ...hit, delayMs: 0, variant: 'arc' as ImpactVariant, angle: Math.round((Math.random() - 0.5) * 30) },
             hit.delayMs,
             IMPACT_DURATION_MS,
           )
         })
       },
       showHitImpact() {
-        if (!hitImpactUrl) return
         const id = nextId()
-        addTimedEffect(setImpacts, { id, isCrit: false, delayMs: 0, xPct: 50, yPct: 50 }, IMPACT_DURATION_MS)
+        addTimedEffect(setImpacts, { id, isCrit: false, delayMs: 0, xPct: 50, yPct: 50, variant: 'slash', angle: 0 }, IMPACT_DURATION_MS)
       },
       showDefendGuard() {
         const id = nextId()
@@ -161,6 +169,10 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
       showHealEffect(value) {
         const id = nextId()
         addTimedEffect(setHeals, { id, value }, BATTLE_ANIM.HEAL_EFFECT_MS)
+      },
+      showGroundShockwave() {
+        const id = nextId()
+        addTimedEffect(setShockwaves, { id }, BATTLE_ANIM.GROUND_SHOCKWAVE_MS)
       },
     }))
 
@@ -202,8 +214,8 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
           </div>
         ))}
 
-        {/* Hit impact PNG */}
-        {hitImpactUrl && impacts.map((h) => (
+        {/* SVG impact graphic */}
+        {impacts.map((h) => (
           <div
             key={h.id}
             data-testid="battle-attack-impact"
@@ -217,19 +229,11 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
               pointerEvents: 'none',
             }}
           >
-            <img
-              src={hitImpactUrl}
-              alt=""
-              draggable={false}
-              style={{
-                display: 'block',
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                animation: `hit-impact ${IMPACT_DURATION_MS}ms ease-out forwards`,
-                filter: h.isCrit ? 'drop-shadow(0 0 7px rgba(251,191,36,0.9)) saturate(1.25)' : undefined,
-                pointerEvents: 'none',
-              }}
+            <ImpactGraphic
+              variant={h.variant}
+              size={impactPx}
+              isCrit={h.isCrit}
+              angle={h.angle}
             />
           </div>
         ))}
@@ -380,6 +384,27 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
               </div>
             </div>
           </div>
+        ))}
+
+        {/* Ground shockwave — violet ellipse at feet for power_strike */}
+        {shockwaves.map((s) => (
+          <div
+            key={s.id}
+            data-testid="battle-ground-shockwave"
+            style={{
+              position: 'absolute',
+              bottom: '6%',
+              left: '50%',
+              width: '68%',
+              height: '18%',
+              border: '3px solid rgba(139,92,246,0.9)',
+              borderRadius: '50%',
+              boxShadow: '0 0 10px rgba(139,92,246,0.7), 0 0 20px rgba(109,40,217,0.4)',
+              transform: 'translate(-50%, -50%) scale(0.1)',
+              pointerEvents: 'none',
+              animation: `ground-shockwave ${BATTLE_ANIM.GROUND_SHOCKWAVE_MS}ms ease-out forwards`,
+            }}
+          />
         ))}
 
         {/* Crit badge */}

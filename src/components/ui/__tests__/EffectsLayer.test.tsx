@@ -51,7 +51,7 @@ describe('EffectsLayer', () => {
     vi.useFakeTimers()
     const ref = createRef<EffectsLayerHandle>()
 
-    render(<EffectsLayer ref={ref} hitImpactUrl="/impact.png" displaySize={160} />)
+    render(<EffectsLayer ref={ref} displaySize={160} />)
 
     act(() => {
       ref.current?.showDamageNumber(12, true)
@@ -80,7 +80,7 @@ describe('EffectsLayer', () => {
   it('renders focused attack as three staggered impacts', async () => {
     const ref = createRef<EffectsLayerHandle>()
 
-    render(<EffectsLayer ref={ref} hitImpactUrl="/impact.png" displaySize={160} />)
+    render(<EffectsLayer ref={ref} displaySize={160} />)
 
     act(() => {
       ref.current?.showFocusedAttackImpact(true)

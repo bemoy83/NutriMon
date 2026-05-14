@@ -26,7 +26,6 @@ import { useTerrainBackground } from '@/hooks/useTerrainBackground'
 import {
   getArenaTerrain,
   getCoLocatedPlatformStyle,
-  getHitImpactUrl,
   getOpponentFootOffsets,
   getOpponentSpriteDescriptor,
   getPlayerBattleSpriteDescriptor,
@@ -163,6 +162,7 @@ export default function BattlePage() {
   const [entranceState, setEntranceState] = useState<{ key: string; phase: EntrancePhase } | null>(null)
 
   const arenaRef = useRef<HTMLDivElement>(null)
+  const arenaFlashRef = useRef<HTMLDivElement>(null)
   const playerSpriteRef = useRef<CreatureSpriteHandle>(null)
   const opponentSpriteRef = useRef<CreatureSpriteHandle>(null)
   const playerEffectsRef = useRef<EffectsLayerHandle>(null)
@@ -204,7 +204,6 @@ export default function BattlePage() {
       opponentDescriptor?.url,
       terrain.playerPlatformUrl,
       terrain.opponentPlatformUrl,
-      getHitImpactUrl(),
     ].filter((url): url is string => Boolean(url))
 
     Promise.all(urls.map(preloadBattleImage)).then(() => {
@@ -241,6 +240,15 @@ export default function BattlePage() {
   const terrainAccentHex = session ? getArenaTerrain(session.opponent.arenaId).accentColor : undefined
   const arenaBackground = useTerrainBackground(terrainPlatformUrl, terrainAccentHex)
 
+  const triggerArenaFlash = useCallback(() => {
+    const el = arenaFlashRef.current
+    if (!el) return
+    el.classList.remove('animate-arena-hit-flash')
+    void el.offsetWidth
+    el.classList.add('animate-arena-hit-flash')
+    setTimeout(() => el.classList.remove('animate-arena-hit-flash'), 280)
+  }, [])
+
   const triggerArenaShake = useCallback((heavy = false) => {
     const el = arenaRef.current
     if (!el) return
@@ -257,6 +265,7 @@ export default function BattlePage() {
     playerEffectsRef,
     opponentEffectsRef,
     triggerArenaShake,
+    triggerArenaFlash,
     specialFlashRef,
     playerMaxHp: session?.playerMaxHp ?? 0,
   })
@@ -299,7 +308,6 @@ export default function BattlePage() {
   }
 
   const terrain = getArenaTerrain(session.opponent.arenaId)
-  const hitImpactUrl = getHitImpactUrl()
   const playerDisplaySize = getPlayerSize(session.companion.stage)
   const opponentDisplaySize = getOpponentSize(session.opponent.sizeClass)
   const oppFootOffsets = getOpponentFootOffsets(session.opponent.name)
@@ -388,6 +396,11 @@ export default function BattlePage() {
           contain: 'layout paint',
         }}
       >
+        {/* Hit flash — darkens arena briefly on each damage hit */}
+        <div
+          ref={arenaFlashRef}
+          style={{ position: 'absolute', inset: 0, background: '#000', opacity: 0, pointerEvents: 'none', zIndex: 6 }}
+        />
         {/* Particles sit behind all three zones */}
         <BattleParticles arenaId={session.opponent.arenaId} />
         {/* Arena atmosphere — remove by deleting this one line (and the import above) */}
@@ -488,7 +501,6 @@ export default function BattlePage() {
                   />
                   <EffectsLayer
                     ref={opponentEffectsRef}
-                    hitImpactUrl={hitImpactUrl ?? undefined}
                     displaySize={opponentDisplaySize}
                   />
                 </SpriteStage>
@@ -545,7 +557,6 @@ export default function BattlePage() {
                 />
                 <EffectsLayer
                   ref={playerEffectsRef}
-                  hitImpactUrl={hitImpactUrl ?? undefined}
                   displaySize={playerDisplaySize}
                 />
               </SpriteStage>

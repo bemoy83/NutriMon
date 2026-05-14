@@ -68,4 +68,7 @@ export const BATTLE_ANIM = {
   LUNGE_MS: 320,
   /** Time from lunge start to peak forward position (ms) — target hurt fires here. */
   LUNGE_PEAK_MS: 90,
+
+  /** Ground shockwave ellipse expand + fade duration (ms). Must match `ground-shockwave` @keyframes. */
+  GROUND_SHOCKWAVE_MS: 420,
 } as const

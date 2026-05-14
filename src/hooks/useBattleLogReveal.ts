@@ -21,6 +21,7 @@ export function useBattleLogReveal(opts: {
   playerEffectsRef: RefObject<EffectsLayerHandle | null>
   opponentEffectsRef: RefObject<EffectsLayerHandle | null>
   triggerArenaShake: (heavy?: boolean) => void
+  triggerArenaFlash: () => void
   specialFlashRef: RefObject<SpecialActionFlashHandle | null>
   playerMaxHp: number
 }) {
@@ -30,6 +31,7 @@ export function useBattleLogReveal(opts: {
     playerEffectsRef,
     opponentEffectsRef,
     triggerArenaShake,
+    triggerArenaFlash,
     specialFlashRef,
     playerMaxHp,
   } = opts
@@ -149,12 +151,14 @@ export function useBattleLogReveal(opts: {
                 playerEffectsRef.current?.showAttackImpact(entry.crit)
                 if (entry.crit) playerEffectsRef.current?.showCritBadge()
                 triggerArenaShake(entry.crit)
+                triggerArenaFlash()
               } else if (entry.target === 'opponent') {
                 triggerHurt(opponentSpriteRef, entry.crit)
                 opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
                 opponentEffectsRef.current?.showAttackImpact(entry.crit)
                 if (entry.crit) opponentEffectsRef.current?.showCritBadge()
                 triggerArenaShake(entry.crit)
+                triggerArenaFlash()
               }
               if (targetWillFaint) {
                 const faintTimer = setTimeout(
@@ -188,25 +192,40 @@ export function useBattleLogReveal(opts: {
             } else if (entry.actor === 'opponent') {
               opponentSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'left')
             }
+            const isPowerStrike = entry.skillId === 'power_strike'
             const impactTimer = setTimeout(() => {
               if (entry.target === 'player') {
-                triggerFocusedHurtSequence(playerSpriteRef, entry.crit)
+                if (isPowerStrike) {
+                  triggerHurt(playerSpriteRef, entry.crit)
+                  playerEffectsRef.current?.showAttackImpact(entry.crit)
+                  playerEffectsRef.current?.showGroundShockwave()
+                } else {
+                  triggerFocusedHurtSequence(playerSpriteRef, entry.crit)
+                  playerEffectsRef.current?.showFocusedAttackImpact(entry.crit)
+                }
                 playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
-                playerEffectsRef.current?.showFocusedAttackImpact(entry.crit)
                 if (entry.crit) playerEffectsRef.current?.showCritBadge()
                 triggerArenaShake(entry.crit)
+                triggerArenaFlash()
               } else if (entry.target === 'opponent') {
-                triggerFocusedHurtSequence(opponentSpriteRef, entry.crit)
+                if (isPowerStrike) {
+                  triggerHurt(opponentSpriteRef, entry.crit)
+                  opponentEffectsRef.current?.showAttackImpact(entry.crit)
+                  opponentEffectsRef.current?.showGroundShockwave()
+                } else {
+                  triggerFocusedHurtSequence(opponentSpriteRef, entry.crit)
+                  opponentEffectsRef.current?.showFocusedAttackImpact(entry.crit)
+                }
                 opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
-                opponentEffectsRef.current?.showFocusedAttackImpact(entry.crit)
                 if (entry.crit) opponentEffectsRef.current?.showCritBadge()
                 triggerArenaShake(entry.crit)
+                triggerArenaFlash()
               }
               if (targetWillFaint) {
-                const faintTimer = setTimeout(
-                  () => triggerFaint(entry.target),
-                  (BATTLE_ANIM.FOCUSED_HIT_SPACING_MS * 2) + BATTLE_ANIM.HIT_IMPACT_MS,
-                )
+                const faintDelay = isPowerStrike
+                  ? (entry.crit ? BATTLE_ANIM.HURT_CRIT_MS : BATTLE_ANIM.HURT_MS)
+                  : (BATTLE_ANIM.FOCUSED_HIT_SPACING_MS * 2) + BATTLE_ANIM.HIT_IMPACT_MS
+                const faintTimer = setTimeout(() => triggerFaint(entry.target), faintDelay)
                 animTimers.current.push(faintTimer)
               }
             }, BATTLE_ANIM.LUNGE_PEAK_MS)
@@ -221,6 +240,7 @@ export function useBattleLogReveal(opts: {
             opponentEffectsRef.current?.showDamageNumber(entry.damage, false)
             opponentEffectsRef.current?.showAttackImpact(false)
             triggerArenaShake(false)
+            triggerArenaFlash()
             if (entry.targetHpAfter === 0) {
               const faintTimer = setTimeout(() => triggerFaint(entry.target), BATTLE_ANIM.HURT_MS)
               animTimers.current.push(faintTimer)
