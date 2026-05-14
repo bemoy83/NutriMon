@@ -143,7 +143,10 @@ export function useBattleLogReveal(opts: {
             }
           }
 
-          if (entry.action === 'counter' && entry.damage > 0) {
+          const playerAlreadyDead = newEntries
+            .slice(0, i)
+            .some(e => e.target === 'player' && e.targetHpAfter === 0)
+          if (entry.action === 'counter' && entry.damage > 0 && !playerAlreadyDead) {
             triggerHurt(opponentSpriteRef, false)
             opponentEffectsRef.current?.showDamageNumber(entry.damage, false)
             opponentEffectsRef.current?.showAttackImpact(false)
