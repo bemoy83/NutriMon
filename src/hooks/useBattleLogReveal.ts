@@ -69,6 +69,17 @@ export function useBattleLogReveal(opts: {
     [],
   )
 
+  const triggerFaint = useCallback(
+    (target: BattleLogEntry['target']) => {
+      if (target === 'player') {
+        playerSpriteRef.current?.triggerAnimation('faint', BATTLE_ANIM.FAINT_MS)
+      } else if (target === 'opponent') {
+        opponentSpriteRef.current?.triggerAnimation('faint', BATTLE_ANIM.FAINT_MS)
+      }
+    },
+    [opponentSpriteRef, playerSpriteRef],
+  )
+
   const revealEntries = useCallback(
     (sessionId: string, fullLog: BattleLogEntry[], base: BattleLogEntry[]) => {
       animTimers.current.forEach(clearTimeout)
@@ -125,6 +136,7 @@ export function useBattleLogReveal(opts: {
           }
 
           if (entry.phase === 'action' && entry.action === 'attack' && entry.damage > 0) {
+            const targetWillFaint = entry.targetHpAfter === 0
             if (entry.actor === 'player') {
               playerSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'right')
             } else if (entry.actor === 'opponent') {
@@ -143,6 +155,13 @@ export function useBattleLogReveal(opts: {
                 opponentEffectsRef.current?.showAttackImpact(entry.crit)
                 if (entry.crit) opponentEffectsRef.current?.showCritBadge()
                 triggerArenaShake(entry.crit)
+              }
+              if (targetWillFaint) {
+                const faintTimer = setTimeout(
+                  () => triggerFaint(entry.target),
+                  entry.crit ? BATTLE_ANIM.HURT_CRIT_MS : BATTLE_ANIM.HURT_MS,
+                )
+                animTimers.current.push(faintTimer)
               }
             }, BATTLE_ANIM.LUNGE_PEAK_MS)
             animTimers.current.push(impactTimer)
@@ -163,6 +182,7 @@ export function useBattleLogReveal(opts: {
           }
 
           if (entry.phase === 'action' && entry.action === 'skill' && entry.damage > 0) {
+            const targetWillFaint = entry.targetHpAfter === 0
             if (entry.actor === 'player') {
               playerSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'right')
             } else if (entry.actor === 'opponent') {
@@ -182,6 +202,13 @@ export function useBattleLogReveal(opts: {
                 if (entry.crit) opponentEffectsRef.current?.showCritBadge()
                 triggerArenaShake(entry.crit)
               }
+              if (targetWillFaint) {
+                const faintTimer = setTimeout(
+                  () => triggerFaint(entry.target),
+                  (BATTLE_ANIM.FOCUSED_HIT_SPACING_MS * 2) + BATTLE_ANIM.HIT_IMPACT_MS,
+                )
+                animTimers.current.push(faintTimer)
+              }
             }, BATTLE_ANIM.LUNGE_PEAK_MS)
             animTimers.current.push(impactTimer)
           }
@@ -194,14 +221,20 @@ export function useBattleLogReveal(opts: {
             opponentEffectsRef.current?.showDamageNumber(entry.damage, false)
             opponentEffectsRef.current?.showAttackImpact(false)
             triggerArenaShake(false)
+            if (entry.targetHpAfter === 0) {
+              const faintTimer = setTimeout(() => triggerFaint(entry.target), BATTLE_ANIM.HURT_MS)
+              animTimers.current.push(faintTimer)
+            }
           }
 
-          if (entry.targetHpAfter === 0) {
-            if (entry.target === 'player') {
-              playerSpriteRef.current?.triggerAnimation('faint', BATTLE_ANIM.FAINT_MS)
-            } else if (entry.target === 'opponent') {
-              opponentSpriteRef.current?.triggerAnimation('faint', BATTLE_ANIM.FAINT_MS)
-            }
+          const faintHandledByDamageSequence =
+            entry.damage > 0 &&
+            (
+              (entry.phase === 'action' && (entry.action === 'attack' || entry.action === 'skill')) ||
+              (entry.action === 'counter' && !playerAlreadyDead)
+            )
+          if (entry.targetHpAfter === 0 && !faintHandledByDamageSequence) {
+            triggerFaint(entry.target)
           }
 
           if (i === newEntries.length - 1) {
@@ -221,11 +254,13 @@ export function useBattleLogReveal(opts: {
       triggerArenaShake,
       triggerHurt,
       triggerFocusedHurtSequence,
+      triggerFaint,
       playerSpriteRef,
       opponentSpriteRef,
       playerEffectsRef,
       opponentEffectsRef,
       specialFlashRef,
+      playerMaxHp,
     ],
   )
 

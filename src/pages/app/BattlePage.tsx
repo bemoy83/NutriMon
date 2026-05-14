@@ -53,6 +53,8 @@ const BATTLE_TOP_HUD_HEIGHT = 80
 const BATTLE_COMMAND_BAR_HEIGHT = 160
 const BATTLE_ARENA_MIN_HEIGHT = 320
 const BATTLE_ARENA_MIN_HEIGHT_STYLE = `min(${BATTLE_ARENA_MIN_HEIGHT}px, calc(100dvh - ${BATTLE_TOP_HUD_HEIGHT + BATTLE_COMMAND_BAR_HEIGHT}px))`
+const BATTLE_FADE_MS = 350
+const BATTLE_ENTRANCE_MS = 380
 
 // Opponent sprite size scales with size_class. The platform is always rendered
 // at its registered width (fixed depth), so size_class reads as physical creature
@@ -65,6 +67,41 @@ const OPPONENT_SIZE_BY_CLASS: Record<string, number> = {
 
 function getOpponentSize(sizeClass: string): number {
   return OPPONENT_SIZE_BY_CLASS[sizeClass] ?? OPPONENT_SIZE_BY_CLASS.medium
+}
+
+function preloadBattleImage(url: string): Promise<void> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.decoding = 'async'
+    img.onload = () => resolve()
+    img.onerror = () => resolve()
+    img.src = url
+
+    if (img.complete) {
+      if (typeof img.decode === 'function') {
+        img.decode().then(() => resolve(), () => resolve())
+      } else {
+        resolve()
+      }
+    }
+  })
+}
+
+function BattleFadeOverlay({ visible }: { visible: boolean }) {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 100,
+        background: '#000',
+        opacity: visible ? 1 : 0,
+        transition: visible ? undefined : `opacity ${BATTLE_FADE_MS}ms ease-out`,
+        pointerEvents: 'none',
+        transform: 'translateZ(0)',
+      }}
+    />
+  )
 }
 
 function BattlePageSkeleton() {
@@ -114,12 +151,16 @@ export default function BattlePage() {
   const { battleRunId } = useParams<{ battleRunId: string }>()
   const navigate = useNavigate()
 
-  // Fade in from black — mirrors the fade-out on BattleHubPage.
-  const [fadeVisible, setFadeVisible] = useState(true)
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => setFadeVisible(false))
-    return () => cancelAnimationFrame(frame)
-  }, [])
+  // Fade in from black once the battle data and key art are ready. Starting the
+  // fade on mount reveals the skeleton or empty decoded image boxes on slower loads.
+  const [sceneArtReadyKey, setSceneArtReadyKey] = useState<string | null>(null)
+  const [fadeReleasedKey, setFadeReleasedKey] = useState<string | null>(null)
+
+  // Entrance slide: hidden during fade, then both sprites slide in from opposite sides.
+  // The slide starts only after fade + image decode readiness to avoid exposing
+  // platform/stage containers before the sprite bitmaps have painted.
+  type EntrancePhase = 'hidden' | 'entering' | 'done'
+  const [entranceState, setEntranceState] = useState<{ key: string; phase: EntrancePhase } | null>(null)
 
   const arenaRef = useRef<HTMLDivElement>(null)
   const playerSpriteRef = useRef<CreatureSpriteHandle>(null)
@@ -130,6 +171,71 @@ export default function BattlePage() {
 
   const { data: session, isLoading, error } = useBattleRun(battleRunId)
   const { mutate: submitAction, isPending } = useSubmitBattleAction()
+
+  const battleSceneKey = session
+    ? [
+        session.id,
+        session.opponent.arenaId,
+        session.opponent.name,
+        session.companion.stage,
+        session.companion.currentCondition,
+      ].join(':')
+    : null
+  const revealKey = battleSceneKey ?? (error ? `error:${battleRunId ?? 'unknown'}` : null)
+  const sceneArtReady = Boolean(battleSceneKey && sceneArtReadyKey === battleSceneKey)
+  const fadeVisible = !revealKey || fadeReleasedKey !== revealKey
+  const entrancePhase = battleSceneKey && entranceState?.key === battleSceneKey
+    ? entranceState.phase
+    : 'hidden'
+
+  useEffect(() => {
+    if (!session || !battleSceneKey) return
+
+    let cancelled = false
+
+    const terrain = getArenaTerrain(session.opponent.arenaId)
+    const playerDescriptor = getPlayerBattleSpriteDescriptor(
+      session.companion.stage,
+      session.companion.currentCondition,
+    )
+    const opponentDescriptor = getOpponentSpriteDescriptor(session.opponent.name)
+    const urls = [
+      playerDescriptor?.url,
+      opponentDescriptor?.url,
+      terrain.playerPlatformUrl,
+      terrain.opponentPlatformUrl,
+      getHitImpactUrl(),
+    ].filter((url): url is string => Boolean(url))
+
+    Promise.all(urls.map(preloadBattleImage)).then(() => {
+      if (!cancelled) setSceneArtReadyKey(battleSceneKey)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [battleSceneKey, session])
+
+  useEffect(() => {
+    if (!revealKey || (!error && !sceneArtReady)) return
+
+    const frame = requestAnimationFrame(() => setFadeReleasedKey(revealKey))
+    return () => cancelAnimationFrame(frame)
+  }, [error, revealKey, sceneArtReady])
+
+  useEffect(() => {
+    if (fadeVisible || !battleSceneKey || !sceneArtReady) return
+
+    const t1 = setTimeout(() => setEntranceState({ key: battleSceneKey, phase: 'entering' }), BATTLE_FADE_MS)
+    const t2 = setTimeout(
+      () => setEntranceState({ key: battleSceneKey, phase: 'done' }),
+      BATTLE_FADE_MS + BATTLE_ENTRANCE_MS,
+    )
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+    }
+  }, [battleSceneKey, fadeVisible, sceneArtReady])
 
   const terrainPlatformUrl = session ? getArenaTerrain(session.opponent.arenaId).playerPlatformUrl : null
   const terrainAccentHex = session ? getArenaTerrain(session.opponent.arenaId).accentColor : undefined
@@ -165,7 +271,14 @@ export default function BattlePage() {
         : session.battleLog
       : session?.battleLog ?? []
 
-  if (isLoading) return <BattlePageSkeleton />
+  if (isLoading) {
+    return (
+      <>
+        <BattlePageSkeleton />
+        <BattleFadeOverlay visible={fadeVisible} />
+      </>
+    )
+  }
 
   if (error || !session) {
     return (
@@ -180,6 +293,7 @@ export default function BattlePage() {
         >
           Return to Hub
         </button>
+        <BattleFadeOverlay visible={fadeVisible} />
       </div>
     )
   }
@@ -323,21 +437,83 @@ export default function BattlePage() {
             <BattleHudHpBar current={opponentHp} max={session.opponentMaxHp} />
           </BattleHudCard>
 
-          {/* Opponent platform + sprite share one container so they bob as a unit */}
+          {/* Opponent platform + sprite — outer div: positioning + entrance slide
+               inner div: float bob (separate element avoids transform conflict) */}
           <div
-            className="absolute right-6 z-[1] animate-battle-float-opponent"
+            className={`absolute right-6 z-[1]${entrancePhase === 'entering' ? ' animate-battle-entrance-right' : ''}`}
             style={{
               bottom: 'min(calc(var(--player-h) + var(--player-pad) + var(--sprite-gap)), calc(100% - var(--opp-h)))',
               overflow: 'visible',
+              ...(entrancePhase === 'hidden' ? { visibility: 'hidden' as const } : {}),
             }}
           >
             <div
-              className="pointer-events-none"
+              className="relative animate-battle-float-opponent"
               style={{ width: opponentDisplaySize, height: opponentDisplaySize, overflow: 'visible' }}
             >
-              {terrain.opponentPlatformUrl && terrain.opponentPlatformWidth && (
+              <div
+                className="pointer-events-none"
+                style={{ width: opponentDisplaySize, height: opponentDisplaySize, overflow: 'visible' }}
+              >
+                {terrain.opponentPlatformUrl && terrain.opponentPlatformWidth && (
+                  <img
+                    src={terrain.opponentPlatformUrl}
+                    alt=""
+                    width={512}
+                    height={240}
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
+                    draggable={false}
+                    style={{
+                      ...getCoLocatedPlatformStyle(
+                        terrain.opponentPlatformWidth,
+                        opponentDisplaySize,
+                        oppFootOffsets.x,
+                        terrain.opponentCalibration,
+                        oppFootOffsets.y,
+                      ),
+                      zIndex: 0,
+                    }}
+                  />
+                )}
+              </div>
+              <div className="absolute inset-0 z-[3]" style={{ overflow: 'visible' }}>
+                <SpriteStage displaySize={opponentDisplaySize} contactShadow>
+                  <CreatureSprite
+                    ref={opponentSpriteRef}
+                    descriptor={getOpponentSpriteDescriptor(session.opponent.name)}
+                    displaySize={opponentDisplaySize}
+                    flip={false}
+                  />
+                  <EffectsLayer
+                    ref={opponentEffectsRef}
+                    hitImpactUrl={hitImpactUrl ?? undefined}
+                    displaySize={opponentDisplaySize}
+                  />
+                </SpriteStage>
+              </div>
+            </div>
+          </div>
+
+          {/* Player platform + sprite — outer div: positioning + entrance slide
+               inner div: float bob (separate element avoids transform conflict) */}
+          <div
+            className={`absolute bottom-4 left-6 z-[4]${entrancePhase === 'entering' ? ' animate-battle-entrance-left' : ''}`}
+            style={{
+              width: playerDisplaySize,
+              height: playerDisplaySize,
+              overflow: 'visible',
+              ...(entrancePhase === 'hidden' ? { visibility: 'hidden' as const } : {}),
+            }}
+          >
+            <div
+              className="relative animate-battle-float-player"
+              style={{ width: playerDisplaySize, height: playerDisplaySize, overflow: 'visible' }}
+            >
+              {terrain.playerPlatformUrl && terrain.playerPlatformRenderedWidth != null && (
                 <img
-                  src={terrain.opponentPlatformUrl}
+                  src={terrain.playerPlatformUrl}
                   alt=""
                   width={512}
                   height={240}
@@ -345,78 +521,35 @@ export default function BattlePage() {
                   fetchPriority="high"
                   decoding="async"
                   draggable={false}
+                  className="pointer-events-none absolute z-[2] object-contain"
                   style={{
                     ...getCoLocatedPlatformStyle(
-                      terrain.opponentPlatformWidth,
-                      opponentDisplaySize,
-                      oppFootOffsets.x,
-                      terrain.opponentCalibration,
-                      oppFootOffsets.y,
+                      terrain.playerPlatformRenderedWidth,
+                      playerDisplaySize,
+                      0,
+                      terrain.playerPlatformCalibration,
                     ),
-                    zIndex: 0,
+                    zIndex: 2,
                   }}
                 />
               )}
-            </div>
-            <div className="absolute inset-0 z-[3]" style={{ overflow: 'visible' }}>
-              <SpriteStage displaySize={opponentDisplaySize} contactShadow>
+              <SpriteStage className="z-[3]" displaySize={playerDisplaySize} contactShadow>
                 <CreatureSprite
-                  ref={opponentSpriteRef}
-                  descriptor={getOpponentSpriteDescriptor(session.opponent.name)}
-                  displaySize={opponentDisplaySize}
+                  ref={playerSpriteRef}
+                  descriptor={getPlayerBattleSpriteDescriptor(
+                    session.companion.stage,
+                    session.companion.currentCondition,
+                  )}
+                  displaySize={playerDisplaySize}
                   flip={false}
                 />
                 <EffectsLayer
-                  ref={opponentEffectsRef}
+                  ref={playerEffectsRef}
                   hitImpactUrl={hitImpactUrl ?? undefined}
-                  displaySize={opponentDisplaySize}
+                  displaySize={playerDisplaySize}
                 />
               </SpriteStage>
             </div>
-          </div>
-
-          <div
-            className="absolute bottom-4 left-6 z-[4] animate-battle-float-player"
-            style={{ width: playerDisplaySize, height: playerDisplaySize, overflow: 'visible' }}
-          >
-            {terrain.playerPlatformUrl && terrain.playerPlatformRenderedWidth != null && (
-              <img
-                src={terrain.playerPlatformUrl}
-                alt=""
-                width={512}
-                height={240}
-                loading="eager"
-                fetchPriority="high"
-                decoding="async"
-                draggable={false}
-                className="pointer-events-none absolute z-[2] object-contain"
-                style={{
-                  ...getCoLocatedPlatformStyle(
-                    terrain.playerPlatformRenderedWidth,
-                    playerDisplaySize,
-                    0,
-                    terrain.playerPlatformCalibration,
-                  ),
-                  zIndex: 2,
-                }}
-              />
-            )}
-            <SpriteStage className="z-[3]" displaySize={playerDisplaySize} contactShadow>
-              <CreatureSprite
-                ref={playerSpriteRef}
-                descriptor={getPlayerBattleSpriteDescriptor(
-                  session.companion.stage,
-                  session.companion.currentCondition,
-                )}
-                displaySize={playerDisplaySize}
-                flip={false}
-              />
-              <EffectsLayer
-                ref={playerEffectsRef}
-                hitImpactUrl={hitImpactUrl ?? undefined}
-                displaySize={playerDisplaySize}
-              />
-            </SpriteStage>
           </div>
 
           <BattleHudCard className="right-4 bottom-10 max-sm:max-w-[min(11rem,calc(100vw-3.5rem-128px))]">
@@ -469,18 +602,8 @@ export default function BattlePage() {
         onClose={() => setSkillModalOpen(false)}
       />
 
-      {/* Fade from black on mount */}
-      <div
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 100,
-          background: '#000',
-          opacity: fadeVisible ? 1 : 0,
-          transition: fadeVisible ? undefined : 'opacity 0.35s ease-out',
-          pointerEvents: 'none',
-        }}
-      />
+      {/* Fade overlay owns a compositor layer so it stacks above animated sprite layers. */}
+      <BattleFadeOverlay visible={fadeVisible} />
     </div>
   )
 }

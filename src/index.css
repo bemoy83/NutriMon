@@ -668,6 +668,24 @@ select {
 }
 
 
+/* Battle entrance slide-in — pure translateX, no opacity, to avoid GPU compositing
+   conflicts with the black fade overlay. Triggered after the fade completes (~400 ms). */
+@keyframes battle-entrance-from-right {
+  from { transform: translateX(3.5rem); }
+  to   { transform: translateX(0); }
+}
+@keyframes battle-entrance-from-left {
+  from { transform: translateX(-3.5rem); }
+  to   { transform: translateX(0); }
+}
+.animate-battle-entrance-right {
+  animation: battle-entrance-from-right 380ms ease-out forwards;
+}
+.animate-battle-entrance-left {
+  animation: battle-entrance-from-left 380ms ease-out forwards;
+}
+
+
 /* ── App utilities ───────────────────────────────────────────────────────── */
 
 .app-page {

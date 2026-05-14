@@ -40,6 +40,7 @@ function effectHandle(): EffectsLayerHandle {
     showHitImpact: vi.fn(),
     showDefendGuard: vi.fn(),
     showFocusCharge: vi.fn(),
+    showHealEffect: vi.fn(),
   }
 }
 
@@ -60,6 +61,7 @@ describe('useBattleLogReveal', () => {
         opponentEffectsRef: { current: opponentEffects },
         triggerArenaShake: vi.fn(),
         specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
+        playerMaxHp: 100,
       }),
     )
 
@@ -90,6 +92,7 @@ describe('useBattleLogReveal', () => {
         opponentEffectsRef: { current: opponentEffects },
         triggerArenaShake,
         specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
+        playerMaxHp: 100,
       }),
     )
 
@@ -105,7 +108,7 @@ describe('useBattleLogReveal', () => {
           crit: true,
         }),
       ], [])
-      vi.advanceTimersByTime(0)
+      vi.advanceTimersByTime(BATTLE_ANIM.LUNGE_PEAK_MS)
     })
 
     expect(opponentSprite.triggerAnimation).toHaveBeenCalledWith('hurt', expect.any(Number), true)
@@ -127,6 +130,7 @@ describe('useBattleLogReveal', () => {
         opponentEffectsRef: { current: opponentEffects },
         triggerArenaShake: vi.fn(),
         specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
+        playerMaxHp: 100,
       }),
     )
 
@@ -143,7 +147,7 @@ describe('useBattleLogReveal', () => {
           crit: true,
         }),
       ], [])
-      vi.advanceTimersByTime(0)
+      vi.advanceTimersByTime(BATTLE_ANIM.LUNGE_PEAK_MS)
     })
 
     expect(opponentEffects.showFocusedAttackImpact).toHaveBeenCalledWith(true)
@@ -161,5 +165,49 @@ describe('useBattleLogReveal', () => {
     })
 
     expect(opponentSprite.triggerAnimation).toHaveBeenCalledTimes(3)
+  })
+
+  it('waits until the final lethal hit finishes before triggering faint', () => {
+    vi.useFakeTimers()
+    const playerSprite = { triggerAnimation: vi.fn() } satisfies CreatureSpriteHandle
+    const opponentSprite = { triggerAnimation: vi.fn() } satisfies CreatureSpriteHandle
+    const { result } = renderHook(() =>
+      useBattleLogReveal({
+        playerSpriteRef: { current: playerSprite },
+        opponentSpriteRef: { current: opponentSprite },
+        playerEffectsRef: { current: effectHandle() },
+        opponentEffectsRef: { current: effectHandle() },
+        triggerArenaShake: vi.fn(),
+        specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
+        playerMaxHp: 100,
+      }),
+    )
+
+    act(() => {
+      result.current.revealEntries('run-1', [
+        entry({
+          id: 'lethal-skill-1',
+          actor: 'player',
+          action: 'skill',
+          skillId: 'triple_hit',
+          damage: 42,
+          target: 'opponent',
+          targetHpAfter: 0,
+        }),
+      ], [])
+      vi.advanceTimersByTime(BATTLE_ANIM.LUNGE_PEAK_MS)
+    })
+
+    expect(playerSprite.triggerAnimation).toHaveBeenCalledWith('attack', BATTLE_ANIM.LUNGE_MS, false, 'right')
+    expect(opponentSprite.triggerAnimation).toHaveBeenCalledWith('hurt', BATTLE_ANIM.HIT_IMPACT_MS, false)
+    expect(opponentSprite.triggerAnimation).not.toHaveBeenCalledWith('faint', BATTLE_ANIM.FAINT_MS)
+
+    act(() => {
+      vi.advanceTimersByTime(
+        (BATTLE_ANIM.FOCUSED_HIT_SPACING_MS * 2) + BATTLE_ANIM.HIT_IMPACT_MS,
+      )
+    })
+
+    expect(opponentSprite.triggerAnimation).toHaveBeenLastCalledWith('faint', BATTLE_ANIM.FAINT_MS)
   })
 })
