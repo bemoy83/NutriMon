@@ -283,6 +283,14 @@ select {
   }
 }
 
+/* Crit damage number — scale-bounce pop then floats higher than a normal hit. */
+@keyframes crit-float-up {
+  0%   { transform: translateY(2px) scale(0.52); opacity: 0; }
+  10%  { transform: translateY(-5px) scale(1.32); opacity: 1; }
+  26%  { transform: translateY(-13px) scale(1.0); opacity: 1; }
+  100% { transform: translateY(-56px) scale(0.92); opacity: 0; }
+}
+
 @keyframes hit-flash {
 
   0%,
@@ -774,20 +782,16 @@ select {
 }
 
 
-/* Low-HP danger pulse — slow heartbeat radial glow from the arena edges.
-   Applied to an overlay div in BattleArenaDressing when playerHpPct ≤ 0.25. */
+/* Low-HP danger pulse — double-beat heartbeat (lub-dub) from the arena edges.
+   Applied to an overlay div in BattleArenaDressing when playerHpPct ≤ 0.25.
+   1.4s cycle: lub at ~7%, mini-rest, dub at ~25%, then silence until loop. */
 @keyframes battle-danger-pulse {
-  0%, 100% {
-    opacity: 0;
-  }
-
-  40% {
-    opacity: 0.62;
-  }
-
-  60% {
-    opacity: 0.48;
-  }
+  0%   { opacity: 0; }
+  7%   { opacity: 0.52; }
+  16%  { opacity: 0.12; }
+  25%  { opacity: 0.65; }
+  48%  { opacity: 0; }
+  100% { opacity: 0; }
 }
 
 
@@ -808,6 +812,47 @@ select {
   animation: battle-entrance-from-left 380ms ease-out forwards;
 }
 
+
+/* ── Skill Identity V2 effects ───────────────────────────────────────────── */
+
+/* Overdrive afterimage streak — horizontal speed-blur flash per hit beat.
+   Duration: ~280ms. Color matches overdrive SKILL_FLASH_COLOR (fuchsia). */
+@keyframes overdrive-streak {
+  0%   { transform: translateX(-50%) scaleX(0.35) scaleY(1);   opacity: 0; }
+  14%  { transform: translateX(-50%) scaleX(1.3)  scaleY(0.65); opacity: 0.85; }
+  52%  { transform: translateX(-50%) scaleX(1.9)  scaleY(0.3);  opacity: 0.45; }
+  100% { transform: translateX(-50%) scaleX(2.6)  scaleY(0.08); opacity: 0; }
+}
+
+/* Regen orbit inward — green particle travels from ring position toward sprite center.
+   Each particle has --dx / --dy CSS vars set inline for its specific delta. */
+@keyframes regen-orbit-in {
+  0%   { transform: translate(0, 0) scale(1);                       opacity: 0; }
+  12%  { opacity: 1; }
+  80%  { opacity: 0.85; }
+  100% { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(0.15); opacity: 0; }
+}
+
+/* Charge strike converge — pip flies from spread position toward sprite center.
+   Each pip has --dx / --dy CSS vars set inline. */
+@keyframes battle-focus-converge {
+  0%   { transform: translate(0, 0) scale(1);                       opacity: 0; }
+  15%  { opacity: 1; }
+  75%  { opacity: 0.9; }
+  100% { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(0.08); opacity: 0; }
+}
+
+/* Persistent counter stance guard — loops while counter_stance is active.
+   Replaces the one-shot COUNTER_STANCE_GUARD ring. */
+@keyframes persistent-guard-ring {
+  0%, 100% { transform: translate(-50%, -50%) scale(0.97); opacity: 0.6; }
+  50%       { transform: translate(-50%, -50%) scale(1.06); opacity: 0.92; }
+}
+
+@keyframes persistent-guard-spark {
+  0%, 100% { transform: scale(0.65); opacity: 0.28; }
+  40%, 60%  { transform: scale(1.1);  opacity: 1; }
+}
 
 /* ── App utilities ───────────────────────────────────────────────────────── */
 

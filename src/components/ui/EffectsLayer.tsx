@@ -1,20 +1,29 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type Dispatch, type SetStateAction } from 'react'
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
 import { ImpactGraphic, type ImpactVariant } from './ImpactGraphic'
 
 export interface EffectsLayerHandle {
   showDamageNumber(value: number, isCrit: boolean): void
   showCritBadge(): void
-  showAttackImpact(isCrit?: boolean): void
-  showHeavyAttackImpact(isCrit?: boolean): void
-  showFocusedAttackImpact(isCrit?: boolean, hitCount?: number, spacingMs?: number): void
-  showGroundShockwave(): void
+  showAttackImpact(isCrit?: boolean, impactColor?: { stroke: string; glowFilter: string }): void
+  showHeavyAttackImpact(isCrit?: boolean, impactColor?: { stroke: string; glowFilter: string }): void
+  showFocusedAttackImpact(isCrit?: boolean, hitCount?: number, spacingMs?: number, variant?: ImpactVariant, impactColor?: { stroke: string; glowFilter: string }): void
+  showGroundShockwave(wide?: boolean): void
   /** @deprecated Use showAttackImpact(). */
   showHitImpact(): void
   showDefendGuard(durationMs?: number): void
   showFocusCharge(): void
   showFocusSpend(pipCount: number): void
   showHealEffect(value: number): void
+  /** Overdrive: fuchsia horizontal streak per hit beat. */
+  showOverdriveStreak(): void
+  /** Regen V2: green particles orbit inward before the +HP number. */
+  showRegenOrbitEffect(value: number): void
+  /** Charge Strike V2: pips converge into sprite center. */
+  showChargeStrikeSpend(pipCount: number): void
+  /** Counter Stance V2: looping shield ring that persists until counter fires. */
+  showPersistentGuard(): void
+  hidePersistentGuard(): void
 }
 
 interface FloatingNumber {
@@ -35,6 +44,7 @@ interface HitImpact {
   yPct: number
   variant: ImpactVariant
   angle: number
+  impactColor?: { stroke: string; glowFilter: string }
 }
 
 interface GuardEffect {
@@ -58,6 +68,22 @@ interface HealEffect {
 
 interface ShockwaveEffect {
   id: number
+  wide: boolean
+}
+
+interface OverdriveStreak {
+  id: number
+  yPct: number
+}
+
+interface RegenOrbitEffect {
+  id: number
+  value: number
+}
+
+interface ChargeSpendEffect {
+  id: number
+  pipCount: number
 }
 
 interface EffectsLayerProps {
@@ -88,6 +114,10 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
     const [focusSpends, setFocusSpends] = useState<FocusSpendEffect[]>([])
     const [heals, setHeals] = useState<HealEffect[]>([])
     const [shockwaves, setShockwaves] = useState<ShockwaveEffect[]>([])
+    const [streaks, setStreaks] = useState<OverdriveStreak[]>([])
+    const [regenOrbits, setRegenOrbits] = useState<RegenOrbitEffect[]>([])
+    const [chargeSpends, setChargeSpends] = useState<ChargeSpendEffect[]>([])
+    const [persistentGuard, setPersistentGuard] = useState(false)
     const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
 
     function addTimedEffect<T extends { id: number }>(
@@ -139,39 +169,52 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         const id = nextId()
         addTimedEffect(setCrits, { id }, BATTLE_ANIM.CRIT_BADGE_MS)
       },
-      showAttackImpact(isCrit = false) {
+      showAttackImpact(isCrit = false, impactColor?) {
         const id = nextId()
         addTimedEffect(setImpacts, {
           id, isCrit, delayMs: 0, xPct: 50, yPct: 50,
           variant: 'slash',
           angle: Math.round((Math.random() - 0.5) * 40),
+          impactColor,
         }, IMPACT_DURATION_MS)
       },
-      showHeavyAttackImpact(isCrit = false) {
+      showHeavyAttackImpact(isCrit = false, impactColor?) {
         const id = nextId()
         addTimedEffect(setImpacts, {
           id, isCrit, delayMs: 0, xPct: 50, yPct: 52,
           variant: 'burst',
           angle: Math.round((Math.random() - 0.5) * 18),
+          impactColor,
         }, IMPACT_DURATION_MS + BATTLE_ANIM.HIT_STOP_MS)
       },
-      showFocusedAttackImpact(isCrit = false, hitCount = 3, spacingMs = BATTLE_ANIM.FOCUSED_HIT_SPACING_MS) {
-        const pattern = [
+      showFocusedAttackImpact(isCrit = false, hitCount = 3, spacingMs = BATTLE_ANIM.FOCUSED_HIT_SPACING_MS, variant: ImpactVariant = 'arc', impactColor?) {
+        const arcPattern = [
           { xPct: 39, yPct: 57, angle: -18 },
           { xPct: 60, yPct: 39, angle: 18 },
           { xPct: 49, yPct: 62, angle: -4 },
           { xPct: 35, yPct: 43, angle: 28 },
           { xPct: 64, yPct: 58, angle: -26 },
         ]
+        // Cut pattern: each hit placed at a distinct body zone with a strong directional angle.
+        // The angle rotates the parallel-stroke SVG so each read as a different slash direction.
+        const cutPattern = [
+          { xPct: 44, yPct: 54, angle: -42 },  // steep down-left
+          { xPct: 55, yPct: 40, angle: 38 },   // steep down-right
+          { xPct: 50, yPct: 50, angle: -8 },   // near-vertical center
+          { xPct: 38, yPct: 46, angle: 55 },
+          { xPct: 62, yPct: 58, angle: -32 },
+        ]
+        const pattern = variant === 'cut' ? cutPattern : arcPattern
         const hitOffsets = Array.from({ length: Math.max(1, Math.min(hitCount, pattern.length)) }, (_, index) => ({
           delayMs: spacingMs * index,
           ...pattern[index],
         }))
         hitOffsets.forEach((hit) => {
           const id = nextId()
-          addDelayedTimedEffect(
+          const impact: HitImpact = { id, isCrit, ...hit, delayMs: 0, variant, impactColor }
+          addDelayedTimedEffect<HitImpact>(
             setImpacts,
-            { id, isCrit, ...hit, delayMs: 0, variant: 'arc' as ImpactVariant },
+            impact,
             hit.delayMs,
             IMPACT_DURATION_MS,
           )
@@ -197,10 +240,25 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         const id = nextId()
         addTimedEffect(setHeals, { id, value }, BATTLE_ANIM.HEAL_EFFECT_MS)
       },
-      showGroundShockwave() {
+      showGroundShockwave(wide = false) {
         const id = nextId()
-        addTimedEffect(setShockwaves, { id }, BATTLE_ANIM.GROUND_SHOCKWAVE_MS)
+        addTimedEffect(setShockwaves, { id, wide }, BATTLE_ANIM.GROUND_SHOCKWAVE_MS)
       },
+      showOverdriveStreak() {
+        const id = nextId()
+        const yPct = 30 + Math.round(Math.random() * 36)
+        addTimedEffect(setStreaks, { id, yPct }, 280)
+      },
+      showRegenOrbitEffect(value) {
+        const id = nextId()
+        addTimedEffect(setRegenOrbits, { id, value }, BATTLE_ANIM.HEAL_EFFECT_MS)
+      },
+      showChargeStrikeSpend(pipCount) {
+        const id = nextId()
+        addTimedEffect(setChargeSpends, { id, pipCount: Math.max(1, Math.min(pipCount, 5)) }, BATTLE_ANIM.FOCUS_SPEND_MS)
+      },
+      showPersistentGuard() { setPersistentGuard(true) },
+      hidePersistentGuard() { setPersistentGuard(false) },
     }))
 
     return (
@@ -227,12 +285,14 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
           >
             <div
               style={{
-                animation: `float-up ${BATTLE_ANIM.DAMAGE_NUMBER_MS}ms ease-out forwards`,
-                fontWeight: 700,
-                fontSize: n.isCrit ? 28 : 20,
+                animation: `${n.isCrit ? 'crit-float-up' : 'float-up'} ${BATTLE_ANIM.DAMAGE_NUMBER_MS}ms ease-out forwards`,
+                fontWeight: 800,
+                fontSize: n.isCrit ? 30 : 20,
                 lineHeight: 1,
-                color: n.isCrit ? 'var(--app-warning)' : 'var(--app-text-primary)',
-                textShadow: '0 2px 5px rgba(0,0,0,0.4)',
+                color: n.isCrit ? '#ffffff' : 'var(--app-text-primary)',
+                textShadow: n.isCrit
+                  ? '0 2px 6px rgba(0,0,0,0.55), 0 0 14px rgba(255,255,180,0.8)'
+                  : '0 2px 5px rgba(0,0,0,0.4)',
                 whiteSpace: 'nowrap',
               }}
             >
@@ -261,6 +321,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
               size={impactPx}
               isCrit={h.isCrit}
               angle={h.angle}
+              impactColor={h.impactColor}
             />
           </div>
         ))}
@@ -443,7 +504,8 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
           </div>
         ))}
 
-        {/* Ground shockwave — violet ellipse at feet for power_strike */}
+        {/* Ground shockwave — violet ellipse at feet for power_strike.
+            wide=true expands the initial ring for power_strike's heavier impact. */}
         {shockwaves.map((s) => (
           <div
             key={s.id}
@@ -452,17 +514,191 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
               position: 'absolute',
               bottom: '6%',
               left: '50%',
-              width: '68%',
-              height: '18%',
-              border: '3px solid rgba(139,92,246,0.9)',
+              width: s.wide ? '90%' : '68%',
+              height: s.wide ? '22%' : '18%',
+              border: s.wide ? '4px solid rgba(139,92,246,0.95)' : '3px solid rgba(139,92,246,0.9)',
               borderRadius: '50%',
-              boxShadow: '0 0 10px rgba(139,92,246,0.7), 0 0 20px rgba(109,40,217,0.4)',
+              boxShadow: s.wide
+                ? '0 0 14px rgba(139,92,246,0.8), 0 0 28px rgba(109,40,217,0.5)'
+                : '0 0 10px rgba(139,92,246,0.7), 0 0 20px rgba(109,40,217,0.4)',
               transform: 'translate(-50%, -50%) scale(0.1)',
               pointerEvents: 'none',
               animation: `ground-shockwave ${BATTLE_ANIM.GROUND_SHOCKWAVE_MS}ms ease-out forwards`,
             }}
           />
         ))}
+
+        {/* Overdrive afterimage streaks — fuchsia horizontal speed-blur per hit beat */}
+        {streaks.map((s) => (
+          <div
+            key={s.id}
+            data-testid="battle-overdrive-streak"
+            style={{
+              position: 'absolute',
+              top: `${s.yPct}%`,
+              left: '50%',
+              width: '65%',
+              height: 3,
+              borderRadius: 2,
+              background: 'linear-gradient(90deg, transparent 0%, rgba(217,70,239,0.85) 22%, rgba(255,255,255,0.72) 50%, rgba(217,70,239,0.85) 78%, transparent 100%)',
+              filter: 'blur(0.5px)',
+              pointerEvents: 'none',
+              animation: 'overdrive-streak 280ms ease-out forwards',
+            }}
+          />
+        ))}
+
+        {/* Regen orbit inward — green particles converge from ring to sprite center */}
+        {regenOrbits.map((h) => (
+          <div
+            key={h.id}
+            data-testid="battle-regen-orbit"
+            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+          >
+            {Array.from({ length: 6 }).map((_, i) => {
+              const ds = displaySize ?? 128
+              const angle = (i / 6) * Math.PI * 2
+              const cx = ds / 2
+              const cy = ds * 0.44
+              const rx = ds * 0.35
+              const ry = ds * 0.27
+              const px = cx + Math.cos(angle) * rx
+              const py = cy + Math.sin(angle) * ry
+              return (
+                <span
+                  key={i}
+                  style={{
+                    position: 'absolute',
+                    left: px,
+                    top: py,
+                    width: 7,
+                    height: 7,
+                    marginLeft: -3.5,
+                    marginTop: -3.5,
+                    borderRadius: '50%',
+                    background: '#4ade80',
+                    boxShadow: '0 0 6px rgba(74,222,128,0.9), 0 0 12px rgba(34,197,94,0.5)',
+                    ['--dx' as string]: `${cx - px}px`,
+                    ['--dy' as string]: `${cy - py}px`,
+                    animation: `regen-orbit-in ${BATTLE_ANIM.HEAL_EFFECT_MS}ms ease-in ${i * 38}ms forwards`,
+                  } as React.CSSProperties}
+                />
+              )
+            })}
+            <div
+              style={{
+                position: 'absolute',
+                left: '50%',
+                bottom: '7%',
+                width: '78%',
+                height: '42%',
+                borderRadius: '50%',
+                background: 'radial-gradient(ellipse, rgba(74,222,128,0.45) 0%, rgba(34,197,94,0.18) 48%, transparent 72%)',
+                transform: 'translateX(-50%)',
+                animation: `battle-focus-aura ${BATTLE_ANIM.HEAL_EFFECT_MS}ms steps(6, end) forwards`,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '100%',
+                left: '50%',
+                transform: 'translateX(-50%)',
+              }}
+            >
+              <div
+                style={{
+                  animation: `float-up ${BATTLE_ANIM.HEAL_EFFECT_MS}ms ease-out forwards`,
+                  fontWeight: 700,
+                  fontSize: 20,
+                  lineHeight: 1,
+                  color: '#4ade80',
+                  textShadow: '0 2px 5px rgba(0,0,0,0.4)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                +{h.value}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Charge strike converge — pips fly from spread into sprite center */}
+        {chargeSpends.map((effect) => (
+          <div
+            key={effect.id}
+            data-testid="battle-charge-spend"
+            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+          >
+            {Array.from({ length: effect.pipCount }).map((_, i) => {
+              const ds = displaySize ?? 128
+              const offset = i - (effect.pipCount - 1) / 2
+              const startX = ds / 2 + offset * ds * 0.13
+              const startY = ds * 0.82
+              const dx = ds / 2 - startX
+              const dy = ds * 0.50 - startY
+              return (
+                <span
+                  key={i}
+                  style={{
+                    position: 'absolute',
+                    left: startX,
+                    top: startY,
+                    width: 9,
+                    height: 9,
+                    marginLeft: -4.5,
+                    marginTop: -4.5,
+                    borderRadius: '50%',
+                    background: '#facc15',
+                    boxShadow: '0 0 10px rgba(250,204,21,0.95), 0 0 18px rgba(245,158,11,0.6)',
+                    ['--dx' as string]: `${dx}px`,
+                    ['--dy' as string]: `${dy}px`,
+                    animation: `battle-focus-converge ${BATTLE_ANIM.FOCUS_SPEND_MS}ms ease-in ${i * 22}ms forwards`,
+                  } as React.CSSProperties}
+                />
+              )
+            })}
+          </div>
+        ))}
+
+        {/* Persistent counter stance guard — loops until hidePersistentGuard() is called */}
+        {persistentGuard && (
+          <div
+            data-testid="battle-persistent-guard"
+            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: '47%',
+                left: '50%',
+                width: '72%',
+                height: '58%',
+                border: '3px solid rgba(125, 211, 252, 0.82)',
+                borderRadius: '50%',
+                boxShadow: '0 0 0 2px rgba(30, 64, 175, 0.42), inset 0 0 14px rgba(186, 230, 253, 0.35)',
+                transform: 'translate(-50%, -50%)',
+                animation: 'persistent-guard-ring 1.8s ease-in-out infinite',
+              }}
+            />
+            {[0, 1, 2].map((spark) => (
+              <span
+                key={spark}
+                style={{
+                  position: 'absolute',
+                  top: `${spark === 0 ? 29 : spark === 1 ? 43 : 59}%`,
+                  left: `${spark === 0 ? 31 : spark === 1 ? 70 : 38}%`,
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: '#e0f2fe',
+                  boxShadow: '0 0 5px rgba(14,116,144,0.8), 0 0 10px rgba(14,116,144,0.4)',
+                  animation: `persistent-guard-spark 1.2s ease-in-out ${spark * 220}ms infinite`,
+                }}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Crit badge */}
         {crits.map((c) => (

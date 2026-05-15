@@ -1,11 +1,27 @@
 # NutriMon Battle UX Handoff
 
 ## Recent Work Completed
+- Implemented Effects & Animation Polish Pass V1:
+  - Skill-tinted impact graphics: `SKILL_IMPACT_COLOR` map in `battleAnimationConfig.ts` drives per-skill hit spark color/glow. `triple_hit` → sky blue cut marks, `overdrive` → fuchsia arcs, `power_strike` → orange burst, `charge_strike` → amber burst, `counter_stance` payoff hit → sky blue slash. Crits always flash white for maximum pop regardless of skill.
+  - `ImpactGraphic` now accepts `impactColor?: { stroke, glowFilter }` prop; crit overrides to `#ffffff` + white glow.
+  - `EffectsLayerHandle` methods `showAttackImpact`, `showHeavyAttackImpact`, `showFocusedAttackImpact` all accept an optional `impactColor` trailing param (backward compatible).
+  - Crit damage number bounce: new `crit-float-up` CSS keyframe — pops in at 1.3× scale then floats 56px up (vs 40px for normal). Crit numbers are white + warm-gold text-glow shadow instead of amber.
+  - Danger heartbeat: `battle-danger-pulse` keyframe restructured to a double-beat "lub-dub" rhythm (7% peak → 16% rest → 25% peak → silence) at 1.4s cycle instead of single 1.6s wave.
+
+- Implemented Skill Identity Pass V2:
+  - `triple_hit`: directional slash impacts (±38°/+36°/−14°) instead of arcs.
+  - `power_strike`: 400ms anticipation (`POWER_STRIKE_ANTICIPATION_MS`), always-heavy arena shake, wider 90% shockwave with thicker border.
+  - `regen`: 6 green particles orbit inward to sprite center (CSS var `--dx`/`--dy` per particle) before +HP number appears.
+  - `charge_strike`: pips converge into sprite center (`showChargeStrikeSpend`) using `battle-focus-converge` keyframe instead of floating up.
+  - `counter_stance`: persistent looping shield ring (`showPersistentGuard`) replaces one-shot guard; cleared when counter fires or animation ends.
+  - `overdrive`: fuchsia horizontal streak (`showOverdriveStreak`) fires per hit beat alongside the arc impacts.
 - Implemented Arena Layer Competition Pass V1:
   - Split biome particles into back and front depth layers.
   - Constrained foreground particles away from fixed top HUD and bottom command bar zones.
-  - Added combat-active dimming for particles and ambient arena dressing while actions resolve.
-  - Added BattleParticles tests for depth layers, foreground safe zones, and combat dimming.
+  - Added BattleParticles tests for depth layers and foreground safe zones.
+- Fixed compressed-height battle depth ordering:
+  - Root cause: Tailwind emitted `z-[1]`, `z-[2]`, and `z-[3]` in the built CSS, but not the player wrapper's `z-[4]`.
+  - Moved opponent/player wrapper depth values to inline `zIndex` styles so the player remains foreground when sprites/platforms overlap.
 - Implemented Battle Action Readability V1:
   - Added action anticipation before attacks/support actions resolve.
   - Added `triggerAnticipation(direction, durationMs, heavy?)` to `CreatureSpriteHandle`.
@@ -59,36 +75,7 @@
 
   ## Additional Requested Future Work
 
-### Skill Identity Pass V2
-The user wants stronger per-skill signatures beyond the V1 pass. Current V1 improved timing and differentiated some effects, but the requested direction is more specific:
-
-- `triple_hit`
-  - Three directional slashes.
-  - Prefer separate damage ticks if the battle log/model can support it visually.
-- `power_strike`
-  - Larger pause before impact.
-  - Heavier shake.
-  - Wider ground shockwave.
-- `regen`
-  - Green particles orbit inward before the heal number appears.
-- `charge_strike`
-  - Focus pips visibly fly into the player before impact.
-- `counter_stance`
-  - Shield should persist until the counter triggers, not just flash briefly.
-  - Likely needs persistent stance state derived from revealed/resolved log or battle session flags.
-- `overdrive`
-  - Five fast afterimages/streaks.
-  - One combined damage total.
-
-Implementation note:
-- Keep the shared battle animation system.
-- Avoid combat math changes unless needed for visual state only.
-- Current relevant files:
-  - `src/hooks/useBattleLogReveal.ts`
-  - `src/components/ui/EffectsLayer.tsx`
-  - `src/components/ui/CreatureSprite.tsx`
-  - `src/lib/battleAnimationConfig.ts`
-  - `src/index.css`
+### ~~Skill Identity Pass V2~~ — Implemented May 2026
 
 ### Layer Battle Particles With Depth
 The user also wants biome particles split into depth layers.

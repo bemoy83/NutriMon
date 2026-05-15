@@ -90,4 +90,34 @@ export const BATTLE_ANIM = {
 
   /** Charge build-up glow on the attacker's sprite stage before the lunge (ms). Must match `charge-glow` @keyframes. */
   CHARGE_GLOW_MS: 300,
+  /** Larger wind-up pause specifically for power_strike's heavy burst — more drama before impact. */
+  POWER_STRIKE_ANTICIPATION_MS: 400,
 } as const
+
+/**
+ * Per-skill hit impact tint — overrides the default yellow impact graphic.
+ * 'counter' is a pseudo-skill key for the counter_stance payoff hit.
+ * Skills not listed fall back to yellow (normal attack feel).
+ */
+export const SKILL_IMPACT_COLOR: Record<string, { stroke: string; glowFilter: string }> = {
+  triple_hit: {
+    stroke: '#bae6fd',
+    glowFilter: 'drop-shadow(0 0 6px rgba(186,230,253,0.92)) drop-shadow(0 0 11px rgba(56,189,248,0.62))',
+  },
+  overdrive: {
+    stroke: '#e879f9',
+    glowFilter: 'drop-shadow(0 0 7px rgba(232,121,249,0.92)) drop-shadow(0 0 13px rgba(217,70,239,0.62))',
+  },
+  power_strike: {
+    stroke: '#fb923c',
+    glowFilter: 'drop-shadow(0 0 7px rgba(251,146,60,0.92)) drop-shadow(0 0 13px rgba(234,88,12,0.62))',
+  },
+  charge_strike: {
+    stroke: '#fbbf24',
+    glowFilter: 'drop-shadow(0 0 8px rgba(251,191,36,0.95)) drop-shadow(0 0 15px rgba(245,158,11,0.65))',
+  },
+  counter_stance: {
+    stroke: '#7dd3fc',
+    glowFilter: 'drop-shadow(0 0 7px rgba(125,211,252,0.92)) drop-shadow(0 0 12px rgba(14,165,233,0.62))',
+  },
+}

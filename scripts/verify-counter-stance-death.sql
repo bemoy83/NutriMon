@@ -1,0 +1,70 @@
+-- Manual regression checks for migration 073.
+--
+-- Run this against a scratch/local Supabase database after creating or finding
+-- a battle run where the player can use counter_stance. Replace the IDs below
+-- with runs owned by the authenticated SQL session/user. The assertions are
+-- written as queries that should return zero rows.
+
+-- Case 1: lethal opponent hit while counter_pending is active.
+-- Setup: put an active run at low player HP with counter_pending=true, then
+-- call submit_battle_action with any non-skill action that lets the opponent
+-- attack. Expected: loss, no counter log, stance cleared.
+--
+-- update public.battle_runs
+-- set player_current_hp = 1,
+--     opponent_current_hp = opponent_max_hp,
+--     counter_pending = true,
+--     status = 'active',
+--     outcome = 'pending'
+-- where id = '<lethal_run_id>'::uuid;
+--
+-- select public.submit_battle_action('<lethal_run_id>'::uuid, 'attack', null);
+--
+-- select *
+-- from public.battle_runs
+-- where id = '<lethal_run_id>'::uuid
+--   and not (
+--     status = 'completed'
+--     and outcome = 'loss'
+--     and counter_pending = false
+--     and not exists (
+--       select 1
+--       from jsonb_array_elements(battle_log) e
+--       where e->>'action' = 'counter'
+--         and e->>'skill_id' = 'counter_stance'
+--     )
+--   );
+
+-- Case 2: surviving opponent hit while counter_pending is active.
+-- Setup: put an active run at high player HP with counter_pending=true.
+-- Expected: player survives, one counter log appears, stance cleared.
+--
+-- update public.battle_runs
+-- set player_current_hp = player_max_hp,
+--     opponent_current_hp = opponent_max_hp,
+--     counter_pending = true,
+--     status = 'active',
+--     outcome = 'pending'
+-- where id = '<survive_run_id>'::uuid;
+--
+-- select public.submit_battle_action('<survive_run_id>'::uuid, 'attack', null);
+--
+-- select *
+-- from public.battle_runs
+-- where id = '<survive_run_id>'::uuid
+--   and not (
+--     player_current_hp > 0
+--     and counter_pending = false
+--     and exists (
+--       select 1
+--       from jsonb_array_elements(battle_log) e
+--       where e->>'action' = 'counter'
+--         and e->>'skill_id' = 'counter_stance'
+--     )
+--   );
+
+-- Case 3: simultaneous-looking lethal race.
+-- If the opponent hit reduces player HP to 0 and the counter would have killed
+-- the opponent, the result must still be a loss and the counter must not log.
+-- Use the Case 1 assertion after lowering both player_current_hp and
+-- opponent_current_hp before submit_battle_action.

@@ -20,10 +20,4 @@ describe('BattleParticles', () => {
     expect(frontLayer).toHaveStyle({ top: '5rem', bottom: '10rem' })
   })
 
-  it('dims both particle layers while combat animation is active', () => {
-    render(<BattleParticles arenaId={VERDANTROOT_ARENA_ID} combatActive />)
-
-    expect(screen.getByTestId('battle-particles-back')).toHaveStyle({ opacity: '0.42' })
-    expect(screen.getByTestId('battle-particles-front')).toHaveStyle({ opacity: '0.22' })
-  })
 })

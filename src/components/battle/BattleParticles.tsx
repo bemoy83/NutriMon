@@ -253,7 +253,6 @@ function FireflyParticles({ preset, depth }: { preset: (typeof PRESETS)['firefly
 
 interface BattleParticlesProps {
   arenaId: string
-  combatActive?: boolean
 }
 
 function BiomeParticles({ biome, depth }: { biome: keyof typeof PRESETS; depth: ParticleDepth }) {
@@ -268,7 +267,7 @@ function BiomeParticles({ biome, depth }: { biome: keyof typeof PRESETS; depth: 
   )
 }
 
-export function BattleParticles({ arenaId, combatActive = false }: BattleParticlesProps) {
+export function BattleParticles({ arenaId }: BattleParticlesProps) {
   const biome = ARENA_BIOME[arenaId]
   if (!biome) return null
 
@@ -279,8 +278,6 @@ export function BattleParticles({ arenaId, combatActive = false }: BattleParticl
         data-testid="battle-particles-back"
         style={{
           zIndex: 0,
-          opacity: combatActive ? 0.42 : 1,
-          transition: 'opacity 180ms ease-out',
         }}
         aria-hidden
       >
@@ -293,8 +290,6 @@ export function BattleParticles({ arenaId, combatActive = false }: BattleParticl
           top: '5rem',
           bottom: '10rem',
           zIndex: 5,
-          opacity: combatActive ? 0.22 : 1,
-          transition: 'opacity 180ms ease-out',
           WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 14%, black 80%, transparent 100%)',
           maskImage: 'linear-gradient(to bottom, transparent 0%, black 14%, black 80%, transparent 100%)',
         }}

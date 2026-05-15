@@ -44,6 +44,11 @@ function effectHandle(): EffectsLayerHandle {
     showFocusCharge: vi.fn(),
     showFocusSpend: vi.fn(),
     showHealEffect: vi.fn(),
+    showOverdriveStreak: vi.fn(),
+    showRegenOrbitEffect: vi.fn(),
+    showChargeStrikeSpend: vi.fn(),
+    showPersistentGuard: vi.fn(),
+    hidePersistentGuard: vi.fn(),
   }
 }
 
@@ -197,6 +202,8 @@ describe('useBattleLogReveal', () => {
       true,
       3,
       BATTLE_ANIM.FOCUSED_HIT_SPACING_MS,
+      'cut',
+      expect.any(Object),
     )
     expect(opponentEffects.showAttackImpact).not.toHaveBeenCalled()
     expect(opponentSprite.triggerAnimation).toHaveBeenCalledTimes(1)
@@ -247,12 +254,13 @@ describe('useBattleLogReveal', () => {
       vi.advanceTimersByTime(0)
     })
 
-    expect(playerSprite.triggerAnticipation).toHaveBeenCalledWith('right', BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS, true)
+    // V2: power_strike uses its own longer anticipation
+    expect(playerSprite.triggerAnticipation).toHaveBeenCalledWith('right', BATTLE_ANIM.POWER_STRIKE_ANTICIPATION_MS, true)
     expect(playerSprite.triggerAnimation).not.toHaveBeenCalledWith('attack', BATTLE_ANIM.LUNGE_MS, false, 'right')
     expect(opponentEffects.showAttackImpact).not.toHaveBeenCalled()
 
     act(() => {
-      vi.advanceTimersByTime(BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS)
+      vi.advanceTimersByTime(BATTLE_ANIM.POWER_STRIKE_ANTICIPATION_MS)
     })
 
     expect(playerSprite.triggerAnimation).toHaveBeenCalledWith('attack', BATTLE_ANIM.LUNGE_MS, false, 'right')
@@ -263,8 +271,9 @@ describe('useBattleLogReveal', () => {
     })
 
     expect(opponentSprite.triggerAnimation).toHaveBeenCalledWith('hurt', BATTLE_ANIM.HURT_MS, false)
-    expect(opponentEffects.showHeavyAttackImpact).toHaveBeenCalledWith(false)
-    expect(opponentEffects.showGroundShockwave).toHaveBeenCalledTimes(1)
+    expect(opponentEffects.showHeavyAttackImpact).toHaveBeenCalledWith(false, expect.any(Object))
+    // V2: power_strike uses wide shockwave
+    expect(opponentEffects.showGroundShockwave).toHaveBeenCalledWith(true)
   })
 
   it('uses five-hit overdrive timing for overdrive', () => {
@@ -307,6 +316,8 @@ describe('useBattleLogReveal', () => {
       false,
       5,
       BATTLE_ANIM.OVERDRIVE_HIT_SPACING_MS,
+      'arc',
+      expect.any(Object),
     )
     expect(opponentSprite.triggerAnimation).toHaveBeenCalledTimes(1)
 
@@ -367,5 +378,79 @@ describe('useBattleLogReveal', () => {
     })
 
     expect(opponentSprite.triggerAnimation).toHaveBeenLastCalledWith('faint', BATTLE_ANIM.FAINT_MS)
+  })
+
+  it('does not animate a malformed counter entry after the player already fainted', () => {
+    vi.useFakeTimers()
+    const playerSprite = spriteHandle()
+    const opponentSprite = spriteHandle()
+    const playerEffects = effectHandle()
+    const opponentEffects = effectHandle()
+    const { result } = renderHook(() =>
+      useBattleLogReveal({
+        playerSpriteRef: { current: playerSprite },
+        opponentSpriteRef: { current: opponentSprite },
+        playerEffectsRef: { current: playerEffects },
+        opponentEffectsRef: { current: opponentEffects },
+        triggerArenaShake: vi.fn(),
+        triggerArenaFlash: vi.fn(),
+        specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
+        playerMaxHp: 100,
+      }),
+    )
+
+    act(() => {
+      result.current.revealEntries('run-1', [
+        entry({
+          id: 'counter-stance-1',
+          actor: 'player',
+          action: 'skill',
+          skillId: 'counter_stance',
+          target: 'player',
+          targetHpAfter: 24,
+        }),
+        entry({
+          id: 'lethal-attack-1',
+          actor: 'opponent',
+          action: 'attack',
+          damage: 24,
+          target: 'player',
+          targetHpAfter: 0,
+        }),
+        entry({
+          id: 'bad-counter-1',
+          actor: 'player',
+          action: 'counter',
+          skillId: 'counter_stance',
+          damage: 99,
+          target: 'opponent',
+          targetHpAfter: 0,
+        }),
+      ], [])
+      vi.advanceTimersByTime(0)
+    })
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+    })
+    expect(playerEffects.showPersistentGuard).toHaveBeenCalledTimes(1)
+
+    act(() => {
+      vi.advanceTimersByTime(
+        BATTLE_ANIM.ENTRY_DELAY_ACTION_MS
+        + BATTLE_ANIM.ATTACK_ANTICIPATION_MS
+        + BATTLE_ANIM.LUNGE_PEAK_MS,
+      )
+    })
+    expect(playerEffects.hidePersistentGuard).toHaveBeenCalled()
+    expect(playerEffects.showDamageNumber).toHaveBeenCalledWith(24, false)
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.ENTRY_DELAY_ACTION_HIT_MS)
+    })
+
+    expect(opponentEffects.showDamageNumber).not.toHaveBeenCalledWith(99, false)
+    expect(opponentEffects.showAttackImpact).not.toHaveBeenCalled()
+    expect(opponentSprite.triggerAnimation).not.toHaveBeenCalledWith('hurt', expect.any(Number), false)
   })
 })

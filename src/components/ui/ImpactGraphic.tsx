@@ -1,20 +1,22 @@
 import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
 
-export type ImpactVariant = 'slash' | 'arc' | 'burst'
+export type ImpactVariant = 'slash' | 'arc' | 'burst' | 'cut'
 
 interface ImpactGraphicProps {
   variant: ImpactVariant
   size: number
   isCrit: boolean
   angle: number
+  /** Optional skill tint. Crit always overrides to white for maximum pop. */
+  impactColor?: { stroke: string; glowFilter: string }
 }
 
 
-export function ImpactGraphic({ variant, size, isCrit, angle }: ImpactGraphicProps) {
-  const color = isCrit ? '#fff7ae' : '#fde047'
+export function ImpactGraphic({ variant, size, isCrit, angle, impactColor }: ImpactGraphicProps) {
+  const color = isCrit ? '#ffffff' : (impactColor?.stroke ?? '#fde047')
   const glow = isCrit
-    ? 'drop-shadow(0 0 8px rgba(255,255,180,1)) drop-shadow(0 0 14px rgba(250,204,21,0.9))'
-    : 'drop-shadow(0 0 7px rgba(250,204,21,0.98)) drop-shadow(0 0 12px rgba(234,179,8,0.7))'
+    ? 'drop-shadow(0 0 10px rgba(255,255,255,0.98)) drop-shadow(0 0 18px rgba(255,255,220,0.72))'
+    : (impactColor?.glowFilter ?? 'drop-shadow(0 0 7px rgba(250,204,21,0.98)) drop-shadow(0 0 12px rgba(234,179,8,0.7))')
   const dur = BATTLE_ANIM.HIT_IMPACT_MS
 
   return (
@@ -159,6 +161,42 @@ export function ImpactGraphic({ variant, size, isCrit, angle }: ImpactGraphicPro
               }}
             />
           ))}
+        </>
+      )}
+
+      {variant === 'cut' && (
+        /* Directional slash marks — three parallel diagonal strokes.
+           The SVG is rotated by `angle` so each hit reads as a distinct cut direction. */
+        <>
+          {[
+            { x1: 14, y1: 70, x2: 54, y2: 14, delay: 0,  w: isCrit ? 2.5 : 1.8 },
+            { x1: 28, y1: 78, x2: 68, y2: 22, delay: 16, w: isCrit ? 4.5 : 3.5 },
+            { x1: 40, y1: 84, x2: 80, y2: 28, delay: 6,  w: isCrit ? 2.5 : 1.8 },
+          ].map(({ x1, y1, x2, y2, delay, w }, i) => (
+            <line
+              key={i}
+              x1={x1} y1={y1} x2={x2} y2={y2}
+              stroke={color}
+              strokeWidth={w}
+              strokeLinecap="round"
+              pathLength="100"
+              style={{
+                strokeDasharray: 100,
+                strokeDashoffset: 100,
+                animation: `impact-slash ${dur}ms ease-out forwards`,
+                animationDelay: `${delay}ms`,
+              }}
+            />
+          ))}
+          <circle
+            cx="47" cy="48" r={isCrit ? 5 : 4}
+            fill={color}
+            style={{
+              transformBox: 'fill-box' as React.CSSProperties['transformBox'],
+              transformOrigin: 'center',
+              animation: `impact-core ${dur}ms ease-out forwards`,
+            }}
+          />
         </>
       )}
 

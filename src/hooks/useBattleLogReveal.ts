@@ -3,8 +3,7 @@ import type { CreatureSpriteHandle } from '@/components/ui/CreatureSprite'
 import type { EffectsLayerHandle } from '@/components/ui/EffectsLayer'
 import type { SpecialActionFlashHandle } from '@/components/ui/SpecialActionFlash'
 import type { BattleLogEntry } from '@/types/domain'
-import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
-import { BATTLE_SKILL_PIP_COST } from '@/components/battle/battleActionConfig'
+import { BATTLE_ANIM, SKILL_IMPACT_COLOR } from '@/lib/battleAnimationConfig'
 
 // Colors must be rgba with low alpha — the flash is a full-viewport overlay.
 const SKILL_FLASH_COLOR: Record<string, string> = {
@@ -135,6 +134,12 @@ export function useBattleLogReveal(opts: {
             entries: [...base, ...newEntries.slice(0, i + 1)],
           })
 
+          // Drop counter_stance guard the moment we learn the player will faint,
+          // regardless of which action caused it.
+          if (entry.target === 'player' && entry.targetHpAfter === 0) {
+            playerEffectsRef.current?.hidePersistentGuard()
+          }
+
           if (entry.action === 'special') {
             specialFlashRef.current?.triggerFlash()
           }
@@ -225,10 +230,10 @@ export function useBattleLogReveal(opts: {
 
           if (entry.phase === 'action' && entry.action === 'skill' && entry.skillId === 'counter_stance') {
             triggerActorAnticipation(entry.actor, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
-            actorEffects?.showFocusSpend(BATTLE_SKILL_PIP_COST.counter_stance)
             resolveEntryAfter(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+            // V2: persistent looping shield replaces the timed one-shot guard
             scheduleAnimation(
-              () => playerEffectsRef.current?.showDefendGuard(BATTLE_ANIM.COUNTER_STANCE_GUARD_MS),
+              () => playerEffectsRef.current?.showPersistentGuard(),
               BATTLE_ANIM.SUPPORT_ANTICIPATION_MS,
             )
           }
@@ -236,7 +241,6 @@ export function useBattleLogReveal(opts: {
           if (entry.phase === 'action' && entry.action === 'skill' && entry.skillId === 'regen' && entry.targetHpAfter !== null) {
             const targetHpAfter = entry.targetHpAfter
             triggerActorAnticipation(entry.actor, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
-            actorEffects?.showFocusSpend(BATTLE_SKILL_PIP_COST.regen)
             resolveEntryAfter(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
             scheduleAnimation(() => {
               const priorEntries = [...base, ...newEntries.slice(0, i)]
@@ -245,7 +249,8 @@ export function useBattleLogReveal(opts: {
                 return e.target === 'player' && e.targetHpAfter !== null ? e.targetHpAfter : null
               }, null) ?? playerMaxHp
               const healAmount = Math.max(0, targetHpAfter - priorHp)
-              if (healAmount > 0) playerEffectsRef.current?.showHealEffect(healAmount)
+              // V2: orbit particles converge inward before +HP number appears
+              if (healAmount > 0) playerEffectsRef.current?.showRegenOrbitEffect(healAmount)
             }, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
           }
 
@@ -254,18 +259,19 @@ export function useBattleLogReveal(opts: {
             const isPowerStrike = entry.skillId === 'power_strike'
             const isChargeStrike = entry.skillId === 'charge_strike'
             const isOverdrive = entry.skillId === 'overdrive'
+            const isTripleHit = entry.skillId === 'triple_hit'
             const isSingleHit = isPowerStrike || isChargeStrike
             const hitCount = isOverdrive ? 5 : 3
             const hitSpacingMs = isOverdrive
               ? BATTLE_ANIM.OVERDRIVE_HIT_SPACING_MS
               : BATTLE_ANIM.FOCUSED_HIT_SPACING_MS
-            const anticipationMs = isSingleHit
-              ? BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS
-              : BATTLE_ANIM.ATTACK_ANTICIPATION_MS
+            // V2: power_strike gets a longer wind-up for extra drama
+            const anticipationMs = isPowerStrike
+              ? BATTLE_ANIM.POWER_STRIKE_ANTICIPATION_MS
+              : isSingleHit
+                ? BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS
+                : BATTLE_ANIM.ATTACK_ANTICIPATION_MS
             const contactMs = anticipationMs + BATTLE_ANIM.LUNGE_PEAK_MS
-            const spentPips = entry.skillId === 'charge_strike'
-              ? 4
-              : BATTLE_SKILL_PIP_COST[entry.skillId ?? ''] ?? 1
             if (isChargeStrike) {
               const actorSpriteRef = entry.actor === 'player' ? playerSpriteRef : opponentSpriteRef
               actorSpriteRef.current?.triggerChargeGlow()
@@ -273,7 +279,6 @@ export function useBattleLogReveal(opts: {
 
             const doLungeAndImpact = () => {
               triggerActorAnticipation(entry.actor, anticipationMs, isSingleHit)
-              actorEffects?.showFocusSpend(spentPips)
               scheduleAnimation(() => {
                 if (entry.actor === 'player') {
                   playerSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'right')
@@ -283,33 +288,34 @@ export function useBattleLogReveal(opts: {
               }, anticipationMs)
               resolveEntryAfter(contactMs)
               const impactTimer = setTimeout(() => {
-                if (entry.target === 'player') {
-                  if (isSingleHit) {
-                    triggerHurt(playerSpriteRef, entry.crit)
-                    playerEffectsRef.current?.showHeavyAttackImpact(entry.crit)
-                    playerEffectsRef.current?.showGroundShockwave()
-                  } else {
-                    triggerFocusedHurtSequence(playerSpriteRef, entry.crit, hitCount, hitSpacingMs)
-                    playerEffectsRef.current?.showFocusedAttackImpact(entry.crit, hitCount, hitSpacingMs)
+                const targetEffects = entry.target === 'player' ? playerEffectsRef.current : opponentEffectsRef.current
+                const targetSpriteRef = entry.target === 'player' ? playerSpriteRef : opponentSpriteRef
+                const skillTint = SKILL_IMPACT_COLOR[entry.skillId ?? '']
+                if (isSingleHit) {
+                  triggerHurt(targetSpriteRef, entry.crit)
+                  targetEffects?.showHeavyAttackImpact(entry.crit, skillTint)
+                  // V2: power_strike gets wide shockwave; charge_strike keeps normal
+                  targetEffects?.showGroundShockwave(isPowerStrike)
+                } else {
+                  triggerFocusedHurtSequence(targetSpriteRef, entry.crit, hitCount, hitSpacingMs)
+                  // V2: triple_hit uses parallel-stroke cut variant
+                  const impactVariant = isTripleHit ? 'cut' : 'arc'
+                  targetEffects?.showFocusedAttackImpact(entry.crit, hitCount, hitSpacingMs, impactVariant, skillTint)
+                  // V2: overdrive fires a streak afterimage per hit beat
+                  if (isOverdrive) {
+                    for (let hit = 0; hit < hitCount; hit++) {
+                      const streakTimer = setTimeout(() => {
+                        targetEffects?.showOverdriveStreak()
+                      }, hit * hitSpacingMs)
+                      animTimers.current.push(streakTimer)
+                    }
                   }
-                  playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
-                  if (entry.crit) playerEffectsRef.current?.showCritBadge()
-                  triggerArenaShake(entry.crit)
-                  triggerArenaFlash()
-                } else if (entry.target === 'opponent') {
-                  if (isSingleHit) {
-                    triggerHurt(opponentSpriteRef, entry.crit)
-                    opponentEffectsRef.current?.showHeavyAttackImpact(entry.crit)
-                    opponentEffectsRef.current?.showGroundShockwave()
-                  } else {
-                    triggerFocusedHurtSequence(opponentSpriteRef, entry.crit, hitCount, hitSpacingMs)
-                    opponentEffectsRef.current?.showFocusedAttackImpact(entry.crit, hitCount, hitSpacingMs)
-                  }
-                  opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
-                  if (entry.crit) opponentEffectsRef.current?.showCritBadge()
-                  triggerArenaShake(entry.crit)
-                  triggerArenaFlash()
                 }
+                targetEffects?.showDamageNumber(entry.damage, entry.crit)
+                if (entry.crit) targetEffects?.showCritBadge()
+                // V2: power_strike always gets heavy shake; others shake on crit
+                triggerArenaShake(isPowerStrike || entry.crit)
+                triggerArenaFlash()
                 if (targetWillFaint) {
                   const faintDelay = isSingleHit
                     ? (entry.crit ? BATTLE_ANIM.HURT_CRIT_MS : BATTLE_ANIM.HURT_MS)
@@ -333,13 +339,15 @@ export function useBattleLogReveal(opts: {
             .slice(0, i)
             .some(e => e.target === 'player' && e.targetHpAfter === 0)
           if (entry.action === 'counter' && entry.damage > 0 && !playerAlreadyDead) {
+            // V2: counter fires — drop the persistent guard ring now
+            playerEffectsRef.current?.hidePersistentGuard()
             setResolvedLogOverride({
               sessionId,
               entries: [...base, ...newEntries.slice(0, i + 1)],
             })
             triggerHurt(opponentSpriteRef, false)
             opponentEffectsRef.current?.showDamageNumber(entry.damage, false)
-            opponentEffectsRef.current?.showAttackImpact(false)
+            opponentEffectsRef.current?.showAttackImpact(false, SKILL_IMPACT_COLOR.counter_stance)
             triggerArenaShake(false)
             triggerArenaFlash()
             if (entry.targetHpAfter === 0) {
@@ -352,7 +360,7 @@ export function useBattleLogReveal(opts: {
             entry.damage > 0 &&
             (
               (entry.phase === 'action' && (entry.action === 'attack' || entry.action === 'skill')) ||
-              (entry.action === 'counter' && !playerAlreadyDead)
+              (entry.action === 'counter')
             )
           if (entry.targetHpAfter === 0 && !faintHandledByDamageSequence) {
             setResolvedLogOverride({
@@ -368,7 +376,11 @@ export function useBattleLogReveal(opts: {
               : entry.phase === 'result'   ? BATTLE_ANIM.ENTRY_DELAY_RESULT_MS
               : entry.damage > 0           ? BATTLE_ANIM.ENTRY_DELAY_ACTION_HIT_MS
               :                              BATTLE_ANIM.ENTRY_DELAY_ACTION_MS
-            const finishTimer = setTimeout(() => setIsAnimating(false), lingerMs)
+            const finishTimer = setTimeout(() => {
+              setIsAnimating(false)
+              // Cleanup: drop persistent guard if counter_stance was used but counter never fired
+              playerEffectsRef.current?.hidePersistentGuard()
+            }, lingerMs)
             animTimers.current.push(finishTimer)
           }
         }, entryMs)

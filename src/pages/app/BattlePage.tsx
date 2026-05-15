@@ -55,6 +55,8 @@ const BATTLE_ARENA_MIN_HEIGHT_STYLE = `min(${BATTLE_ARENA_MIN_HEIGHT}px, calc(10
 const BATTLE_FADE_MS = 350
 const BATTLE_ENTRANCE_MS = 380
 const BATTLE_HIT_VIGNETTE_MS = 360
+const OPPONENT_DEPTH_Z = 1
+const PLAYER_DEPTH_Z = 4
 
 // Opponent sprite size scales with size_class. The platform is always rendered
 // at its registered width (fixed depth), so size_class reads as physical creature
@@ -420,12 +422,11 @@ export default function BattlePage() {
           }}
         />
         {/* Particles sit behind all three zones */}
-        <BattleParticles arenaId={session.opponent.arenaId} combatActive={isAnimating} />
+        <BattleParticles arenaId={session.opponent.arenaId} />
         {/* Arena atmosphere — remove by deleting this one line (and the import above) */}
         <BattleArenaDressing
           accentColor={terrain.accentColor}
           playerHpPct={session.playerMaxHp > 0 ? playerHp / session.playerMaxHp : 1}
-          combatActive={isAnimating}
         />
 
         {/* ── Zone 1: Turn order HUD — fixed top strip ── */}
@@ -472,9 +473,10 @@ export default function BattlePage() {
           {/* Opponent platform + sprite — outer div: positioning + entrance slide
                inner div: float bob (separate element avoids transform conflict) */}
           <div
-            className={`absolute right-6 z-[1]${entrancePhase === 'entering' ? ' animate-battle-entrance-right' : ''}`}
+            className={`absolute right-6${entrancePhase === 'entering' ? ' animate-battle-entrance-right' : ''}`}
             style={{
               bottom: 'min(calc(var(--player-h) + var(--player-pad) + var(--sprite-gap)), calc(100% - var(--opp-h)))',
+              zIndex: OPPONENT_DEPTH_Z,
               overflow: 'visible',
               ...(entrancePhase === 'hidden' ? { visibility: 'hidden' as const } : {}),
             }}
@@ -530,10 +532,11 @@ export default function BattlePage() {
           {/* Player platform + sprite — outer div: positioning + entrance slide
                inner div: float bob (separate element avoids transform conflict) */}
           <div
-            className={`absolute bottom-4 left-6 z-[4]${entrancePhase === 'entering' ? ' animate-battle-entrance-left' : ''}`}
+            className={`absolute bottom-4 left-6${entrancePhase === 'entering' ? ' animate-battle-entrance-left' : ''}`}
             style={{
               width: playerDisplaySize,
               height: playerDisplaySize,
+              zIndex: PLAYER_DEPTH_Z,
               overflow: 'visible',
               ...(entrancePhase === 'hidden' ? { visibility: 'hidden' as const } : {}),
             }}
