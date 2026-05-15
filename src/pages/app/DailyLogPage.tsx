@@ -117,6 +117,7 @@ export default function DailyLogPage() {
                 finalizing={p.finalizing}
                 finalizeError={p.finalizeError}
                 onFinalize={p.finalizeDay}
+                requiresConfirmation={p.shouldConfirmFinalize}
                 className="w-full"
               />
             ) : p.screen?.repeatLastMeal && !p.loggedMealTypes.has(p.currentMealType) ? (
@@ -132,6 +133,7 @@ export default function DailyLogPage() {
                 finalizing={p.finalizing}
                 finalizeError={p.finalizeError}
                 onFinalize={p.finalizeDay}
+                requiresConfirmation={p.shouldConfirmFinalize}
                 className="w-full"
               />
             ) : null}

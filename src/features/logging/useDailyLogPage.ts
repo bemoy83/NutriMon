@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toZonedTime } from 'date-fns-tz'
 import { useInvalidateDailyLog } from '@/features/logging/useDailyLog'
 import { habitMetricsForStreak } from '@/features/logging/dailyLogScreenPayload'
 import { useDailyLogScreen } from '@/features/logging/useDailyLogScreen'
@@ -64,7 +65,6 @@ export function useDailyLogPage(logDate: string) {
   const [quickAddLoggedAt, setQuickAddLoggedAt] = useState(() => new Date().toISOString())
   const nowIso = new Date().toISOString()
   const currentMealType = getDefaultMealType(nowIso)
-  const isEveningOrLater = new Date().getHours() >= 17
 
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [addToSlotType, setAddToSlotType] = useState<MealType | null>(null)
@@ -115,6 +115,9 @@ export function useDailyLogPage(logDate: string) {
 
   const todayDate = getTodayInTimezone(timezone)
   const isViewingPastDay = logDate < todayDate
+  const currentHour = toZonedTime(new Date(), timezone).getHours()
+  const isEveningOrLater = currentHour >= 17
+  const shouldConfirmFinalize = isViewingPastDay || currentHour < 22
 
   const handleMealCreated = useCallback(
     (result: MealMutationResult) => {
@@ -238,6 +241,7 @@ export function useDailyLogPage(logDate: string) {
     finalizing,
     finalizeError,
     finalizeDay,
+    shouldConfirmFinalize,
     repeating,
     repeatError,
     handleRepeatLastMeal,
