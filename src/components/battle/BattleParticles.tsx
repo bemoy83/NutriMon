@@ -1,5 +1,7 @@
 import { useMemo } from 'react'
 
+type ParticleDepth = 'back' | 'front'
+
 // Arena UUID → biome particle type
 const ARENA_BIOME: Record<string, 'leaf' | 'firefly' | 'ash' | 'snow' | 'ember'> = {
   '37543fca-9f22-41c7-83b5-2ded30d7b063': 'leaf',     // Verdantroot Forest
@@ -10,11 +12,34 @@ const ARENA_BIOME: Record<string, 'leaf' | 'firefly' | 'ash' | 'snow' | 'ember'>
 }
 
 const PRESETS = {
-  leaf:    { count: 14, color: '#9bd66a', secondaryColor: '#5aa840' },
-  firefly: { count: 12, color: '#d8e860', glowColor: '#d8e86080' },
-  ash:     { count: 18, color: '#c4b8ad' },
-  snow:    { count: 26, color: '#ffffff' },
-  ember:   { count: 22, color: '#ffaa3a', coreColor: '#fff5cc', tailColor: '#ff5020' },
+  leaf:    { count: 14, color: '#9bd66a', secondaryColor: '#5aa840', seed: 7 },
+  firefly: { count: 12, color: '#d8e860', glowColor: '#d8e86080', seed: 13 },
+  ash:     { count: 18, color: '#c4b8ad', seed: 11 },
+  snow:    { count: 26, color: '#ffffff', seed: 3 },
+  ember:   { count: 22, color: '#ffaa3a', coreColor: '#fff5cc', tailColor: '#ff5020', seed: 5 },
+}
+
+const DEPTH_PRESETS: Record<ParticleDepth, {
+  countScale: number
+  sizeScale: number
+  durationScale: number
+  opacityScale: number
+  blurPx: number
+}> = {
+  back: {
+    countScale: 0.82,
+    sizeScale: 0.78,
+    durationScale: 1.45,
+    opacityScale: 0.52,
+    blurPx: 0.6,
+  },
+  front: {
+    countScale: 0.32,
+    sizeScale: 1.18,
+    durationScale: 0.9,
+    opacityScale: 0.72,
+    blurPx: 0.15,
+  },
 }
 
 function seededRandom(seed: number) {
@@ -48,163 +73,235 @@ function useParticles(count: number, seed: number): Particle[] {
   }, [count, seed])
 }
 
-function SnowParticles({ preset }: { preset: (typeof PRESETS)['snow'] }) {
-  const particles = useParticles(preset.count, 3)
+function layerCount(count: number, depth: ParticleDepth): number {
+  return Math.max(2, Math.round(count * DEPTH_PRESETS[depth].countScale))
+}
+
+function particleStyle(depth: ParticleDepth, baseOpacity: number, baseSize: number) {
+  const config = DEPTH_PRESETS[depth]
+  return {
+    opacity: baseOpacity * config.opacityScale,
+    size: baseSize * config.sizeScale,
+    durationScale: config.durationScale,
+    blurPx: config.blurPx,
+  }
+}
+
+function SnowParticles({ preset, depth }: { preset: (typeof PRESETS)['snow']; depth: ParticleDepth }) {
+  const depthStyle = particleStyle(depth, 0.85, 1)
+  const particles = useParticles(layerCount(preset.count, depth), preset.seed + (depth === 'front' ? 30 : 0))
   return (
     <>
-      {particles.map((p, i) => (
+      {particles.map((p, i) => {
+        const size = p.size * depthStyle.size
+        return (
         <div
           key={i}
           style={{
             position: 'absolute',
             left: `${p.x}%`,
             top: `${p.y}%`,
-            width: p.size,
-            height: p.size,
+            width: size,
+            height: size,
             borderRadius: '50%',
             background: 'radial-gradient(circle, #fff 30%, rgba(255,255,255,0.4) 70%, transparent)',
-            opacity: 0.85,
-            animation: `particle-snow-fall ${p.dur * 2.2}s linear infinite`,
+            opacity: depthStyle.opacity,
+            animation: `particle-snow-fall ${p.dur * 2.2 * depthStyle.durationScale}s linear infinite`,
             animationDelay: `${p.delay}s`,
-            filter: 'blur(0.4px)',
+            filter: `blur(${0.4 + depthStyle.blurPx}px)`,
             pointerEvents: 'none',
             willChange: 'transform',
           }}
         />
-      ))}
+        )
+      })}
     </>
   )
 }
 
-function EmberParticles({ preset }: { preset: (typeof PRESETS)['ember'] }) {
-  const particles = useParticles(preset.count, 5)
+function EmberParticles({ preset, depth }: { preset: (typeof PRESETS)['ember']; depth: ParticleDepth }) {
+  const depthStyle = particleStyle(depth, 0.9, 1)
+  const particles = useParticles(layerCount(preset.count, depth), preset.seed + (depth === 'front' ? 30 : 0))
   return (
     <>
-      {particles.map((p, i) => (
+      {particles.map((p, i) => {
+        const size = p.size * 0.9 * depthStyle.size
+        return (
         <div
           key={i}
           style={{
             position: 'absolute',
             left: `${p.x}%`,
             top: `${p.y}%`,
-            width: p.size * 0.9,
-            height: p.size * 0.9,
+            width: size,
+            height: size,
             borderRadius: '50%',
             background: `radial-gradient(circle, ${preset.coreColor} 0%, ${preset.color} 40%, ${preset.tailColor} 80%, transparent)`,
-            boxShadow: `0 0 ${p.size * 2}px ${preset.color}`,
-            animation: `particle-ember-rise ${p.dur * 0.7}s ease-out infinite`,
+            boxShadow: `0 0 ${size * 2}px ${preset.color}`,
+            opacity: depthStyle.opacity,
+            filter: `blur(${depthStyle.blurPx}px)`,
+            animation: `particle-ember-rise ${p.dur * 0.7 * depthStyle.durationScale}s ease-out infinite`,
             animationDelay: `${p.delay}s`,
             pointerEvents: 'none',
             willChange: 'transform, opacity',
           }}
         />
-      ))}
+        )
+      })}
     </>
   )
 }
 
-function LeafParticles({ preset }: { preset: (typeof PRESETS)['leaf'] }) {
-  const particles = useParticles(preset.count, 7)
+function LeafParticles({ preset, depth }: { preset: (typeof PRESETS)['leaf']; depth: ParticleDepth }) {
+  const depthStyle = particleStyle(depth, 0.85, 1)
+  const particles = useParticles(layerCount(preset.count, depth), preset.seed + (depth === 'front' ? 30 : 0))
   return (
     <>
-      {particles.map((p, i) => (
+      {particles.map((p, i) => {
+        const width = p.size * 1.6 * depthStyle.size
+        const height = p.size * 0.9 * depthStyle.size
+        return (
         <div
           key={i}
           style={{
             position: 'absolute',
             left: `${p.x}%`,
             top: `${p.y}%`,
-            width: p.size * 1.6,
-            height: p.size * 0.9,
+            width,
+            height,
             background: `linear-gradient(120deg, ${preset.color}, ${preset.secondaryColor})`,
             borderRadius: '50% 10% 50% 10%',
-            opacity: 0.85,
+            opacity: depthStyle.opacity,
             transform: `rotate(${p.rot}deg)`,
-            animation: `particle-leaf-fall ${p.dur * 2.2}s ease-in-out infinite`,
+            filter: `blur(${depthStyle.blurPx}px)`,
+            animation: `particle-leaf-fall ${p.dur * 2.2 * depthStyle.durationScale}s ease-in-out infinite`,
             animationDelay: `${p.delay}s`,
             pointerEvents: 'none',
             willChange: 'transform',
           }}
         />
-      ))}
+        )
+      })}
     </>
   )
 }
 
-function AshParticles({ preset }: { preset: (typeof PRESETS)['ash'] }) {
-  const particles = useParticles(preset.count, 11)
+function AshParticles({ preset, depth }: { preset: (typeof PRESETS)['ash']; depth: ParticleDepth }) {
+  const depthStyle = particleStyle(depth, 0.5, 1)
+  const particles = useParticles(layerCount(preset.count, depth), preset.seed + (depth === 'front' ? 30 : 0))
   return (
     <>
-      {particles.map((p, i) => (
+      {particles.map((p, i) => {
+        const size = p.size * 0.7 * depthStyle.size
+        return (
         <div
           key={i}
           style={{
             position: 'absolute',
             left: `${p.x}%`,
             top: `${p.y}%`,
-            width: p.size * 0.7,
-            height: p.size * 0.7,
+            width: size,
+            height: size,
             borderRadius: '50%',
             background: preset.color,
-            opacity: 0.5,
-            animation: `particle-ash-drift ${p.dur * 1.4}s linear infinite`,
+            opacity: depthStyle.opacity,
+            animation: `particle-ash-drift ${p.dur * 1.4 * depthStyle.durationScale}s linear infinite`,
             animationDelay: `${p.delay}s`,
-            filter: 'blur(0.5px)',
+            filter: `blur(${0.5 + depthStyle.blurPx}px)`,
             pointerEvents: 'none',
             willChange: 'transform',
           }}
         />
-      ))}
+        )
+      })}
     </>
   )
 }
 
-function FireflyParticles({ preset }: { preset: (typeof PRESETS)['firefly'] }) {
-  const particles = useParticles(preset.count, 13)
+function FireflyParticles({ preset, depth }: { preset: (typeof PRESETS)['firefly']; depth: ParticleDepth }) {
+  const depthStyle = particleStyle(depth, 0.9, 1)
+  const particles = useParticles(layerCount(preset.count, depth), preset.seed + (depth === 'front' ? 30 : 0))
   return (
     <>
-      {particles.map((p, i) => (
+      {particles.map((p, i) => {
+        const size = p.size * depthStyle.size
+        return (
         <div
           key={i}
           style={{
             position: 'absolute',
             left: `${p.x}%`,
             top: `${p.y}%`,
-            width: p.size,
-            height: p.size,
+            width: size,
+            height: size,
             borderRadius: '50%',
             background: preset.color,
-            boxShadow: `0 0 ${p.size * 3}px ${preset.color}, 0 0 ${p.size * 6}px ${preset.glowColor}`,
-            animation: `particle-firefly-float ${p.dur * 1.2}s ease-in-out infinite, particle-firefly-blink ${1.6 + i * 0.13}s ease-in-out infinite`,
+            boxShadow: `0 0 ${size * 3}px ${preset.color}, 0 0 ${size * 6}px ${preset.glowColor}`,
+            opacity: depthStyle.opacity,
+            filter: `blur(${depthStyle.blurPx}px)`,
+            animation: `particle-firefly-float ${p.dur * 1.2 * depthStyle.durationScale}s ease-in-out infinite, particle-firefly-blink ${1.6 + i * 0.13}s ease-in-out infinite`,
             animationDelay: `${p.delay}s, ${-p.delay * 0.5}s`,
             pointerEvents: 'none',
             willChange: 'transform, opacity',
           }}
         />
-      ))}
+        )
+      })}
     </>
   )
 }
 
 interface BattleParticlesProps {
   arenaId: string
+  combatActive?: boolean
 }
 
-export function BattleParticles({ arenaId }: BattleParticlesProps) {
+function BiomeParticles({ biome, depth }: { biome: keyof typeof PRESETS; depth: ParticleDepth }) {
+  return (
+    <>
+      {biome === 'snow'    && <SnowParticles    preset={PRESETS.snow} depth={depth} />}
+      {biome === 'ember'   && <EmberParticles   preset={PRESETS.ember} depth={depth} />}
+      {biome === 'leaf'    && <LeafParticles    preset={PRESETS.leaf} depth={depth} />}
+      {biome === 'ash'     && <AshParticles     preset={PRESETS.ash} depth={depth} />}
+      {biome === 'firefly' && <FireflyParticles preset={PRESETS.firefly} depth={depth} />}
+    </>
+  )
+}
+
+export function BattleParticles({ arenaId, combatActive = false }: BattleParticlesProps) {
   const biome = ARENA_BIOME[arenaId]
   if (!biome) return null
 
   return (
-    <div
-      className="pointer-events-none absolute inset-0 overflow-hidden"
-      style={{ zIndex: 5 }}
-      aria-hidden
-    >
-      {biome === 'snow'    && <SnowParticles    preset={PRESETS.snow} />}
-      {biome === 'ember'   && <EmberParticles   preset={PRESETS.ember} />}
-      {biome === 'leaf'    && <LeafParticles    preset={PRESETS.leaf} />}
-      {biome === 'ash'     && <AshParticles     preset={PRESETS.ash} />}
-      {biome === 'firefly' && <FireflyParticles preset={PRESETS.firefly} />}
-    </div>
+    <>
+      <div
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+        data-testid="battle-particles-back"
+        style={{
+          zIndex: 0,
+          opacity: combatActive ? 0.42 : 1,
+          transition: 'opacity 180ms ease-out',
+        }}
+        aria-hidden
+      >
+        <BiomeParticles biome={biome} depth="back" />
+      </div>
+      <div
+        className="pointer-events-none absolute left-0 right-0 overflow-hidden"
+        data-testid="battle-particles-front"
+        style={{
+          top: '5rem',
+          bottom: '10rem',
+          zIndex: 5,
+          opacity: combatActive ? 0.22 : 1,
+          transition: 'opacity 180ms ease-out',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 14%, black 80%, transparent 100%)',
+          maskImage: 'linear-gradient(to bottom, transparent 0%, black 14%, black 80%, transparent 100%)',
+        }}
+        aria-hidden
+      >
+        <BiomeParticles biome={biome} depth="front" />
+      </div>
+    </>
   )
 }

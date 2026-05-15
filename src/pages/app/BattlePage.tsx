@@ -420,11 +420,12 @@ export default function BattlePage() {
           }}
         />
         {/* Particles sit behind all three zones */}
-        <BattleParticles arenaId={session.opponent.arenaId} />
+        <BattleParticles arenaId={session.opponent.arenaId} combatActive={isAnimating} />
         {/* Arena atmosphere — remove by deleting this one line (and the import above) */}
         <BattleArenaDressing
           accentColor={terrain.accentColor}
           playerHpPct={session.playerMaxHp > 0 ? playerHp / session.playerMaxHp : 1}
+          combatActive={isAnimating}
         />
 
         {/* ── Zone 1: Turn order HUD — fixed top strip ── */}

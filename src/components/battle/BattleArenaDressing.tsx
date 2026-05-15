@@ -13,6 +13,8 @@ interface BattleArenaDressingProps {
   accentColor?: string
   /** Player HP as a fraction 0–1. Danger vignette activates at ≤ 0.25. */
   playerHpPct?: number
+  /** Softens ambient dressing while combat VFX are resolving. */
+  combatActive?: boolean
 }
 
 function hexToRgb(hex: string): string {
@@ -23,9 +25,14 @@ function hexToRgb(hex: string): string {
   return `${isNaN(r) ? 106 : r},${isNaN(g) ? 170 : g},${isNaN(b) ? 48 : b}`
 }
 
-export function BattleArenaDressing({ accentColor = '#6aaa30', playerHpPct = 1 }: BattleArenaDressingProps) {
+export function BattleArenaDressing({
+  accentColor = '#6aaa30',
+  playerHpPct = 1,
+  combatActive = false,
+}: BattleArenaDressingProps) {
   const rgb = hexToRgb(accentColor)
   const isDanger = playerHpPct <= 0.25
+  const ambientTransition = 'opacity 180ms ease-out'
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
@@ -41,7 +48,9 @@ export function BattleArenaDressing({ accentColor = '#6aaa30', playerHpPct = 1 }
           left: 0,
           right: 0,
           height: '55%',
+          opacity: combatActive ? 0.58 : 1,
           background: `radial-gradient(ellipse 90% 100% at 50% 100%, rgba(${rgb},0.38) 0%, rgba(${rgb},0.12) 55%, transparent 75%)`,
+          transition: ambientTransition,
           zIndex: 2,
         }}
       />
@@ -57,7 +66,9 @@ export function BattleArenaDressing({ accentColor = '#6aaa30', playerHpPct = 1 }
         style={{
           position: 'absolute',
           inset: 0,
+          opacity: combatActive ? 0.72 : 1,
           background: 'radial-gradient(ellipse 160% 110% at 50% 48%, transparent 38%, rgba(0,0,0,0.18) 58%, rgba(0,0,0,0.38) 78%, rgba(0,0,0,0.52) 100%)',
+          transition: ambientTransition,
           zIndex: 6,
         }}
       />
@@ -86,7 +97,9 @@ export function BattleArenaDressing({ accentColor = '#6aaa30', playerHpPct = 1 }
         style={{
           position: 'absolute',
           inset: 0,
+          opacity: combatActive ? 0.38 : 1,
           backgroundImage: 'repeating-linear-gradient(to bottom, rgba(0,0,0,0.025) 0px, rgba(0,0,0,0.025) 1px, transparent 1px, transparent 3px)',
+          transition: ambientTransition,
           zIndex: 7,
         }}
       />

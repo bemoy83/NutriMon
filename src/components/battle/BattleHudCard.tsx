@@ -12,13 +12,16 @@ function hpBarColor(pct: number): string {
 export function BattleHudHpBar({
   current,
   max,
+  showDelta = true,
 }: {
   current: number
   max: number
+  showDelta?: boolean
 }) {
   const pct = max > 0 ? Math.max(0, current / max) : 0
   const isLow = pct <= 0.25
   const color = hpBarColor(pct)
+  const [delta, setDelta] = useState<{ id: number; value: number } | null>(null)
 
   // Ghost bar — lingers at the previous HP position, then slowly drains.
   const [ghostState, setGhostState] = useState(() => ({
@@ -29,6 +32,10 @@ export function BattleHudHpBar({
   }))
 
   if (ghostState.displayedPct !== pct) {
+    const rawDelta = current - Math.round(ghostState.displayedPct * max)
+    if (showDelta && rawDelta !== 0) {
+      setDelta((prev) => ({ id: (prev?.id ?? 0) + 1, value: rawDelta }))
+    }
     if (pct < ghostState.displayedPct) {
       // Damage taken — freeze ghost at the old position, then drain after a pause.
       setGhostState({
@@ -47,6 +54,12 @@ export function BattleHudHpBar({
       })
     }
   }
+
+  useEffect(() => {
+    if (!delta) return
+    const t = setTimeout(() => setDelta(null), 900)
+    return () => clearTimeout(t)
+  }, [delta])
 
   useEffect(() => {
     if (ghostState.drainTargetPct === null) return
@@ -73,43 +86,100 @@ export function BattleHudHpBar({
   const showGhost = ghostState.ghostPct > pct
 
   return (
-    <div className="relative h-2 w-full overflow-hidden rounded-full bg-[var(--app-border)]">
-      {/* Ghost bar — sits behind the main bar */}
-      {showGhost && (
+    <div className="relative">
+      {delta && (
         <div
-          className="absolute inset-y-0 left-0 rounded-full"
+          key={delta.id}
+          className="pointer-events-none absolute right-0 top-[-1.35rem] z-10 text-xs font-black tabular-nums"
           style={{
-            width: `${Math.round(ghostState.ghostPct * 100)}%`,
-            background: 'rgba(255,255,255,0.35)',
-            transition: ghostState.isDraining ? 'width 950ms ease-out' : 'none',
+            animation: 'hud-delta-pop 900ms ease-out forwards',
+            color: delta.value < 0 ? '#fca5a5' : '#86efac',
+            WebkitTextStroke: '2px rgba(8,10,16,0.82)',
+            paintOrder: 'stroke fill',
+            textShadow: [
+              '0 1px 0 rgba(0,0,0,0.7)',
+              '0 2px 4px rgba(0,0,0,0.8)',
+              delta.value < 0 ? '0 0 8px rgba(239,68,68,0.55)' : '0 0 8px rgba(34,197,94,0.45)',
+            ].join(', '),
+          }}
+        >
+          {delta.value > 0 ? '+' : ''}{delta.value}
+        </div>
+      )}
+      <div className="relative h-2 w-full overflow-hidden rounded-full bg-[var(--app-border)]">
+        {/* Ghost bar — sits behind the main bar */}
+        {showGhost && (
+          <div
+            className="absolute inset-y-0 left-0 rounded-full"
+            style={{
+              width: `${Math.round(ghostState.ghostPct * 100)}%`,
+              background: 'rgba(255,255,255,0.35)',
+              transition: ghostState.isDraining ? 'width 950ms ease-out' : 'none',
+            }}
+          />
+        )}
+        {/* Main HP bar */}
+        <div
+          className={`absolute inset-y-0 left-0 rounded-full transition-[width,background-color] duration-700${isLow ? ' animate-hp-shimmer' : ''}`}
+          style={{
+            width: `${Math.round(pct * 100)}%`,
+            background: color,
+            boxShadow: isLow ? '0 0 6px 1px var(--app-danger)' : undefined,
           }}
         />
-      )}
-      {/* Main HP bar */}
-      <div
-        className={`absolute inset-y-0 left-0 rounded-full transition-[width,background-color] duration-700${isLow ? ' animate-hp-shimmer' : ''}`}
-        style={{
-          width: `${Math.round(pct * 100)}%`,
-          background: color,
-          boxShadow: isLow ? '0 0 6px 1px var(--app-danger)' : undefined,
-        }}
-      />
-      {/* Quarter markers */}
-      {[25, 50, 75].map((t) => (
-        <div
-          key={t}
-          className="absolute inset-y-0 w-px bg-black/30"
-          style={{ left: `${t}%`, zIndex: 1 }}
-        />
-      ))}
+        {/* Quarter markers */}
+        {[25, 50, 75].map((t) => (
+          <div
+            key={t}
+            className="absolute inset-y-0 w-px bg-black/30"
+            style={{ left: `${t}%`, zIndex: 1 }}
+          />
+        ))}
+      </div>
     </div>
   )
 }
 
 export function BattleHudFocusPips({ count, pipCap }: { count: number; pipCap: number }) {
   const atMax = count >= pipCap
+  const [delta, setDelta] = useState<{ id: number; value: number } | null>(null)
+  const [previousCount, setPreviousCount] = useState(count)
+
+  if (previousCount !== count) {
+    const nextDelta = count - previousCount
+    if (nextDelta !== 0) {
+      setDelta((prev) => ({ id: (prev?.id ?? 0) + 1, value: nextDelta }))
+    }
+    setPreviousCount(count)
+  }
+
+  useEffect(() => {
+    if (!delta) return
+    const t = setTimeout(() => setDelta(null), 900)
+    return () => clearTimeout(t)
+  }, [delta])
+
   return (
-    <div className="mt-2 flex items-center gap-1.5">
+    <div className="relative mt-2 flex items-center gap-1.5">
+      {delta && (
+        <div
+          key={delta.id}
+          className="pointer-events-none absolute right-0 top-[-1.3rem] z-10 text-xs font-black tabular-nums"
+          style={{
+            animation: 'hud-delta-pop 900ms ease-out forwards',
+            color: '#fde68a',
+            WebkitTextStroke: '2px rgba(8,10,16,0.82)',
+            paintOrder: 'stroke fill',
+            textShadow: [
+              '0 1px 0 rgba(0,0,0,0.7)',
+              '0 2px 4px rgba(0,0,0,0.8)',
+              '0 0 8px rgba(245,158,11,0.6)',
+            ].join(', '),
+          }}
+        >
+          {delta.value > 0 ? '+' : ''}{delta.value} FP
+        </div>
+      )}
       <span
         className="w-5 text-[10px] font-semibold uppercase tracking-wider transition-colors duration-300"
         style={{ color: atMax ? 'var(--app-warning)' : 'rgba(255,255,255,0.4)' }}
