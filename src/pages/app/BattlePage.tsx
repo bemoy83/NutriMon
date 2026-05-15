@@ -260,7 +260,7 @@ export default function BattlePage() {
     setTimeout(() => el.classList.remove(cls), heavy ? 500 : 400)
   }, [])
 
-  const { displayedLogOverride, isAnimating, revealEntries } = useBattleLogReveal({
+  const { displayedLogOverride, resolvedLogOverride, isAnimating, revealEntries } = useBattleLogReveal({
     playerSpriteRef,
     opponentSpriteRef,
     playerEffectsRef,
@@ -280,6 +280,13 @@ export default function BattlePage() {
         ? displayedLogOverride.entries
         : session.battleLog
       : session?.battleLog ?? []
+
+  const resolvedLog =
+    session && resolvedLogOverride?.sessionId === session.id
+      ? isAnimating || resolvedLogOverride.entries.length > session.battleLog.length
+        ? resolvedLogOverride.entries
+        : session.battleLog
+      : displayedLog
 
   if (isLoading) {
     return (
@@ -315,7 +322,7 @@ export default function BattlePage() {
 
   let opponentHp = session.opponentMaxHp
   let playerHp = session.playerMaxHp
-  for (const entry of displayedLog) {
+  for (const entry of resolvedLog) {
     if (entry.target === 'opponent' && entry.targetHpAfter !== null) opponentHp = entry.targetHpAfter
     if (entry.target === 'player' && entry.targetHpAfter !== null) playerHp = entry.targetHpAfter
   }
@@ -325,7 +332,7 @@ export default function BattlePage() {
 
   // Derive pip count from the revealed log so it animates step-by-step
   // as entries are disclosed.
-  const focusPips = displayedLog.reduce((count, e) => {
+  const focusPips = resolvedLog.reduce((count, e) => {
     if (e.actor !== 'player' || e.phase !== 'action') return count
     if (e.action === 'focus') return Math.min(pipCap, count + focusGain)
     if (e.action === 'skill') {

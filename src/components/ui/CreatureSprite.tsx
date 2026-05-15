@@ -4,6 +4,7 @@ import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
 
 export interface CreatureSpriteHandle {
   triggerAnimation(type: 'hurt' | 'faint' | 'attack', durationMs: number, isCrit?: boolean, lungeDir?: 'right' | 'left'): void
+  triggerAnticipation(direction: 'right' | 'left', durationMs: number, heavy?: boolean): void
   triggerChargeGlow(): void
 }
 
@@ -49,7 +50,14 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
     } | null>(null)
     const [hasFainted, setHasFainted] = useState(false)
     const [isCharging, setIsCharging] = useState(false)
+    const [activeAnticipation, setActiveAnticipation] = useState<{
+      id: number
+      direction: 'right' | 'left'
+      durationMs: number
+      heavy: boolean
+    } | null>(null)
     const chargeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const anticipationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const descriptorKey = descriptor ? `${descriptor.url}:${descriptor.facing}` : 'placeholder'
     const [frameState, setFrameState] = useState({ descriptorKey, currentFrame: 0 })
 
@@ -94,6 +102,19 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
           animClearRef.current = null
         }, durationMs)
       },
+      triggerAnticipation(direction, durationMs, heavy = false) {
+        if (anticipationTimerRef.current) clearTimeout(anticipationTimerRef.current)
+        setActiveAnticipation((prev) => ({
+          id: (prev?.id ?? 0) + 1,
+          direction,
+          durationMs,
+          heavy,
+        }))
+        anticipationTimerRef.current = setTimeout(() => {
+          setActiveAnticipation(null)
+          anticipationTimerRef.current = null
+        }, durationMs)
+      },
       triggerChargeGlow() {
         if (chargeTimerRef.current) clearTimeout(chargeTimerRef.current)
         setIsCharging(true)
@@ -108,6 +129,7 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
       return () => {
         if (animClearRef.current) clearTimeout(animClearRef.current)
         if (chargeTimerRef.current) clearTimeout(chargeTimerRef.current)
+        if (anticipationTimerRef.current) clearTimeout(anticipationTimerRef.current)
         if (frameIntervalRef.current) clearInterval(frameIntervalRef.current)
       }
     }, [])
@@ -127,7 +149,11 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
       ? `charge-glow ${BATTLE_ANIM.CHARGE_GLOW_MS}ms ease-in forwards`
       : undefined
 
-    const compositeAnimation = [lungeAnimation, chargeGlowAnimation].filter(Boolean).join(', ') || undefined
+    const anticipationAnimation = activeAnticipation
+      ? `battle-anticipate-${activeAnticipation.heavy ? 'heavy-' : ''}${activeAnticipation.direction} ${activeAnticipation.durationMs}ms ease-out forwards`
+      : undefined
+
+    const compositeAnimation = [lungeAnimation, anticipationAnimation, chargeGlowAnimation].filter(Boolean).join(', ') || undefined
 
     const containerStyle: React.CSSProperties = {
       position: 'relative',

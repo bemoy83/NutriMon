@@ -108,4 +108,59 @@ describe('EffectsLayer', () => {
 
     expect(screen.queryByTestId('battle-attack-impact')).not.toBeInTheDocument()
   })
+
+  it('renders overdrive as five faster staggered impacts', async () => {
+    const ref = createRef<EffectsLayerHandle>()
+
+    render(<EffectsLayer ref={ref} displaySize={160} />)
+
+    act(() => {
+      ref.current?.showFocusedAttackImpact(false, 5, BATTLE_ANIM.OVERDRIVE_HIT_SPACING_MS)
+    })
+
+    expect(screen.getAllByTestId('battle-attack-impact')).toHaveLength(1)
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, BATTLE_ANIM.OVERDRIVE_HIT_SPACING_MS * 2 + 10))
+    })
+
+    expect(screen.getAllByTestId('battle-attack-impact')).toHaveLength(3)
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, BATTLE_ANIM.HIT_IMPACT_MS + 10))
+    })
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, BATTLE_ANIM.OVERDRIVE_HIT_SPACING_MS * 3))
+    })
+
+    expect(screen.queryByTestId('battle-attack-impact')).not.toBeInTheDocument()
+  })
+
+  it('renders heavy impact and focus spend effects', () => {
+    vi.useFakeTimers()
+    const ref = createRef<EffectsLayerHandle>()
+
+    render(<EffectsLayer ref={ref} displaySize={160} />)
+
+    act(() => {
+      ref.current?.showHeavyAttackImpact(true)
+      ref.current?.showFocusSpend(4)
+    })
+
+    expect(screen.getByTestId('battle-attack-impact')).toBeInTheDocument()
+    expect(screen.getByTestId('battle-focus-spend')).toBeInTheDocument()
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.FOCUS_SPEND_MS)
+    })
+
+    expect(screen.queryByTestId('battle-focus-spend')).not.toBeInTheDocument()
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.HIT_IMPACT_MS + BATTLE_ANIM.HIT_STOP_MS)
+    })
+
+    expect(screen.queryByTestId('battle-attack-impact')).not.toBeInTheDocument()
+  })
 })

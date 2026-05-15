@@ -17,6 +17,7 @@
  *  FOCUSED_HIT_SPACING_MS — delay between focused attack hit beats
  *  DEFEND_GUARD_MS — blue guard ring duration for defend actions
  *  FOCUS_CHARGE_MS — gold charge aura duration for focus actions
+ *  *_ANTICIPATION_MS — short pre-action reads before effects resolve
  */
 export const BATTLE_ANIM = {
   /**
@@ -27,6 +28,15 @@ export const BATTLE_ANIM = {
   ENTRY_DELAY_ACTION_HIT_MS: 2600,  // attack / skill / special with damage — read + process effect
   ENTRY_DELAY_ACTION_MS: 2000,      // defend / focus — no damage number competing for attention
   ENTRY_DELAY_RESULT_MS: 1800,      // victory / defeat hold before outcome modal
+
+  /** Short wind-up before normal attack and fast damage skills resolve. */
+  ATTACK_ANTICIPATION_MS: 140,
+  /** Longer wind-up for heavy damage skills. */
+  HEAVY_SKILL_ANTICIPATION_MS: 240,
+  /** Short readability beat before support effects appear. */
+  SUPPORT_ANTICIPATION_MS: 120,
+  /** Reserved micro-pause budget for heavier contacts. */
+  HIT_STOP_MS: 45,
 
   /** Normal hit flash duration (ms). Must match `hit-flash` @keyframes. */
   HURT_MS: 500,
@@ -50,10 +60,16 @@ export const BATTLE_ANIM = {
   HIT_IMPACT_MS: 350,
   /** Time between focused attack hit starts (ms). Used by both impact sprites and target hit flashes. */
   FOCUSED_HIT_SPACING_MS: 180,
+  /** Faster hit cadence for overdrive's five-hit sequence. */
+  OVERDRIVE_HIT_SPACING_MS: 115,
   /** Defensive guard ring duration (ms). Must match `battle-guard-ring` and `battle-guard-spark` @keyframes. */
   DEFEND_GUARD_MS: 560,
+  /** Longer guard read for Counter Stance. */
+  COUNTER_STANCE_GUARD_MS: 980,
   /** Focus charge aura duration (ms). Must match `battle-focus-aura` and `battle-focus-spark` @keyframes. */
   FOCUS_CHARGE_MS: 650,
+  /** FP spend pips converge before a skill resolves. */
+  FOCUS_SPEND_MS: 520,
 
   /**
    * Full-screen flash duration for special actions (ms). Must match `special-flash` @keyframes.

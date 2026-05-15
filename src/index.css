@@ -434,6 +434,30 @@ select {
   100% { filter: drop-shadow(0 0 12px rgba(250,204,21,0.95)) drop-shadow(0 0 26px rgba(250,204,21,0.45)); }
 }
 
+@keyframes battle-anticipate-right {
+  0%   { transform: translateX(0) scale(1); }
+  55%  { transform: translateX(-5px) scaleX(0.97) scaleY(1.03); }
+  100% { transform: translateX(0) scale(1); }
+}
+
+@keyframes battle-anticipate-left {
+  0%   { transform: translateX(0) scale(1); }
+  55%  { transform: translateX(5px) scaleX(0.97) scaleY(1.03); }
+  100% { transform: translateX(0) scale(1); }
+}
+
+@keyframes battle-anticipate-heavy-right {
+  0%   { transform: translateX(0) scale(1); filter: brightness(1); }
+  45%  { transform: translateX(-8px) scaleX(0.95) scaleY(1.05); filter: brightness(1.2) drop-shadow(0 0 10px rgba(250,204,21,0.45)); }
+  100% { transform: translateX(0) scale(1); filter: brightness(1); }
+}
+
+@keyframes battle-anticipate-heavy-left {
+  0%   { transform: translateX(0) scale(1); filter: brightness(1); }
+  45%  { transform: translateX(8px) scaleX(0.95) scaleY(1.05); filter: brightness(1.2) drop-shadow(0 0 10px rgba(250,204,21,0.45)); }
+  100% { transform: translateX(0) scale(1); filter: brightness(1); }
+}
+
 @keyframes battle-guard-ring {
   0% {
     transform: translate(-50%, -50%) scale(0.72);
@@ -507,6 +531,26 @@ select {
 
   100% {
     transform: translateY(-28px) scaleY(1);
+    opacity: 0;
+  }
+}
+
+@keyframes battle-focus-spend {
+  0% {
+    transform: translate(-50%, 0) scale(1);
+    opacity: 0;
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  72% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(-50%, -58px) scale(0.25);
     opacity: 0;
   }
 }

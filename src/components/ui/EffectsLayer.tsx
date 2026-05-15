@@ -6,12 +6,14 @@ export interface EffectsLayerHandle {
   showDamageNumber(value: number, isCrit: boolean): void
   showCritBadge(): void
   showAttackImpact(isCrit?: boolean): void
-  showFocusedAttackImpact(isCrit?: boolean): void
+  showHeavyAttackImpact(isCrit?: boolean): void
+  showFocusedAttackImpact(isCrit?: boolean, hitCount?: number, spacingMs?: number): void
   showGroundShockwave(): void
   /** @deprecated Use showAttackImpact(). */
   showHitImpact(): void
-  showDefendGuard(): void
+  showDefendGuard(durationMs?: number): void
   showFocusCharge(): void
+  showFocusSpend(pipCount: number): void
   showHealEffect(value: number): void
 }
 
@@ -37,10 +39,16 @@ interface HitImpact {
 
 interface GuardEffect {
   id: number
+  durationMs: number
 }
 
 interface FocusEffect {
   id: number
+}
+
+interface FocusSpendEffect {
+  id: number
+  pipCount: number
 }
 
 interface HealEffect {
@@ -77,6 +85,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
     const [impacts, setImpacts] = useState<HitImpact[]>([])
     const [guards, setGuards] = useState<GuardEffect[]>([])
     const [focuses, setFocuses] = useState<FocusEffect[]>([])
+    const [focusSpends, setFocusSpends] = useState<FocusSpendEffect[]>([])
     const [heals, setHeals] = useState<HealEffect[]>([])
     const [shockwaves, setShockwaves] = useState<ShockwaveEffect[]>([])
     const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
@@ -138,17 +147,31 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
           angle: Math.round((Math.random() - 0.5) * 40),
         }, IMPACT_DURATION_MS)
       },
-      showFocusedAttackImpact(isCrit = false) {
-        const hitOffsets = [
-          { delayMs: 0,                                    xPct: 39, yPct: 57 },
-          { delayMs: BATTLE_ANIM.FOCUSED_HIT_SPACING_MS,  xPct: 60, yPct: 39 },
-          { delayMs: BATTLE_ANIM.FOCUSED_HIT_SPACING_MS * 2, xPct: 49, yPct: 62 },
+      showHeavyAttackImpact(isCrit = false) {
+        const id = nextId()
+        addTimedEffect(setImpacts, {
+          id, isCrit, delayMs: 0, xPct: 50, yPct: 52,
+          variant: 'burst',
+          angle: Math.round((Math.random() - 0.5) * 18),
+        }, IMPACT_DURATION_MS + BATTLE_ANIM.HIT_STOP_MS)
+      },
+      showFocusedAttackImpact(isCrit = false, hitCount = 3, spacingMs = BATTLE_ANIM.FOCUSED_HIT_SPACING_MS) {
+        const pattern = [
+          { xPct: 39, yPct: 57, angle: -18 },
+          { xPct: 60, yPct: 39, angle: 18 },
+          { xPct: 49, yPct: 62, angle: -4 },
+          { xPct: 35, yPct: 43, angle: 28 },
+          { xPct: 64, yPct: 58, angle: -26 },
         ]
+        const hitOffsets = Array.from({ length: Math.max(1, Math.min(hitCount, pattern.length)) }, (_, index) => ({
+          delayMs: spacingMs * index,
+          ...pattern[index],
+        }))
         hitOffsets.forEach((hit) => {
           const id = nextId()
           addDelayedTimedEffect(
             setImpacts,
-            { id, isCrit, ...hit, delayMs: 0, variant: 'arc' as ImpactVariant, angle: Math.round((Math.random() - 0.5) * 30) },
+            { id, isCrit, ...hit, delayMs: 0, variant: 'arc' as ImpactVariant },
             hit.delayMs,
             IMPACT_DURATION_MS,
           )
@@ -158,13 +181,17 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         const id = nextId()
         addTimedEffect(setImpacts, { id, isCrit: false, delayMs: 0, xPct: 50, yPct: 50, variant: 'slash', angle: 0 }, IMPACT_DURATION_MS)
       },
-      showDefendGuard() {
+      showDefendGuard(durationMs = BATTLE_ANIM.DEFEND_GUARD_MS) {
         const id = nextId()
-        addTimedEffect(setGuards, { id }, BATTLE_ANIM.DEFEND_GUARD_MS)
+        addTimedEffect(setGuards, { id, durationMs }, durationMs)
       },
       showFocusCharge() {
         const id = nextId()
         addTimedEffect(setFocuses, { id }, BATTLE_ANIM.FOCUS_CHARGE_MS)
+      },
+      showFocusSpend(pipCount) {
+        const id = nextId()
+        addTimedEffect(setFocusSpends, { id, pipCount: Math.max(1, Math.min(pipCount, 5)) }, BATTLE_ANIM.FOCUS_SPEND_MS)
       },
       showHealEffect(value) {
         const id = nextId()
@@ -260,7 +287,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
                 borderRadius: '50%',
                 boxShadow: '0 0 0 2px rgba(30, 64, 175, 0.55), inset 0 0 12px rgba(186, 230, 253, 0.45)',
                 transform: 'translate(-50%, -50%)',
-                animation: `battle-guard-ring ${BATTLE_ANIM.DEFEND_GUARD_MS}ms steps(5, end) forwards`,
+                animation: `battle-guard-ring ${g.durationMs}ms steps(5, end) forwards`,
               }}
             />
             {[0, 1, 2].map((spark) => (
@@ -274,11 +301,41 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
                   height: 6,
                   background: '#e0f2fe',
                   boxShadow: '0 0 0 1px rgba(14, 116, 144, 0.8)',
-                  animation: `battle-guard-spark ${BATTLE_ANIM.DEFEND_GUARD_MS}ms steps(4, end) forwards`,
+                  animation: `battle-guard-spark ${g.durationMs}ms steps(4, end) forwards`,
                   animationDelay: `${spark * 70}ms`,
                 }}
               />
             ))}
+          </div>
+        ))}
+
+        {/* FP spend — amber pips collapse toward the sprite core before skill contact */}
+        {focusSpends.map((effect) => (
+          <div
+            key={effect.id}
+            data-testid="battle-focus-spend"
+            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+          >
+            {Array.from({ length: effect.pipCount }).map((_, i) => {
+              const offset = i - (effect.pipCount - 1) / 2
+              return (
+                <span
+                  key={i}
+                  style={{
+                    position: 'absolute',
+                    left: `${50 + offset * 12}%`,
+                    bottom: '16%',
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: '#facc15',
+                    boxShadow: '0 0 8px rgba(250,204,21,0.9), 0 0 14px rgba(245,158,11,0.5)',
+                    animation: `battle-focus-spend ${BATTLE_ANIM.FOCUS_SPEND_MS}ms ease-in forwards`,
+                    animationDelay: `${i * 24}ms`,
+                  }}
+                />
+              )
+            })}
           </div>
         ))}
 

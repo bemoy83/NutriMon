@@ -4,6 +4,7 @@ import type { EffectsLayerHandle } from '@/components/ui/EffectsLayer'
 import type { SpecialActionFlashHandle } from '@/components/ui/SpecialActionFlash'
 import type { BattleLogEntry } from '@/types/domain'
 import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
+import { BATTLE_SKILL_PIP_COST } from '@/components/battle/battleActionConfig'
 
 // Colors must be rgba with low alpha — the flash is a full-viewport overlay.
 const SKILL_FLASH_COLOR: Record<string, string> = {
@@ -41,6 +42,10 @@ export function useBattleLogReveal(opts: {
     sessionId: string
     entries: BattleLogEntry[]
   } | null>(null)
+  const [resolvedLogOverride, setResolvedLogOverride] = useState<{
+    sessionId: string
+    entries: BattleLogEntry[]
+  } | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
 
   const triggerHurt = useCallback(
@@ -55,9 +60,14 @@ export function useBattleLogReveal(opts: {
   )
 
   const triggerFocusedHurtSequence = useCallback(
-    (spriteRef: RefObject<CreatureSpriteHandle | null>, isCrit: boolean) => {
-      for (let hit = 0; hit < 3; hit += 1) {
-        const delayMs = hit * BATTLE_ANIM.FOCUSED_HIT_SPACING_MS
+    (
+      spriteRef: RefObject<CreatureSpriteHandle | null>,
+      isCrit: boolean,
+      hitCount = 3,
+      spacingMs: number = BATTLE_ANIM.FOCUSED_HIT_SPACING_MS,
+    ) => {
+      for (let hit = 0; hit < hitCount; hit += 1) {
+        const delayMs = hit * spacingMs
         if (delayMs === 0) {
           spriteRef.current?.triggerAnimation('hurt', BATTLE_ANIM.HIT_IMPACT_MS, isCrit)
           continue
@@ -69,6 +79,17 @@ export function useBattleLogReveal(opts: {
       }
     },
     [],
+  )
+
+  const triggerActorAnticipation = useCallback(
+    (actor: BattleLogEntry['actor'], durationMs: number, heavy = false) => {
+      if (actor === 'player') {
+        playerSpriteRef.current?.triggerAnticipation('right', durationMs, heavy)
+      } else if (actor === 'opponent') {
+        opponentSpriteRef.current?.triggerAnticipation('left', durationMs, heavy)
+      }
+    },
+    [opponentSpriteRef, playerSpriteRef],
   )
 
   const triggerFaint = useCallback(
@@ -89,6 +110,7 @@ export function useBattleLogReveal(opts: {
 
       const newEntries = fullLog.slice(base.length)
       setDisplayedLogOverride({ sessionId, entries: base })
+      setResolvedLogOverride({ sessionId, entries: base })
 
       if (newEntries.length === 0) return
 
@@ -117,7 +139,7 @@ export function useBattleLogReveal(opts: {
             specialFlashRef.current?.triggerFlash()
           }
 
-          if (entry.phase === 'action' && entry.action === 'skill' && entry.actor === 'player') {
+          if (entry.phase === 'action' && entry.action === 'skill' && entry.actor === 'player' && entry.damage > 0) {
             const skillColor = SKILL_FLASH_COLOR[entry.skillId ?? '']
             if (skillColor) specialFlashRef.current?.triggerFlash(skillColor)
           }
@@ -129,21 +151,51 @@ export function useBattleLogReveal(opts: {
                 ? opponentEffectsRef.current
                 : null
 
+          function scheduleAnimation(fn: () => void, delayMs: number) {
+            const timer = setTimeout(fn, delayMs)
+            animTimers.current.push(timer)
+          }
+
+          function resolveEntryAfter(delayMs: number) {
+            scheduleAnimation(() => {
+              setResolvedLogOverride({
+                sessionId,
+                entries: [...base, ...newEntries.slice(0, i + 1)],
+              })
+            }, delayMs)
+          }
+
+          if (entry.phase === 'initiative' || entry.phase === 'result') {
+            setResolvedLogOverride({
+              sessionId,
+              entries: [...base, ...newEntries.slice(0, i + 1)],
+            })
+          }
+
           if (entry.phase === 'action' && entry.action === 'defend') {
-            actorEffects?.showDefendGuard()
+            triggerActorAnticipation(entry.actor, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+            resolveEntryAfter(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+            scheduleAnimation(() => actorEffects?.showDefendGuard(), BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
           }
 
           if (entry.phase === 'action' && entry.action === 'focus') {
-            actorEffects?.showFocusCharge()
+            triggerActorAnticipation(entry.actor, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+            resolveEntryAfter(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+            scheduleAnimation(() => actorEffects?.showFocusCharge(), BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
           }
 
           if (entry.phase === 'action' && entry.action === 'attack' && entry.damage > 0) {
             const targetWillFaint = entry.targetHpAfter === 0
-            if (entry.actor === 'player') {
-              playerSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'right')
-            } else if (entry.actor === 'opponent') {
-              opponentSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'left')
-            }
+            const contactMs = BATTLE_ANIM.ATTACK_ANTICIPATION_MS + BATTLE_ANIM.LUNGE_PEAK_MS
+            triggerActorAnticipation(entry.actor, BATTLE_ANIM.ATTACK_ANTICIPATION_MS)
+            scheduleAnimation(() => {
+              if (entry.actor === 'player') {
+                playerSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'right')
+              } else if (entry.actor === 'opponent') {
+                opponentSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'left')
+              }
+            }, BATTLE_ANIM.ATTACK_ANTICIPATION_MS)
+            resolveEntryAfter(contactMs)
             const impactTimer = setTimeout(() => {
               if (entry.target === 'player') {
                 triggerHurt(playerSpriteRef, entry.crit)
@@ -167,49 +219,78 @@ export function useBattleLogReveal(opts: {
                 )
                 animTimers.current.push(faintTimer)
               }
-            }, BATTLE_ANIM.LUNGE_PEAK_MS)
+            }, contactMs)
             animTimers.current.push(impactTimer)
           }
 
           if (entry.phase === 'action' && entry.action === 'skill' && entry.skillId === 'counter_stance') {
-            playerEffectsRef.current?.showDefendGuard()
+            triggerActorAnticipation(entry.actor, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+            actorEffects?.showFocusSpend(BATTLE_SKILL_PIP_COST.counter_stance)
+            resolveEntryAfter(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+            scheduleAnimation(
+              () => playerEffectsRef.current?.showDefendGuard(BATTLE_ANIM.COUNTER_STANCE_GUARD_MS),
+              BATTLE_ANIM.SUPPORT_ANTICIPATION_MS,
+            )
           }
 
           if (entry.phase === 'action' && entry.action === 'skill' && entry.skillId === 'regen' && entry.targetHpAfter !== null) {
-            const priorEntries = [...base, ...newEntries.slice(0, i)]
-            const priorHp = priorEntries.reduceRight<number | null>((found, e) => {
-              if (found !== null) return found
-              return e.target === 'player' && e.targetHpAfter !== null ? e.targetHpAfter : null
-            }, null) ?? playerMaxHp
-            const healAmount = Math.max(0, entry.targetHpAfter - priorHp)
-            if (healAmount > 0) playerEffectsRef.current?.showHealEffect(healAmount)
+            const targetHpAfter = entry.targetHpAfter
+            triggerActorAnticipation(entry.actor, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+            actorEffects?.showFocusSpend(BATTLE_SKILL_PIP_COST.regen)
+            resolveEntryAfter(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+            scheduleAnimation(() => {
+              const priorEntries = [...base, ...newEntries.slice(0, i)]
+              const priorHp = priorEntries.reduceRight<number | null>((found, e) => {
+                if (found !== null) return found
+                return e.target === 'player' && e.targetHpAfter !== null ? e.targetHpAfter : null
+              }, null) ?? playerMaxHp
+              const healAmount = Math.max(0, targetHpAfter - priorHp)
+              if (healAmount > 0) playerEffectsRef.current?.showHealEffect(healAmount)
+            }, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
           }
 
           if (entry.phase === 'action' && entry.action === 'skill' && entry.damage > 0) {
             const targetWillFaint = entry.targetHpAfter === 0
             const isPowerStrike = entry.skillId === 'power_strike'
             const isChargeStrike = entry.skillId === 'charge_strike'
+            const isOverdrive = entry.skillId === 'overdrive'
             const isSingleHit = isPowerStrike || isChargeStrike
+            const hitCount = isOverdrive ? 5 : 3
+            const hitSpacingMs = isOverdrive
+              ? BATTLE_ANIM.OVERDRIVE_HIT_SPACING_MS
+              : BATTLE_ANIM.FOCUSED_HIT_SPACING_MS
+            const anticipationMs = isSingleHit
+              ? BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS
+              : BATTLE_ANIM.ATTACK_ANTICIPATION_MS
+            const contactMs = anticipationMs + BATTLE_ANIM.LUNGE_PEAK_MS
+            const spentPips = entry.skillId === 'charge_strike'
+              ? 4
+              : BATTLE_SKILL_PIP_COST[entry.skillId ?? ''] ?? 1
             if (isChargeStrike) {
               const actorSpriteRef = entry.actor === 'player' ? playerSpriteRef : opponentSpriteRef
               actorSpriteRef.current?.triggerChargeGlow()
             }
 
             const doLungeAndImpact = () => {
-              if (entry.actor === 'player') {
-                playerSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'right')
-              } else if (entry.actor === 'opponent') {
-                opponentSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'left')
-              }
+              triggerActorAnticipation(entry.actor, anticipationMs, isSingleHit)
+              actorEffects?.showFocusSpend(spentPips)
+              scheduleAnimation(() => {
+                if (entry.actor === 'player') {
+                  playerSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'right')
+                } else if (entry.actor === 'opponent') {
+                  opponentSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'left')
+                }
+              }, anticipationMs)
+              resolveEntryAfter(contactMs)
               const impactTimer = setTimeout(() => {
                 if (entry.target === 'player') {
                   if (isSingleHit) {
                     triggerHurt(playerSpriteRef, entry.crit)
-                    playerEffectsRef.current?.showAttackImpact(entry.crit)
+                    playerEffectsRef.current?.showHeavyAttackImpact(entry.crit)
                     playerEffectsRef.current?.showGroundShockwave()
                   } else {
-                    triggerFocusedHurtSequence(playerSpriteRef, entry.crit)
-                    playerEffectsRef.current?.showFocusedAttackImpact(entry.crit)
+                    triggerFocusedHurtSequence(playerSpriteRef, entry.crit, hitCount, hitSpacingMs)
+                    playerEffectsRef.current?.showFocusedAttackImpact(entry.crit, hitCount, hitSpacingMs)
                   }
                   playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
                   if (entry.crit) playerEffectsRef.current?.showCritBadge()
@@ -218,11 +299,11 @@ export function useBattleLogReveal(opts: {
                 } else if (entry.target === 'opponent') {
                   if (isSingleHit) {
                     triggerHurt(opponentSpriteRef, entry.crit)
-                    opponentEffectsRef.current?.showAttackImpact(entry.crit)
+                    opponentEffectsRef.current?.showHeavyAttackImpact(entry.crit)
                     opponentEffectsRef.current?.showGroundShockwave()
                   } else {
-                    triggerFocusedHurtSequence(opponentSpriteRef, entry.crit)
-                    opponentEffectsRef.current?.showFocusedAttackImpact(entry.crit)
+                    triggerFocusedHurtSequence(opponentSpriteRef, entry.crit, hitCount, hitSpacingMs)
+                    opponentEffectsRef.current?.showFocusedAttackImpact(entry.crit, hitCount, hitSpacingMs)
                   }
                   opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
                   if (entry.crit) opponentEffectsRef.current?.showCritBadge()
@@ -232,11 +313,11 @@ export function useBattleLogReveal(opts: {
                 if (targetWillFaint) {
                   const faintDelay = isSingleHit
                     ? (entry.crit ? BATTLE_ANIM.HURT_CRIT_MS : BATTLE_ANIM.HURT_MS)
-                    : (BATTLE_ANIM.FOCUSED_HIT_SPACING_MS * 2) + BATTLE_ANIM.HIT_IMPACT_MS
+                    : (hitSpacingMs * (hitCount - 1)) + BATTLE_ANIM.HIT_IMPACT_MS
                   const faintTimer = setTimeout(() => triggerFaint(entry.target), faintDelay)
                   animTimers.current.push(faintTimer)
                 }
-              }, BATTLE_ANIM.LUNGE_PEAK_MS)
+              }, contactMs)
               animTimers.current.push(impactTimer)
             }
 
@@ -252,6 +333,10 @@ export function useBattleLogReveal(opts: {
             .slice(0, i)
             .some(e => e.target === 'player' && e.targetHpAfter === 0)
           if (entry.action === 'counter' && entry.damage > 0 && !playerAlreadyDead) {
+            setResolvedLogOverride({
+              sessionId,
+              entries: [...base, ...newEntries.slice(0, i + 1)],
+            })
             triggerHurt(opponentSpriteRef, false)
             opponentEffectsRef.current?.showDamageNumber(entry.damage, false)
             opponentEffectsRef.current?.showAttackImpact(false)
@@ -270,6 +355,10 @@ export function useBattleLogReveal(opts: {
               (entry.action === 'counter' && !playerAlreadyDead)
             )
           if (entry.targetHpAfter === 0 && !faintHandledByDamageSequence) {
+            setResolvedLogOverride({
+              sessionId,
+              entries: [...base, ...newEntries.slice(0, i + 1)],
+            })
             triggerFaint(entry.target)
           }
 
@@ -291,6 +380,7 @@ export function useBattleLogReveal(opts: {
       triggerArenaFlash,
       triggerHurt,
       triggerFocusedHurtSequence,
+      triggerActorAnticipation,
       triggerFaint,
       playerSpriteRef,
       opponentSpriteRef,
@@ -307,6 +397,7 @@ export function useBattleLogReveal(opts: {
 
   return {
     displayedLogOverride,
+    resolvedLogOverride,
     isAnimating,
     revealEntries,
   }
