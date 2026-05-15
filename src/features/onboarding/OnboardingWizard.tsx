@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -9,6 +9,9 @@ import { calculateBMR, calculateTDEE, suggestCalorieTarget, lbToKg, inchesToCm }
 import { guessTimezone } from '@/lib/date'
 import type { SexForTDEE, ActivityLevel } from '@/types/domain'
 import { CALORIE_TARGET_MIN, CALORIE_TARGET_MAX } from '@/lib/constants'
+
+const base = (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '')
+const creatureMarkUrl = `${base}/sprites/player_battle/baby_steady.png`
 
 // ─── Step 1 schema ──────────────────────────────────────────────────────────
 const step1Schema = z.object({
@@ -143,28 +146,37 @@ export default function OnboardingWizard() {
   }
 
   return (
-    <div className="app-page flex min-h-screen items-start justify-center px-4 py-10">
+    <div className="app-page flex min-h-screen items-start justify-center px-4 py-6 pb-24">
       <div className="w-full max-w-md">
-        {/* Progress indicator */}
-        <div className="flex gap-2 mb-8">
-          {[1, 2, 3, 4].map((s) => (
-            <div
-              key={s}
-              className={`h-1 flex-1 rounded-full transition-colors ${
-                s <= step ? 'bg-indigo-500' : 'bg-slate-700'
-              }`}
-            />
-          ))}
+        <div className="mb-5 flex items-center gap-3 px-1">
+          <img
+            src={creatureMarkUrl}
+            alt=""
+            className="sprite-pixel-art h-12 w-12 flex-none"
+            style={{ imageRendering: 'pixelated' }}
+          />
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--app-text-muted)]">
+              Setup
+            </p>
+            <h1 className="text-xl font-bold leading-tight text-[var(--app-text-primary)]">
+              Build your baseline
+            </h1>
+          </div>
         </div>
+
+        <ProgressIndicator step={step} />
 
         {/* Step 1: Profile input */}
         {step === 1 && (
-          <form onSubmit={step1Form.handleSubmit(handleStep1Submit)} className="space-y-5">
-            <h2 className="text-xl font-semibold text-white">Tell us about yourself</h2>
+          <form onSubmit={step1Form.handleSubmit(handleStep1Submit)} className="app-card space-y-5 p-4">
+            <StepHeading
+              title="Tell us about yourself"
+              subtitle="This helps estimate your daily energy needs."
+            />
 
             {/* Sex */}
-            <div>
-              <label className="block text-sm text-slate-300 mb-2">Biological sex (for TDEE)</label>
+            <FormField label="Biological sex (for TDEE)">
               <div className="flex gap-3">
                 {(['male', 'female'] as SexForTDEE[]).map((s) => (
                   <label key={s} className="flex-1 cursor-pointer">
@@ -175,10 +187,10 @@ export default function OnboardingWizard() {
                       className="sr-only"
                     />
                     <div
-                      className={`py-2 text-center rounded-lg border text-sm transition-colors ${
+                      className={`rounded-[var(--app-radius-lg)] px-3 py-2 text-center text-sm font-medium transition-[background-color,color,box-shadow] ${
                         sexForTDEE === s
-                          ? 'border-indigo-500 bg-indigo-950 text-white'
-                          : 'border-slate-700 text-slate-400'
+                          ? 'bg-white text-[var(--app-brand)] shadow-[0_1px_8px_rgb(124_58_237/0.16),0_0_0_1px_var(--app-brand-ring)]'
+                          : 'bg-[var(--app-input-bg)] text-[var(--app-text-muted)] hover:bg-[var(--app-input-bg-focus)] hover:text-[var(--app-text-secondary)]'
                       }`}
                     >
                       {s === 'male' ? 'Male' : 'Female'}
@@ -187,17 +199,14 @@ export default function OnboardingWizard() {
                 ))}
               </div>
               {step1Form.formState.errors.sexForTDEE && (
-                <p className="text-red-400 text-xs mt-1">
+                <ErrorText>
                   {step1Form.formState.errors.sexForTDEE.message}
-                </p>
+                </ErrorText>
               )}
-            </div>
+            </FormField>
 
             {/* Age */}
-            <div>
-              <label htmlFor="age" className="block text-sm text-slate-300 mb-1">
-                Age
-              </label>
+            <FormField label="Age" htmlFor="age">
               <input
                 id="age"
                 type="number"
@@ -206,33 +215,34 @@ export default function OnboardingWizard() {
                 placeholder="30"
               />
               {step1Form.formState.errors.ageYears && (
-                <p className="text-red-400 text-xs mt-1">
+                <ErrorText>
                   {step1Form.formState.errors.ageYears.message}
-                </p>
+                </ErrorText>
               )}
-            </div>
+            </FormField>
 
             {/* Height */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-sm text-slate-300">Height</label>
-                <div className="flex gap-2 text-xs">
+            <FormField
+              label="Height"
+              trailing={
+                <div className="flex rounded-[var(--app-radius-lg)] bg-[var(--app-input-bg)] p-1 text-xs">
                   {(['cm', 'ft'] as const).map((u) => (
                     <button
                       key={u}
                       type="button"
                       onClick={() => step1Form.setValue('heightUnit', u)}
-                      className={`px-2 py-0.5 rounded ${
+                      className={`rounded-[var(--app-radius-md)] px-2.5 py-1 font-medium transition-colors ${
                         heightUnit === u
-                          ? 'bg-indigo-600 text-white'
-                          : 'text-slate-400 hover:text-white'
+                          ? 'bg-white text-[var(--app-brand)] shadow-[0_1px_8px_rgb(124_58_237/0.10)]'
+                          : 'text-[var(--app-input-placeholder)] hover:text-[var(--app-text-secondary)]'
                       }`}
                     >
                       {u}
                     </button>
                   ))}
                 </div>
-              </div>
+              }
+            >
               {heightUnit === 'cm' ? (
                 <input
                   type="number"
@@ -256,29 +266,30 @@ export default function OnboardingWizard() {
                   />
                 </div>
               )}
-            </div>
+            </FormField>
 
             {/* Weight */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-sm text-slate-300">Current weight</label>
-                <div className="flex gap-2 text-xs">
+            <FormField
+              label="Current weight"
+              trailing={
+                <div className="flex rounded-[var(--app-radius-lg)] bg-[var(--app-input-bg)] p-1 text-xs">
                   {(['kg', 'lb'] as const).map((u) => (
                     <button
                       key={u}
                       type="button"
                       onClick={() => step1Form.setValue('weightUnit', u)}
-                      className={`px-2 py-0.5 rounded ${
+                      className={`rounded-[var(--app-radius-md)] px-2.5 py-1 font-medium transition-colors ${
                         weightUnit === u
-                          ? 'bg-indigo-600 text-white'
-                          : 'text-slate-400 hover:text-white'
+                          ? 'bg-white text-[var(--app-brand)] shadow-[0_1px_8px_rgb(124_58_237/0.10)]'
+                          : 'text-[var(--app-input-placeholder)] hover:text-[var(--app-text-secondary)]'
                       }`}
                     >
                       {u}
                     </button>
                   ))}
                 </div>
-              </div>
+              }
+            >
               <input
                 type="number"
                 step="0.1"
@@ -287,42 +298,41 @@ export default function OnboardingWizard() {
                 placeholder={weightUnit === 'kg' ? '80' : '176'}
               />
               {step1Form.formState.errors.weightValue && (
-                <p className="text-red-400 text-xs mt-1">
+                <ErrorText>
                   {step1Form.formState.errors.weightValue.message}
-                </p>
+                </ErrorText>
               )}
-            </div>
+            </FormField>
 
             {/* Activity Level */}
-            <div>
-              <label className="block text-sm text-slate-300 mb-2">Activity level</label>
+            <FormField label="Activity level">
               <div className="space-y-2">
                 {(Object.entries(ACTIVITY_LABELS) as [ActivityLevel, string][]).map(
                   ([value, label]) => (
-                    <label key={value} className="flex items-center gap-3 cursor-pointer">
+                    <label
+                      key={value}
+                      className="flex cursor-pointer items-center gap-3 rounded-[var(--app-radius-lg)] bg-[var(--app-input-bg)] px-3 py-2.5 text-sm text-[var(--app-text-secondary)] transition-colors hover:bg-[var(--app-input-bg-focus)]"
+                    >
                       <input
                         type="radio"
                         value={value}
                         {...step1Form.register('activityLevel')}
-                        className="accent-indigo-500"
+                        className="accent-[var(--app-brand)]"
                       />
-                      <span className="text-sm text-slate-300">{label}</span>
+                      <span>{label}</span>
                     </label>
                   ),
                 )}
               </div>
               {step1Form.formState.errors.activityLevel && (
-                <p className="text-red-400 text-xs mt-1">
+                <ErrorText>
                   {step1Form.formState.errors.activityLevel.message}
-                </p>
+                </ErrorText>
               )}
-            </div>
+            </FormField>
 
             {/* Timezone */}
-            <div>
-              <label htmlFor="timezone" className="block text-sm text-slate-300 mb-1">
-                Timezone
-              </label>
+            <FormField label="Timezone" htmlFor="timezone">
               <input
                 id="timezone"
                 type="text"
@@ -331,18 +341,14 @@ export default function OnboardingWizard() {
                 placeholder="America/New_York"
               />
               {step1Form.formState.errors.timezone && (
-                <p className="text-red-400 text-xs mt-1">
+                <ErrorText>
                   {step1Form.formState.errors.timezone.message}
-                </p>
+                </ErrorText>
               )}
-            </div>
+            </FormField>
 
             {/* Goal weight (optional) */}
-            <div>
-              <label className="block text-sm text-slate-400 mb-1">
-                Goal weight{' '}
-                <span className="text-slate-500">(optional)</span>
-              </label>
+            <FormField label="Goal weight" helper="Optional">
               <input
                 type="number"
                 step="0.1"
@@ -350,7 +356,7 @@ export default function OnboardingWizard() {
                 className="app-input px-3 py-2"
                 placeholder={weightUnit === 'kg' ? '72' : '158'}
               />
-            </div>
+            </FormField>
 
             <button
               type="submit"
@@ -363,27 +369,28 @@ export default function OnboardingWizard() {
 
         {/* Step 2: TDEE result */}
         {step === 2 && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-white">Your estimated needs</h2>
+          <div className="app-card space-y-5 p-4">
+            <StepHeading
+              title="Your estimated needs"
+              subtitle="A starting point based on your profile."
+            />
 
-            <div className="app-card space-y-4 p-5">
-              <div>
-                <p className="text-slate-400 text-sm">Total Daily Energy Expenditure</p>
-                <p className="text-3xl font-bold text-white mt-1">
+            <div className="space-y-3">
+              <MetricPanel label="Total Daily Energy Expenditure">
+                <p className="mt-1 text-3xl font-bold text-[var(--app-text-primary)]">
                   {tdee.toLocaleString()}{' '}
-                  <span className="text-sm font-normal text-slate-400">kcal/day</span>
+                  <span className="text-sm font-normal text-[var(--app-text-muted)]">kcal/day</span>
                 </p>
-              </div>
-              <div className="border-t border-slate-700 pt-4">
-                <p className="text-slate-400 text-sm">Suggested daily target (500 kcal deficit)</p>
-                <p className="text-2xl font-semibold text-indigo-400 mt-1">
+              </MetricPanel>
+              <MetricPanel label="Suggested daily target">
+                <p className="mt-1 text-2xl font-semibold text-[var(--app-brand)]">
                   {suggestedTarget.toLocaleString()}{' '}
-                  <span className="text-sm font-normal text-slate-400">kcal/day</span>
+                  <span className="text-sm font-normal text-[var(--app-text-muted)]">kcal/day</span>
                 </p>
-              </div>
+              </MetricPanel>
             </div>
 
-            <p className="text-slate-400 text-sm">
+            <p className="rounded-[var(--app-radius-lg)] bg-[var(--app-brand-soft)] px-3 py-2.5 text-sm leading-relaxed text-[var(--app-surface-purple-text)]">
               This creates a moderate deficit aimed at sustainable fat loss. You can adjust this on
               the next screen.
             </p>
@@ -399,16 +406,13 @@ export default function OnboardingWizard() {
 
         {/* Step 3: Target confirmation */}
         {step === 3 && (
-          <form onSubmit={step3Form.handleSubmit(handleStep3Submit)} className="space-y-5">
-            <h2 className="text-xl font-semibold text-white">Confirm your daily target</h2>
-            <p className="text-slate-400 text-sm">
-              Adjust if needed. You can change this anytime from your profile.
-            </p>
+          <form onSubmit={step3Form.handleSubmit(handleStep3Submit)} className="app-card space-y-5 p-4">
+            <StepHeading
+              title="Confirm your daily target"
+              subtitle="Adjust if needed. You can change this anytime from your profile."
+            />
 
-            <div>
-              <label htmlFor="calorieTarget" className="block text-sm text-slate-300 mb-1">
-                Daily calorie target
-              </label>
+            <FormField label="Daily calorie target" htmlFor="calorieTarget">
               <input
                 id="calorieTarget"
                 type="number"
@@ -416,17 +420,17 @@ export default function OnboardingWizard() {
                 className="app-input px-3 py-2 text-lg font-semibold"
               />
               {step3Form.formState.errors.calorieTarget && (
-                <p className="text-red-400 text-xs mt-1">
+                <ErrorText>
                   {step3Form.formState.errors.calorieTarget.message}
-                </p>
+                </ErrorText>
               )}
-              <p className="text-slate-500 text-xs mt-1">
+              <p className="mt-1 text-xs text-[var(--app-text-muted)]">
                 Range: {CALORIE_TARGET_MIN}–{CALORIE_TARGET_MAX} kcal
               </p>
-            </div>
+            </FormField>
 
             {saveError && (
-              <p className="text-red-400 text-sm">{saveError}</p>
+              <p className="text-sm text-[var(--app-danger)]">{saveError}</p>
             )}
 
             <div className="flex gap-3">
@@ -450,35 +454,27 @@ export default function OnboardingWizard() {
 
         {/* Step 4: Creature intro */}
         {step === 4 && (
-          <div className="text-center space-y-6">
-            <div className="w-32 h-32 mx-auto bg-slate-800 rounded-full flex items-center justify-center">
-              <span className="text-6xl">🥚</span>
+          <div className="app-card space-y-6 p-4 text-center">
+            <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-full bg-[var(--app-brand-soft)]">
+              <img
+                src={creatureMarkUrl}
+                alt=""
+                className="sprite-pixel-art h-24 w-24"
+                style={{ imageRendering: 'pixelated' }}
+              />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">Meet your companion</h2>
-              <p className="text-slate-400 text-sm mt-2 leading-relaxed">
+              <h2 className="text-2xl font-bold text-[var(--app-text-primary)]">Meet your companion</h2>
+              <p className="mt-2 text-sm leading-relaxed text-[var(--app-text-muted)]">
                 Your creature grows stronger as you build consistency. Log your meals each day to
                 watch it evolve.
               </p>
             </div>
 
-            <div className="app-card space-y-2 p-4 text-left">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-indigo-400" />
-                <span className="text-slate-300 text-sm">Log meals daily to build streaks</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-indigo-400" />
-                <span className="text-slate-300 text-sm">
-                  Stay within target to gain strength
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-indigo-400" />
-                <span className="text-slate-300 text-sm">
-                  7-day streak unlocks the first evolution
-                </span>
-              </div>
+            <div className="space-y-2 text-left">
+              <ChecklistItem>Log meals daily to build streaks</ChecklistItem>
+              <ChecklistItem>Stay within target to gain strength</ChecklistItem>
+              <ChecklistItem>7-day streak unlocks the first evolution</ChecklistItem>
             </div>
 
             <button
@@ -490,6 +486,84 @@ export default function OnboardingWizard() {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function ProgressIndicator({ step }: { step: number }) {
+  return (
+    <div className="mb-5 rounded-[var(--app-radius-xl)] bg-white/65 p-2">
+      <div className="flex gap-2">
+        {[1, 2, 3, 4].map((s) => (
+          <div
+            key={s}
+            className={`h-1.5 flex-1 rounded-full transition-colors ${
+              s <= step ? 'bg-[var(--app-brand)]' : 'bg-[var(--app-ring-track)]'
+            }`}
+          />
+        ))}
+      </div>
+      <p className="mt-2 text-center text-xs font-medium text-[var(--app-text-muted)]">
+        Step {step} of 4
+      </p>
+    </div>
+  )
+}
+
+function StepHeading({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div>
+      <h2 className="text-xl font-bold text-[var(--app-text-primary)]">{title}</h2>
+      <p className="mt-1 text-sm leading-relaxed text-[var(--app-text-muted)]">{subtitle}</p>
+    </div>
+  )
+}
+
+function FormField({
+  label,
+  htmlFor,
+  helper,
+  trailing,
+  children,
+}: {
+  label: string
+  htmlFor?: string
+  helper?: string
+  trailing?: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <div>
+      <div className="mb-1.5 flex min-h-7 items-center justify-between gap-3">
+        <label htmlFor={htmlFor} className="text-sm text-[var(--app-text-secondary)]">
+          {label}
+          {helper ? <span className="ml-1 text-[var(--app-text-muted)]">({helper})</span> : null}
+        </label>
+        {trailing}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function ErrorText({ children }: { children: ReactNode }) {
+  return <p className="mt-1 text-xs text-[var(--app-danger)]">{children}</p>
+}
+
+function MetricPanel({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="rounded-[var(--app-radius-lg)] bg-[var(--app-input-bg)] p-4">
+      <p className="text-sm text-[var(--app-text-muted)]">{label}</p>
+      {children}
+    </div>
+  )
+}
+
+function ChecklistItem({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 rounded-[var(--app-radius-lg)] bg-[var(--app-input-bg)] px-3 py-2.5">
+      <span className="h-2 w-2 flex-none rounded-full bg-[var(--app-brand)]" />
+      <span className="text-sm text-[var(--app-text-secondary)]">{children}</span>
     </div>
   )
 }
