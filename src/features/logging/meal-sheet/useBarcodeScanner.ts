@@ -12,6 +12,60 @@ const EAN_BARCODE_FORMATS = new Set<BarcodeFormat>([
   BarcodeFormat.UPC_E,
 ])
 
+type FocusDistanceRange = { min?: number; max?: number; step?: number }
+type BarcodeTrackCapabilities = MediaTrackCapabilities & {
+  focusMode?: string[]
+  focusDistance?: FocusDistanceRange
+}
+type BarcodeTrackConstraintSet = MediaTrackConstraintSet & {
+  focusMode?: string
+  focusDistance?: number
+}
+
+const SCANNER_VIDEO_CONSTRAINTS: MediaStreamConstraints = {
+  video: {
+    facingMode: { ideal: 'environment' },
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    frameRate: { ideal: 30 },
+  },
+}
+
+function chooseNearFocusDistance(range: FocusDistanceRange): number | null {
+  const min = range.min
+  const max = range.max
+  if (typeof min !== 'number' || typeof max !== 'number' || !Number.isFinite(min) || !Number.isFinite(max) || max <= min) {
+    return null
+  }
+
+  const nearDistance = min + (max - min) * 0.2
+  const step = range.step
+  if (typeof step !== 'number' || !Number.isFinite(step) || step <= 0) return nearDistance
+  return min + Math.round((nearDistance - min) / step) * step
+}
+
+async function tuneTrackForBarcodeScanning(video: HTMLVideoElement): Promise<void> {
+  const stream = video.srcObject as ({ getVideoTracks?: () => MediaStreamTrack[] } | null)
+  const track = stream?.getVideoTracks?.()[0]
+  if (!track) return
+
+  const capabilities = track.getCapabilities() as BarcodeTrackCapabilities
+  const focusConstraint: BarcodeTrackConstraintSet = {}
+  if (capabilities.focusMode?.includes('continuous')) {
+    focusConstraint.focusMode = 'continuous'
+  } else if (capabilities.focusMode?.includes('auto')) {
+    focusConstraint.focusMode = 'auto'
+  }
+
+  const focusDistance = capabilities.focusDistance ? chooseNearFocusDistance(capabilities.focusDistance) : null
+  if (focusDistance != null) {
+    focusConstraint.focusDistance = focusDistance
+  }
+
+  if (Object.keys(focusConstraint).length === 0) return
+  await track.applyConstraints({ advanced: [focusConstraint] })
+}
+
 export function useBarcodeScanner({
   active,
   paused = false,
@@ -45,7 +99,7 @@ export function useBarcodeScanner({
       try {
         if (!videoRef.current) return
         controls = await reader.decodeFromConstraints(
-          { video: { facingMode: 'environment' } },
+          SCANNER_VIDEO_CONSTRAINTS,
           videoRef.current,
           (result, error) => {
             if (stopped) return
@@ -66,6 +120,11 @@ export function useBarcodeScanner({
             }
           },
         )
+        try {
+          if (!stopped && videoRef.current) await tuneTrackForBarcodeScanning(videoRef.current)
+        } catch {
+          // Camera focus controls are browser/device-specific; scanning still works without them.
+        }
         if (!stopped) setStatus('scanning')
       } catch (e) {
         if (stopped) return
