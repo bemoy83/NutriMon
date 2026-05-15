@@ -113,7 +113,7 @@ function EnergyField({
       <input
         id={fieldId}
         type="number"
-        {...register('caloriesPer100g', { valueAsNumber: true })}
+        {...register('caloriesPer100g', { setValueAs: v => v == null || v === '' ? undefined : Number(v) })}
         className="app-input px-3 py-2"
         placeholder="e.g. 165"
         onFocus={selectAllOnFocus}

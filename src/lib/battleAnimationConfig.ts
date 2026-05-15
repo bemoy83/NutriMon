@@ -71,4 +71,7 @@ export const BATTLE_ANIM = {
 
   /** Ground shockwave ellipse expand + fade duration (ms). Must match `ground-shockwave` @keyframes. */
   GROUND_SHOCKWAVE_MS: 420,
+
+  /** Charge build-up glow on the attacker's sprite stage before the lunge (ms). Must match `charge-glow` @keyframes. */
+  CHARGE_GLOW_MS: 300,
 } as const

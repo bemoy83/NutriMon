@@ -4,6 +4,7 @@ import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
 
 export interface CreatureSpriteHandle {
   triggerAnimation(type: 'hurt' | 'faint' | 'attack', durationMs: number, isCrit?: boolean, lungeDir?: 'right' | 'left'): void
+  triggerChargeGlow(): void
 }
 
 interface CreatureSpriteProps {
@@ -47,6 +48,8 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
       lungeDir?: 'right' | 'left'
     } | null>(null)
     const [hasFainted, setHasFainted] = useState(false)
+    const [isCharging, setIsCharging] = useState(false)
+    const chargeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const descriptorKey = descriptor ? `${descriptor.url}:${descriptor.facing}` : 'placeholder'
     const [frameState, setFrameState] = useState({ descriptorKey, currentFrame: 0 })
 
@@ -91,11 +94,20 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
           animClearRef.current = null
         }, durationMs)
       },
+      triggerChargeGlow() {
+        if (chargeTimerRef.current) clearTimeout(chargeTimerRef.current)
+        setIsCharging(true)
+        chargeTimerRef.current = setTimeout(() => {
+          setIsCharging(false)
+          chargeTimerRef.current = null
+        }, BATTLE_ANIM.CHARGE_GLOW_MS + BATTLE_ANIM.LUNGE_MS)
+      },
     }))
 
     useEffect(() => {
       return () => {
         if (animClearRef.current) clearTimeout(animClearRef.current)
+        if (chargeTimerRef.current) clearTimeout(chargeTimerRef.current)
         if (frameIntervalRef.current) clearInterval(frameIntervalRef.current)
       }
     }, [])
@@ -111,6 +123,12 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
       ? `battle-lunge-${activeAnimation.lungeDir} ${activeAnimation.durationMs}ms ease-out forwards`
       : undefined
 
+    const chargeGlowAnimation = isCharging
+      ? `charge-glow ${BATTLE_ANIM.CHARGE_GLOW_MS}ms ease-in forwards`
+      : undefined
+
+    const compositeAnimation = [lungeAnimation, chargeGlowAnimation].filter(Boolean).join(', ') || undefined
+
     const containerStyle: React.CSSProperties = {
       position: 'relative',
       width: displaySize,
@@ -118,7 +136,7 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
       display: 'inline-block',
       flexShrink: 0,
       ...(hasFainted ? { visibility: 'hidden' } : {}),
-      ...(lungeAnimation ? { animation: lungeAnimation } : {}),
+      ...(compositeAnimation ? { animation: compositeAnimation } : {}),
     }
 
     const imgStyle: React.CSSProperties = {

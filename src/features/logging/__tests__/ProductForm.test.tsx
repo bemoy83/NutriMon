@@ -143,4 +143,25 @@ describe('ProductForm', () => {
       updatedAt: '2026-01-06T08:30:00.000Z',
     })
   })
+
+  it('renders scanner-prefilled missing kcal as blank and requires user input before save', async () => {
+    const onSave = vi.fn()
+
+    render(
+      <ProductForm
+        initialValues={{ name: 'Scanned yogurt', caloriesPer100g: null }}
+        onSave={onSave}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(document.getElementById('name')).toHaveValue('Scanned yogurt')
+      expect(document.getElementById('caloriesPer100g')).toHaveValue(null)
+    })
+
+    fireEvent.click(screen.getByText('Save'))
+
+    expect(await screen.findByText('Enter kcal per 100g')).toBeInTheDocument()
+    expect(onSave).not.toHaveBeenCalled()
+  })
 })

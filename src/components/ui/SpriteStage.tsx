@@ -23,7 +23,6 @@ const SpriteStage = forwardRef<SpriteStageHandle, SpriteStageProps>(
         const el = divRef.current
         if (!el) return
         el.classList.remove('animate-shake')
-        // Force reflow so re-adding the class restarts the animation
         void el.offsetWidth
         el.classList.add('animate-shake')
         setTimeout(() => el.classList.remove('animate-shake'), 350)

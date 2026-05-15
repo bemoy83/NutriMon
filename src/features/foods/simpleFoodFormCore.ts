@@ -24,7 +24,7 @@ export type SimpleFoodFormData = z.infer<typeof simpleFoodSchema>
 
 export interface SimpleFoodFormPrefill {
   name?: string
-  caloriesPer100g?: number
+  caloriesPer100g?: number | null
   proteinPer100g?: number | null
   carbsPer100g?: number | null
   fatPer100g?: number | null
@@ -104,12 +104,13 @@ export function useSimpleFoodForm({
   const ivCarbs = initialValues?.carbsPer100g
   const ivFat = initialValues?.fatPer100g
   const ivPortion = initialValues?.labelPortionGrams
+  const hasInitialCalories = initialValues != null && 'caloriesPer100g' in initialValues
 
   useEffect(() => {
     if (!initialProduct) {
       reset({
         name: ivName ?? '',
-        caloriesPer100g: ivCal ?? 0,
+        caloriesPer100g: hasInitialCalories && ivCal == null ? null as unknown as number : ivCal ?? 0,
         proteinPer100g: ivProtein ?? null,
         carbsPer100g: ivCarbs ?? null,
         fatPer100g: ivFat ?? null,
@@ -127,7 +128,7 @@ export function useSimpleFoodForm({
       fatPer100g: initialProduct.fatPer100g ?? initialProduct.fatG ?? null,
       labelPortionGrams: initialProduct.labelPortionGrams,
     })
-  }, [initialProduct, reset, ivName, ivCal, ivProtein, ivCarbs, ivFat, ivPortion])
+  }, [initialProduct, reset, ivName, ivCal, ivProtein, ivCarbs, ivFat, ivPortion, hasInitialCalories])
 
   const portionKcalPreview =
     portionG && calPer100 != null && calPer100 >= 0

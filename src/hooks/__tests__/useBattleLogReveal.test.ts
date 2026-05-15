@@ -37,11 +37,16 @@ function effectHandle(): EffectsLayerHandle {
     showCritBadge: vi.fn(),
     showAttackImpact: vi.fn(),
     showFocusedAttackImpact: vi.fn(),
+    showGroundShockwave: vi.fn(),
     showHitImpact: vi.fn(),
     showDefendGuard: vi.fn(),
     showFocusCharge: vi.fn(),
     showHealEffect: vi.fn(),
   }
+}
+
+function spriteHandle(): CreatureSpriteHandle {
+  return { triggerAnimation: vi.fn(), triggerChargeGlow: vi.fn() }
 }
 
 describe('useBattleLogReveal', () => {
@@ -55,11 +60,12 @@ describe('useBattleLogReveal', () => {
     const opponentEffects = effectHandle()
     const { result } = renderHook(() =>
       useBattleLogReveal({
-        playerSpriteRef: { current: { triggerAnimation: vi.fn() } satisfies CreatureSpriteHandle },
-        opponentSpriteRef: { current: { triggerAnimation: vi.fn() } satisfies CreatureSpriteHandle },
+        playerSpriteRef: { current: spriteHandle() },
+        opponentSpriteRef: { current: spriteHandle() },
         playerEffectsRef: { current: playerEffects },
         opponentEffectsRef: { current: opponentEffects },
         triggerArenaShake: vi.fn(),
+        triggerArenaFlash: vi.fn(),
         specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
         playerMaxHp: 100,
       }),
@@ -81,16 +87,17 @@ describe('useBattleLogReveal', () => {
 
   it('keeps attack damage behavior on the target sprite layer', () => {
     vi.useFakeTimers()
-    const opponentSprite = { triggerAnimation: vi.fn() } satisfies CreatureSpriteHandle
+    const opponentSprite = spriteHandle()
     const opponentEffects = effectHandle()
     const triggerArenaShake = vi.fn()
     const { result } = renderHook(() =>
       useBattleLogReveal({
-        playerSpriteRef: { current: { triggerAnimation: vi.fn() } satisfies CreatureSpriteHandle },
+        playerSpriteRef: { current: spriteHandle() },
         opponentSpriteRef: { current: opponentSprite },
         playerEffectsRef: { current: effectHandle() },
         opponentEffectsRef: { current: opponentEffects },
         triggerArenaShake,
+        triggerArenaFlash: vi.fn(),
         specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
         playerMaxHp: 100,
       }),
@@ -120,15 +127,16 @@ describe('useBattleLogReveal', () => {
 
   it('uses focused attack impact and 3-hit hurt sequence for skill action', () => {
     vi.useFakeTimers()
-    const opponentSprite = { triggerAnimation: vi.fn() } satisfies CreatureSpriteHandle
+    const opponentSprite = spriteHandle()
     const opponentEffects = effectHandle()
     const { result } = renderHook(() =>
       useBattleLogReveal({
-        playerSpriteRef: { current: { triggerAnimation: vi.fn() } satisfies CreatureSpriteHandle },
+        playerSpriteRef: { current: spriteHandle() },
         opponentSpriteRef: { current: opponentSprite },
         playerEffectsRef: { current: effectHandle() },
         opponentEffectsRef: { current: opponentEffects },
         triggerArenaShake: vi.fn(),
+        triggerArenaFlash: vi.fn(),
         specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
         playerMaxHp: 100,
       }),
@@ -169,8 +177,8 @@ describe('useBattleLogReveal', () => {
 
   it('waits until the final lethal hit finishes before triggering faint', () => {
     vi.useFakeTimers()
-    const playerSprite = { triggerAnimation: vi.fn() } satisfies CreatureSpriteHandle
-    const opponentSprite = { triggerAnimation: vi.fn() } satisfies CreatureSpriteHandle
+    const playerSprite = spriteHandle()
+    const opponentSprite = spriteHandle()
     const { result } = renderHook(() =>
       useBattleLogReveal({
         playerSpriteRef: { current: playerSprite },
@@ -178,6 +186,7 @@ describe('useBattleLogReveal', () => {
         playerEffectsRef: { current: effectHandle() },
         opponentEffectsRef: { current: effectHandle() },
         triggerArenaShake: vi.fn(),
+        triggerArenaFlash: vi.fn(),
         specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
         playerMaxHp: 100,
       }),

@@ -1,14 +1,24 @@
 import { useEffect, useRef, useState } from 'react'
 import { BrowserMultiFormatReader } from '@zxing/browser'
-import { NotFoundException } from '@zxing/library'
+import { BarcodeFormat, NotFoundException } from '@zxing/library'
+import { normalizeEan } from '@/lib/ean'
 
 export type ScanStatus = 'idle' | 'requesting' | 'scanning' | 'denied' | 'error'
 
+const EAN_BARCODE_FORMATS = new Set<BarcodeFormat>([
+  BarcodeFormat.EAN_8,
+  BarcodeFormat.EAN_13,
+  BarcodeFormat.UPC_A,
+  BarcodeFormat.UPC_E,
+])
+
 export function useBarcodeScanner({
   active,
+  paused = false,
   onDetect,
 }: {
   active: boolean
+  paused?: boolean
   onDetect: (ean: string) => void
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -18,6 +28,8 @@ export function useBarcodeScanner({
   // stable ref so the effect doesn't re-run when onDetect identity changes
   const onDetectRef = useRef(onDetect)
   useEffect(() => { onDetectRef.current = onDetect })
+  const pausedRef = useRef(paused)
+  useEffect(() => { pausedRef.current = paused })
 
   useEffect(() => {
     if (!active) return
@@ -37,8 +49,10 @@ export function useBarcodeScanner({
           videoRef.current,
           (result, error) => {
             if (stopped) return
-            if (result) {
-              const text = result.getText()
+            if (result && !pausedRef.current) {
+              if (!EAN_BARCODE_FORMATS.has(result.getBarcodeFormat())) return
+              const text = normalizeEan(result.getText())
+              if (!text) return
               // deduplicate: don't fire for the same EAN on consecutive frames
               if (text !== lastEan) {
                 lastEan = text

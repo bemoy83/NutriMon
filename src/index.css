@@ -428,6 +428,12 @@ select {
   100% { transform: translate(-50%, -50%) scale(3.2); opacity: 0; }
 }
 
+@keyframes charge-glow {
+  0%   { filter: drop-shadow(0 0 0px rgba(250,204,21,0)); }
+  45%  { filter: drop-shadow(0 0 8px rgba(250,204,21,0.7)) drop-shadow(0 0 18px rgba(250,204,21,0.25)); }
+  100% { filter: drop-shadow(0 0 12px rgba(250,204,21,0.95)) drop-shadow(0 0 26px rgba(250,204,21,0.45)); }
+}
+
 @keyframes battle-guard-ring {
   0% {
     transform: translate(-50%, -50%) scale(0.72);

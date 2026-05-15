@@ -253,9 +253,9 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // ── Arena 4 — Frostveil Peaks (levels 19–26) ──────────────────────────────
 
   // 016 Frostscarab — small — glacial bulwark (oval shell with central split)
-  // 'frostscarab': {
-  //   battle: { url: s('/sprites/opponents/frostscarab.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // },
+  'frostscarab': {
+    battle: { url: s('/sprites/opponents/frostscarab.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+  },
 
   // 017 Glaciowyrm — medium — relentless tunneler (large head tapering to tail)
   // 'glaciowyrm': {

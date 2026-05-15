@@ -187,49 +187,65 @@ export function useBattleLogReveal(opts: {
 
           if (entry.phase === 'action' && entry.action === 'skill' && entry.damage > 0) {
             const targetWillFaint = entry.targetHpAfter === 0
-            if (entry.actor === 'player') {
-              playerSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'right')
-            } else if (entry.actor === 'opponent') {
-              opponentSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'left')
-            }
             const isPowerStrike = entry.skillId === 'power_strike'
-            const impactTimer = setTimeout(() => {
-              if (entry.target === 'player') {
-                if (isPowerStrike) {
-                  triggerHurt(playerSpriteRef, entry.crit)
-                  playerEffectsRef.current?.showAttackImpact(entry.crit)
-                  playerEffectsRef.current?.showGroundShockwave()
-                } else {
-                  triggerFocusedHurtSequence(playerSpriteRef, entry.crit)
-                  playerEffectsRef.current?.showFocusedAttackImpact(entry.crit)
-                }
-                playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
-                if (entry.crit) playerEffectsRef.current?.showCritBadge()
-                triggerArenaShake(entry.crit)
-                triggerArenaFlash()
-              } else if (entry.target === 'opponent') {
-                if (isPowerStrike) {
-                  triggerHurt(opponentSpriteRef, entry.crit)
-                  opponentEffectsRef.current?.showAttackImpact(entry.crit)
-                  opponentEffectsRef.current?.showGroundShockwave()
-                } else {
-                  triggerFocusedHurtSequence(opponentSpriteRef, entry.crit)
-                  opponentEffectsRef.current?.showFocusedAttackImpact(entry.crit)
-                }
-                opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
-                if (entry.crit) opponentEffectsRef.current?.showCritBadge()
-                triggerArenaShake(entry.crit)
-                triggerArenaFlash()
+            const isChargeStrike = entry.skillId === 'charge_strike'
+            const isSingleHit = isPowerStrike || isChargeStrike
+            if (isChargeStrike) {
+              const actorSpriteRef = entry.actor === 'player' ? playerSpriteRef : opponentSpriteRef
+              actorSpriteRef.current?.triggerChargeGlow()
+            }
+
+            const doLungeAndImpact = () => {
+              if (entry.actor === 'player') {
+                playerSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'right')
+              } else if (entry.actor === 'opponent') {
+                opponentSpriteRef.current?.triggerAnimation('attack', BATTLE_ANIM.LUNGE_MS, false, 'left')
               }
-              if (targetWillFaint) {
-                const faintDelay = isPowerStrike
-                  ? (entry.crit ? BATTLE_ANIM.HURT_CRIT_MS : BATTLE_ANIM.HURT_MS)
-                  : (BATTLE_ANIM.FOCUSED_HIT_SPACING_MS * 2) + BATTLE_ANIM.HIT_IMPACT_MS
-                const faintTimer = setTimeout(() => triggerFaint(entry.target), faintDelay)
-                animTimers.current.push(faintTimer)
-              }
-            }, BATTLE_ANIM.LUNGE_PEAK_MS)
-            animTimers.current.push(impactTimer)
+              const impactTimer = setTimeout(() => {
+                if (entry.target === 'player') {
+                  if (isSingleHit) {
+                    triggerHurt(playerSpriteRef, entry.crit)
+                    playerEffectsRef.current?.showAttackImpact(entry.crit)
+                    playerEffectsRef.current?.showGroundShockwave()
+                  } else {
+                    triggerFocusedHurtSequence(playerSpriteRef, entry.crit)
+                    playerEffectsRef.current?.showFocusedAttackImpact(entry.crit)
+                  }
+                  playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
+                  if (entry.crit) playerEffectsRef.current?.showCritBadge()
+                  triggerArenaShake(entry.crit)
+                  triggerArenaFlash()
+                } else if (entry.target === 'opponent') {
+                  if (isSingleHit) {
+                    triggerHurt(opponentSpriteRef, entry.crit)
+                    opponentEffectsRef.current?.showAttackImpact(entry.crit)
+                    opponentEffectsRef.current?.showGroundShockwave()
+                  } else {
+                    triggerFocusedHurtSequence(opponentSpriteRef, entry.crit)
+                    opponentEffectsRef.current?.showFocusedAttackImpact(entry.crit)
+                  }
+                  opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
+                  if (entry.crit) opponentEffectsRef.current?.showCritBadge()
+                  triggerArenaShake(entry.crit)
+                  triggerArenaFlash()
+                }
+                if (targetWillFaint) {
+                  const faintDelay = isSingleHit
+                    ? (entry.crit ? BATTLE_ANIM.HURT_CRIT_MS : BATTLE_ANIM.HURT_MS)
+                    : (BATTLE_ANIM.FOCUSED_HIT_SPACING_MS * 2) + BATTLE_ANIM.HIT_IMPACT_MS
+                  const faintTimer = setTimeout(() => triggerFaint(entry.target), faintDelay)
+                  animTimers.current.push(faintTimer)
+                }
+              }, BATTLE_ANIM.LUNGE_PEAK_MS)
+              animTimers.current.push(impactTimer)
+            }
+
+            if (isChargeStrike) {
+              const lungeTimer = setTimeout(doLungeAndImpact, BATTLE_ANIM.CHARGE_GLOW_MS)
+              animTimers.current.push(lungeTimer)
+            } else {
+              doLungeAndImpact()
+            }
           }
 
           const playerAlreadyDead = newEntries

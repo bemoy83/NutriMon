@@ -33,6 +33,7 @@ import { MealSheetBrowseFooter, MealSheetServingFooter } from './meal-sheet/Meal
 import { lookupBarcode, type KassalappProduct } from '@/lib/kassalapp'
 import BarcodeScannerView from './meal-sheet/BarcodeScannerView'
 import type { ProductFormPrefill } from './ProductForm'
+import { normalizeEan } from '@/lib/ean'
 
 interface MealSheetProps {
   logDate: string
@@ -79,6 +80,7 @@ export default function MealSheet({
   const [scanError, setScanError] = useState<string | null>(null)
   const [scanKey, setScanKey] = useState(0)
   const mealMenuRef = useRef<HTMLDivElement | null>(null)
+  const barcodeLookupRef = useRef<{ id: number; ean: string } | null>(null)
 
   const invalidateDailyLog = useInvalidateDailyLog()
   const invalidateFoodSources = useInvalidateFoodSourceLists()
@@ -395,21 +397,51 @@ export default function MealSheet({
   }, [])
 
   const handleBarcodeEan = useCallback(async (ean: string) => {
+    const normalized = normalizeEan(ean)
+    if (!normalized) return
+    if (barcodeLookupRef.current?.ean === normalized && scanLoading) return
+
+    const lookup = { id: (barcodeLookupRef.current?.id ?? 0) + 1, ean: normalized }
+    barcodeLookupRef.current = lookup
     setScanLoading(true)
     setScanError(null)
     try {
-      const product = await lookupBarcode(ean)
+      const product = await lookupBarcode(normalized)
+      if (barcodeLookupRef.current?.id !== lookup.id) return
       if (product) {
         onBarcodeProduct(product)
       } else {
         setScanError('No product found for this barcode')
       }
     } catch (e) {
+      if (barcodeLookupRef.current?.id !== lookup.id) return
       setScanError(e instanceof Error ? e.message : 'Lookup failed')
     } finally {
-      setScanLoading(false)
+      if (barcodeLookupRef.current?.id === lookup.id) {
+        setScanLoading(false)
+      }
     }
-  }, [onBarcodeProduct])
+  }, [onBarcodeProduct, scanLoading])
+
+  const invalidateBarcodeLookup = useCallback(() => {
+    barcodeLookupRef.current = {
+      id: (barcodeLookupRef.current?.id ?? 0) + 1,
+      ean: '',
+    }
+    setScanLoading(false)
+  }, [])
+
+  const openBarcodeScanner = useCallback(() => {
+    invalidateBarcodeLookup()
+    setScanError(null)
+    setScanKey(k => k + 1)
+    setSheetView('scan')
+  }, [invalidateBarcodeLookup])
+
+  const cancelBarcodeScanner = useCallback(() => {
+    invalidateBarcodeLookup()
+    setSheetView('browse')
+  }, [invalidateBarcodeLookup])
 
   const onServingBack = useCallback(() => {
     setSheetView('browse')
@@ -492,7 +524,7 @@ export default function MealSheet({
             onLogTemplate={handleLogTemplate}
             onDeleteTemplate={handleDeleteTemplate}
             onOpenCreateFood={onOpenCreateFood}
-            onOpenCameraScanner={() => { setScanError(null); setScanKey(k => k + 1); setSheetView('scan') }}
+            onOpenCameraScanner={openBarcodeScanner}
             footer={(
               <MealSheetBrowseFooter
                 submitError={submitError}
@@ -558,7 +590,7 @@ export default function MealSheet({
             onEan={handleBarcodeEan}
             barcodeLoading={scanLoading}
             barcodeError={scanError}
-            onCancel={() => setSheetView('browse')}
+            onCancel={cancelBarcodeScanner}
           />
         </div>
       </div>

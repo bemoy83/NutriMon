@@ -1,7 +1,6 @@
 import { useState } from 'react'
+import { normalizeEan } from '@/lib/ean'
 import { useBarcodeScanner } from './useBarcodeScanner'
-
-const EAN_RE = /^\d{8,14}$/
 
 interface BarcodeScannerViewProps {
   active: boolean
@@ -18,7 +17,11 @@ export default function BarcodeScannerView({
   barcodeError,
   onCancel,
 }: BarcodeScannerViewProps) {
-  const { videoRef, status, errorMessage: cameraError } = useBarcodeScanner({ active, onDetect: onEan })
+  const { videoRef, status, errorMessage: cameraError } = useBarcodeScanner({
+    active,
+    paused: barcodeLoading,
+    onDetect: onEan,
+  })
   const [ean, setEan] = useState('')
   const [manualError, setManualError] = useState<string | null>(null)
 
@@ -26,13 +29,20 @@ export default function BarcodeScannerView({
     const digits = e.target.value.replace(/\D/g, '')
     setEan(digits)
     setManualError(null)
-    if (EAN_RE.test(digits)) onEan(digits)
+  }
+
+  function submitManualEan() {
+    const normalized = normalizeEan(ean)
+    if (normalized) {
+      onEan(normalized)
+      return
+    }
+    setManualError('Enter a valid 8-14 digit EAN')
   }
 
   function handleEanKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') {
-      if (EAN_RE.test(ean)) onEan(ean)
-      else setManualError('Enter a valid 8–14 digit EAN')
+      submitManualEan()
     }
     if (e.key === 'Escape') onCancel()
   }
@@ -108,19 +118,27 @@ export default function BarcodeScannerView({
             placeholder="Or type EAN barcode…"
             maxLength={14}
             disabled={barcodeLoading}
-            className="app-input box-border h-10 w-full px-4 pr-10 text-sm !rounded-[var(--app-radius-lg)]"
+            className="app-input box-border h-10 w-full px-4 pr-24 text-sm !rounded-[var(--app-radius-lg)]"
           />
           {barcodeLoading && (
-            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 right-20 flex items-center pointer-events-none">
               <svg className="animate-spin h-4 w-4 text-[var(--app-text-muted)]" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
               </svg>
             </div>
           )}
+          <button
+            type="button"
+            onClick={submitManualEan}
+            disabled={barcodeLoading}
+            className="app-button-primary absolute inset-y-1 right-1 px-3 text-xs font-semibold disabled:opacity-50"
+          >
+            Lookup
+          </button>
         </div>
         {displayError && (
-          <p className="px-1 text-xs" style={{ color: 'var(--app-destructive)' }}>{displayError}</p>
+          <p className="px-1 text-xs" style={{ color: 'var(--app-danger)' }}>{displayError}</p>
         )}
         <button
           type="button"

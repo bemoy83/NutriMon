@@ -5,7 +5,7 @@ export interface KassalappProduct {
   name: string
   brand: string | null
   imageUrl: string | null
-  caloriesPer100g: number
+  caloriesPer100g: number | null
   proteinPer100g: number | null
   carbsPer100g: number | null
   fatPer100g: number | null
@@ -46,7 +46,7 @@ function getNutrient(nutrition: KassalappNutrient[] | null | undefined, ...codes
 
 function mapProduct(ean: string, raw: KassalappApiProduct): KassalappProduct {
   const nutrition = Array.isArray(raw.nutrition) ? raw.nutrition : []
-  const kcal = getNutrient(nutrition, 'energi_kcal', 'energy_kcal', 'calories', 'energi') ?? 0
+  const kcal = getNutrient(nutrition, 'energi_kcal', 'energy_kcal', 'calories', 'energi')
   const portionG =
     raw.weight && raw.weight_unit?.toLowerCase() === 'g' ? raw.weight : null
 

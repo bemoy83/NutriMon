@@ -7,6 +7,36 @@ const deleteMealTemplateMock = vi.fn()
 const invalidateDailyLogMock = vi.fn()
 const invalidateProductsMock = vi.fn()
 const invalidateTemplatesMock = vi.fn()
+const lookupBarcodeMock = vi.fn()
+
+vi.mock('@/app/providers/auth', () => ({
+  useAuth: () => ({ user: { id: 'user-1' }, session: null, loading: false }),
+}))
+
+vi.mock('@/lib/kassalapp', () => ({
+  lookupBarcode: (...args: unknown[]) => lookupBarcodeMock(...args),
+}))
+
+vi.mock('../meal-sheet/BarcodeScannerView', () => ({
+  default: ({
+    active,
+    onEan,
+    barcodeLoading,
+    barcodeError,
+  }: {
+    active: boolean
+    onEan: (ean: string) => void
+    barcodeLoading: boolean
+    barcodeError: string | null
+  }) => active ? (
+    <div>
+      <button type="button" onClick={() => onEan('7038011234567')}>Scan EAN 1</button>
+      <button type="button" onClick={() => onEan('7038017654321')}>Scan EAN 2</button>
+      {barcodeLoading && <p>Looking up barcode</p>}
+      {barcodeError && <p>{barcodeError}</p>}
+    </div>
+  ) : null,
+}))
 
 vi.mock('../api', () => ({
   createMealWithItems: (...args: unknown[]) => createMealWithItemsMock(...args),
@@ -80,6 +110,7 @@ describe('MealSheet', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     createMealWithItemsMock.mockResolvedValue(mealMutationResult)
+    lookupBarcodeMock.mockResolvedValue(null)
   })
 
   it('tapping a food opens the serving step with live kcal', async () => {
@@ -201,6 +232,100 @@ describe('MealSheet', () => {
       ])
       expect(createMealWithItemsMock).not.toHaveBeenCalled()
       expect(onClose).toHaveBeenCalled()
+    })
+  })
+
+  it('opens the product form with scanner prefill and blank kcal when nutrition is missing', async () => {
+    lookupBarcodeMock.mockResolvedValue({
+      ean: '7038011234567',
+      name: 'Scanned yogurt',
+      brand: 'Brand',
+      imageUrl: null,
+      caloriesPer100g: null,
+      proteinPer100g: 4,
+      carbsPer100g: 12,
+      fatPer100g: 1.5,
+      labelPortionGrams: 150,
+    })
+
+    render(
+      <MealSheet
+        logDate="2026-01-05"
+        loggedAt="2026-01-05T08:00:00.000Z"
+        onClose={vi.fn()}
+        onAdded={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Scan barcode' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Scan EAN 1' }))
+
+    await waitFor(() => {
+      expect(document.getElementById('name')).toHaveValue('Brand – Scanned yogurt')
+      expect(document.getElementById('caloriesPer100g')).toHaveValue(null)
+    })
+  })
+
+  it('shows scanner error when no barcode product is found', async () => {
+    lookupBarcodeMock.mockResolvedValue(null)
+
+    render(
+      <MealSheet
+        logDate="2026-01-05"
+        loggedAt="2026-01-05T08:00:00.000Z"
+        onClose={vi.fn()}
+        onAdded={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Scan barcode' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Scan EAN 1' }))
+
+    expect(await screen.findByText('No product found for this barcode')).toBeInTheDocument()
+  })
+
+  it('does not let stale barcode lookup responses overwrite the latest scan', async () => {
+    let resolveFirst: (value: null) => void = () => {}
+    let resolveSecond: (value: unknown) => void = () => {}
+    lookupBarcodeMock
+      .mockReturnValueOnce(new Promise((resolve) => { resolveFirst = resolve }))
+      .mockReturnValueOnce(new Promise((resolve) => { resolveSecond = resolve }))
+
+    render(
+      <MealSheet
+        logDate="2026-01-05"
+        loggedAt="2026-01-05T08:00:00.000Z"
+        onClose={vi.fn()}
+        onAdded={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Scan barcode' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Scan EAN 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Scan EAN 2' }))
+
+    resolveSecond({
+      ean: '7038017654321',
+      name: 'Fresh product',
+      brand: 'New',
+      imageUrl: null,
+      caloriesPer100g: 120,
+      proteinPer100g: null,
+      carbsPer100g: null,
+      fatPer100g: null,
+      labelPortionGrams: null,
+    })
+
+    await waitFor(() => {
+      expect(document.getElementById('name')).toHaveValue('New – Fresh product')
+      expect(document.getElementById('caloriesPer100g')).toHaveValue(120)
+    })
+
+    resolveFirst(null)
+
+    await waitFor(() => {
+      expect(screen.queryByText('No product found for this barcode')).not.toBeInTheDocument()
+      expect(document.getElementById('name')).toHaveValue('New – Fresh product')
     })
   })
 })
