@@ -1,6 +1,15 @@
 # NutriMon Battle UX Handoff
 
 ## Recent Work Completed
+- Implemented Regen Effect V3 (motes-rise + expanding rings):
+  - Visual language flipped from convergence (attack feel) to outward radiation (heal feel), matching the reference Pokémon VFX system.
+  - 12 motes now float upward from sprite body center with random horizontal scatter (`--fx` CSS var) and staggered delays 0–380ms. Replaces the old 6-particle inward-orbit.
+  - Three concentric elliptical rings expand from sprite center at 0/180/380ms offsets, each scaling 0.32×→2.3× before dissolving. Rings are slightly flattened (60% height) to read as a ground-plane ripple.
+  - Soft `regen-body-bloom` radial glow replaces the stepped `battle-focus-aura` reuse.
+  - `+HP` number delayed 250ms so the first ring expands before the number appears. Number now has a green glow text-shadow.
+  - `HEAL_EFFECT_MS` bumped 900→1300ms to cover the staggered ring tail.
+  - `RegenOrbitEffect` state now carries pre-computed `motes[]` (fxPx, delayMs, sizePx) so mote positions are stable across re-renders.
+  - Old `regen-orbit-in` keyframe removed; new: `regen-mote-rise`, `regen-ring-expand`, `regen-body-bloom`.
 - Implemented Effects & Animation Polish Pass V1:
   - Skill-tinted impact graphics: `SKILL_IMPACT_COLOR` map in `battleAnimationConfig.ts` drives per-skill hit spark color/glow. `triple_hit` → sky blue cut marks, `overdrive` → fuchsia arcs, `power_strike` → orange burst, `charge_strike` → amber burst, `counter_stance` payoff hit → sky blue slash. Crits always flash white for maximum pop regardless of skill.
   - `ImpactGraphic` now accepts `impactColor?: { stroke, glowFilter }` prop; crit overrides to `#ffffff` + white glow.

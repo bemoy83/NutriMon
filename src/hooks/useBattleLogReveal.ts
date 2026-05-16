@@ -249,8 +249,8 @@ export function useBattleLogReveal(opts: {
                 return e.target === 'player' && e.targetHpAfter !== null ? e.targetHpAfter : null
               }, null) ?? playerMaxHp
               const healAmount = Math.max(0, targetHpAfter - priorHp)
-              // V2: orbit particles converge inward before +HP number appears
               if (healAmount > 0) playerEffectsRef.current?.showRegenOrbitEffect(healAmount)
+              playerSpriteRef.current?.triggerHealGlow()
             }, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
           }
 

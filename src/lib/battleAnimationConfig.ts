@@ -77,8 +77,8 @@ export const BATTLE_ANIM = {
    */
   SPECIAL_FLASH_MS: 450,
 
-  /** Regen heal aura + sparks + floating +HP number duration (ms). Reuses focus-aura/spark keyframes. */
-  HEAL_EFFECT_MS: 900,
+  /** Regen heal effect total duration (ms). Covers mote rise + staggered ring sequence (0/180/380ms delays + 900ms longest ring). */
+  HEAL_EFFECT_MS: 1300,
 
   /** Attacker lunge slide duration (ms). Must match `battle-lunge-*` @keyframes. */
   LUNGE_MS: 320,
@@ -90,6 +90,8 @@ export const BATTLE_ANIM = {
 
   /** Charge build-up glow on the attacker's sprite stage before the lunge (ms). Must match `charge-glow` @keyframes. */
   CHARGE_GLOW_MS: 300,
+  /** Green edge glow on the healed sprite during regen (ms). Must match `heal-glow` @keyframes. */
+  HEAL_GLOW_MS: 950,
   /** Larger wind-up pause specifically for power_strike's heavy burst — more drama before impact. */
   POWER_STRIKE_ANTICIPATION_MS: 400,
 } as const

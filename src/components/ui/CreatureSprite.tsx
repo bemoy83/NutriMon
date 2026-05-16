@@ -6,6 +6,7 @@ export interface CreatureSpriteHandle {
   triggerAnimation(type: 'hurt' | 'faint' | 'attack', durationMs: number, isCrit?: boolean, lungeDir?: 'right' | 'left'): void
   triggerAnticipation(direction: 'right' | 'left', durationMs: number, heavy?: boolean): void
   triggerChargeGlow(): void
+  triggerHealGlow(): void
 }
 
 interface CreatureSpriteProps {
@@ -50,6 +51,8 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
     } | null>(null)
     const [hasFainted, setHasFainted] = useState(false)
     const [isCharging, setIsCharging] = useState(false)
+    const [isHealing, setIsHealing] = useState(false)
+    const healGlowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const [activeAnticipation, setActiveAnticipation] = useState<{
       id: number
       direction: 'right' | 'left'
@@ -123,12 +126,21 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
           chargeTimerRef.current = null
         }, BATTLE_ANIM.CHARGE_GLOW_MS + BATTLE_ANIM.LUNGE_MS)
       },
+      triggerHealGlow() {
+        if (healGlowTimerRef.current) clearTimeout(healGlowTimerRef.current)
+        setIsHealing(true)
+        healGlowTimerRef.current = setTimeout(() => {
+          setIsHealing(false)
+          healGlowTimerRef.current = null
+        }, BATTLE_ANIM.HEAL_GLOW_MS)
+      },
     }))
 
     useEffect(() => {
       return () => {
         if (animClearRef.current) clearTimeout(animClearRef.current)
         if (chargeTimerRef.current) clearTimeout(chargeTimerRef.current)
+        if (healGlowTimerRef.current) clearTimeout(healGlowTimerRef.current)
         if (anticipationTimerRef.current) clearTimeout(anticipationTimerRef.current)
         if (frameIntervalRef.current) clearInterval(frameIntervalRef.current)
       }
@@ -149,11 +161,15 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
       ? `charge-glow ${BATTLE_ANIM.CHARGE_GLOW_MS}ms ease-in forwards`
       : undefined
 
+    const healGlowAnimation = isHealing
+      ? `heal-glow ${BATTLE_ANIM.HEAL_GLOW_MS}ms ease-out forwards`
+      : undefined
+
     const anticipationAnimation = activeAnticipation
       ? `battle-anticipate-${activeAnticipation.heavy ? 'heavy-' : ''}${activeAnticipation.direction} ${activeAnticipation.durationMs}ms ease-out forwards`
       : undefined
 
-    const compositeAnimation = [lungeAnimation, anticipationAnimation, chargeGlowAnimation].filter(Boolean).join(', ') || undefined
+    const compositeAnimation = [lungeAnimation, anticipationAnimation, chargeGlowAnimation, healGlowAnimation].filter(Boolean).join(', ') || undefined
 
     const containerStyle: React.CSSProperties = {
       position: 'relative',

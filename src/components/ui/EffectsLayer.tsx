@@ -76,9 +76,16 @@ interface OverdriveStreak {
   yPct: number
 }
 
+interface RegenMote {
+  fxPx: number
+  delayMs: number
+  sizePx: number
+}
+
 interface RegenOrbitEffect {
   id: number
   value: number
+  motes: RegenMote[]
 }
 
 interface ChargeSpendEffect {
@@ -251,7 +258,13 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
       },
       showRegenOrbitEffect(value) {
         const id = nextId()
-        addTimedEffect(setRegenOrbits, { id, value }, BATTLE_ANIM.HEAL_EFFECT_MS)
+        const ds = displaySize ?? 128
+        const motes: RegenMote[] = Array.from({ length: 12 }, () => ({
+          fxPx: (Math.random() - 0.5) * ds * 0.72,
+          delayMs: Math.random() * 380,
+          sizePx: Math.random() < 0.3 ? 6 : 5,
+        }))
+        addTimedEffect(setRegenOrbits, { id, value, motes }, BATTLE_ANIM.HEAL_EFFECT_MS)
       },
       showChargeStrikeSpend(pipCount) {
         const id = nextId()
@@ -548,80 +561,90 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
           />
         ))}
 
-        {/* Regen orbit inward — green particles converge from ring to sprite center */}
-        {regenOrbits.map((h) => (
-          <div
-            key={h.id}
-            data-testid="battle-regen-orbit"
-            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-          >
-            {Array.from({ length: 6 }).map((_, i) => {
-              const ds = displaySize ?? 128
-              const angle = (i / 6) * Math.PI * 2
-              const cx = ds / 2
-              const cy = ds * 0.44
-              const rx = ds * 0.35
-              const ry = ds * 0.27
-              const px = cx + Math.cos(angle) * rx
-              const py = cy + Math.sin(angle) * ry
-              return (
+        {/* Regen — motes rise + concentric rings expand outward + delayed +HP */}
+        {regenOrbits.map((h) => {
+          const ds = displaySize ?? 128
+          const cx = ds / 2
+          const cy = ds * 0.44
+          const rings = [
+            { delay: 0,   sizePct: 0.55, dur: 700 },
+            { delay: 180, sizePct: 0.70, dur: 800 },
+            { delay: 380, sizePct: 0.86, dur: 900 },
+          ]
+          return (
+            <div
+              key={h.id}
+              data-testid="battle-regen-orbit"
+              style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+            >
+              {/* Rising motes — float upward with horizontal scatter */}
+              {h.motes.map((m, i) => (
                 <span
                   key={i}
                   style={{
                     position: 'absolute',
-                    left: px,
-                    top: py,
-                    width: 7,
-                    height: 7,
-                    marginLeft: -3.5,
-                    marginTop: -3.5,
+                    left: cx,
+                    top: cy,
+                    width: m.sizePx,
+                    height: m.sizePx,
+                    marginLeft: -m.sizePx / 2,
+                    marginTop: -m.sizePx / 2,
                     borderRadius: '50%',
-                    background: '#4ade80',
-                    boxShadow: '0 0 6px rgba(74,222,128,0.9), 0 0 12px rgba(34,197,94,0.5)',
-                    ['--dx' as string]: `${cx - px}px`,
-                    ['--dy' as string]: `${cy - py}px`,
-                    animation: `regen-orbit-in ${BATTLE_ANIM.HEAL_EFFECT_MS}ms ease-in ${i * 38}ms forwards`,
+                    background: i % 4 === 0 ? '#bbf7d0' : '#4ade80',
+                    boxShadow: '0 0 6px rgba(74,222,128,0.9), 0 0 10px rgba(34,197,94,0.45)',
+                    ['--fx' as string]: `${m.fxPx}px`,
+                    animation: `regen-mote-rise 900ms ease-out ${m.delayMs}ms forwards`,
+                    opacity: 0,
                   } as React.CSSProperties}
                 />
-              )
-            })}
-            <div
-              style={{
-                position: 'absolute',
-                left: '50%',
-                bottom: '7%',
-                width: '78%',
-                height: '42%',
-                borderRadius: '50%',
-                background: 'radial-gradient(ellipse, rgba(74,222,128,0.45) 0%, rgba(34,197,94,0.18) 48%, transparent 72%)',
-                transform: 'translateX(-50%)',
-                animation: `battle-focus-aura ${BATTLE_ANIM.HEAL_EFFECT_MS}ms steps(6, end) forwards`,
-              }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '100%',
-                left: '50%',
-                transform: 'translateX(-50%)',
-              }}
-            >
+              ))}
+
+              {/* Expanding rings — circular ripples radiating outward */}
+              {rings.map((ring, i) => {
+                const w = ds * ring.sizePct
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      position: 'absolute',
+                      left: cx - w / 2,
+                      top: cy - w / 2,
+                      width: w,
+                      height: w,
+                      border: '3px solid rgba(74,222,128,0.88)',
+                      borderRadius: '50%',
+                      boxShadow: '0 0 10px rgba(74,222,128,0.45)',
+                      animation: `regen-ring-expand ${ring.dur}ms ease-out ${ring.delay}ms forwards`,
+                      opacity: 0,
+                    }}
+                  />
+                )
+              })}
+
+
+              {/* +HP number — anchored at sprite center, keyframe pops it in then drifts it up.
+                  Stays fully visible until 78% of the animation so the player can read it. */}
               <div
                 style={{
-                  animation: `float-up ${BATTLE_ANIM.HEAL_EFFECT_MS}ms ease-out forwards`,
-                  fontWeight: 700,
-                  fontSize: 20,
+                  position: 'absolute',
+                  left: cx,
+                  top: cy,
+                  animation: `regen-number-pop 1200ms cubic-bezier(0.2,0.8,0.3,1) 160ms forwards`,
+                  fontWeight: 800,
+                  fontSize: 24,
                   lineHeight: 1,
                   color: '#4ade80',
-                  textShadow: '0 2px 5px rgba(0,0,0,0.4)',
+                  textShadow: '0 2px 5px rgba(0,0,0,0.5), 0 0 12px rgba(74,222,128,0.7)',
                   whiteSpace: 'nowrap',
+                  opacity: 0,
+                  pointerEvents: 'none',
                 }}
               >
                 +{h.value}
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
 
         {/* Charge strike converge — pips fly from spread into sprite center */}
         {chargeSpends.map((effect) => (

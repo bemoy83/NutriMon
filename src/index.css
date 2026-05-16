@@ -442,6 +442,15 @@ select {
   100% { filter: drop-shadow(0 0 12px rgba(250,204,21,0.95)) drop-shadow(0 0 26px rgba(250,204,21,0.45)); }
 }
 
+/* Heal edge glow — green drop-shadow builds then fades on the healed sprite.
+   More subtle than charge-glow: lower blur radius, fades back to nothing by 100%. */
+@keyframes heal-glow {
+  0%   { filter: drop-shadow(0 0 0px  rgba(74,222,128,0)); }
+  24%  { filter: drop-shadow(0 0 7px  rgba(74,222,128,0.68)) drop-shadow(0 0 16px rgba(34,197,94,0.28)); }
+  56%  { filter: drop-shadow(0 0 5px  rgba(74,222,128,0.52)) drop-shadow(0 0 12px rgba(34,197,94,0.20)); }
+  100% { filter: drop-shadow(0 0 0px  rgba(74,222,128,0)); }
+}
+
 @keyframes battle-anticipate-right {
   0%   { transform: translateX(0) scale(1); }
   55%  { transform: translateX(-5px) scaleX(0.97) scaleY(1.03); }
@@ -824,13 +833,33 @@ select {
   100% { transform: translateX(-50%) scaleX(2.6)  scaleY(0.08); opacity: 0; }
 }
 
-/* Regen orbit inward — green particle travels from ring position toward sprite center.
-   Each particle has --dx / --dy CSS vars set inline for its specific delta. */
-@keyframes regen-orbit-in {
-  0%   { transform: translate(0, 0) scale(1);                       opacity: 0; }
-  12%  { opacity: 1; }
-  80%  { opacity: 0.85; }
-  100% { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(0.15); opacity: 0; }
+/* Regen mote rise — particle floats upward from sprite body with horizontal scatter.
+   --fx set inline per mote for the x spread; y always rises. */
+@keyframes regen-mote-rise {
+  0%   { transform: translate(var(--fx, 0px), 0px) scale(1);    opacity: 0; }
+  14%  { opacity: 1; }
+  72%  { opacity: 0.9; }
+  100% { transform: translate(var(--fx, 0px), -68px) scale(0.35); opacity: 0; }
+}
+
+/* Regen ring expand — concentric ring radiates outward from sprite center.
+   Starts as a crisp border that expands and dissolves (outward = life force, not charge).
+   Scale capped at 1.48 so the largest ring stays close to the sprite boundary. */
+@keyframes regen-ring-expand {
+  0%   { transform: scale(0.32); opacity: 0.92; border-width: 3px; }
+  38%  { opacity: 0.78; border-width: 2px; }
+  100% { transform: scale(1.48); opacity: 0;    border-width: 0px; }
+}
+
+
+/* Regen heal number — pops in at sprite center, holds readable, then slowly drifts up and fades.
+   Mirrors the reference vfxDmgPop: stays at opacity 1 until 78% so the player can read it. */
+@keyframes regen-number-pop {
+  0%   { transform: translate(-50%, -50%) scale(0.3);    opacity: 0; }
+  16%  { transform: translate(-50%, -50%) scale(1.28);   opacity: 1; }
+  26%  { transform: translate(-50%, -68%) scale(1.0);    opacity: 1; }
+  78%  { transform: translate(-50%, -162%) scale(1.0);   opacity: 1; }
+  100% { transform: translate(-50%, -210%) scale(0.86);  opacity: 0; }
 }
 
 /* Charge strike converge — pip flies from spread position toward sprite center.

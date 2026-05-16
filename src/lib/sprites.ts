@@ -208,8 +208,8 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 011 Pebblit — small — stony sentinel (circle with large side-block ears)
   'pebblit': {
     battle: { url: s('/sprites/opponents/pebblit.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    footOffsetX: 24,
-    footOffsetY: 18,
+    footOffsetX: 6,
+    footOffsetY: 24,
     worldMap: { url: s('/sprites/opponents_world/pebblit.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     icon: { url: s('/sprites/icons/pebblit.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
@@ -255,12 +255,16 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 016 Frostscarab — small — glacial bulwark (oval shell with central split)
   'frostscarab': {
     battle: { url: s('/sprites/opponents/frostscarab.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 12,
+    footOffsetY: 24,
   },
 
   // 017 Glaciowyrm — medium — relentless tunneler (large head tapering to tail)
-  // 'glaciowyrm': {
-  //   battle: { url: s('/sprites/opponents/glaciowyrm.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // },
+  'glaciowyrm': {
+    battle: { url: s('/sprites/opponents/glaciowyrm.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 6,
+    footOffsetY: 24,
+  },
 
   // 018 Glaciermaw — medium — frozen juggernaut (heavy front-loaded rectangle)
   // 'glaciermaw': {

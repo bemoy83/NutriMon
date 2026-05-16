@@ -57,6 +57,7 @@ function spriteHandle(): CreatureSpriteHandle {
     triggerAnimation: vi.fn(),
     triggerAnticipation: vi.fn(),
     triggerChargeGlow: vi.fn(),
+    triggerHealGlow: vi.fn(),
   }
 }
 
