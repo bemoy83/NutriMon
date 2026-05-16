@@ -19,6 +19,12 @@ interface CreatureSpriteProps {
   className?: string
 }
 
+interface HitFlash {
+  id: number
+  isCrit: boolean
+  durationMs: number
+}
+
 // SVG silhouette rendered when no sprite is registered yet
 function SpritePlaceholder({ size }: { size: number }) {
   return (
@@ -51,6 +57,7 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
       lungeDir?: 'right' | 'left'
     } | null>(null)
     const [hasFainted, setHasFainted] = useState(false)
+    const [hitFlashes, setHitFlashes] = useState<HitFlash[]>([])
     const [isCharging, setIsCharging] = useState(false)
     const [isHealing, setIsHealing] = useState(false)
     const [isFocusing, setIsFocusing] = useState(false)
@@ -75,6 +82,8 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
       return () => cancelAnimationFrame(id)
     }, [descriptorKey])
     const animClearRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const hitFlashIdRef = useRef(0)
+    const hitFlashTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
     const frameIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const currentFrame = frameState.descriptorKey === descriptorKey ? frameState.currentFrame : 0
     // Stable unique ID for the SVG dissolve filter — useId is pure and SSR-safe; strip ':' for url(#...)
@@ -102,6 +111,15 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
       triggerAnimation(type, durationMs, isCrit = false, lungeDir) {
         if (animClearRef.current) clearTimeout(animClearRef.current)
         setActiveAnimation((prev) => ({ id: (prev?.id ?? 0) + 1, type, isCrit, durationMs, lungeDir }))
+        if (type === 'hurt') {
+          hitFlashIdRef.current += 1
+          const id = hitFlashIdRef.current
+          setHitFlashes((prev) => [...prev, { id, isCrit, durationMs }])
+          const flashTimer = setTimeout(() => {
+            setHitFlashes((prev) => prev.filter((flash) => flash.id !== id))
+          }, durationMs)
+          hitFlashTimersRef.current.push(flashTimer)
+        }
         animClearRef.current = setTimeout(() => {
           setActiveAnimation(null)
           if (type === 'faint') setHasFainted(true)
@@ -148,8 +166,10 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
     }))
 
     useEffect(() => {
+      const hitFlashTimers = hitFlashTimersRef
       return () => {
         if (animClearRef.current) clearTimeout(animClearRef.current)
+        hitFlashTimers.current.forEach(clearTimeout)
         if (chargeTimerRef.current) clearTimeout(chargeTimerRef.current)
         if (healGlowTimerRef.current) clearTimeout(healGlowTimerRef.current)
         if (focusGlowTimerRef.current) clearTimeout(focusGlowTimerRef.current)
@@ -169,6 +189,12 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
       ? `battle-lunge-${activeAnimation.lungeDir} ${activeAnimation.durationMs}ms ease-out forwards`
       : undefined
 
+    // Recoil: target nudges away from the attacker on contact.
+    // lungeDir on a 'hurt' event is the direction away from the attacker (set by useBattleLogReveal).
+    const recoilAnimation = activeAnimation?.type === 'hurt' && activeAnimation.lungeDir
+      ? `battle-hurt-recoil-${activeAnimation.lungeDir} ${activeAnimation.durationMs}ms ease-out forwards`
+      : undefined
+
     const chargeGlowAnimation = isCharging
       ? `charge-glow ${BATTLE_ANIM.CHARGE_GLOW_MS}ms ease-in forwards`
       : undefined
@@ -185,7 +211,12 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
       ? `battle-anticipate-${activeAnticipation.heavy ? 'heavy-' : ''}${activeAnticipation.direction} ${activeAnticipation.durationMs}ms ease-out forwards`
       : undefined
 
-    const compositeAnimation = [lungeAnimation, anticipationAnimation, chargeGlowAnimation, healGlowAnimation, focusGlowAnimation].filter(Boolean).join(', ') || undefined
+    // Transform-only animations go on the container; filter-only animations go on the inner
+    // glow wrapper. Heavy anticipation animates both transform and filter — keeping it on the
+    // container means the charge/focus/heal glows on the glow wrapper are always independent
+    // and never fight for the same property on the same element.
+    const transformAnimation = [lungeAnimation, recoilAnimation, anticipationAnimation].filter(Boolean).join(', ') || undefined
+    const glowAnimation = [chargeGlowAnimation, healGlowAnimation, focusGlowAnimation].filter(Boolean).join(', ') || undefined
 
     const containerStyle: React.CSSProperties = {
       position: 'relative',
@@ -194,7 +225,13 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
       display: 'inline-block',
       flexShrink: 0,
       ...(hasFainted ? { visibility: 'hidden' } : {}),
-      ...(compositeAnimation ? { animation: compositeAnimation } : {}),
+      ...(transformAnimation ? { animation: transformAnimation } : {}),
+    }
+
+    const glowWrapperStyle: React.CSSProperties = {
+      position: 'absolute',
+      inset: 0,
+      ...(glowAnimation ? { animation: glowAnimation } : {}),
     }
 
     const imgStyle: React.CSSProperties = {
@@ -273,32 +310,52 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
           </svg>
         )}
 
-        {frameUrl ? (
-          <img
-            src={frameUrl}
-            width={displaySize}
-            height={displaySize}
-            draggable={false}
-            alt=""
-            className={pixelArt ? 'sprite-pixel-art block' : 'block'}
+        <div style={glowWrapperStyle}>
+          {frameUrl ? (
+            <img
+              src={frameUrl}
+              width={displaySize}
+              height={displaySize}
+              draggable={false}
+              alt=""
+              className={pixelArt ? 'sprite-pixel-art block' : 'block'}
+              style={{
+                ...imgStyle,
+                width: displaySize,
+                height: displaySize,
+                objectFit: 'contain',
+                ...(activeAnimation?.type === 'faint' ? { filter: `url(#${filterId})` } : {}),
+              }}
+            />
+          ) : (
+            <div style={{ transform }}>
+              <SpritePlaceholder size={displaySize} />
+            </div>
+          )}
+        </div>
+
+        {/* Hurt flashes are queued so rapid multi-hit attacks do not replace the previous flash. */}
+        {hitFlashes.map((flash) => (
+          <div
+            key={flash.id}
+            data-testid="battle-hit-flash"
+            aria-hidden="true"
             style={{
-              ...imgStyle,
-              width: displaySize,
-              height: displaySize,
-              objectFit: 'contain',
-              ...(activeAnimation?.type === 'faint' ? { filter: `url(#${filterId})` } : {}),
+              position: 'absolute',
+              inset: 0,
+              transform,
+              background: flash.isCrit ? '#fbbf24' : 'white',
+              animation: flash.isCrit
+                ? `hit-flash-crit ${flash.durationMs}ms ease-out forwards`
+                : `hit-flash ${flash.durationMs}ms ease-out forwards`,
+              pointerEvents: 'none',
+              ...hitFlashStyle,
             }}
           />
-        ) : (
-          <div style={{ transform }}>
-            <SpritePlaceholder size={displaySize} />
-          </div>
-        )}
+        ))}
 
-        {/* White flash overlay masked to sprite silhouette.
-            hurt  → single bright flash (hit-flash keyframes)
-            faint → 3 rapid blinks before the dissolve starts (faint-blink keyframes) */}
-        {(activeAnimation?.type === 'hurt' || activeAnimation?.type === 'faint') && (
+        {/* Faint overlay blinks before the dissolve starts. */}
+        {activeAnimation?.type === 'faint' && (
           <div
             key={activeAnimation.id}
             aria-hidden="true"
@@ -306,13 +363,8 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
               position: 'absolute',
               inset: 0,
               transform,
-              background: activeAnimation.isCrit ? '#fbbf24' : 'white',
-              animation:
-                activeAnimation.type === 'hurt'
-                  ? (activeAnimation.isCrit
-                      ? `hit-flash-crit ${activeAnimation.durationMs}ms ease-out forwards`
-                      : `hit-flash ${activeAnimation.durationMs}ms ease-out forwards`)
-                  : `faint-blink ${BATTLE_ANIM.FAINT_BLINK_MS}ms linear forwards`,
+              background: 'white',
+              animation: `faint-blink ${BATTLE_ANIM.FAINT_BLINK_MS}ms linear forwards`,
               pointerEvents: 'none',
               ...hitFlashStyle,
             }}

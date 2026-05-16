@@ -281,7 +281,7 @@ describe('useBattleLogReveal', () => {
       vi.advanceTimersByTime(BATTLE_ANIM.LUNGE_PEAK_MS)
     })
 
-    expect(opponentSprite.triggerAnimation).toHaveBeenCalledWith('hurt', expect.any(Number), true)
+    expect(opponentSprite.triggerAnimation).toHaveBeenCalledWith('hurt', expect.any(Number), true, 'right')
     expect(opponentEffects.showDamageNumber).toHaveBeenCalledWith(18, true)
     expect(opponentEffects.showAttackImpact).toHaveBeenCalledWith(true)
     expect(opponentEffects.showCritBadge).toHaveBeenCalledTimes(1)
@@ -422,7 +422,7 @@ describe('useBattleLogReveal', () => {
       vi.advanceTimersByTime(BATTLE_ANIM.LUNGE_PEAK_MS)
     })
 
-    expect(opponentSprite.triggerAnimation).toHaveBeenCalledWith('hurt', BATTLE_ANIM.HURT_MS, false)
+    expect(opponentSprite.triggerAnimation).toHaveBeenCalledWith('hurt', BATTLE_ANIM.HURT_MS, false, 'right')
     expect(opponentEffects.showHeavyAttackImpact).toHaveBeenCalledWith(false, expect.any(Object))
     // V2: power_strike uses wide shockwave
     expect(opponentEffects.showGroundShockwave).toHaveBeenCalledWith(true)
@@ -589,7 +589,7 @@ describe('useBattleLogReveal', () => {
     })
 
     expect(playerSprite.triggerAnimation).toHaveBeenCalledWith('attack', BATTLE_ANIM.LUNGE_MS, false, 'right')
-    expect(opponentSprite.triggerAnimation).toHaveBeenCalledWith('hurt', BATTLE_ANIM.HIT_IMPACT_MS, false)
+    expect(opponentSprite.triggerAnimation).toHaveBeenCalledWith('hurt', BATTLE_ANIM.HIT_IMPACT_MS, false, 'right')
     expect(opponentSprite.triggerAnimation).not.toHaveBeenCalledWith('faint', BATTLE_ANIM.FAINT_MS)
 
     act(() => {

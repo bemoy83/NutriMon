@@ -61,11 +61,12 @@ export function useBattleLogReveal(opts: {
   const [isAnimating, setIsAnimating] = useState(false)
 
   const triggerHurt = useCallback(
-    (spriteRef: RefObject<CreatureSpriteHandle | null>, isCrit: boolean) => {
+    (spriteRef: RefObject<CreatureSpriteHandle | null>, isCrit: boolean, recoilDir?: 'right' | 'left') => {
       spriteRef.current?.triggerAnimation(
         'hurt',
         isCrit ? BATTLE_ANIM.HURT_CRIT_MS : BATTLE_ANIM.HURT_MS,
         isCrit,
+        recoilDir,
       )
     },
     [],
@@ -77,15 +78,16 @@ export function useBattleLogReveal(opts: {
       isCrit: boolean,
       hitCount = 3,
       spacingMs: number = BATTLE_ANIM.FOCUSED_HIT_SPACING_MS,
+      recoilDir?: 'right' | 'left',
     ) => {
       for (let hit = 0; hit < hitCount; hit += 1) {
         const delayMs = hit * spacingMs
         if (delayMs === 0) {
-          spriteRef.current?.triggerAnimation('hurt', BATTLE_ANIM.HIT_IMPACT_MS, isCrit)
+          spriteRef.current?.triggerAnimation('hurt', BATTLE_ANIM.HIT_IMPACT_MS, isCrit, recoilDir)
           continue
         }
         const t = setTimeout(() => {
-          spriteRef.current?.triggerAnimation('hurt', BATTLE_ANIM.HIT_IMPACT_MS, isCrit)
+          spriteRef.current?.triggerAnimation('hurt', BATTLE_ANIM.HIT_IMPACT_MS, isCrit, recoilDir)
         }, delayMs)
         animTimers.current.push(t)
       }
@@ -177,10 +179,13 @@ export function useBattleLogReveal(opts: {
         }
 
         if (event.type === 'sprite_hurt') {
+          // Player is on the left, so player recoils left (away from right-side opponent).
+          // Opponent is on the right, so opponent recoils right (away from left-side player).
+          const recoilDir = event.target === 'player' ? 'left' : 'right'
           if (event.hitCount) {
-            triggerFocusedHurtSequence(targetSprite(event.target), event.crit, event.hitCount, event.spacingMs)
+            triggerFocusedHurtSequence(targetSprite(event.target), event.crit, event.hitCount, event.spacingMs, recoilDir)
           } else {
-            triggerHurt(targetSprite(event.target), event.crit)
+            triggerHurt(targetSprite(event.target), event.crit, recoilDir)
           }
           return
         }

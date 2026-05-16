@@ -53,6 +53,10 @@ function findEffect(events: ScheduledBattleAnimationEvent[], effect: string) {
   return events.find(({ event }) => event.type === 'effect' && event.effect === effect)
 }
 
+function findEffects(events: ScheduledBattleAnimationEvent[], effect: string) {
+  return events.filter(({ event }) => event.type === 'effect' && event.effect === effect)
+}
+
 describe('battleAnimationPlan', () => {
   it('resolves player focus only after the charge effect has finished', () => {
     const events = plan([entry({ id: 'focus-1', actor: 'player', action: 'focus' })])
@@ -238,5 +242,36 @@ describe('battleAnimationPlan', () => {
       atMs: faintMs,
       event: { type: 'sprite_faint', target: 'opponent' },
     })
+  })
+
+  it('only emits overdrive streaks when the player had enough pips to activate overdrive', () => {
+    const overdriveEntry = entry({
+      id: 'overdrive-1',
+      actor: 'player',
+      action: 'skill',
+      skillId: 'overdrive',
+      damage: 63,
+      target: 'opponent',
+      targetHpAfter: 20,
+    })
+
+    expect(findEffects(plan([overdriveEntry]), 'overdrive_streak')).toHaveLength(0)
+
+    const events = plan([overdriveEntry], [
+      entry({ id: 'focus-1', actor: 'player', action: 'focus' }),
+      entry({ id: 'focus-2', actor: 'player', action: 'focus' }),
+      entry({ id: 'focus-3', actor: 'player', action: 'focus' }),
+    ])
+    const contactMs = BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
+      + BATTLE_ANIM.ATTACK_ANTICIPATION_MS
+      + BATTLE_ANIM.LUNGE_PEAK_MS
+
+    expect(findEffects(events, 'overdrive_streak')).toEqual([
+      expect.objectContaining({ atMs: contactMs }),
+      expect.objectContaining({ atMs: contactMs + BATTLE_ANIM.OVERDRIVE_HIT_SPACING_MS }),
+      expect.objectContaining({ atMs: contactMs + (BATTLE_ANIM.OVERDRIVE_HIT_SPACING_MS * 2) }),
+      expect.objectContaining({ atMs: contactMs + (BATTLE_ANIM.OVERDRIVE_HIT_SPACING_MS * 3) }),
+      expect.objectContaining({ atMs: contactMs + (BATTLE_ANIM.OVERDRIVE_HIT_SPACING_MS * 4) }),
+    ])
   })
 })

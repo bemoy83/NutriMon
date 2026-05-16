@@ -164,6 +164,8 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 006 Boglet — small — gaping ambusher (circle with huge mouth)
   'boglet': {
     battle: { url: s('/sprites/opponents/boglet.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 12,
+    footOffsetY: 18,
     worldMap: { url: s('/sprites/opponents_world/boglet.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     icon: { url: s('/sprites/icons/boglet.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
@@ -257,6 +259,8 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
     battle: { url: s('/sprites/opponents/frostscarab.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     footOffsetX: 12,
     footOffsetY: 24,
+    worldMap: { url: s('/sprites/opponents_world/frostscarab.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/frostscarab.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
   // 017 Glaciowyrm — medium — relentless tunneler (large head tapering to tail)

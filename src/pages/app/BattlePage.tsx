@@ -470,6 +470,9 @@ export default function BattlePage() {
             </div>
             <p className="mt-0.5 text-xs font-semibold uppercase tracking-widest text-white/60">HP</p>
             <BattleHudHpBar current={opponentHp} max={session.opponentMaxHp} />
+            <p className="mt-1 text-right text-xs tabular-nums text-white/70">
+              {opponentHp} / {session.opponentMaxHp}
+            </p>
           </BattleHudCard>
 
           {/* Opponent platform + sprite — outer div: positioning + entrance slide

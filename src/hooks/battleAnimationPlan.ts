@@ -69,6 +69,19 @@ function getPlayerFocusPipsBeforeEntry(
   }, 0)
 }
 
+function didPlayerOverdriveActivate(opts: BattleAnimationPlanOptions, entry: BattleLogEntry, entryIndex: number) {
+  if (entry.skillId !== 'overdrive') return false
+  if (entry.actor !== 'player') return true
+
+  return getPlayerFocusPipsBeforeEntry(
+    opts.base,
+    opts.newEntries,
+    entryIndex,
+    opts.playerPipCap,
+    opts.playerFocusGain,
+  ) >= getBattleSkillPipCost('overdrive')
+}
+
 function getSkillAnticipationMs(skillId: string | null) {
   if (skillId === 'power_strike') return BATTLE_ANIM.POWER_STRIKE_ANTICIPATION_MS
   if (skillId === 'charge_strike') return BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS
@@ -392,7 +405,7 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
           tint: SKILL_IMPACT_COLOR[entry.skillId ?? ''],
           heavyShake: false,
         })
-        if (isOverdrive && isBattleTarget(entry.target)) {
+        if (isOverdrive && didPlayerOverdriveActivate(opts, entry, entryIndex) && isBattleTarget(entry.target)) {
           for (let hit = 0; hit < hitCount; hit += 1) {
             add(events, contactAtMs + (hit * hitSpacingMs), {
               type: 'effect',

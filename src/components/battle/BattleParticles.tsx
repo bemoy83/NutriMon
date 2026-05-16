@@ -21,7 +21,7 @@ const LEAF_COLOR_PAIRS = [
 const PRESETS = {
   leaf: { count: 12, seed: 7 },
   firefly: { count: 12, color: '#d8e860', glowColor: '#d8e86080', seed: 13 },
-  ash:     { count: 18, color: '#c4b8ad', seed: 11 },
+  ash: { count: 18, color: '#c4b8ad', seed: 11 },
   snow:    { count: 26, color: '#ffffff', seed: 3 },
   ember:   { count: 22, color: '#ffaa3a', coreColor: '#fff5cc', tailColor: '#ff5020', seed: 5 },
 }
@@ -211,31 +211,54 @@ function LeafParticles({ preset, depth }: { preset: (typeof PRESETS)['leaf']; de
 }
 
 function AshParticles({ preset, depth }: { preset: (typeof PRESETS)['ash']; depth: ParticleDepth }) {
-  const depthStyle = particleStyle(depth, 0.5, 1)
-  const particles = useParticles(layerCount(preset.count, depth), preset.seed + (depth === 'front' ? 30 : 0))
+  const depthStyle = particleStyle(depth, 0.65, 1)
+  const seed = preset.seed + (depth === 'front' ? 30 : 0)
+  const particles = useParticles(layerCount(preset.count, depth), seed)
+
+  const ashData = useMemo(() => {
+    const startXRnd = seededRandom(seed + 300)
+    const aspectRnd = seededRandom(seed + 400)
+    return particles.map((p) => {
+      const totalDur = p.dur * 1.4 * depthStyle.durationScale
+      return {
+        startX: -(5 + startXRnd() * 10),
+        aspectW: 0.8 + aspectRnd() * 0.8,
+        delay: -(Math.abs(p.delay) / 12) * totalDur,
+        totalDur,
+      }
+    })
+  }, [particles, seed, depthStyle.durationScale])
+
   return (
     <>
       {particles.map((p, i) => {
-        const size = p.size * 0.7 * depthStyle.size
+        const baseSize = p.size * 0.7 * depthStyle.size
+        const width = baseSize * ashData[i].aspectW
+        const height = baseSize / ashData[i].aspectW
         return (
-        <div
-          key={i}
-          style={{
-            position: 'absolute',
-            left: `${p.x}%`,
-            top: `${p.y}%`,
-            width: size,
-            height: size,
-            borderRadius: '50%',
-            background: preset.color,
-            opacity: depthStyle.opacity,
-            animation: `particle-ash-drift ${p.dur * 1.4 * depthStyle.durationScale}s linear infinite`,
-            animationDelay: `${p.delay}s`,
-            filter: `blur(${0.5 + depthStyle.blurPx}px)`,
-            pointerEvents: 'none',
-            willChange: 'transform',
-          }}
-        />
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              left: `${ashData[i].startX}%`,
+              top: `${p.y}%`,
+              opacity: depthStyle.opacity,
+              pointerEvents: 'none',
+            }}
+          >
+            <div
+              style={{
+                width,
+                height,
+                borderRadius: '50%',
+                background: `radial-gradient(circle, #c8b89c 0%, ${preset.color} 50%, #6e6560 100%)`,
+                filter: `blur(${0.5 + depthStyle.blurPx}px)`,
+                animation: `particle-ash-drift ${ashData[i].totalDur}s linear infinite`,
+                animationDelay: `${ashData[i].delay}s`,
+                willChange: 'transform, opacity',
+              }}
+            />
+          </div>
         )
       })}
     </>

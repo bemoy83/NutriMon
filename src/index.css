@@ -298,11 +298,11 @@ select {
     opacity: 0;
   }
 
-  30% {
+  12% {
     opacity: 0.85;
   }
 
-  60% {
+  50% {
     opacity: 0.4;
   }
 }
@@ -596,8 +596,12 @@ select {
   100% { transform: translate(-1vw, 130vh) rotate(360deg); }
 }
 @keyframes particle-ash-drift {
-  0%   { transform: translate(-10vw, 0); }
-  100% { transform: translate(110vw, 30px); }
+  0%   { transform: translate(0, 0); opacity: 0; }
+  8%   { opacity: 1; }
+  40%  { transform: translate(42vw, -6px); }
+  65%  { transform: translate(70vw, 10px); }
+  92%  { opacity: 1; }
+  100% { transform: translate(120vw, 16px); opacity: 0; }
 }
 @keyframes particle-firefly-float {
   0%, 100% { transform: translate(0, 0); }
@@ -723,14 +727,40 @@ select {
    Duration driven by BATTLE_ANIM.LUNGE_MS (320ms).
    Peak at ~28% (~90ms) aligns with LUNGE_PEAK_MS so target hurt fires at contact. */
 @keyframes battle-lunge-right {
-  0%   { transform: translateX(0);    animation-timing-function: cubic-bezier(0.2, 0, 0.4, 1); }
-  28%  { transform: translateX(14px); animation-timing-function: ease-out; }
-  100% { transform: translateX(0); }
+  0%   { transform: translateX(0) translateY(0) scale(1);                          animation-timing-function: cubic-bezier(0.2, 0, 0.4, 1); }
+  28%  { transform: translateX(14px) translateY(-3px) scaleX(1.07) scaleY(0.93);  animation-timing-function: ease-out; }
+  100% { transform: translateX(0) translateY(0) scale(1); }
 }
 
 @keyframes battle-lunge-left {
-  0%   { transform: translateX(0);     animation-timing-function: cubic-bezier(0.2, 0, 0.4, 1); }
-  28%  { transform: translateX(-14px); animation-timing-function: ease-out; }
+  0%   { transform: translateX(0) translateY(0) scale(1);                           animation-timing-function: cubic-bezier(0.2, 0, 0.4, 1); }
+  28%  { transform: translateX(-14px) translateY(-3px) scaleX(1.07) scaleY(0.93);  animation-timing-function: ease-out; }
+  100% { transform: translateX(0) translateY(0) scale(1); }
+}
+
+/* Target recoil — directional shear on impact.
+   At 10% the face leads (skewX) while the body barely moves — the contact side
+   deforms first, back side lags. By 22% the body catches up and the skew is gone.
+   The remaining keyframes are a damped X oscillation matching sprite-shake's pattern. */
+/* Target recoil — opposite of the lunge.
+   Lunge: scaleX(1.07) + 14px push toward target.
+   Recoil: scaleX(0.87) + 12px push away from attacker, skewX for directional lean.
+   Peak at 20% (100ms of 500ms) so it's dwell-visible, not just a flash. */
+@keyframes battle-hurt-recoil-left {
+  0%   { transform: translateX(0)     skewX(0deg)  scaleX(1);    animation-timing-function: cubic-bezier(0.05, 0, 0.2, 1); }
+  20%  { transform: translateX(-12px) skewX(-8deg) scaleX(0.87); animation-timing-function: ease-out; }
+  42%  { transform: translateX(-14px) skewX(-1deg) scaleX(0.97); }
+  60%  { transform: translateX(5px)   scale(1); }
+  80%  { transform: translateX(-2px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes battle-hurt-recoil-right {
+  0%   { transform: translateX(0)    skewX(0deg) scaleX(1);    animation-timing-function: cubic-bezier(0.05, 0, 0.2, 1); }
+  20%  { transform: translateX(12px) skewX(8deg) scaleX(0.87); animation-timing-function: ease-out; }
+  42%  { transform: translateX(14px) skewX(1deg) scaleX(0.97); }
+  60%  { transform: translateX(-5px) scale(1); }
+  80%  { transform: translateX(2px); }
   100% { transform: translateX(0); }
 }
 
