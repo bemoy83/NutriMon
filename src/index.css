@@ -883,6 +883,13 @@ select {
   50%       { opacity: 0.92; transform: scale(1.04); }
 }
 
+@keyframes dome-glint {
+  0%   { opacity: 0; transform: translateX(-110%) skewX(-15deg); }
+  9%   { opacity: 0.82; }
+  18%  { opacity: 0;    transform: translateX(110%) skewX(-15deg); }
+  100% { opacity: 0;    transform: translateX(110%) skewX(-15deg); }
+}
+
 /* ── App utilities ───────────────────────────────────────────────────────── */
 
 .app-page {

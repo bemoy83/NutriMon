@@ -882,6 +882,26 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
                 }}
               >
                 {hexSvg(0.30)}
+                {/* Glint — diagonal highlight sweeps across the dome every ~3.5s */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      bottom: 0,
+                      width: '38%',
+                      background: 'linear-gradient(90deg, transparent, rgba(207,233,255,0.72), transparent)',
+                      animation: 'dome-glint 3.5s ease-out 1.1s infinite',
+                      opacity: 0,
+                    }}
+                  />
+                </div>
               </div>
             </div>
           )

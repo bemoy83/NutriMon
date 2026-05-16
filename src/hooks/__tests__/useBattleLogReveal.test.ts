@@ -202,19 +202,27 @@ describe('useBattleLogReveal', () => {
 
     expect(playerEffects.showFocusSpend).toHaveBeenCalledWith(2)
     expect(playerEffects.showRegenOrbitEffect).not.toHaveBeenCalled()
+    expect(result.current.resolvedLogOverride?.entries).toHaveLength(2)
+    expect(result.current.resolvedLogOverride?.entries[1]).toEqual(
+      expect.objectContaining({ action: 'skill', skillId: 'regen', targetHpAfter: null }),
+    )
 
     act(() => {
       vi.advanceTimersByTime(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
     })
 
     expect(playerEffects.showRegenOrbitEffect).toHaveBeenCalledWith(8)
-    expect(result.current.resolvedLogOverride?.entries).toHaveLength(1)
+    expect(result.current.resolvedLogOverride?.entries[1]).toEqual(
+      expect.objectContaining({ action: 'skill', skillId: 'regen', targetHpAfter: null }),
+    )
 
     act(() => {
       vi.advanceTimersByTime(BATTLE_ANIM.REGEN_NUMBER_DELAY_MS - 1)
     })
 
-    expect(result.current.resolvedLogOverride?.entries).toHaveLength(1)
+    expect(result.current.resolvedLogOverride?.entries[1]).toEqual(
+      expect.objectContaining({ action: 'skill', skillId: 'regen', targetHpAfter: null }),
+    )
 
     act(() => {
       vi.advanceTimersByTime(1)

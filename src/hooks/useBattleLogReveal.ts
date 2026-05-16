@@ -180,6 +180,20 @@ export function useBattleLogReveal(opts: {
             }, delayMs)
           }
 
+          function resolvePlayerSkillPipSpendAfter(delayMs: number) {
+            if (entry.phase !== 'action' || entry.action !== 'skill' || entry.actor !== 'player') return
+            scheduleAnimation(() => {
+              setResolvedLogOverride({
+                sessionId,
+                entries: [
+                  ...base,
+                  ...newEntries.slice(0, i),
+                  { ...entry, damage: 0, targetHpAfter: null },
+                ],
+              })
+            }, delayMs)
+          }
+
           function getPlayerFocusPipsBeforeEntry() {
             return [...base, ...newEntries.slice(0, i)].reduce((count, e) => {
               if (e.actor !== 'player' || e.phase !== 'action') return count
@@ -208,6 +222,7 @@ export function useBattleLogReveal(opts: {
             } else {
               playerEffectsRef.current?.showFocusSpend(pipSpendCount)
             }
+            resolvePlayerSkillPipSpendAfter(BATTLE_ANIM.SKILL_PIP_DEPLETION_DELAY_MS)
             return BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
           }
 
