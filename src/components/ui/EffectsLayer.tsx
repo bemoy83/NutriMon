@@ -134,8 +134,9 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
     const [streaks, setStreaks] = useState<OverdriveStreak[]>([])
     const [regenOrbits, setRegenOrbits] = useState<RegenOrbitEffect[]>([])
     const [chargeSpends, setChargeSpends] = useState<ChargeSpendEffect[]>([])
-    const [persistentGuard, setPersistentGuard] = useState(false)
+    const [persistentGuardState, setPersistentGuardState] = useState<'hidden' | 'active' | 'dismissing'>('hidden')
     const [persistentGuardKey, setPersistentGuardKey] = useState(0)
+    const persistentGuardDismissRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
 
     function addTimedEffect<T extends { id: number }>(
@@ -168,9 +169,10 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
 
     useEffect(() => {
       const timersContainer = timersRef
+      const dismissRef = persistentGuardDismissRef
       return () => {
-        const timeouts = timersContainer.current
-        timeouts.forEach(clearTimeout)
+        timersContainer.current.forEach(clearTimeout)
+        if (dismissRef.current) clearTimeout(dismissRef.current)
       }
     }, [])
 
@@ -302,10 +304,21 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         addTimedEffect(setChargeSpends, { id, pipCount: Math.max(1, Math.min(pipCount, 5)) }, BATTLE_ANIM.FOCUS_SPEND_MS)
       },
       showPersistentGuard() {
-        setPersistentGuard(true)
+        if (persistentGuardDismissRef.current) clearTimeout(persistentGuardDismissRef.current)
+        setPersistentGuardState('active')
         setPersistentGuardKey((k) => k + 1)
       },
-      hidePersistentGuard() { setPersistentGuard(false) },
+      hidePersistentGuard() {
+        setPersistentGuardState((current) => {
+          if (current !== 'active') return current
+          if (persistentGuardDismissRef.current) clearTimeout(persistentGuardDismissRef.current)
+          persistentGuardDismissRef.current = setTimeout(() => {
+            setPersistentGuardState('hidden')
+            persistentGuardDismissRef.current = null
+          }, 400)
+          return 'dismissing'
+        })
+      },
     }))
 
     return (
@@ -788,7 +801,8 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         ))}
 
         {/* Persistent counter stance dome — enter burst + looping pulse until hidePersistentGuard() */}
-        {persistentGuard && (() => {
+        {persistentGuardState !== 'hidden' && (() => {
+          const dismissing = persistentGuardState === 'dismissing'
           const ds = displaySize ?? 128
           const cx = ds / 2
           const cy = ds * 0.44
@@ -830,42 +844,46 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
               data-testid="battle-persistent-guard"
               style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
             >
-              {/* Entry flash — one-shot dome-in, fades to invisible */}
-              <div
-                style={{
-                  position: 'absolute',
-                  left: cx - r,
-                  top: cy - r,
-                  width: r * 2,
-                  height: r * 2,
-                  borderRadius: '50%',
-                  background: 'radial-gradient(circle, transparent 55%, rgba(74,172,223,0.48) 75%, rgba(74,172,223,0.70) 88%, transparent 100%)',
-                  border: '2px solid rgba(74,172,223,0.88)',
-                  boxShadow: 'inset 0 0 28px rgba(74,172,223,0.48), 0 0 22px rgba(74,172,223,0.42)',
-                  animation: 'shield-dome-in 900ms cubic-bezier(0.25,0.8,0.3,1) forwards',
-                  overflow: 'hidden',
-                }}
-              >
-                {hexSvg(0.42)}
-              </div>
+              {/* Entry flash — one-shot dome-in, fades to invisible (suppressed on dismiss) */}
+              {!dismissing && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: cx - r,
+                    top: cy - r,
+                    width: r * 2,
+                    height: r * 2,
+                    borderRadius: '50%',
+                    background: 'radial-gradient(circle, transparent 55%, rgba(74,172,223,0.48) 75%, rgba(74,172,223,0.70) 88%, transparent 100%)',
+                    border: '2px solid rgba(74,172,223,0.88)',
+                    boxShadow: 'inset 0 0 28px rgba(74,172,223,0.48), 0 0 22px rgba(74,172,223,0.42)',
+                    animation: 'shield-dome-in 900ms cubic-bezier(0.25,0.8,0.3,1) forwards',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {hexSvg(0.42)}
+                </div>
+              )}
 
-              {/* Entry aura ring */}
-              <div
-                style={{
-                  position: 'absolute',
-                  left: cx - r,
-                  top: cy - r,
-                  width: r * 2,
-                  height: r * 2,
-                  borderRadius: '50%',
-                  border: '3px solid rgba(74,172,223,0.88)',
-                  boxShadow: '0 0 16px rgba(74,172,223,0.65)',
-                  animation: 'aura-ring-out 700ms ease-out 80ms forwards',
-                  opacity: 0,
-                }}
-              />
+              {/* Entry aura ring (suppressed on dismiss) */}
+              {!dismissing && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: cx - r,
+                    top: cy - r,
+                    width: r * 2,
+                    height: r * 2,
+                    borderRadius: '50%',
+                    border: '3px solid rgba(74,172,223,0.88)',
+                    boxShadow: '0 0 16px rgba(74,172,223,0.65)',
+                    animation: 'aura-ring-out 700ms ease-out 80ms forwards',
+                    opacity: 0,
+                  }}
+                />
+              )}
 
-              {/* Persistent dome — breathes until dismissed */}
+              {/* Persistent dome — breathes until dismissed, then dissolves */}
               <div
                 style={{
                   position: 'absolute',
@@ -877,13 +895,15 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
                   background: 'radial-gradient(circle, transparent 55%, rgba(74,172,223,0.26) 75%, rgba(74,172,223,0.45) 88%, transparent 100%)',
                   border: '2px solid rgba(74,172,223,0.68)',
                   boxShadow: 'inset 0 0 20px rgba(74,172,223,0.30), 0 0 16px rgba(74,172,223,0.26)',
-                  animation: 'persistent-dome-pulse 2.2s ease-in-out infinite',
+                  animation: dismissing
+                    ? 'dome-dissolve 400ms ease-out forwards'
+                    : 'persistent-dome-pulse 2.2s ease-in-out infinite',
                   overflow: 'hidden',
                 }}
               >
                 {hexSvg(0.30)}
-                {/* Glint — diagonal highlight sweeps across the dome every ~3.5s */}
-                <div
+                {/* Glint — diagonal highlight sweeps across the dome every ~3.5s (suppressed on dismiss) */}
+                {!dismissing && <div
                   style={{
                     position: 'absolute',
                     inset: 0,
@@ -901,7 +921,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
                       opacity: 0,
                     }}
                   />
-                </div>
+                </div>}
               </div>
             </div>
           )

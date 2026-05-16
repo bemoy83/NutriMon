@@ -677,4 +677,74 @@ describe('useBattleLogReveal', () => {
     expect(opponentEffects.showAttackImpact).not.toHaveBeenCalled()
     expect(opponentSprite.triggerAnimation).not.toHaveBeenCalledWith('hurt', expect.any(Number), false)
   })
+
+  it('dismisses counter stance guard on the incoming hit before counter payoff', () => {
+    vi.useFakeTimers()
+    const playerEffects = effectHandle()
+    const opponentEffects = effectHandle()
+    const { result } = renderHook(() =>
+      useBattleLogReveal({
+        playerSpriteRef: { current: spriteHandle() },
+        opponentSpriteRef: { current: spriteHandle() },
+        playerEffectsRef: { current: playerEffects },
+        opponentEffectsRef: { current: opponentEffects },
+        triggerArenaShake: vi.fn(),
+        triggerArenaFlash: vi.fn(),
+        specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
+        playerMaxHp: 100,
+        playerPipCap: 3,
+        playerFocusGain: 1,
+      }),
+    )
+
+    act(() => {
+      result.current.revealEntries('run-1', [
+        entry({
+          id: 'counter-stance-1',
+          actor: 'player',
+          action: 'skill',
+          skillId: 'counter_stance',
+          target: 'player',
+          targetHpAfter: 80,
+        }),
+        entry({
+          id: 'incoming-hit-1',
+          actor: 'opponent',
+          action: 'attack',
+          damage: 20,
+          target: 'player',
+          targetHpAfter: 60,
+        }),
+        entry({
+          id: 'counter-payoff-1',
+          actor: 'player',
+          action: 'counter',
+          skillId: 'counter_stance',
+          damage: 18,
+          target: 'opponent',
+          targetHpAfter: 40,
+        }),
+      ], [])
+      vi.advanceTimersByTime(0)
+    })
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+    })
+    expect(playerEffects.showPersistentGuard).toHaveBeenCalledTimes(1)
+    expect(playerEffects.hidePersistentGuard).not.toHaveBeenCalled()
+
+    act(() => {
+      vi.advanceTimersByTime(
+        BATTLE_ANIM.ENTRY_DELAY_ACTION_MS
+        - BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
+        - BATTLE_ANIM.SUPPORT_ANTICIPATION_MS
+        + BATTLE_ANIM.ATTACK_ANTICIPATION_MS
+        + BATTLE_ANIM.LUNGE_PEAK_MS,
+      )
+    })
+
+    expect(playerEffects.hidePersistentGuard).toHaveBeenCalledTimes(1)
+    expect(opponentEffects.showDamageNumber).not.toHaveBeenCalledWith(18, false)
+  })
 })

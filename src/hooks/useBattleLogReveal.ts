@@ -267,6 +267,7 @@ export function useBattleLogReveal(opts: {
                 playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
                 playerEffectsRef.current?.showAttackImpact(entry.crit)
                 if (entry.crit) playerEffectsRef.current?.showCritBadge()
+                playerEffectsRef.current?.hidePersistentGuard()
                 triggerArenaShake(entry.crit)
                 triggerArenaFlash()
               } else if (entry.target === 'opponent') {
@@ -384,6 +385,7 @@ export function useBattleLogReveal(opts: {
                 }
                 targetEffects?.showDamageNumber(entry.damage, entry.crit)
                 if (entry.crit) targetEffects?.showCritBadge()
+                if (entry.target === 'player') playerEffectsRef.current?.hidePersistentGuard()
                 // V2: power_strike always gets heavy shake; others shake on crit
                 triggerArenaShake(isPowerStrike || entry.crit)
                 triggerArenaFlash()
