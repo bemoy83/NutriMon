@@ -292,7 +292,7 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
     footOffsetX: 6,
     footOffsetY: 24,
     worldMap: { url: s('/sprites/opponents_world/tuskraal.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-    //icon: { url: s('/sprites/icons/tuskraal.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/tuskraal.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
   // ── Arena 5 — Sunforge Summit (levels 27–35) ──────────────────────────────
