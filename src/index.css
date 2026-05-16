@@ -883,6 +883,13 @@ select {
   50%       { opacity: 0.92; transform: scale(1.04); }
 }
 
+@keyframes battle-speedline-in {
+  0%   { transform: scaleX(0); opacity: 0; }
+  25%  { opacity: 1; }
+  60%  { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(1) translateX(20%); opacity: 0; }
+}
+
 @keyframes dome-dissolve {
   0%   { opacity: 0.72; transform: scale(1); }
   100% { opacity: 0;    transform: scale(1.12); }

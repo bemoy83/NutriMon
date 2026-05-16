@@ -24,6 +24,8 @@ export interface EffectsLayerHandle {
   /** Counter Stance V2: looping shield ring that persists until counter fires. */
   showPersistentGuard(): void
   hidePersistentGuard(): void
+  /** Radial speedlines on the target before a hit lands. */
+  showSpeedlines(): void
 }
 
 interface FloatingNumber {
@@ -103,6 +105,21 @@ interface ChargeSpendEffect {
   pipCount: number
 }
 
+interface SpeedlineItem {
+  angle: number
+  innerPx: number
+  lenPx: number
+  thickPx: number
+  delayMs: number
+}
+
+interface SpeedlineEffect {
+  id: number
+  cx: number
+  cy: number
+  items: SpeedlineItem[]
+}
+
 interface EffectsLayerProps {
   /** Sprite stage box size (same as SpriteStage `displaySize`) — scales hit impact and keeps floated UI centred. */
   displaySize?: number
@@ -134,6 +151,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
     const [streaks, setStreaks] = useState<OverdriveStreak[]>([])
     const [regenOrbits, setRegenOrbits] = useState<RegenOrbitEffect[]>([])
     const [chargeSpends, setChargeSpends] = useState<ChargeSpendEffect[]>([])
+    const [speedlines, setSpeedlines] = useState<SpeedlineEffect[]>([])
     const [persistentGuardState, setPersistentGuardState] = useState<'hidden' | 'active' | 'dismissing'>('hidden')
     const [persistentGuardKey, setPersistentGuardKey] = useState(0)
     const persistentGuardDismissRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -302,6 +320,21 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
       showChargeStrikeSpend(pipCount) {
         const id = nextId()
         addTimedEffect(setChargeSpends, { id, pipCount: Math.max(1, Math.min(pipCount, 5)) }, BATTLE_ANIM.FOCUS_SPEND_MS)
+      },
+      showSpeedlines() {
+        const id = nextId()
+        const ds = displaySize ?? 128
+        const cx = ds / 2
+        const cy = ds * 0.44
+        const count = 14
+        const items: SpeedlineItem[] = Array.from({ length: count }, (_, i) => ({
+          angle: (i / count) * 360 + (Math.random() - 0.5) * 10,
+          innerPx: 28 + Math.random() * 14,
+          lenPx: 20 + Math.random() * 32,
+          thickPx: 1 + Math.random() * 1.8,
+          delayMs: Math.random() * 80,
+        }))
+        addTimedEffect(setSpeedlines, { id, cx, cy, items }, 460)
       },
       showPersistentGuard() {
         if (persistentGuardDismissRef.current) clearTimeout(persistentGuardDismissRef.current)
@@ -797,6 +830,46 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
                 />
               )
             })}
+          </div>
+        ))}
+
+        {/* Radial speedlines — fire on target before hit lands */}
+        {speedlines.map((s) => (
+          <div
+            key={s.id}
+            data-testid="battle-speedlines"
+            style={{ position: 'absolute', left: s.cx, top: s.cy, width: 0, height: 0, pointerEvents: 'none' }}
+          >
+            {s.items.map((line, i) => (
+              <div
+                key={i}
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  width: 0,
+                  height: 0,
+                  transform: `rotate(${line.angle}deg) translateX(${line.innerPx}px)`,
+                }}
+              >
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    width: line.lenPx,
+                    height: line.thickPx,
+                    marginTop: -line.thickPx / 2,
+                    background: 'linear-gradient(90deg, transparent, rgba(255,255,220,0.88) 25%, rgba(255,255,220,0.88) 75%, transparent)',
+                    borderRadius: 99,
+                    transformOrigin: '0 50%',
+                    filter: 'drop-shadow(0 0 2px rgba(255,255,200,0.7))',
+                    animation: `battle-speedline-in 460ms cubic-bezier(0.2,0.85,0.3,1) ${line.delayMs}ms forwards`,
+                    opacity: 0,
+                  }}
+                />
+              </div>
+            ))}
           </div>
         ))}
 

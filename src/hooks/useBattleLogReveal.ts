@@ -266,6 +266,7 @@ export function useBattleLogReveal(opts: {
                 triggerHurt(playerSpriteRef, entry.crit)
                 playerEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
                 playerEffectsRef.current?.showAttackImpact(entry.crit)
+                playerEffectsRef.current?.showSpeedlines()
                 if (entry.crit) playerEffectsRef.current?.showCritBadge()
                 playerEffectsRef.current?.hidePersistentGuard()
                 triggerArenaShake(entry.crit)
@@ -274,6 +275,7 @@ export function useBattleLogReveal(opts: {
                 triggerHurt(opponentSpriteRef, entry.crit)
                 opponentEffectsRef.current?.showDamageNumber(entry.damage, entry.crit)
                 opponentEffectsRef.current?.showAttackImpact(entry.crit)
+                opponentEffectsRef.current?.showSpeedlines()
                 if (entry.crit) opponentEffectsRef.current?.showCritBadge()
                 triggerArenaShake(entry.crit)
                 triggerArenaFlash()
@@ -475,6 +477,8 @@ export function useBattleLogReveal(opts: {
       opponentEffectsRef,
       specialFlashRef,
       playerMaxHp,
+      playerPipCap,
+      playerFocusGain,
     ],
   )
 

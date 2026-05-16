@@ -49,6 +49,7 @@ function effectHandle(): EffectsLayerHandle {
     showChargeStrikeSpend: vi.fn(),
     showPersistentGuard: vi.fn(),
     hidePersistentGuard: vi.fn(),
+    showSpeedlines: vi.fn(),
   }
 }
 
