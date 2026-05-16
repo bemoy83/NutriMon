@@ -64,6 +64,8 @@ export const BATTLE_ANIM = {
   OVERDRIVE_HIT_SPACING_MS: 115,
   /** Shield dome duration (ms). Must match `shield-dome-in` @keyframes. */
   DEFEND_GUARD_MS: 900,
+  /** One-shot shield contact reaction for defended hits. */
+  GUARD_IMPACT_MS: 360,
   /** Focus charge effect total duration (ms). Covers mote orbit (640ms) + shrink rings + burst out (620+220ms). */
   FOCUS_CHARGE_MS: 860,
   /** FP spend pips converge before a skill resolves. */
@@ -100,30 +102,99 @@ export const BATTLE_ANIM = {
   POWER_STRIKE_ANTICIPATION_MS: 400,
 } as const
 
+export interface SkillImpactVisual {
+  stroke: string
+  glowFilter: string
+}
+
+export interface SkillShockwaveVisual {
+  stroke: string
+  glow: string
+  deepGlow: string
+}
+
+export interface SkillStreakVisual {
+  background: string
+}
+
+export interface SkillVisualIdentity {
+  impact: SkillImpactVisual
+  /** Low-alpha full-screen wash for player skill starts. */
+  flash: string
+  shockwave?: SkillShockwaveVisual
+  streak?: SkillStreakVisual
+}
+
+const DEFAULT_AMBER_SHOCKWAVE: SkillShockwaveVisual = {
+  stroke: 'rgba(250,204,21,0.92)',
+  glow: 'rgba(250,204,21,0.72)',
+  deepGlow: 'rgba(245,158,11,0.46)',
+}
+
+const AMBER_HIT_IMPACT: SkillImpactVisual = {
+  stroke: '#fbbf24',
+  glowFilter: 'drop-shadow(0 0 8px rgba(251,191,36,0.95)) drop-shadow(0 0 15px rgba(245,158,11,0.65))',
+}
+
+const BRIGHT_AMBER_HIT_IMPACT: SkillImpactVisual = {
+  stroke: '#fde047',
+  glowFilter: 'drop-shadow(0 0 8px rgba(253,224,71,0.96)) drop-shadow(0 0 16px rgba(251,191,36,0.68))',
+}
+
 /**
- * Per-skill hit impact tint — overrides the default yellow impact graphic.
- * 'counter' is a pseudo-skill key for the counter_stance payoff hit.
- * Skills not listed fall back to yellow (normal attack feel).
+ * Per-skill visual identity for battle VFX.
+ * 'counter_stance' also colors the counter payoff hit.
  */
-export const SKILL_IMPACT_COLOR: Record<string, { stroke: string; glowFilter: string }> = {
+export const SKILL_VISUAL_IDENTITY: Record<string, SkillVisualIdentity> = {
   triple_hit: {
-    stroke: '#bae6fd',
-    glowFilter: 'drop-shadow(0 0 6px rgba(186,230,253,0.92)) drop-shadow(0 0 11px rgba(56,189,248,0.62))',
+    impact: BRIGHT_AMBER_HIT_IMPACT,
+    flash: 'rgba(251,146,60,0.22)',
+    shockwave: {
+      stroke: 'rgba(253,224,71,0.92)',
+      glow: 'rgba(251,191,36,0.68)',
+      deepGlow: 'rgba(14,165,233,0.38)',
+    },
   },
   overdrive: {
-    stroke: '#e879f9',
-    glowFilter: 'drop-shadow(0 0 7px rgba(232,121,249,0.92)) drop-shadow(0 0 13px rgba(217,70,239,0.62))',
+    impact: BRIGHT_AMBER_HIT_IMPACT,
+    flash: 'rgba(217,70,239,0.30)',
+    shockwave: {
+      stroke: 'rgba(253,224,71,0.92)',
+      glow: 'rgba(251,191,36,0.68)',
+      deepGlow: 'rgba(162,28,175,0.44)',
+    },
+    streak: {
+      background: 'linear-gradient(90deg, transparent 0%, rgba(217,70,239,0.85) 22%, rgba(255,255,255,0.72) 50%, rgba(217,70,239,0.85) 78%, transparent 100%)',
+    },
   },
   power_strike: {
-    stroke: '#fb923c',
-    glowFilter: 'drop-shadow(0 0 7px rgba(251,146,60,0.92)) drop-shadow(0 0 13px rgba(234,88,12,0.62))',
+    impact: AMBER_HIT_IMPACT,
+    flash: 'rgba(139,92,246,0.28)',
+    shockwave: {
+      stroke: 'rgba(251,191,36,0.95)',
+      glow: 'rgba(251,191,36,0.74)',
+      deepGlow: 'rgba(234,88,12,0.48)',
+    },
   },
   charge_strike: {
-    stroke: '#fbbf24',
-    glowFilter: 'drop-shadow(0 0 8px rgba(251,191,36,0.95)) drop-shadow(0 0 15px rgba(245,158,11,0.65))',
+    impact: AMBER_HIT_IMPACT,
+    flash: 'rgba(250,204,21,0.28)',
+    shockwave: DEFAULT_AMBER_SHOCKWAVE,
   },
   counter_stance: {
-    stroke: '#7dd3fc',
-    glowFilter: 'drop-shadow(0 0 7px rgba(125,211,252,0.92)) drop-shadow(0 0 12px rgba(14,165,233,0.62))',
+    impact: BRIGHT_AMBER_HIT_IMPACT,
+    flash: 'rgba(14,165,233,0.22)',
+    shockwave: {
+      stroke: 'rgba(253,224,71,0.90)',
+      glow: 'rgba(251,191,36,0.62)',
+      deepGlow: 'rgba(2,132,199,0.38)',
+    },
+  },
+  regen: {
+    impact: {
+      stroke: '#4ade80',
+      glowFilter: 'drop-shadow(0 0 7px rgba(74,222,128,0.9)) drop-shadow(0 0 12px rgba(34,197,94,0.58))',
+    },
+    flash: 'rgba(34,197,94,0.22)',
   },
 }

@@ -3,6 +3,11 @@ export interface GuardEffect {
   durationMs: number
 }
 
+export interface GuardImpactEffect {
+  id: number
+  intensity: 'normal' | 'heavy'
+}
+
 export type PersistentGuardState = 'hidden' | 'active' | 'dismissing'
 
 function HexPattern({
@@ -48,11 +53,13 @@ function HexPattern({
 
 export function GuardEffects({
   guards,
+  guardImpacts,
   persistentGuardState,
   persistentGuardKey,
   displaySize,
 }: {
   guards: GuardEffect[]
+  guardImpacts: GuardImpactEffect[]
   persistentGuardState: PersistentGuardState
   persistentGuardKey: number
   displaySize?: number
@@ -106,6 +113,98 @@ export function GuardEffects({
                 opacity: 0,
               }}
             />
+          </div>
+        )
+      })}
+
+      {guardImpacts.map((impact) => {
+        const heavy = impact.intensity === 'heavy'
+        const fragmentCount = heavy ? 9 : 6
+        return (
+          <div
+            key={impact.id}
+            data-testid="battle-guard-impact"
+            data-intensity={impact.intensity}
+            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                left: cx - r,
+                top: cy - r,
+                width: r * 2,
+                height: r * 2,
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, transparent 48%, rgba(191,239,255,0.30) 68%, rgba(125,211,252,0.72) 86%, transparent 100%)',
+                border: `${heavy ? 4 : 3}px solid rgba(186,230,253,0.95)`,
+                boxShadow: heavy
+                  ? 'inset 0 0 30px rgba(186,230,253,0.62), 0 0 24px rgba(56,189,248,0.72), 0 0 42px rgba(14,165,233,0.42)'
+                  : 'inset 0 0 24px rgba(186,230,253,0.48), 0 0 18px rgba(56,189,248,0.56)',
+                animation: 'shield-impact-compress 360ms cubic-bezier(0.15,0.9,0.2,1) forwards',
+                overflow: 'hidden',
+              }}
+            >
+              <HexPattern
+                patternId={`impact-hex-${impact.id}`}
+                gradientId={`impact-hex-grad-${impact.id}`}
+                maskId={`impact-hex-mask-${impact.id}`}
+                opacity={heavy ? 0.56 : 0.42}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  width: '42%',
+                  background: 'linear-gradient(90deg, transparent, rgba(236,254,255,0.95), transparent)',
+                  animation: 'shield-impact-glint 360ms ease-out forwards',
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                position: 'absolute',
+                left: cx - r,
+                top: cy - r,
+                width: r * 2,
+                height: r * 2,
+                borderRadius: '50%',
+                border: `${heavy ? 4 : 3}px solid rgba(224,251,255,0.95)`,
+                boxShadow: '0 0 18px rgba(125,211,252,0.72)',
+                animation: 'shield-impact-rim 360ms ease-out forwards',
+              }}
+            />
+
+            {Array.from({ length: fragmentCount }).map((_, i) => {
+              const angle = ((i / fragmentCount) * Math.PI * 2) - Math.PI * 0.42
+              const startR = r * (heavy ? 0.84 : 0.78)
+              const x = cx + Math.cos(angle) * startR
+              const y = cy + Math.sin(angle) * startR
+              const travel = heavy ? 18 : 12
+              return (
+                <span
+                  key={i}
+                  style={{
+                    position: 'absolute',
+                    left: x,
+                    top: y,
+                    width: heavy ? 6 : 5,
+                    height: heavy ? 6 : 5,
+                    marginLeft: heavy ? -3 : -2.5,
+                    marginTop: heavy ? -3 : -2.5,
+                    borderRadius: 2,
+                    border: '1px solid rgba(224,251,255,0.92)',
+                    background: 'rgba(125,211,252,0.38)',
+                    boxShadow: '0 0 7px rgba(125,211,252,0.75)',
+                    ['--dx' as string]: `${Math.cos(angle) * travel}px`,
+                    ['--dy' as string]: `${Math.sin(angle) * travel}px`,
+                    animation: `shield-impact-fragment 360ms ease-out ${i * 14}ms forwards`,
+                    opacity: 0,
+                  } as React.CSSProperties}
+                />
+              )
+            })}
           </div>
         )
       })}

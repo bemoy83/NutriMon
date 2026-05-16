@@ -1,27 +1,35 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
+import type { SkillShockwaveVisual, SkillStreakVisual } from '@/lib/battleAnimationConfig'
 import type { ImpactVariant } from './ImpactGraphic'
 import { DamageNumberEffects, type CritBadge, type FloatingNumber } from './battle-effects/DamageNumberEffects'
 import { FocusChargeEffects, type FocusEffect, type FocusMote } from './battle-effects/FocusChargeEffects'
-import { GuardEffects, type GuardEffect, type PersistentGuardState } from './battle-effects/GuardEffects'
+import { GuardEffects, type GuardEffect, type GuardImpactEffect, type PersistentGuardState } from './battle-effects/GuardEffects'
 import { ImpactEffects, type HitImpact, type ImpactColor } from './battle-effects/ImpactEffects'
 import { PipSpendEffects, type ChargeSpendEffect, type FocusSpendEffect } from './battle-effects/PipSpendEffects'
 import { RegenEffects, type RegenMote, type RegenOrbitEffect } from './battle-effects/RegenEffects'
 import { ShockwaveEffects, type OverdriveStreak, type ShockwaveEffect } from './battle-effects/ShockwaveEffects'
-import { SpeedlineEffects, type SpeedlineEffect, type SpeedlineItem } from './battle-effects/SpeedlineEffects'
 
 export interface EffectsLayerHandle {
   showDamageNumber(value: number, isCrit: boolean): void
   showCritBadge(): void
   showAttackImpact(isCrit?: boolean, impactColor?: ImpactColor): void
   showHeavyAttackImpact(isCrit?: boolean, impactColor?: ImpactColor): void
-  showFocusedAttackImpact(isCrit?: boolean, hitCount?: number, spacingMs?: number, variant?: ImpactVariant, impactColor?: ImpactColor): void
-  showGroundShockwave(wide?: boolean): void
+  showFocusedAttackImpact(
+    isCrit?: boolean,
+    hitCount?: number,
+    spacingMs?: number,
+    variant?: ImpactVariant,
+    impactColor?: ImpactColor,
+    options?: { emphasizeFinalHit?: boolean },
+  ): void
+  showGroundShockwave(wide?: boolean, color?: SkillShockwaveVisual): void
   showDefendGuard(durationMs?: number): void
+  showGuardImpact(intensity?: 'normal' | 'heavy'): void
   showFocusCharge(): void
   showFocusSpend(pipCount: number): void
   /** Overdrive: fuchsia horizontal streak per hit beat. */
-  showOverdriveStreak(): void
+  showOverdriveStreak(color?: SkillStreakVisual): void
   /** Regen V2: green particles orbit inward before the +HP number. */
   showRegenOrbitEffect(value: number): void
   /** Charge Strike V2: pips converge into sprite center. */
@@ -29,8 +37,6 @@ export interface EffectsLayerHandle {
   /** Counter Stance V2: looping shield ring that persists until counter fires. */
   showPersistentGuard(): void
   hidePersistentGuard(): void
-  /** Radial speedlines on the target before a hit lands. */
-  showSpeedlines(): void
 }
 
 interface EffectsLayerProps {
@@ -50,6 +56,16 @@ function impactGraphicSize(displaySize: number | undefined): number {
   return Math.round(Math.min(120, Math.max(72, displaySize * 0.37)))
 }
 
+function makeHitSparkItems(count: number, heavy = false) {
+  return Array.from({ length: count }, (_, i) => ({
+    angle: (i / count) * 360 + (Math.random() - 0.5) * (heavy ? 7 : 10),
+    innerPx: heavy ? 22 + Math.random() * 12 : 28 + Math.random() * 14,
+    lenPx: heavy ? 30 + Math.random() * 38 : 20 + Math.random() * 32,
+    thickPx: heavy ? 1.6 + Math.random() * 2.2 : 1 + Math.random() * 1.8,
+    delayMs: Math.random() * (heavy ? 36 : 80),
+  }))
+}
+
 const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
   function EffectsLayer({ displaySize }, ref) {
     const impactPx = impactGraphicSize(displaySize)
@@ -57,13 +73,13 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
     const [crits, setCrits] = useState<CritBadge[]>([])
     const [impacts, setImpacts] = useState<HitImpact[]>([])
     const [guards, setGuards] = useState<GuardEffect[]>([])
+    const [guardImpacts, setGuardImpacts] = useState<GuardImpactEffect[]>([])
     const [focuses, setFocuses] = useState<FocusEffect[]>([])
     const [focusSpends, setFocusSpends] = useState<FocusSpendEffect[]>([])
     const [shockwaves, setShockwaves] = useState<ShockwaveEffect[]>([])
     const [streaks, setStreaks] = useState<OverdriveStreak[]>([])
     const [regenOrbits, setRegenOrbits] = useState<RegenOrbitEffect[]>([])
     const [chargeSpends, setChargeSpends] = useState<ChargeSpendEffect[]>([])
-    const [speedlines, setSpeedlines] = useState<SpeedlineEffect[]>([])
     const [persistentGuardState, setPersistentGuardState] = useState<PersistentGuardState>('hidden')
     const [persistentGuardKey, setPersistentGuardKey] = useState(0)
     const persistentGuardDismissRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -126,6 +142,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
           variant: 'slash',
           angle: Math.round((Math.random() - 0.5) * 40),
           impactColor,
+          sparkItems: makeHitSparkItems(14),
         }, IMPACT_DURATION_MS)
       },
       showHeavyAttackImpact(isCrit = false, impactColor?) {
@@ -134,10 +151,19 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
           id, isCrit, delayMs: 0, xPct: 50, yPct: 52,
           variant: 'burst',
           angle: Math.round((Math.random() - 0.5) * 18),
+          emphasis: true,
           impactColor,
+          sparkItems: makeHitSparkItems(18, true),
         }, IMPACT_DURATION_MS + BATTLE_ANIM.HIT_STOP_MS)
       },
-      showFocusedAttackImpact(isCrit = false, hitCount = 3, spacingMs = BATTLE_ANIM.FOCUSED_HIT_SPACING_MS, variant: ImpactVariant = 'arc', impactColor?) {
+      showFocusedAttackImpact(
+        isCrit = false,
+        hitCount = 3,
+        spacingMs = BATTLE_ANIM.FOCUSED_HIT_SPACING_MS,
+        variant: ImpactVariant = 'arc',
+        impactColor?,
+        options = {},
+      ) {
         const arcPattern = [
           { xPct: 39, yPct: 57, angle: -18 },
           { xPct: 60, yPct: 39, angle: 18 },
@@ -159,13 +185,27 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         }))
         hitOffsets.forEach((hit) => {
           const id = nextId()
-          const impact: HitImpact = { id, isCrit, ...hit, delayMs: 0, variant, impactColor }
+          const isFinalHit = hit.delayMs === hitOffsets[hitOffsets.length - 1]?.delayMs
+          const impact: HitImpact = {
+            id,
+            isCrit,
+            ...hit,
+            delayMs: 0,
+            variant,
+            impactColor,
+            emphasis: Boolean(options.emphasizeFinalHit && isFinalHit),
+            sparkItems: makeHitSparkItems(isFinalHit ? 12 : 8, Boolean(options.emphasizeFinalHit && isFinalHit)),
+          }
           addDelayedTimedEffect(setImpacts, impact, hit.delayMs, IMPACT_DURATION_MS)
         })
       },
       showDefendGuard(durationMs = BATTLE_ANIM.DEFEND_GUARD_MS) {
         const id = nextId()
         addTimedEffect(setGuards, { id, durationMs }, durationMs)
+      },
+      showGuardImpact(intensity = 'normal') {
+        const id = nextId()
+        addTimedEffect(setGuardImpacts, { id, intensity }, BATTLE_ANIM.GUARD_IMPACT_MS)
       },
       showFocusCharge() {
         const id = nextId()
@@ -195,14 +235,16 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         const id = nextId()
         addTimedEffect(setFocusSpends, { id, pipCount: Math.max(1, Math.min(pipCount, 5)) }, BATTLE_ANIM.FOCUS_SPEND_MS)
       },
-      showGroundShockwave(wide = false) {
+      showGroundShockwave(wide = false, color?) {
         const id = nextId()
-        addTimedEffect(setShockwaves, { id, wide }, BATTLE_ANIM.GROUND_SHOCKWAVE_MS)
+        const effect: ShockwaveEffect = color ? { id, wide, color } : { id, wide }
+        addTimedEffect(setShockwaves, effect, BATTLE_ANIM.GROUND_SHOCKWAVE_MS)
       },
-      showOverdriveStreak() {
+      showOverdriveStreak(color?) {
         const id = nextId()
         const yPct = 30 + Math.round(Math.random() * 36)
-        addTimedEffect(setStreaks, { id, yPct }, 280)
+        const effect: OverdriveStreak = color ? { id, yPct, color } : { id, yPct }
+        addTimedEffect(setStreaks, effect, 280)
       },
       showRegenOrbitEffect(value) {
         const id = nextId()
@@ -217,21 +259,6 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
       showChargeStrikeSpend(pipCount) {
         const id = nextId()
         addTimedEffect(setChargeSpends, { id, pipCount: Math.max(1, Math.min(pipCount, 5)) }, BATTLE_ANIM.FOCUS_SPEND_MS)
-      },
-      showSpeedlines() {
-        const id = nextId()
-        const ds = displaySize ?? 128
-        const cx = ds / 2
-        const cy = ds * 0.44
-        const count = 14
-        const items: SpeedlineItem[] = Array.from({ length: count }, (_, i) => ({
-          angle: (i / count) * 360 + (Math.random() - 0.5) * 10,
-          innerPx: 28 + Math.random() * 14,
-          lenPx: 20 + Math.random() * 32,
-          thickPx: 1 + Math.random() * 1.8,
-          delayMs: Math.random() * 80,
-        }))
-        addTimedEffect(setSpeedlines, { id, cx, cy, items }, 460)
       },
       showPersistentGuard() {
         if (persistentGuardDismissRef.current) clearTimeout(persistentGuardDismissRef.current)
@@ -265,6 +292,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         <ImpactEffects impacts={impacts} impactPx={impactPx} />
         <GuardEffects
           guards={guards}
+          guardImpacts={guardImpacts}
           persistentGuardState={persistentGuardState}
           persistentGuardKey={persistentGuardKey}
           displaySize={displaySize}
@@ -273,7 +301,6 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         <FocusChargeEffects focuses={focuses} displaySize={displaySize} />
         <ShockwaveEffects shockwaves={shockwaves} streaks={streaks} />
         <RegenEffects regenOrbits={regenOrbits} displaySize={displaySize} />
-        <SpeedlineEffects speedlines={speedlines} />
       </div>
     )
   },

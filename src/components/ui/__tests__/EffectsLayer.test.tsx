@@ -28,6 +28,25 @@ describe('EffectsLayer', () => {
     expect(screen.queryByTestId('battle-defend-guard')).not.toBeInTheDocument()
   })
 
+  it('renders and clears guard impact effects', () => {
+    vi.useFakeTimers()
+    const ref = createRef<EffectsLayerHandle>()
+
+    render(<EffectsLayer ref={ref} displaySize={160} />)
+
+    act(() => {
+      ref.current?.showGuardImpact('heavy')
+    })
+
+    expect(screen.getByTestId('battle-guard-impact')).toHaveAttribute('data-intensity', 'heavy')
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.GUARD_IMPACT_MS)
+    })
+
+    expect(screen.queryByTestId('battle-guard-impact')).not.toBeInTheDocument()
+  })
+
   it('renders and clears focus charge effects', () => {
     vi.useFakeTimers()
     const ref = createRef<EffectsLayerHandle>()
@@ -62,6 +81,7 @@ describe('EffectsLayer', () => {
     expect(screen.getByText('12')).toBeInTheDocument()
     expect(screen.getByText('CRIT!')).toBeInTheDocument()
     expect(screen.getByTestId('battle-attack-impact')).toBeInTheDocument()
+    expect(screen.getByTestId('battle-hit-spark')).toBeInTheDocument()
 
     act(() => {
       vi.advanceTimersByTime(BATTLE_ANIM.HIT_IMPACT_MS)
@@ -137,6 +157,34 @@ describe('EffectsLayer', () => {
     expect(screen.queryByTestId('battle-attack-impact')).not.toBeInTheDocument()
   })
 
+  it('marks only the final focused attack impact as emphasized', () => {
+    vi.useFakeTimers()
+    const ref = createRef<EffectsLayerHandle>()
+
+    render(<EffectsLayer ref={ref} displaySize={160} />)
+
+    act(() => {
+      ref.current?.showFocusedAttackImpact(
+        false,
+        3,
+        BATTLE_ANIM.FOCUSED_HIT_SPACING_MS,
+        'arc',
+        undefined,
+        { emphasizeFinalHit: true },
+      )
+    })
+
+    expect(screen.getByTestId('battle-attack-impact')).not.toHaveAttribute('data-emphasis')
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.FOCUSED_HIT_SPACING_MS * 2)
+    })
+
+    const impacts = screen.getAllByTestId('battle-attack-impact')
+    expect(impacts).toHaveLength(2)
+    expect(impacts.filter((impact) => impact.getAttribute('data-emphasis') === 'true')).toHaveLength(1)
+  })
+
   it('renders heavy impact and focus spend effects', () => {
     vi.useFakeTimers()
     const ref = createRef<EffectsLayerHandle>()
@@ -149,6 +197,8 @@ describe('EffectsLayer', () => {
     })
 
     expect(screen.getByTestId('battle-attack-impact')).toBeInTheDocument()
+    expect(screen.getByTestId('battle-attack-impact')).toHaveAttribute('data-emphasis', 'true')
+    expect(screen.getByTestId('battle-hit-spark')).toBeInTheDocument()
     expect(screen.getByTestId('battle-focus-spend')).toBeInTheDocument()
 
     act(() => {

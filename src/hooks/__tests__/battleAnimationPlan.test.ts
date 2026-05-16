@@ -177,6 +177,88 @@ describe('battleAnimationPlan', () => {
     })
   })
 
+  it('emits guard impact at contact time for defended hits only', () => {
+    const defendedEvents = plan([
+      entry({
+        id: 'defended-hit-1',
+        actor: 'opponent',
+        action: 'attack',
+        damage: 12,
+        target: 'player',
+        targetHpAfter: 88,
+        defended: true,
+        playerAction: 'defend',
+        opponentAction: 'attack',
+      }),
+    ])
+    const contactMs = BATTLE_ANIM.ATTACK_ANTICIPATION_MS + BATTLE_ANIM.LUNGE_PEAK_MS
+
+    expect(findEffect(defendedEvents, 'guard_impact')).toMatchObject({
+      atMs: contactMs,
+      event: {
+        target: 'player',
+        payload: { intensity: 'normal' },
+      },
+    })
+
+    const plainEvents = plan([
+      entry({
+        id: 'plain-hit-1',
+        actor: 'opponent',
+        action: 'attack',
+        damage: 12,
+        target: 'player',
+        targetHpAfter: 88,
+      }),
+    ])
+
+    expect(findEffect(plainEvents, 'guard_impact')).toBeUndefined()
+
+    const flaggedWithoutDefendEvents = plan([
+      entry({
+        id: 'flagged-without-defend-1',
+        actor: 'opponent',
+        action: 'attack',
+        damage: 12,
+        target: 'player',
+        targetHpAfter: 88,
+        defended: true,
+        playerAction: 'attack',
+        opponentAction: 'attack',
+      }),
+    ])
+
+    expect(findEffect(flaggedWithoutDefendEvents, 'guard_impact')).toBeUndefined()
+  })
+
+  it('uses heavy guard impact for defended heavy skill contact', () => {
+    const events = plan([
+      entry({
+        id: 'defended-power-strike-1',
+        actor: 'player',
+        action: 'skill',
+        skillId: 'power_strike',
+        damage: 20,
+        target: 'opponent',
+        targetHpAfter: 70,
+        defended: true,
+        playerAction: 'skill',
+        opponentAction: 'defend',
+      }),
+    ])
+    const contactMs = BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
+      + BATTLE_ANIM.POWER_STRIKE_ANTICIPATION_MS
+      + BATTLE_ANIM.LUNGE_PEAK_MS
+
+    expect(findEffect(events, 'guard_impact')).toMatchObject({
+      atMs: contactMs,
+      event: {
+        target: 'opponent',
+        payload: { intensity: 'heavy' },
+      },
+    })
+  })
+
   it('dismisses counter stance on the incoming hit before counter payoff resolves', () => {
     const events = plan([
       entry({

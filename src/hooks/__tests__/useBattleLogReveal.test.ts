@@ -40,14 +40,14 @@ function effectHandle(): EffectsLayerHandle {
     showFocusedAttackImpact: vi.fn(),
     showGroundShockwave: vi.fn(),
     showDefendGuard: vi.fn(),
+    showGuardImpact: vi.fn(),
     showFocusCharge: vi.fn(),
     showFocusSpend: vi.fn(),
     showOverdriveStreak: vi.fn(),
     showRegenOrbitEffect: vi.fn(),
     showChargeStrikeSpend: vi.fn(),
-showPersistentGuard: vi.fn(),
+    showPersistentGuard: vi.fn(),
     hidePersistentGuard: vi.fn(),
-    showSpeedlines: vi.fn(),
   }
 }
 
@@ -236,6 +236,7 @@ describe('useBattleLogReveal', () => {
     const opponentSprite = spriteHandle()
     const opponentEffects = effectHandle()
     const triggerArenaShake = vi.fn()
+    const triggerArenaFlash = vi.fn()
     const { result } = renderHook(() =>
       useBattleLogReveal({
         playerSpriteRef: { current: playerSprite },
@@ -243,7 +244,7 @@ describe('useBattleLogReveal', () => {
         playerEffectsRef: { current: effectHandle() },
         opponentEffectsRef: { current: opponentEffects },
         triggerArenaShake,
-        triggerArenaFlash: vi.fn(),
+        triggerArenaFlash,
         specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
         playerMaxHp: 100,
         playerPipCap: 3,
@@ -286,6 +287,50 @@ describe('useBattleLogReveal', () => {
     expect(opponentEffects.showAttackImpact).toHaveBeenCalledWith(true)
     expect(opponentEffects.showCritBadge).toHaveBeenCalledTimes(1)
     expect(triggerArenaShake).toHaveBeenCalledWith(true)
+    expect(triggerArenaFlash).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps normal basic attacks local without arena flash or shake', () => {
+    vi.useFakeTimers()
+    const opponentEffects = effectHandle()
+    const triggerArenaShake = vi.fn()
+    const triggerArenaFlash = vi.fn()
+    const { result } = renderHook(() =>
+      useBattleLogReveal({
+        playerSpriteRef: { current: spriteHandle() },
+        opponentSpriteRef: { current: spriteHandle() },
+        playerEffectsRef: { current: effectHandle() },
+        opponentEffectsRef: { current: opponentEffects },
+        triggerArenaShake,
+        triggerArenaFlash,
+        specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
+        playerMaxHp: 100,
+        playerPipCap: 3,
+        playerFocusGain: 1,
+      }),
+    )
+
+    act(() => {
+      result.current.revealEntries('run-1', [
+        entry({
+          id: 'attack-1',
+          actor: 'player',
+          action: 'attack',
+          damage: 12,
+          target: 'opponent',
+          targetHpAfter: 40,
+          crit: false,
+        }),
+      ], [])
+      vi.advanceTimersByTime(
+        BATTLE_ANIM.ATTACK_ANTICIPATION_MS + BATTLE_ANIM.LUNGE_PEAK_MS,
+      )
+    })
+
+    expect(opponentEffects.showDamageNumber).toHaveBeenCalledWith(12, false)
+    expect(opponentEffects.showAttackImpact).toHaveBeenCalledWith(false)
+    expect(triggerArenaShake).not.toHaveBeenCalled()
+    expect(triggerArenaFlash).not.toHaveBeenCalled()
   })
 
   it('uses focused attack impact and 3-hit hurt sequence for skill action', () => {
@@ -346,21 +391,35 @@ describe('useBattleLogReveal', () => {
       BATTLE_ANIM.FOCUSED_HIT_SPACING_MS,
       'cut',
       expect.any(Object),
+      { emphasizeFinalHit: true },
     )
+    expect(opponentEffects.showDamageNumber).not.toHaveBeenCalled()
+    expect(opponentEffects.showCritBadge).not.toHaveBeenCalled()
     expect(opponentEffects.showAttackImpact).not.toHaveBeenCalled()
     expect(opponentSprite.triggerAnimation).toHaveBeenCalledTimes(1)
+    expect(opponentSprite.triggerAnimation).toHaveBeenNthCalledWith(
+      1,
+      'hurt',
+      BATTLE_ANIM.HIT_IMPACT_MS,
+      true,
+      'right',
+    )
 
     act(() => {
       vi.advanceTimersByTime(BATTLE_ANIM.FOCUSED_HIT_SPACING_MS)
     })
 
     expect(opponentSprite.triggerAnimation).toHaveBeenCalledTimes(2)
+    expect(opponentEffects.showDamageNumber).not.toHaveBeenCalled()
 
     act(() => {
       vi.advanceTimersByTime(BATTLE_ANIM.FOCUSED_HIT_SPACING_MS)
     })
 
     expect(opponentSprite.triggerAnimation).toHaveBeenCalledTimes(3)
+    expect(opponentSprite.triggerAnimation).toHaveBeenLastCalledWith('hurt', BATTLE_ANIM.HURT_CRIT_MS, true, 'right')
+    expect(opponentEffects.showDamageNumber).toHaveBeenCalledWith(42, true)
+    expect(opponentEffects.showCritBadge).toHaveBeenCalledTimes(1)
   })
 
   it('uses heavy anticipation before heavy skill contact', () => {
@@ -425,7 +484,7 @@ describe('useBattleLogReveal', () => {
     expect(opponentSprite.triggerAnimation).toHaveBeenCalledWith('hurt', BATTLE_ANIM.HURT_MS, false, 'right')
     expect(opponentEffects.showHeavyAttackImpact).toHaveBeenCalledWith(false, expect.any(Object))
     // V2: power_strike uses wide shockwave
-    expect(opponentEffects.showGroundShockwave).toHaveBeenCalledWith(true)
+    expect(opponentEffects.showGroundShockwave).toHaveBeenCalledWith(true, expect.any(Object))
   })
 
   it('spends all available pips before charge strike starts charging', () => {
@@ -529,6 +588,7 @@ describe('useBattleLogReveal', () => {
       BATTLE_ANIM.OVERDRIVE_HIT_SPACING_MS,
       'arc',
       expect.any(Object),
+      { emphasizeFinalHit: true },
     )
     expect(opponentSprite.triggerAnimation).toHaveBeenCalledTimes(1)
 
@@ -745,5 +805,45 @@ describe('useBattleLogReveal', () => {
 
     expect(playerEffects.hidePersistentGuard).toHaveBeenCalledTimes(1)
     expect(opponentEffects.showDamageNumber).not.toHaveBeenCalledWith(18, false)
+  })
+
+  it('shows guard impact on defended contact target', () => {
+    vi.useFakeTimers()
+    const playerEffects = effectHandle()
+    const opponentEffects = effectHandle()
+    const { result } = renderHook(() =>
+      useBattleLogReveal({
+        playerSpriteRef: { current: spriteHandle() },
+        opponentSpriteRef: { current: spriteHandle() },
+        playerEffectsRef: { current: playerEffects },
+        opponentEffectsRef: { current: opponentEffects },
+        triggerArenaShake: vi.fn(),
+        triggerArenaFlash: vi.fn(),
+        specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
+        playerMaxHp: 100,
+        playerPipCap: 3,
+        playerFocusGain: 1,
+      }),
+    )
+
+    act(() => {
+      result.current.revealEntries('run-1', [
+        entry({
+          id: 'defended-hit-1',
+          actor: 'opponent',
+          action: 'attack',
+          damage: 8,
+          target: 'player',
+          targetHpAfter: 92,
+          defended: true,
+          playerAction: 'defend',
+          opponentAction: 'attack',
+        }),
+      ], [])
+      vi.advanceTimersByTime(BATTLE_ANIM.ATTACK_ANTICIPATION_MS + BATTLE_ANIM.LUNGE_PEAK_MS)
+    })
+
+    expect(playerEffects.showGuardImpact).toHaveBeenCalledWith('normal')
+    expect(opponentEffects.showGuardImpact).not.toHaveBeenCalled()
   })
 })

@@ -344,7 +344,7 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
               position: 'absolute',
               inset: 0,
               transform,
-              background: flash.isCrit ? '#fbbf24' : 'white',
+              background: 'white',
               animation: flash.isCrit
                 ? `hit-flash-crit ${flash.durationMs}ms ease-out forwards`
                 : `hit-flash ${flash.durationMs}ms ease-out forwards`,

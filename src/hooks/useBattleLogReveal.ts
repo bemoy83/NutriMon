@@ -19,9 +19,14 @@ type BattleEffectPayload = {
   healAmount?: number
   hitCount?: number
   spacingMs?: number
+  damageDelayMs?: number
+  finalHitDurationMs?: number
   groundShockwaveHeavy?: boolean
   impactVariant?: Parameters<EffectsLayerHandle['showFocusedAttackImpact']>[3]
   tint?: Parameters<EffectsLayerHandle['showAttackImpact']>[1]
+  shockwaveColor?: Parameters<EffectsLayerHandle['showGroundShockwave']>[1]
+  streakColor?: Parameters<EffectsLayerHandle['showOverdriveStreak']>[0]
+  intensity?: Parameters<EffectsLayerHandle['showGuardImpact']>[0]
 }
 
 export function useBattleLogReveal(opts: {
@@ -79,15 +84,17 @@ export function useBattleLogReveal(opts: {
       hitCount = 3,
       spacingMs: number = BATTLE_ANIM.FOCUSED_HIT_SPACING_MS,
       recoilDir?: 'right' | 'left',
+      finalHitDurationMs: number = BATTLE_ANIM.HIT_IMPACT_MS,
     ) => {
       for (let hit = 0; hit < hitCount; hit += 1) {
         const delayMs = hit * spacingMs
+        const durationMs = hit === hitCount - 1 ? finalHitDurationMs : BATTLE_ANIM.HIT_IMPACT_MS
         if (delayMs === 0) {
-          spriteRef.current?.triggerAnimation('hurt', BATTLE_ANIM.HIT_IMPACT_MS, isCrit, recoilDir)
+          spriteRef.current?.triggerAnimation('hurt', durationMs, isCrit, recoilDir)
           continue
         }
         const t = setTimeout(() => {
-          spriteRef.current?.triggerAnimation('hurt', BATTLE_ANIM.HIT_IMPACT_MS, isCrit, recoilDir)
+          spriteRef.current?.triggerAnimation('hurt', durationMs, isCrit, recoilDir)
         }, delayMs)
         animTimers.current.push(t)
       }
@@ -183,7 +190,14 @@ export function useBattleLogReveal(opts: {
           // Opponent is on the right, so opponent recoils right (away from left-side player).
           const recoilDir = event.target === 'player' ? 'left' : 'right'
           if (event.hitCount) {
-            triggerFocusedHurtSequence(targetSprite(event.target), event.crit, event.hitCount, event.spacingMs, recoilDir)
+            triggerFocusedHurtSequence(
+              targetSprite(event.target),
+              event.crit,
+              event.hitCount,
+              event.spacingMs,
+              recoilDir,
+              event.finalHitDurationMs,
+            )
           } else {
             triggerHurt(targetSprite(event.target), event.crit, recoilDir)
           }
@@ -200,7 +214,13 @@ export function useBattleLogReveal(opts: {
           const payload = (event.payload ?? {}) as BattleEffectPayload
           const crit = Boolean(payload.crit)
           const damage = Number(payload.damage ?? 0)
+          const damageDelayMs = Number(payload.damageDelayMs ?? 0)
+          const showDamageFeedback = () => {
+            effects?.showDamageNumber(damage, crit)
+            if (crit) effects?.showCritBadge()
+          }
           if (event.effect === 'defend_guard') effects?.showDefendGuard()
+          if (event.effect === 'guard_impact') effects?.showGuardImpact(payload.intensity)
           if (event.effect === 'focus_charge') {
             effects?.showFocusCharge()
             targetSprite(event.target).current?.triggerFocusGlow()
@@ -219,16 +239,13 @@ export function useBattleLogReveal(opts: {
           }
           if (event.effect === 'special_flash') specialFlashRef.current?.triggerFlash(payload.color)
           if (event.effect === 'basic') {
-            effects?.showDamageNumber(damage, crit)
+            showDamageFeedback()
             effects?.showAttackImpact(crit)
-            effects?.showSpeedlines()
-            if (crit) effects?.showCritBadge()
           }
           if (event.effect === 'heavy_skill') {
             effects?.showHeavyAttackImpact(crit, payload.tint)
-            effects?.showGroundShockwave(Boolean(payload.groundShockwaveHeavy))
-            effects?.showDamageNumber(damage, crit)
-            if (crit) effects?.showCritBadge()
+            effects?.showGroundShockwave(Boolean(payload.groundShockwaveHeavy), payload.shockwaveColor)
+            showDamageFeedback()
           }
           if (event.effect === 'focused_skill') {
             effects?.showFocusedAttackImpact(
@@ -237,11 +254,16 @@ export function useBattleLogReveal(opts: {
               Number(payload.spacingMs ?? BATTLE_ANIM.FOCUSED_HIT_SPACING_MS),
               payload.impactVariant,
               payload.tint,
+              { emphasizeFinalHit: true },
             )
-            effects?.showDamageNumber(damage, crit)
-            if (crit) effects?.showCritBadge()
+            if (damageDelayMs > 0) {
+              const t = setTimeout(showDamageFeedback, damageDelayMs)
+              animTimers.current.push(t)
+            } else {
+              showDamageFeedback()
+            }
           }
-          if (event.effect === 'overdrive_streak') effects?.showOverdriveStreak()
+          if (event.effect === 'overdrive_streak') effects?.showOverdriveStreak(payload.streakColor)
           if (event.effect === 'counter') {
             effects?.showDamageNumber(damage, false)
             effects?.showAttackImpact(false, payload.tint)
