@@ -273,12 +273,18 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
     battle: { url: s('/sprites/opponents/glaciermaw.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     footOffsetX: 6,
     footOffsetY: 24,
+    worldMap: { url: s('/sprites/opponents_world/glaciermaw.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/glaciermaw.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
   // 019 Frostwraith — medium — frost phantom (vertical taper with flowing bottom)
-  // 'frostwraith': {
-  //   battle: { url: s('/sprites/opponents/frostwraith.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // },
+  'frostwraith': {
+    battle: { url: s('/sprites/opponents/frostwraith.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 6,
+    footOffsetY: 24,
+    worldMap: { url: s('/sprites/opponents_world/frostwraith.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    //icon: { url: s('/sprites/icons/frostwraith.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
   // 020 Tuskraal — large (BOSS) — tundra warlord (wide base with tusk cluster)
   // 'tuskraal': {

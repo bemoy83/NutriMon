@@ -47,7 +47,7 @@ function effectHandle(): EffectsLayerHandle {
     showOverdriveStreak: vi.fn(),
     showRegenOrbitEffect: vi.fn(),
     showChargeStrikeSpend: vi.fn(),
-    showPersistentGuard: vi.fn(),
+showPersistentGuard: vi.fn(),
     hidePersistentGuard: vi.fn(),
     showSpeedlines: vi.fn(),
   }

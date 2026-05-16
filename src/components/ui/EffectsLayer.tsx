@@ -24,7 +24,7 @@ export interface EffectsLayerHandle {
   /** Counter Stance V2: looping shield ring that persists until counter fires. */
   showPersistentGuard(): void
   hidePersistentGuard(): void
-  /** Radial speedlines on the target before a hit lands. */
+/** Radial speedlines on the target before a hit lands. */
   showSpeedlines(): void
 }
 
@@ -105,6 +105,7 @@ interface ChargeSpendEffect {
   pipCount: number
 }
 
+
 interface SpeedlineItem {
   angle: number
   innerPx: number
@@ -151,7 +152,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
     const [streaks, setStreaks] = useState<OverdriveStreak[]>([])
     const [regenOrbits, setRegenOrbits] = useState<RegenOrbitEffect[]>([])
     const [chargeSpends, setChargeSpends] = useState<ChargeSpendEffect[]>([])
-    const [speedlines, setSpeedlines] = useState<SpeedlineEffect[]>([])
+const [speedlines, setSpeedlines] = useState<SpeedlineEffect[]>([])
     const [persistentGuardState, setPersistentGuardState] = useState<'hidden' | 'active' | 'dismissing'>('hidden')
     const [persistentGuardKey, setPersistentGuardKey] = useState(0)
     const persistentGuardDismissRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -321,7 +322,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         const id = nextId()
         addTimedEffect(setChargeSpends, { id, pipCount: Math.max(1, Math.min(pipCount, 5)) }, BATTLE_ANIM.FOCUS_SPEND_MS)
       },
-      showSpeedlines() {
+showSpeedlines() {
         const id = nextId()
         const ds = displaySize ?? 128
         const cx = ds / 2
@@ -833,7 +834,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
           </div>
         ))}
 
-        {/* Radial speedlines — fire on target before hit lands */}
+{/* Radial speedlines — fire on target before hit lands */}
         {speedlines.map((s) => (
           <div
             key={s.id}
