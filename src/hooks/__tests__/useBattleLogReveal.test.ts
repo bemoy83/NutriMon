@@ -103,6 +103,113 @@ describe('useBattleLogReveal', () => {
     expect(playerEffects.showFocusCharge).not.toHaveBeenCalled()
   })
 
+  it('delays player focus pip resolution until the focus charge finishes', () => {
+    vi.useFakeTimers()
+    const playerEffects = effectHandle()
+    const { result } = renderHook(() =>
+      useBattleLogReveal({
+        playerSpriteRef: { current: spriteHandle() },
+        opponentSpriteRef: { current: spriteHandle() },
+        playerEffectsRef: { current: playerEffects },
+        opponentEffectsRef: { current: effectHandle() },
+        triggerArenaShake: vi.fn(),
+        triggerArenaFlash: vi.fn(),
+        specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
+        playerMaxHp: 100,
+      }),
+    )
+
+    act(() => {
+      result.current.revealEntries('run-1', [
+        entry({ id: 'focus-1', actor: 'player', action: 'focus' }),
+      ], [])
+      vi.advanceTimersByTime(0)
+    })
+
+    expect(result.current.resolvedLogOverride?.entries).toHaveLength(0)
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+    })
+
+    expect(playerEffects.showFocusCharge).toHaveBeenCalledTimes(1)
+    expect(result.current.resolvedLogOverride?.entries).toHaveLength(0)
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.FOCUS_CHARGE_MS - 1)
+    })
+
+    expect(result.current.resolvedLogOverride?.entries).toHaveLength(0)
+
+    act(() => {
+      vi.advanceTimersByTime(1)
+    })
+
+    expect(result.current.resolvedLogOverride?.entries).toHaveLength(1)
+  })
+
+  it('delays regen HP resolution until the heal number appears', () => {
+    vi.useFakeTimers()
+    const playerEffects = effectHandle()
+    const { result } = renderHook(() =>
+      useBattleLogReveal({
+        playerSpriteRef: { current: spriteHandle() },
+        opponentSpriteRef: { current: spriteHandle() },
+        playerEffectsRef: { current: playerEffects },
+        opponentEffectsRef: { current: effectHandle() },
+        triggerArenaShake: vi.fn(),
+        triggerArenaFlash: vi.fn(),
+        specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
+        playerMaxHp: 100,
+      }),
+    )
+
+    act(() => {
+      const previousEntry = entry({
+        id: 'damage-before-regen',
+        actor: 'opponent',
+        action: 'attack',
+        damage: 30,
+        target: 'player',
+        targetHpAfter: 70,
+      })
+      const regenEntry = entry({
+        id: 'regen-1',
+        actor: 'player',
+        action: 'skill',
+        skillId: 'regen',
+        target: 'player',
+        targetHpAfter: 78,
+      })
+      result.current.revealEntries('run-1', [
+        previousEntry,
+        regenEntry,
+      ], [previousEntry])
+      vi.advanceTimersByTime(0)
+    })
+
+    expect(result.current.resolvedLogOverride?.entries).toHaveLength(1)
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+    })
+
+    expect(playerEffects.showRegenOrbitEffect).toHaveBeenCalledWith(8)
+    expect(result.current.resolvedLogOverride?.entries).toHaveLength(1)
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.REGEN_NUMBER_DELAY_MS - 1)
+    })
+
+    expect(result.current.resolvedLogOverride?.entries).toHaveLength(1)
+
+    act(() => {
+      vi.advanceTimersByTime(1)
+    })
+
+    expect(result.current.resolvedLogOverride?.entries).toHaveLength(2)
+  })
+
   it('keeps attack damage behavior on the target sprite layer', () => {
     vi.useFakeTimers()
     const playerSprite = spriteHandle()

@@ -369,49 +369,83 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
           </div>
         ))}
 
-        {/* Defend guard ring */}
-        {guards.map((g) => (
-          <div
-            key={g.id}
-            data-testid="battle-defend-guard"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              pointerEvents: 'none',
-            }}
-          >
+        {/* Defend shield dome */}
+        {guards.map((g) => {
+          const ds = displaySize ?? 128
+          const cx = ds / 2
+          const cy = ds * 0.44
+          const r = ds * 0.46
+          const hexPatternId = `vfx-hex-${g.id}`
+          const hexGradId = `vfx-hex-grad-${g.id}`
+          const hexMaskId = `vfx-hex-mask-${g.id}`
+          return (
             <div
-              style={{
-                position: 'absolute',
-                top: '47%',
-                left: '50%',
-                width: '72%',
-                height: '58%',
-                border: '3px solid rgba(125, 211, 252, 0.95)',
-                borderRadius: '50%',
-                boxShadow: '0 0 0 2px rgba(30, 64, 175, 0.55), inset 0 0 12px rgba(186, 230, 253, 0.45)',
-                transform: 'translate(-50%, -50%)',
-                animation: `battle-guard-ring ${g.durationMs}ms steps(5, end) forwards`,
-              }}
-            />
-            {[0, 1, 2].map((spark) => (
-              <span
-                key={spark}
+              key={g.id}
+              data-testid="battle-defend-guard"
+              style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+            >
+              {/* Dome — circular shell with edge gradient + hex force-field overlay */}
+              <div
                 style={{
                   position: 'absolute',
-                  top: `${spark === 0 ? 29 : spark === 1 ? 43 : 59}%`,
-                  left: `${spark === 0 ? 31 : spark === 1 ? 70 : 38}%`,
-                  width: 6,
-                  height: 6,
-                  background: '#e0f2fe',
-                  boxShadow: '0 0 0 1px rgba(14, 116, 144, 0.8)',
-                  animation: `battle-guard-spark ${g.durationMs}ms steps(4, end) forwards`,
-                  animationDelay: `${spark * 70}ms`,
+                  left: cx - r,
+                  top: cy - r,
+                  width: r * 2,
+                  height: r * 2,
+                  borderRadius: '50%',
+                  background: 'radial-gradient(circle, transparent 55%, rgba(74,172,223,0.38) 75%, rgba(74,172,223,0.62) 88%, transparent 100%)',
+                  border: '2px solid rgba(74,172,223,0.88)',
+                  boxShadow: 'inset 0 0 28px rgba(74,172,223,0.48), 0 0 22px rgba(74,172,223,0.42)',
+                  animation: `shield-dome-in ${g.durationMs}ms cubic-bezier(0.25,0.8,0.3,1) forwards`,
+                  overflow: 'hidden',
+                }}
+              >
+                <svg
+                  width="100%"
+                  height="100%"
+                  style={{ position: 'absolute', inset: 0, opacity: 0.42 }}
+                  aria-hidden="true"
+                >
+                  <defs>
+                    <pattern id={hexPatternId} width="16" height="14" patternUnits="userSpaceOnUse">
+                      <polygon
+                        points="8,1 15,4.5 15,10.5 8,14 1,10.5 1,4.5"
+                        fill="none"
+                        stroke="rgba(74,172,223,0.9)"
+                        strokeWidth="0.6"
+                      />
+                    </pattern>
+                    <radialGradient id={hexGradId}>
+                      <stop offset="0%"   stopColor="white" stopOpacity="0" />
+                      <stop offset="60%"  stopColor="white" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="white" stopOpacity="1" />
+                    </radialGradient>
+                    <mask id={hexMaskId}>
+                      <rect width="100%" height="100%" fill={`url(#${hexGradId})`} />
+                    </mask>
+                  </defs>
+                  <rect width="100%" height="100%" fill={`url(#${hexPatternId})`} mask={`url(#${hexMaskId})`} />
+                </svg>
+              </div>
+
+              {/* Aura ring — single pulse expanding outward from dome edge */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: cx - r,
+                  top: cy - r,
+                  width: r * 2,
+                  height: r * 2,
+                  borderRadius: '50%',
+                  border: '3px solid rgba(74,172,223,0.88)',
+                  boxShadow: '0 0 16px rgba(74,172,223,0.65)',
+                  animation: `aura-ring-out 700ms ease-out 80ms forwards`,
+                  opacity: 0,
                 }}
               />
-            ))}
-          </div>
-        ))}
+            </div>
+          )
+        })}
 
         {/* FP spend — amber pips collapse toward the sprite core before skill contact */}
         {focusSpends.map((effect) => (
@@ -694,7 +728,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
                   position: 'absolute',
                   left: cx,
                   top: cy,
-                  animation: `regen-number-pop 1200ms cubic-bezier(0.2,0.8,0.3,1) 160ms forwards`,
+                  animation: `regen-number-pop 1200ms cubic-bezier(0.2,0.8,0.3,1) ${BATTLE_ANIM.REGEN_NUMBER_DELAY_MS}ms forwards`,
                   fontWeight: 800,
                   fontSize: 24,
                   lineHeight: 1,

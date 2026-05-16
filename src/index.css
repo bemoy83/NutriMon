@@ -482,43 +482,16 @@ select {
   100% { transform: translateX(0) scale(1); filter: brightness(1); }
 }
 
-@keyframes battle-guard-ring {
-  0% {
-    transform: translate(-50%, -50%) scale(0.72);
-    opacity: 0;
-  }
-
-  18% {
-    opacity: 1;
-  }
-
-  58% {
-    transform: translate(-50%, -50%) scale(1.04);
-    opacity: 0.9;
-  }
-
-  100% {
-    transform: translate(-50%, -50%) scale(1.16);
-    opacity: 0;
-  }
+@keyframes shield-dome-in {
+  0%   { transform: scale(0.4); opacity: 0; }
+  25%  { transform: scale(1.1); opacity: 1; }
+  55%  { transform: scale(1);   opacity: 1; }
+  100% { transform: scale(1.15); opacity: 0; }
 }
 
-@keyframes battle-guard-spark {
-  0% {
-    transform: scale(0.4);
-    opacity: 0;
-  }
-
-  25%,
-  55% {
-    transform: scale(1);
-    opacity: 1;
-  }
-
-  100% {
-    transform: scale(0.3);
-    opacity: 0;
-  }
+@keyframes aura-ring-out {
+  0%   { transform: scale(0.4); opacity: 0.95; border-width: 3px; }
+  100% { transform: scale(2.4); opacity: 0;    border-width: 0px; }
 }
 
 @keyframes battle-focus-aura {

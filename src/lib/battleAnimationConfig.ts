@@ -62,8 +62,8 @@ export const BATTLE_ANIM = {
   FOCUSED_HIT_SPACING_MS: 180,
   /** Faster hit cadence for overdrive's five-hit sequence. */
   OVERDRIVE_HIT_SPACING_MS: 115,
-  /** Defensive guard ring duration (ms). Must match `battle-guard-ring` and `battle-guard-spark` @keyframes. */
-  DEFEND_GUARD_MS: 560,
+  /** Shield dome duration (ms). Must match `shield-dome-in` @keyframes. */
+  DEFEND_GUARD_MS: 900,
   /** Longer guard read for Counter Stance. */
   COUNTER_STANCE_GUARD_MS: 980,
   /** Focus charge effect total duration (ms). Covers mote orbit (640ms) + shrink rings + burst out (620+220ms). */
@@ -79,6 +79,8 @@ export const BATTLE_ANIM = {
 
   /** Regen heal effect total duration (ms). Covers mote rise + staggered ring sequence (0/180/380ms delays + 900ms longest ring). */
   HEAL_EFFECT_MS: 1300,
+  /** Delay before regen's +HP number appears. Must match the `regen-number-pop` animation delay. */
+  REGEN_NUMBER_DELAY_MS: 160,
 
   /** Attacker lunge slide duration (ms). Must match `battle-lunge-*` @keyframes. */
   LUNGE_MS: 320,

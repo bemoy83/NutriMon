@@ -186,11 +186,11 @@ export function useBattleLogReveal(opts: {
           if (entry.phase === 'action' && entry.action === 'focus') {
             const actorSpriteRef = entry.actor === 'player' ? playerSpriteRef : opponentSpriteRef
             triggerActorAnticipation(entry.actor, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
-            resolveEntryAfter(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
             scheduleAnimation(() => {
               actorEffects?.showFocusCharge()
               actorSpriteRef.current?.triggerFocusGlow()
             }, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+            resolveEntryAfter(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS + BATTLE_ANIM.FOCUS_CHARGE_MS)
           }
 
           if (entry.phase === 'action' && entry.action === 'attack' && entry.damage > 0) {
@@ -245,7 +245,6 @@ export function useBattleLogReveal(opts: {
           if (entry.phase === 'action' && entry.action === 'skill' && entry.skillId === 'regen' && entry.targetHpAfter !== null) {
             const targetHpAfter = entry.targetHpAfter
             triggerActorAnticipation(entry.actor, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
-            resolveEntryAfter(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
             scheduleAnimation(() => {
               const priorEntries = [...base, ...newEntries.slice(0, i)]
               const priorHp = priorEntries.reduceRight<number | null>((found, e) => {
@@ -256,6 +255,7 @@ export function useBattleLogReveal(opts: {
               if (healAmount > 0) playerEffectsRef.current?.showRegenOrbitEffect(healAmount)
               playerSpriteRef.current?.triggerHealGlow()
             }, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+            resolveEntryAfter(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS + BATTLE_ANIM.REGEN_NUMBER_DELAY_MS)
           }
 
           if (entry.phase === 'action' && entry.action === 'skill' && entry.damage > 0) {
