@@ -15,6 +15,17 @@ const SKILL_FLASH_COLOR: Record<string, string> = {
   overdrive:     'rgba(217,70,239,0.30)',   // fuchsia
 }
 
+const PLAYER_SKILL_PIP_COST: Record<string, number> = {
+  triple_hit: 1,
+  power_strike: 1,
+  regen: 2,
+  charge_strike: 2,
+  counter_stance: 1,
+  overdrive: 3,
+}
+
+const PLAYER_SKILLS_SPENDING_ALL_PIPS = new Set(['charge_strike'])
+
 export function useBattleLogReveal(opts: {
   playerSpriteRef: RefObject<CreatureSpriteHandle | null>
   opponentSpriteRef: RefObject<CreatureSpriteHandle | null>
@@ -24,6 +35,8 @@ export function useBattleLogReveal(opts: {
   triggerArenaFlash: () => void
   specialFlashRef: RefObject<SpecialActionFlashHandle | null>
   playerMaxHp: number
+  playerPipCap: number
+  playerFocusGain: number
 }) {
   const {
     playerSpriteRef,
@@ -34,6 +47,8 @@ export function useBattleLogReveal(opts: {
     triggerArenaFlash,
     specialFlashRef,
     playerMaxHp,
+    playerPipCap,
+    playerFocusGain,
   } = opts
 
   const animTimers = useRef<ReturnType<typeof setTimeout>[]>([])
@@ -144,11 +159,6 @@ export function useBattleLogReveal(opts: {
             specialFlashRef.current?.triggerFlash()
           }
 
-          if (entry.phase === 'action' && entry.action === 'skill' && entry.actor === 'player' && entry.damage > 0) {
-            const skillColor = SKILL_FLASH_COLOR[entry.skillId ?? '']
-            if (skillColor) specialFlashRef.current?.triggerFlash(skillColor)
-          }
-
           const actorEffects =
             entry.actor === 'player'
               ? playerEffectsRef.current
@@ -168,6 +178,37 @@ export function useBattleLogReveal(opts: {
                 entries: [...base, ...newEntries.slice(0, i + 1)],
               })
             }, delayMs)
+          }
+
+          function getPlayerFocusPipsBeforeEntry() {
+            return [...base, ...newEntries.slice(0, i)].reduce((count, e) => {
+              if (e.actor !== 'player' || e.phase !== 'action') return count
+              if (e.action === 'focus') return Math.min(playerPipCap, count + playerFocusGain)
+              if (e.action === 'skill') {
+                const skillId = e.skillId ?? ''
+                const pipCost = PLAYER_SKILL_PIP_COST[skillId] ?? 1
+                if (PLAYER_SKILLS_SPENDING_ALL_PIPS.has(skillId)) return 0
+                return Math.max(0, count - pipCost)
+              }
+              return count
+            }, 0)
+          }
+
+          function triggerPlayerSkillPipSpend() {
+            if (entry.phase !== 'action' || entry.action !== 'skill' || entry.actor !== 'player') return 0
+            const skillId = entry.skillId ?? ''
+            const pipCost = PLAYER_SKILL_PIP_COST[skillId] ?? 1
+            const pipsBeforeSkill = getPlayerFocusPipsBeforeEntry()
+            const pipSpendCount = PLAYER_SKILLS_SPENDING_ALL_PIPS.has(skillId)
+              ? Math.max(pipCost, pipsBeforeSkill)
+              : pipCost
+
+            if (skillId === 'charge_strike') {
+              playerEffectsRef.current?.showChargeStrikeSpend(pipSpendCount)
+            } else {
+              playerEffectsRef.current?.showFocusSpend(pipSpendCount)
+            }
+            return BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
           }
 
           if (entry.phase === 'initiative' || entry.phase === 'result') {
@@ -233,18 +274,24 @@ export function useBattleLogReveal(opts: {
           }
 
           if (entry.phase === 'action' && entry.action === 'skill' && entry.skillId === 'counter_stance') {
-            triggerActorAnticipation(entry.actor, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
-            resolveEntryAfter(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+            const skillLeadMs = triggerPlayerSkillPipSpend()
+            scheduleAnimation(() => {
+              triggerActorAnticipation(entry.actor, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+            }, skillLeadMs)
+            resolveEntryAfter(skillLeadMs + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
             // V2: persistent looping shield replaces the timed one-shot guard
             scheduleAnimation(
               () => playerEffectsRef.current?.showPersistentGuard(),
-              BATTLE_ANIM.SUPPORT_ANTICIPATION_MS,
+              skillLeadMs + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS,
             )
           }
 
           if (entry.phase === 'action' && entry.action === 'skill' && entry.skillId === 'regen' && entry.targetHpAfter !== null) {
             const targetHpAfter = entry.targetHpAfter
-            triggerActorAnticipation(entry.actor, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+            const skillLeadMs = triggerPlayerSkillPipSpend()
+            scheduleAnimation(() => {
+              triggerActorAnticipation(entry.actor, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+            }, skillLeadMs)
             scheduleAnimation(() => {
               const priorEntries = [...base, ...newEntries.slice(0, i)]
               const priorHp = priorEntries.reduceRight<number | null>((found, e) => {
@@ -254,11 +301,12 @@ export function useBattleLogReveal(opts: {
               const healAmount = Math.max(0, targetHpAfter - priorHp)
               if (healAmount > 0) playerEffectsRef.current?.showRegenOrbitEffect(healAmount)
               playerSpriteRef.current?.triggerHealGlow()
-            }, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
-            resolveEntryAfter(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS + BATTLE_ANIM.REGEN_NUMBER_DELAY_MS)
+            }, skillLeadMs + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+            resolveEntryAfter(skillLeadMs + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS + BATTLE_ANIM.REGEN_NUMBER_DELAY_MS)
           }
 
           if (entry.phase === 'action' && entry.action === 'skill' && entry.damage > 0) {
+            const skillLeadMs = triggerPlayerSkillPipSpend()
             const targetWillFaint = entry.targetHpAfter === 0
             const isPowerStrike = entry.skillId === 'power_strike'
             const isChargeStrike = entry.skillId === 'charge_strike'
@@ -278,10 +326,14 @@ export function useBattleLogReveal(opts: {
             const contactMs = anticipationMs + BATTLE_ANIM.LUNGE_PEAK_MS
             if (isChargeStrike) {
               const actorSpriteRef = entry.actor === 'player' ? playerSpriteRef : opponentSpriteRef
-              actorSpriteRef.current?.triggerChargeGlow()
+              scheduleAnimation(() => {
+                actorSpriteRef.current?.triggerChargeGlow()
+              }, skillLeadMs)
             }
 
             const doLungeAndImpact = () => {
+              const skillColor = SKILL_FLASH_COLOR[entry.skillId ?? '']
+              if (entry.actor === 'player' && skillColor) specialFlashRef.current?.triggerFlash(skillColor)
               triggerActorAnticipation(entry.actor, anticipationMs, isSingleHit)
               scheduleAnimation(() => {
                 if (entry.actor === 'player') {
@@ -332,8 +384,10 @@ export function useBattleLogReveal(opts: {
             }
 
             if (isChargeStrike) {
-              const lungeTimer = setTimeout(doLungeAndImpact, BATTLE_ANIM.CHARGE_GLOW_MS)
+              const lungeTimer = setTimeout(doLungeAndImpact, skillLeadMs + BATTLE_ANIM.CHARGE_GLOW_MS)
               animTimers.current.push(lungeTimer)
+            } else if (skillLeadMs > 0) {
+              scheduleAnimation(doLungeAndImpact, skillLeadMs)
             } else {
               doLungeAndImpact()
             }

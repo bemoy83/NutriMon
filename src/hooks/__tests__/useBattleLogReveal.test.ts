@@ -81,6 +81,8 @@ describe('useBattleLogReveal', () => {
         triggerArenaFlash: vi.fn(),
         specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
         playerMaxHp: 100,
+        playerPipCap: 3,
+        playerFocusGain: 1,
       }),
     )
 
@@ -116,6 +118,8 @@ describe('useBattleLogReveal', () => {
         triggerArenaFlash: vi.fn(),
         specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
         playerMaxHp: 100,
+        playerPipCap: 3,
+        playerFocusGain: 1,
       }),
     )
 
@@ -161,6 +165,8 @@ describe('useBattleLogReveal', () => {
         triggerArenaFlash: vi.fn(),
         specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
         playerMaxHp: 100,
+        playerPipCap: 3,
+        playerFocusGain: 1,
       }),
     )
 
@@ -189,6 +195,13 @@ describe('useBattleLogReveal', () => {
     })
 
     expect(result.current.resolvedLogOverride?.entries).toHaveLength(1)
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS)
+    })
+
+    expect(playerEffects.showFocusSpend).toHaveBeenCalledWith(2)
+    expect(playerEffects.showRegenOrbitEffect).not.toHaveBeenCalled()
 
     act(() => {
       vi.advanceTimersByTime(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
@@ -226,6 +239,8 @@ describe('useBattleLogReveal', () => {
         triggerArenaFlash: vi.fn(),
         specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
         playerMaxHp: 100,
+        playerPipCap: 3,
+        playerFocusGain: 1,
       }),
     )
 
@@ -270,17 +285,20 @@ describe('useBattleLogReveal', () => {
     vi.useFakeTimers()
     const playerSprite = spriteHandle()
     const opponentSprite = spriteHandle()
+    const playerEffects = effectHandle()
     const opponentEffects = effectHandle()
     const { result } = renderHook(() =>
       useBattleLogReveal({
         playerSpriteRef: { current: playerSprite },
         opponentSpriteRef: { current: opponentSprite },
-        playerEffectsRef: { current: effectHandle() },
+        playerEffectsRef: { current: playerEffects },
         opponentEffectsRef: { current: opponentEffects },
         triggerArenaShake: vi.fn(),
         triggerArenaFlash: vi.fn(),
         specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
         playerMaxHp: 100,
+        playerPipCap: 3,
+        playerFocusGain: 1,
       }),
     )
 
@@ -298,6 +316,14 @@ describe('useBattleLogReveal', () => {
         }),
       ], [])
       vi.advanceTimersByTime(0)
+    })
+
+    expect(playerEffects.showFocusSpend).toHaveBeenCalledWith(1)
+    expect(playerSprite.triggerAnticipation).not.toHaveBeenCalled()
+    expect(opponentEffects.showFocusedAttackImpact).not.toHaveBeenCalled()
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS)
     })
 
     expect(playerSprite.triggerAnticipation).toHaveBeenCalledWith('right', BATTLE_ANIM.ATTACK_ANTICIPATION_MS, false)
@@ -334,17 +360,20 @@ describe('useBattleLogReveal', () => {
     vi.useFakeTimers()
     const playerSprite = spriteHandle()
     const opponentSprite = spriteHandle()
+    const playerEffects = effectHandle()
     const opponentEffects = effectHandle()
     const { result } = renderHook(() =>
       useBattleLogReveal({
         playerSpriteRef: { current: playerSprite },
         opponentSpriteRef: { current: opponentSprite },
-        playerEffectsRef: { current: effectHandle() },
+        playerEffectsRef: { current: playerEffects },
         opponentEffectsRef: { current: opponentEffects },
         triggerArenaShake: vi.fn(),
         triggerArenaFlash: vi.fn(),
         specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
         playerMaxHp: 100,
+        playerPipCap: 3,
+        playerFocusGain: 1,
       }),
     )
 
@@ -361,6 +390,13 @@ describe('useBattleLogReveal', () => {
         }),
       ], [])
       vi.advanceTimersByTime(0)
+    })
+
+    expect(playerEffects.showFocusSpend).toHaveBeenCalledWith(1)
+    expect(playerSprite.triggerAnticipation).not.toHaveBeenCalled()
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS)
     })
 
     // V2: power_strike uses its own longer anticipation
@@ -385,20 +421,73 @@ describe('useBattleLogReveal', () => {
     expect(opponentEffects.showGroundShockwave).toHaveBeenCalledWith(true)
   })
 
+  it('spends all available pips before charge strike starts charging', () => {
+    vi.useFakeTimers()
+    const playerSprite = spriteHandle()
+    const playerEffects = effectHandle()
+    const { result } = renderHook(() =>
+      useBattleLogReveal({
+        playerSpriteRef: { current: playerSprite },
+        opponentSpriteRef: { current: spriteHandle() },
+        playerEffectsRef: { current: playerEffects },
+        opponentEffectsRef: { current: effectHandle() },
+        triggerArenaShake: vi.fn(),
+        triggerArenaFlash: vi.fn(),
+        specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
+        playerMaxHp: 100,
+        playerPipCap: 3,
+        playerFocusGain: 1,
+      }),
+    )
+    const base = [
+      entry({ id: 'focus-1', actor: 'player', action: 'focus' }),
+      entry({ id: 'focus-2', actor: 'player', action: 'focus' }),
+      entry({ id: 'focus-3', actor: 'player', action: 'focus' }),
+    ]
+
+    act(() => {
+      result.current.revealEntries('run-1', [
+        ...base,
+        entry({
+          id: 'charge-strike-1',
+          actor: 'player',
+          action: 'skill',
+          skillId: 'charge_strike',
+          damage: 60,
+          target: 'opponent',
+          targetHpAfter: 20,
+        }),
+      ], base)
+      vi.advanceTimersByTime(0)
+    })
+
+    expect(playerEffects.showChargeStrikeSpend).toHaveBeenCalledWith(3)
+    expect(playerSprite.triggerChargeGlow).not.toHaveBeenCalled()
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS)
+    })
+
+    expect(playerSprite.triggerChargeGlow).toHaveBeenCalledTimes(1)
+  })
+
   it('uses five-hit overdrive timing for overdrive', () => {
     vi.useFakeTimers()
+    const playerEffects = effectHandle()
     const opponentSprite = spriteHandle()
     const opponentEffects = effectHandle()
     const { result } = renderHook(() =>
       useBattleLogReveal({
         playerSpriteRef: { current: spriteHandle() },
         opponentSpriteRef: { current: opponentSprite },
-        playerEffectsRef: { current: effectHandle() },
+        playerEffectsRef: { current: playerEffects },
         opponentEffectsRef: { current: opponentEffects },
         triggerArenaShake: vi.fn(),
         triggerArenaFlash: vi.fn(),
         specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
         playerMaxHp: 100,
+        playerPipCap: 3,
+        playerFocusGain: 1,
       }),
     )
 
@@ -417,8 +506,14 @@ describe('useBattleLogReveal', () => {
       vi.advanceTimersByTime(0)
     })
 
+    expect(playerEffects.showFocusSpend).toHaveBeenCalledWith(3)
+
     act(() => {
-      vi.advanceTimersByTime(BATTLE_ANIM.ATTACK_ANTICIPATION_MS + BATTLE_ANIM.LUNGE_PEAK_MS)
+      vi.advanceTimersByTime(
+        BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
+        + BATTLE_ANIM.ATTACK_ANTICIPATION_MS
+        + BATTLE_ANIM.LUNGE_PEAK_MS,
+      )
     })
 
     expect(opponentEffects.showFocusedAttackImpact).toHaveBeenCalledWith(
@@ -441,16 +536,19 @@ describe('useBattleLogReveal', () => {
     vi.useFakeTimers()
     const playerSprite = spriteHandle()
     const opponentSprite = spriteHandle()
+    const playerEffects = effectHandle()
     const { result } = renderHook(() =>
       useBattleLogReveal({
         playerSpriteRef: { current: playerSprite },
         opponentSpriteRef: { current: opponentSprite },
-        playerEffectsRef: { current: effectHandle() },
+        playerEffectsRef: { current: playerEffects },
         opponentEffectsRef: { current: effectHandle() },
         triggerArenaShake: vi.fn(),
         triggerArenaFlash: vi.fn(),
         specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
         playerMaxHp: 100,
+        playerPipCap: 3,
+        playerFocusGain: 1,
       }),
     )
 
@@ -467,6 +565,13 @@ describe('useBattleLogReveal', () => {
         }),
       ], [])
       vi.advanceTimersByTime(0)
+    })
+
+    expect(playerEffects.showFocusSpend).toHaveBeenCalledWith(1)
+    expect(playerSprite.triggerAnticipation).not.toHaveBeenCalled()
+
+    act(() => {
+      vi.advanceTimersByTime(BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS)
     })
 
     expect(playerSprite.triggerAnticipation).toHaveBeenCalledWith('right', BATTLE_ANIM.ATTACK_ANTICIPATION_MS, false)
@@ -505,6 +610,8 @@ describe('useBattleLogReveal', () => {
         triggerArenaFlash: vi.fn(),
         specialFlashRef: { current: { triggerFlash: vi.fn() } satisfies SpecialActionFlashHandle },
         playerMaxHp: 100,
+        playerPipCap: 3,
+        playerFocusGain: 1,
       }),
     )
 
@@ -540,7 +647,7 @@ describe('useBattleLogReveal', () => {
     })
 
     act(() => {
-      vi.advanceTimersByTime(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+      vi.advanceTimersByTime(BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
     })
     expect(playerEffects.showPersistentGuard).toHaveBeenCalledTimes(1)
 

@@ -135,6 +135,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
     const [regenOrbits, setRegenOrbits] = useState<RegenOrbitEffect[]>([])
     const [chargeSpends, setChargeSpends] = useState<ChargeSpendEffect[]>([])
     const [persistentGuard, setPersistentGuard] = useState(false)
+    const [persistentGuardKey, setPersistentGuardKey] = useState(0)
     const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
 
     function addTimedEffect<T extends { id: number }>(
@@ -300,7 +301,10 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         const id = nextId()
         addTimedEffect(setChargeSpends, { id, pipCount: Math.max(1, Math.min(pipCount, 5)) }, BATTLE_ANIM.FOCUS_SPEND_MS)
       },
-      showPersistentGuard() { setPersistentGuard(true) },
+      showPersistentGuard() {
+        setPersistentGuard(true)
+        setPersistentGuardKey((k) => k + 1)
+      },
       hidePersistentGuard() { setPersistentGuard(false) },
     }))
 
@@ -783,44 +787,105 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
           </div>
         ))}
 
-        {/* Persistent counter stance guard — loops until hidePersistentGuard() is called */}
-        {persistentGuard && (
-          <div
-            data-testid="battle-persistent-guard"
-            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-          >
+        {/* Persistent counter stance dome — enter burst + looping pulse until hidePersistentGuard() */}
+        {persistentGuard && (() => {
+          const ds = displaySize ?? 128
+          const cx = ds / 2
+          const cy = ds * 0.44
+          const r = ds * 0.46
+          const hexPid = `p-hex-p-${persistentGuardKey}`
+          const hexGid = `p-hex-g-${persistentGuardKey}`
+          const hexMid = `p-hex-m-${persistentGuardKey}`
+          const hexSvg = (opacity: number) => (
+            <svg
+              width="100%"
+              height="100%"
+              style={{ position: 'absolute', inset: 0, opacity }}
+              aria-hidden="true"
+            >
+              <defs>
+                <pattern id={hexPid} width="16" height="14" patternUnits="userSpaceOnUse">
+                  <polygon
+                    points="8,1 15,4.5 15,10.5 8,14 1,10.5 1,4.5"
+                    fill="none"
+                    stroke="rgba(74,172,223,0.9)"
+                    strokeWidth="0.6"
+                  />
+                </pattern>
+                <radialGradient id={hexGid}>
+                  <stop offset="0%"   stopColor="white" stopOpacity="0" />
+                  <stop offset="60%"  stopColor="white" stopOpacity="0.4" />
+                  <stop offset="100%" stopColor="white" stopOpacity="1" />
+                </radialGradient>
+                <mask id={hexMid}>
+                  <rect width="100%" height="100%" fill={`url(#${hexGid})`} />
+                </mask>
+              </defs>
+              <rect width="100%" height="100%" fill={`url(#${hexPid})`} mask={`url(#${hexMid})`} />
+            </svg>
+          )
+          return (
             <div
-              style={{
-                position: 'absolute',
-                top: '47%',
-                left: '50%',
-                width: '72%',
-                height: '58%',
-                border: '3px solid rgba(125, 211, 252, 0.82)',
-                borderRadius: '50%',
-                boxShadow: '0 0 0 2px rgba(30, 64, 175, 0.42), inset 0 0 14px rgba(186, 230, 253, 0.35)',
-                transform: 'translate(-50%, -50%)',
-                animation: 'persistent-guard-ring 1.8s ease-in-out infinite',
-              }}
-            />
-            {[0, 1, 2].map((spark) => (
-              <span
-                key={spark}
+              key={persistentGuardKey}
+              data-testid="battle-persistent-guard"
+              style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+            >
+              {/* Entry flash — one-shot dome-in, fades to invisible */}
+              <div
                 style={{
                   position: 'absolute',
-                  top: `${spark === 0 ? 29 : spark === 1 ? 43 : 59}%`,
-                  left: `${spark === 0 ? 31 : spark === 1 ? 70 : 38}%`,
-                  width: 6,
-                  height: 6,
+                  left: cx - r,
+                  top: cy - r,
+                  width: r * 2,
+                  height: r * 2,
                   borderRadius: '50%',
-                  background: '#e0f2fe',
-                  boxShadow: '0 0 5px rgba(14,116,144,0.8), 0 0 10px rgba(14,116,144,0.4)',
-                  animation: `persistent-guard-spark 1.2s ease-in-out ${spark * 220}ms infinite`,
+                  background: 'radial-gradient(circle, transparent 55%, rgba(74,172,223,0.48) 75%, rgba(74,172,223,0.70) 88%, transparent 100%)',
+                  border: '2px solid rgba(74,172,223,0.88)',
+                  boxShadow: 'inset 0 0 28px rgba(74,172,223,0.48), 0 0 22px rgba(74,172,223,0.42)',
+                  animation: 'shield-dome-in 900ms cubic-bezier(0.25,0.8,0.3,1) forwards',
+                  overflow: 'hidden',
+                }}
+              >
+                {hexSvg(0.42)}
+              </div>
+
+              {/* Entry aura ring */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: cx - r,
+                  top: cy - r,
+                  width: r * 2,
+                  height: r * 2,
+                  borderRadius: '50%',
+                  border: '3px solid rgba(74,172,223,0.88)',
+                  boxShadow: '0 0 16px rgba(74,172,223,0.65)',
+                  animation: 'aura-ring-out 700ms ease-out 80ms forwards',
+                  opacity: 0,
                 }}
               />
-            ))}
-          </div>
-        )}
+
+              {/* Persistent dome — breathes until dismissed */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: cx - r,
+                  top: cy - r,
+                  width: r * 2,
+                  height: r * 2,
+                  borderRadius: '50%',
+                  background: 'radial-gradient(circle, transparent 55%, rgba(74,172,223,0.26) 75%, rgba(74,172,223,0.45) 88%, transparent 100%)',
+                  border: '2px solid rgba(74,172,223,0.68)',
+                  boxShadow: 'inset 0 0 20px rgba(74,172,223,0.30), 0 0 16px rgba(74,172,223,0.26)',
+                  animation: 'persistent-dome-pulse 2.2s ease-in-out infinite',
+                  overflow: 'hidden',
+                }}
+              >
+                {hexSvg(0.30)}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Crit badge */}
         {crits.map((c) => (

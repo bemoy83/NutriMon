@@ -70,6 +70,8 @@ export const BATTLE_ANIM = {
   FOCUS_CHARGE_MS: 860,
   /** FP spend pips converge before a skill resolves. */
   FOCUS_SPEND_MS: 520,
+  /** Short lead-in before player skill animation starts, giving FP spend a distinct cause beat. */
+  SKILL_PIP_SPEND_LEAD_MS: 260,
 
   /**
    * Full-screen flash duration for special actions (ms). Must match `special-flash` @keyframes.

@@ -271,6 +271,8 @@ export default function BattlePage() {
     triggerArenaFlash,
     specialFlashRef,
     playerMaxHp: session?.playerMaxHp ?? 0,
+    playerPipCap: session ? getPipCap(session.snapshot.level) : 3,
+    playerFocusGain: session ? getFocusGain(session.snapshot.level) : 1,
   })
 
   const [pendingAction, setPendingAction] = useState<BattleActionLabel | null>(null)
