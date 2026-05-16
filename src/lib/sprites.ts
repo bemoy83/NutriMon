@@ -135,6 +135,8 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 003 Mossboar — medium — heavy charger (moss ridge + tusks)
   'mossboar': {
     battle: { url: s('/sprites/opponents/mossboar.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 8,
+    footOffsetY: 20,
     worldMap: { url: s('/sprites/opponents_world/mossboar.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     icon: { url: s('/sprites/icons/mossboar.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
@@ -142,6 +144,8 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 004 Thornfang — medium — quick predator (raised shoulder ridge)
   'thornfang': {
     battle: { url: s('/sprites/opponents/thornfang.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 8,
+    footOffsetY: 20,
     worldMap: { url: s('/sprites/opponents_world/thornfang.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     icon: { url: s('/sprites/icons/thornfang.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },

@@ -11,8 +11,15 @@ const ARENA_BIOME: Record<string, 'leaf' | 'firefly' | 'ash' | 'snow' | 'ember'>
   'af76c388-9746-4484-8ab5-bfa9f16349f9': 'ember',    // Sunforge Summit
 }
 
+const LEAF_COLOR_PAIRS = [
+  { from: '#9bd66a', to: '#5aa840' },
+  { from: '#c8d850', to: '#88aa28' },
+  { from: '#d4bc38', to: '#a88820' },
+  { from: '#74c240', to: '#3a7a1c' },
+]
+
 const PRESETS = {
-  leaf: { count: 20, color: '#9bd66a', secondaryColor: '#5aa840', seed: 7 },
+  leaf: { count: 12, seed: 7 },
   firefly: { count: 12, color: '#d8e860', glowColor: '#d8e86080', seed: 13 },
   ash:     { count: 18, color: '#c4b8ad', seed: 11 },
   snow:    { count: 26, color: '#ffffff', seed: 3 },
@@ -153,33 +160,50 @@ function EmberParticles({ preset, depth }: { preset: (typeof PRESETS)['ember']; 
 }
 
 function LeafParticles({ preset, depth }: { preset: (typeof PRESETS)['leaf']; depth: ParticleDepth }) {
-  const depthStyle = particleStyle(depth, 0.85, 1)
-  const particles = useParticles(layerCount(preset.count, depth), preset.seed + (depth === 'front' ? 30 : 0))
+  const depthStyle = particleStyle(depth, 1.0, 1)
+  const seed = preset.seed + (depth === 'front' ? 30 : 0)
+  const particles = useParticles(layerCount(preset.count, depth), seed)
+
+  const leafData = useMemo(() => {
+    const colorRnd = seededRandom(seed + 100)
+    const yRnd = seededRandom(seed + 200)
+    return particles.map((p) => {
+      const totalDur = p.dur * 2.2 * depthStyle.durationScale
+      return {
+        colorIdx: Math.floor(colorRnd() * LEAF_COLOR_PAIRS.length),
+        startY: -(yRnd() * 8),
+        delay: -(Math.abs(p.delay) / 12) * totalDur,
+        totalDur,
+      }
+    })
+  }, [particles, seed, depthStyle.durationScale])
+
   return (
     <>
       {particles.map((p, i) => {
-        const width = p.size * 1.6 * depthStyle.size
-        const height = p.size * 0.9 * depthStyle.size
+        const width = p.size * 2.5 * depthStyle.size
+        const height = p.size * 1.0 * depthStyle.size
+        const { from, to } = LEAF_COLOR_PAIRS[leafData[i].colorIdx]
         return (
-        <div
-          key={i}
-          style={{
-            position: 'absolute',
-            left: `${p.x}%`,
-            top: `${p.y}%`,
-            width,
-            height,
-            background: `linear-gradient(120deg, ${preset.color}, ${preset.secondaryColor})`,
-            borderRadius: '50% 10% 50% 10%',
-            opacity: depthStyle.opacity,
-            transform: `rotate(${p.rot}deg)`,
-            filter: `blur(${depthStyle.blurPx}px)`,
-            animation: `particle-leaf-fall ${p.dur * 2.2 * depthStyle.durationScale}s ease-in-out infinite`,
-            animationDelay: `${p.delay}s`,
-            pointerEvents: 'none',
-            willChange: 'transform',
-          }}
-        />
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              left: `${p.x}%`,
+              top: `${leafData[i].startY}%`,
+              width,
+              height,
+              background: `linear-gradient(120deg, ${from}, ${to})`,
+              borderRadius: '60% 40% 60% 40% / 80% 60% 80% 60%',
+              opacity: depthStyle.opacity,
+              transform: `rotate(${p.rot}deg)`,
+              filter: `blur(${depthStyle.blurPx}px)`,
+              animation: `particle-leaf-fall ${leafData[i].totalDur}s linear infinite`,
+              animationDelay: `${leafData[i].delay}s`,
+              pointerEvents: 'none',
+              willChange: 'transform',
+            }}
+          />
         )
       })}
     </>

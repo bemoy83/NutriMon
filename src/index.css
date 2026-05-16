@@ -589,9 +589,11 @@ select {
   100% { transform: translate(-30px, -30vh) scale(0.2); opacity: 0; }
 }
 @keyframes particle-leaf-fall {
-  0%   { transform: translate(0, -20vh) rotate(0deg); }
-  50%  { transform: translate(30px, 40vh) rotate(180deg); }
-  100% { transform: translate(-20px, 120vh) rotate(360deg); }
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  25%  { transform: translate(4vw, 28vh) rotate(90deg); }
+  55%  { transform: translate(-3vw, 66vh) rotate(230deg); }
+  80%  { transform: translate(2vw, 95vh) rotate(320deg); }
+  100% { transform: translate(-1vw, 130vh) rotate(360deg); }
 }
 @keyframes particle-ash-drift {
   0%   { transform: translate(-10vw, 0); }

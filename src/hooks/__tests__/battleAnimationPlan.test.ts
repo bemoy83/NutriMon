@@ -1,0 +1,242 @@
+import { describe, expect, it } from 'vitest'
+import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
+import type { BattleLogEntry } from '@/types/domain'
+import {
+  planBattleAnimationEvents,
+  type BattleAnimationEvent,
+  type ScheduledBattleAnimationEvent,
+} from '../battleAnimationPlan'
+
+function entry(overrides: Partial<BattleLogEntry>): BattleLogEntry {
+  return {
+    id: 'entry-1',
+    round: 1,
+    phase: 'action',
+    actor: 'player',
+    action: 'attack',
+    skillId: null,
+    firstActor: null,
+    playerInitiative: null,
+    opponentInitiative: null,
+    playerAction: null,
+    opponentAction: null,
+    damage: 0,
+    target: null,
+    targetHpAfter: null,
+    crit: false,
+    defended: false,
+    consumedMomentumBoost: false,
+    message: 'Test entry',
+    ...overrides,
+  }
+}
+
+function plan(newEntries: BattleLogEntry[], base: BattleLogEntry[] = []) {
+  return planBattleAnimationEvents({
+    base,
+    newEntries,
+    playerMaxHp: 100,
+    playerPipCap: 3,
+    playerFocusGain: 1,
+  })
+}
+
+function findEvent(
+  events: ScheduledBattleAnimationEvent[],
+  type: BattleAnimationEvent['type'],
+  predicate: (event: BattleAnimationEvent) => boolean = () => true,
+) {
+  return events.find(({ event }) => event.type === type && predicate(event))
+}
+
+function findEffect(events: ScheduledBattleAnimationEvent[], effect: string) {
+  return events.find(({ event }) => event.type === 'effect' && event.effect === effect)
+}
+
+describe('battleAnimationPlan', () => {
+  it('resolves player focus only after the charge effect has finished', () => {
+    const events = plan([entry({ id: 'focus-1', actor: 'player', action: 'focus' })])
+
+    expect(events).toEqual(expect.arrayContaining([
+      { atMs: 0, event: { type: 'reveal_log_entry', entryIndex: 0 } },
+      {
+        atMs: 0,
+        event: {
+          type: 'sprite_anticipation',
+          actor: 'player',
+          durationMs: BATTLE_ANIM.SUPPORT_ANTICIPATION_MS,
+        },
+      },
+      {
+        atMs: BATTLE_ANIM.SUPPORT_ANTICIPATION_MS,
+        event: { type: 'effect', target: 'player', effect: 'focus_charge' },
+      },
+      {
+        atMs: BATTLE_ANIM.SUPPORT_ANTICIPATION_MS + BATTLE_ANIM.FOCUS_CHARGE_MS,
+        event: { type: 'resolve_log_entry', entryIndex: 0 },
+      },
+      { atMs: BATTLE_ANIM.ENTRY_DELAY_ACTION_MS, event: { type: 'finish_animation' } },
+    ]))
+  })
+
+  it('resolves regen pips before HP and resolves HP when the heal number appears', () => {
+    const previousEntry = entry({
+      id: 'damage-before-regen',
+      actor: 'opponent',
+      action: 'attack',
+      damage: 30,
+      target: 'player',
+      targetHpAfter: 70,
+    })
+    const regenEntry = entry({
+      id: 'regen-1',
+      actor: 'player',
+      action: 'skill',
+      skillId: 'regen',
+      target: 'player',
+      targetHpAfter: 78,
+    })
+    const events = plan([regenEntry], [previousEntry])
+
+    expect(findEffect(events, 'focus_spend')).toMatchObject({ atMs: 0, event: { payload: { count: 2 } } })
+    expect(findEvent(events, 'resolve_log_entry', event => event.type === 'resolve_log_entry' && event.mode === 'pip_spend_only'))
+      .toMatchObject({ atMs: BATTLE_ANIM.SKILL_PIP_DEPLETION_DELAY_MS })
+    expect(findEffect(events, 'regen')).toMatchObject({
+      atMs: BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS,
+      event: { payload: { healAmount: 8 } },
+    })
+    expect(findEvent(events, 'resolve_log_entry', event => event.type === 'resolve_log_entry' && event.mode !== 'pip_spend_only'))
+      .toMatchObject({
+        atMs: BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
+          + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS
+          + BATTLE_ANIM.REGEN_NUMBER_DELAY_MS,
+      })
+  })
+
+  it('spends charge strike pips before charge glow and heavy contact', () => {
+    const base = [
+      entry({ id: 'focus-1', actor: 'player', action: 'focus' }),
+      entry({ id: 'focus-2', actor: 'player', action: 'focus' }),
+      entry({ id: 'focus-3', actor: 'player', action: 'focus' }),
+    ]
+    const events = plan([
+      entry({
+        id: 'charge-strike-1',
+        actor: 'player',
+        action: 'skill',
+        skillId: 'charge_strike',
+        damage: 60,
+        target: 'opponent',
+        targetHpAfter: 20,
+      }),
+    ], base)
+    const lungeStartMs = BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS + BATTLE_ANIM.CHARGE_GLOW_MS
+    const contactMs = lungeStartMs + BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS + BATTLE_ANIM.LUNGE_PEAK_MS
+
+    expect(findEffect(events, 'charge_strike_spend')).toMatchObject({ atMs: 0, event: { payload: { count: 3 } } })
+    expect(findEffect(events, 'charge_glow')).toMatchObject({ atMs: BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS })
+    expect(findEvent(events, 'sprite_anticipation')).toMatchObject({
+      atMs: lungeStartMs,
+      event: { durationMs: BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS, heavy: true },
+    })
+    expect(findEvent(events, 'sprite_hurt')).toMatchObject({ atMs: contactMs, event: { target: 'opponent' } })
+  })
+
+  it('models multi-hit damage as one focused contact with hit cadence metadata', () => {
+    const events = plan([
+      entry({
+        id: 'triple-hit-1',
+        actor: 'player',
+        action: 'skill',
+        skillId: 'triple_hit',
+        damage: 42,
+        target: 'opponent',
+        targetHpAfter: 20,
+      }),
+    ])
+    const contactMs = BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
+      + BATTLE_ANIM.ATTACK_ANTICIPATION_MS
+      + BATTLE_ANIM.LUNGE_PEAK_MS
+
+    expect(findEvent(events, 'sprite_hurt')).toMatchObject({
+      atMs: contactMs,
+      event: {
+        type: 'sprite_hurt',
+        target: 'opponent',
+        hitCount: 3,
+        spacingMs: BATTLE_ANIM.FOCUSED_HIT_SPACING_MS,
+      },
+    })
+    expect(findEffect(events, 'focused_skill')).toMatchObject({
+      atMs: contactMs,
+      event: { payload: { hitCount: 3, impactVariant: 'cut' } },
+    })
+  })
+
+  it('dismisses counter stance on the incoming hit before counter payoff resolves', () => {
+    const events = plan([
+      entry({
+        id: 'counter-stance-1',
+        actor: 'player',
+        action: 'skill',
+        skillId: 'counter_stance',
+        target: 'player',
+        targetHpAfter: 80,
+      }),
+      entry({
+        id: 'incoming-hit-1',
+        actor: 'opponent',
+        action: 'attack',
+        damage: 20,
+        target: 'player',
+        targetHpAfter: 60,
+      }),
+      entry({
+        id: 'counter-payoff-1',
+        actor: 'player',
+        action: 'counter',
+        skillId: 'counter_stance',
+        damage: 18,
+        target: 'opponent',
+        targetHpAfter: 40,
+      }),
+    ])
+    const guardAtMs = BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS
+    const incomingHitMs = BATTLE_ANIM.ENTRY_DELAY_ACTION_MS
+      + BATTLE_ANIM.ATTACK_ANTICIPATION_MS
+      + BATTLE_ANIM.LUNGE_PEAK_MS
+    const counterPayoffMs = BATTLE_ANIM.ENTRY_DELAY_ACTION_MS + BATTLE_ANIM.ENTRY_DELAY_ACTION_HIT_MS
+
+    expect(findEffect(events, 'persistent_guard')).toMatchObject({ atMs: guardAtMs })
+    expect(events.filter(({ event }) => event.type === 'effect' && event.effect === 'hide_persistent_guard')[0])
+      .toMatchObject({ atMs: incomingHitMs })
+    expect(findEffect(events, 'counter')).toMatchObject({ atMs: counterPayoffMs })
+    expect(incomingHitMs).toBeLessThan(counterPayoffMs)
+  })
+
+  it('waits for the final hit beat before fainting on lethal multi-hit damage', () => {
+    const events = plan([
+      entry({
+        id: 'lethal-triple-hit-1',
+        actor: 'player',
+        action: 'skill',
+        skillId: 'triple_hit',
+        damage: 42,
+        target: 'opponent',
+        targetHpAfter: 0,
+      }),
+    ])
+    const contactMs = BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
+      + BATTLE_ANIM.ATTACK_ANTICIPATION_MS
+      + BATTLE_ANIM.LUNGE_PEAK_MS
+    const faintMs = contactMs
+      + (BATTLE_ANIM.FOCUSED_HIT_SPACING_MS * 2)
+      + BATTLE_ANIM.HIT_IMPACT_MS
+
+    expect(findEvent(events, 'sprite_hurt')).toMatchObject({ atMs: contactMs })
+    expect(findEvent(events, 'sprite_faint')).toMatchObject({
+      atMs: faintMs,
+      event: { type: 'sprite_faint', target: 'opponent' },
+    })
+  })
+})
