@@ -5,7 +5,6 @@ import {
   battleActionButtonHoverClass,
   battleActionGhostColors,
   battleActionIcon,
-  battleActionSubLabel,
 } from '@/components/battle/battleActionConfig'
 import { battleCommandBarSurfaceClass } from '@/components/battle/battleLayout'
 import { useTypewriter } from '@/hooks/useTypewriter'
@@ -88,26 +87,6 @@ export function BattleCommandBar({
               <span className="block text-sm font-semibold leading-tight">
                 {isThisPending ? `${label}…` : label}
               </span>
-              <span className="mt-0.5 block text-[10px] font-medium leading-tight opacity-60">
-                {battleActionSubLabel[label]}
-              </span>
-              {label === 'Skill' && (
-                <div className="mt-1.5 flex gap-[3px]">
-                  {Array.from({ length: minSkillCost }).map((_, i) => {
-                    const dotFilled = playerFocusPips > i
-                    return (
-                      <div
-                        key={`${i}-${dotFilled}`}
-                        className={`h-1.5 w-1.5 rounded-full transition-colors ${dotFilled ? 'animate-pip-fill' : 'opacity-25'}`}
-                        style={dotFilled
-                          ? { background: 'currentColor', boxShadow: '0 0 4px currentColor' }
-                          : { border: '1px solid currentColor' }
-                        }
-                      />
-                    )
-                  })}
-                </div>
-              )}
             </button>
           )
         })}
