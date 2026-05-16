@@ -64,8 +64,6 @@ export const BATTLE_ANIM = {
   OVERDRIVE_HIT_SPACING_MS: 115,
   /** Shield dome duration (ms). Must match `shield-dome-in` @keyframes. */
   DEFEND_GUARD_MS: 900,
-  /** Longer guard read for Counter Stance. */
-  COUNTER_STANCE_GUARD_MS: 980,
   /** Focus charge effect total duration (ms). Covers mote orbit (640ms) + shrink rings + burst out (620+220ms). */
   FOCUS_CHARGE_MS: 860,
   /** FP spend pips converge before a skill resolves. */

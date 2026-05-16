@@ -1,4 +1,4 @@
-import { BATTLE_SKILL_CATALOG } from '@/components/battle/battleActionConfig'
+import { BATTLE_SKILL_CATALOG } from '@/lib/battleSkills'
 
 
 const KIND_COLORS: Record<string, { text: string; bg: string; border: string }> = {

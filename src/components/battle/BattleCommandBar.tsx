@@ -1,11 +1,11 @@
 import {
   BATTLE_ACTION_LABELS,
-  BATTLE_SKILL_CATALOG,
   type BattleActionLabel,
   battleActionButtonHoverClass,
   battleActionGhostColors,
   battleActionIcon,
 } from '@/components/battle/battleActionConfig'
+import { BATTLE_SKILL_CATALOG } from '@/lib/battleSkills'
 import { battleCommandBarSurfaceClass } from '@/components/battle/battleLayout'
 import { useTypewriter } from '@/hooks/useTypewriter'
 

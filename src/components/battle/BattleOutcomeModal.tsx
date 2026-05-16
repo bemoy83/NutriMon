@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import confetti from 'canvas-confetti'
-import { BATTLE_SKILL_CATALOG } from '@/components/battle/battleActionConfig'
+import { BATTLE_SKILL_CATALOG } from '@/lib/battleSkills'
 
 function levelForXp(xp: number) {
   return Math.floor(Math.cbrt(Math.max(0, xp))) + 1

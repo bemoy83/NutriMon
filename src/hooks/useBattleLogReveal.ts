@@ -4,6 +4,7 @@ import type { EffectsLayerHandle } from '@/components/ui/EffectsLayer'
 import type { SpecialActionFlashHandle } from '@/components/ui/SpecialActionFlash'
 import type { BattleLogEntry } from '@/types/domain'
 import { BATTLE_ANIM, SKILL_IMPACT_COLOR } from '@/lib/battleAnimationConfig'
+import { doesBattleSkillSpendAllPips, getBattleSkillPipCost } from '@/lib/battleSkills'
 
 // Colors must be rgba with low alpha — the flash is a full-viewport overlay.
 const SKILL_FLASH_COLOR: Record<string, string> = {
@@ -15,16 +16,56 @@ const SKILL_FLASH_COLOR: Record<string, string> = {
   overdrive:     'rgba(217,70,239,0.30)',   // fuchsia
 }
 
-const PLAYER_SKILL_PIP_COST: Record<string, number> = {
-  triple_hit: 1,
-  power_strike: 1,
-  regen: 2,
-  charge_strike: 2,
-  counter_stance: 1,
-  overdrive: 3,
+function makeSkillPipSpendResolvedEntry(entry: BattleLogEntry): BattleLogEntry {
+  return { ...entry, damage: 0, targetHpAfter: null }
 }
 
-const PLAYER_SKILLS_SPENDING_ALL_PIPS = new Set(['charge_strike'])
+function getPlayerFocusPipsBeforeEntry(
+  base: BattleLogEntry[],
+  newEntries: BattleLogEntry[],
+  entryIndex: number,
+  playerPipCap: number,
+  playerFocusGain: number,
+) {
+  return [...base, ...newEntries.slice(0, entryIndex)].reduce((count, e) => {
+    if (e.actor !== 'player' || e.phase !== 'action') return count
+    if (e.action === 'focus') return Math.min(playerPipCap, count + playerFocusGain)
+    if (e.action === 'skill') {
+      if (doesBattleSkillSpendAllPips(e.skillId)) return 0
+      return Math.max(0, count - getBattleSkillPipCost(e.skillId))
+    }
+    return count
+  }, 0)
+}
+
+function getSkillAnticipationMs(skillId: string | null) {
+  if (skillId === 'power_strike') return BATTLE_ANIM.POWER_STRIKE_ANTICIPATION_MS
+  if (skillId === 'charge_strike') return BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS
+  return BATTLE_ANIM.ATTACK_ANTICIPATION_MS
+}
+
+function getSkillImpactProfile(skillId: string | null) {
+  const isPowerStrike = skillId === 'power_strike'
+  const isChargeStrike = skillId === 'charge_strike'
+  const isOverdrive = skillId === 'overdrive'
+  const isTripleHit = skillId === 'triple_hit'
+  const isSingleHit = isPowerStrike || isChargeStrike
+  const hitCount = isOverdrive ? 5 : 3
+  const hitSpacingMs = isOverdrive
+    ? BATTLE_ANIM.OVERDRIVE_HIT_SPACING_MS
+    : BATTLE_ANIM.FOCUSED_HIT_SPACING_MS
+
+  return {
+    isPowerStrike,
+    isChargeStrike,
+    isOverdrive,
+    isTripleHit,
+    isSingleHit,
+    hitCount,
+    hitSpacingMs,
+    anticipationMs: getSkillAnticipationMs(skillId),
+  }
+}
 
 export function useBattleLogReveal(opts: {
   playerSpriteRef: RefObject<CreatureSpriteHandle | null>
@@ -188,32 +229,24 @@ export function useBattleLogReveal(opts: {
                 entries: [
                   ...base,
                   ...newEntries.slice(0, i),
-                  { ...entry, damage: 0, targetHpAfter: null },
+                  makeSkillPipSpendResolvedEntry(entry),
                 ],
               })
             }, delayMs)
           }
 
-          function getPlayerFocusPipsBeforeEntry() {
-            return [...base, ...newEntries.slice(0, i)].reduce((count, e) => {
-              if (e.actor !== 'player' || e.phase !== 'action') return count
-              if (e.action === 'focus') return Math.min(playerPipCap, count + playerFocusGain)
-              if (e.action === 'skill') {
-                const skillId = e.skillId ?? ''
-                const pipCost = PLAYER_SKILL_PIP_COST[skillId] ?? 1
-                if (PLAYER_SKILLS_SPENDING_ALL_PIPS.has(skillId)) return 0
-                return Math.max(0, count - pipCost)
-              }
-              return count
-            }, 0)
-          }
-
           function triggerPlayerSkillPipSpend() {
             if (entry.phase !== 'action' || entry.action !== 'skill' || entry.actor !== 'player') return 0
             const skillId = entry.skillId ?? ''
-            const pipCost = PLAYER_SKILL_PIP_COST[skillId] ?? 1
-            const pipsBeforeSkill = getPlayerFocusPipsBeforeEntry()
-            const pipSpendCount = PLAYER_SKILLS_SPENDING_ALL_PIPS.has(skillId)
+            const pipCost = getBattleSkillPipCost(skillId)
+            const pipsBeforeSkill = getPlayerFocusPipsBeforeEntry(
+              base,
+              newEntries,
+              i,
+              playerPipCap,
+              playerFocusGain,
+            )
+            const pipSpendCount = doesBattleSkillSpendAllPips(skillId)
               ? Math.max(pipCost, pipsBeforeSkill)
               : pipCost
 
@@ -326,21 +359,17 @@ export function useBattleLogReveal(opts: {
           if (entry.phase === 'action' && entry.action === 'skill' && entry.damage > 0) {
             const skillLeadMs = triggerPlayerSkillPipSpend()
             const targetWillFaint = entry.targetHpAfter === 0
-            const isPowerStrike = entry.skillId === 'power_strike'
-            const isChargeStrike = entry.skillId === 'charge_strike'
-            const isOverdrive = entry.skillId === 'overdrive'
-            const isTripleHit = entry.skillId === 'triple_hit'
-            const isSingleHit = isPowerStrike || isChargeStrike
-            const hitCount = isOverdrive ? 5 : 3
-            const hitSpacingMs = isOverdrive
-              ? BATTLE_ANIM.OVERDRIVE_HIT_SPACING_MS
-              : BATTLE_ANIM.FOCUSED_HIT_SPACING_MS
-            // V2: power_strike gets a longer wind-up for extra drama
-            const anticipationMs = isPowerStrike
-              ? BATTLE_ANIM.POWER_STRIKE_ANTICIPATION_MS
-              : isSingleHit
-                ? BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS
-                : BATTLE_ANIM.ATTACK_ANTICIPATION_MS
+            const skillProfile = getSkillImpactProfile(entry.skillId)
+            const {
+              isPowerStrike,
+              isChargeStrike,
+              isOverdrive,
+              isTripleHit,
+              isSingleHit,
+              hitCount,
+              hitSpacingMs,
+              anticipationMs,
+            } = skillProfile
             const contactMs = anticipationMs + BATTLE_ANIM.LUNGE_PEAK_MS
             if (isChargeStrike) {
               const actorSpriteRef = entry.actor === 'player' ? playerSpriteRef : opponentSpriteRef

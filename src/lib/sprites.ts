@@ -64,16 +64,6 @@ const PLAYER_BATTLE_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
   // 'champion_recovering': { url: s('/sprites/player_battle/champion_recovering.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: false },
 }
 
-// ── Hit impact registry ──────────────────────────────────────────────────────
-// Drop a PNG into public/sprites/effects/ and set the URL below.
-// null = no impact PNG registered yet (showHitImpact() becomes a no-op).
-const HIT_IMPACT_URL: string | null = s('/sprites/effects/hit_impact.png')
-
-/** Returns the hit impact PNG URL, or null if none is registered. */
-export function getHitImpactUrl(): string | null {
-  return HIT_IMPACT_URL
-}
-
 // ── Player world map sprite registry ────────────────────────────────────────
 // Distinct from battle sprites — overhead/isometric style for the world map.
 // Falls back to PLAYER_BATTLE_SPRITES when not registered.
@@ -127,6 +117,8 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 001 Bramblin — small — prickly defender (leaf-ball hedgehog)
   'bramblin': {
     battle: { url: s('/sprites/opponents/bramblin.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 8,
+    footOffsetY: 20,
     worldMap: { url: s('/sprites/opponents_world/bramblin.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     icon: { url: s('/sprites/icons/bramblin.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
@@ -134,6 +126,8 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 002 Mushbob — small — unstable brawler (lopsided mushroom cap)
   'mushbob': {
     battle: { url: s('/sprites/opponents/mushbob.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 8,
+    footOffsetY: 20,
     worldMap: { url: s('/sprites/opponents_world/mushbob.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     icon: { url: s('/sprites/icons/mushbob.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
@@ -155,6 +149,8 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // 005 Elderhorn — large (BOSS) — ancient forest guardian (antler crown)
   'elderhorn': {
     battle: { url: s('/sprites/opponents/elderhorn.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 18,
+    footOffsetY: 12,
     worldMap: { url: s('/sprites/opponents_world/elderhorn.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     icon: { url: s('/sprites/icons/elderhorn.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },

@@ -3,8 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import {
   type BattleActionLabel,
   battleActionToPayload,
-  BATTLE_SKILL_CATALOG,
 } from '@/components/battle/battleActionConfig'
+import { BATTLE_SKILL_CATALOG } from '@/lib/battleSkills'
 import { getPipCap, getFocusGain } from '@/lib/battlePerks'
 import { BattleCommandBar } from '@/components/battle/BattleCommandBar'
 import { BattleSkillModal } from '@/components/battle/BattleSkillModal'

@@ -12,7 +12,7 @@ const ARENA_BIOME: Record<string, 'leaf' | 'firefly' | 'ash' | 'snow' | 'ember'>
 }
 
 const PRESETS = {
-  leaf:    { count: 14, color: '#9bd66a', secondaryColor: '#5aa840', seed: 7 },
+  leaf: { count: 20, color: '#9bd66a', secondaryColor: '#5aa840', seed: 7 },
   firefly: { count: 12, color: '#d8e860', glowColor: '#d8e86080', seed: 13 },
   ash:     { count: 18, color: '#c4b8ad', seed: 11 },
   snow:    { count: 26, color: '#ffffff', seed: 3 },
@@ -34,7 +34,7 @@ const DEPTH_PRESETS: Record<ParticleDepth, {
     blurPx: 0.6,
   },
   front: {
-    countScale: 0.32,
+    countScale: 0.45,
     sizeScale: 1.18,
     durationScale: 0.9,
     opacityScale: 0.72,
