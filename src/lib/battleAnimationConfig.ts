@@ -66,8 +66,8 @@ export const BATTLE_ANIM = {
   DEFEND_GUARD_MS: 560,
   /** Longer guard read for Counter Stance. */
   COUNTER_STANCE_GUARD_MS: 980,
-  /** Focus charge aura duration (ms). Must match `battle-focus-aura` and `battle-focus-spark` @keyframes. */
-  FOCUS_CHARGE_MS: 650,
+  /** Focus charge effect total duration (ms). Covers mote orbit (640ms) + shrink rings + burst out (620+220ms). */
+  FOCUS_CHARGE_MS: 860,
   /** FP spend pips converge before a skill resolves. */
   FOCUS_SPEND_MS: 520,
 

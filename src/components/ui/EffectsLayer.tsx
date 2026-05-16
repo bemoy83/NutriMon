@@ -52,8 +52,18 @@ interface GuardEffect {
   durationMs: number
 }
 
+interface FocusMote {
+  px: number
+  py: number
+  dx: number
+  dy: number
+  delayMs: number
+  sizePx: number
+}
+
 interface FocusEffect {
   id: number
+  motes: FocusMote[]
 }
 
 interface FocusSpendEffect {
@@ -237,7 +247,27 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
       },
       showFocusCharge() {
         const id = nextId()
-        addTimedEffect(setFocuses, { id }, BATTLE_ANIM.FOCUS_CHARGE_MS)
+        const ds = displaySize ?? 128
+        const cx = ds / 2
+        const cy = ds * 0.44
+        const rx = ds * 0.42
+        const ry = ds * 0.34
+        const count = 8
+        const motes: FocusMote[] = Array.from({ length: count }, (_, i) => {
+          const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.3
+          const r = 0.85 + Math.random() * 0.3
+          const px = cx + Math.cos(angle) * rx * r
+          const py = cy + Math.sin(angle) * ry * r
+          return {
+            px,
+            py,
+            dx: cx - px,
+            dy: cy - py,
+            delayMs: Math.random() * 180,
+            sizePx: Math.random() < 0.35 ? 7 : 5,
+          }
+        })
+        addTimedEffect(setFocuses, { id, motes }, BATTLE_ANIM.FOCUS_CHARGE_MS)
       },
       showFocusSpend(pipCount) {
         const id = nextId()
@@ -414,47 +444,82 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         ))}
 
         {/* Focus charge aura */}
-        {focuses.map((f) => (
-          <div
-            key={f.id}
-            data-testid="battle-focus-charge"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              pointerEvents: 'none',
-            }}
-          >
+        {focuses.map((f) => {
+          const ds = displaySize ?? 128
+          const cx = ds / 2
+          const cy = ds * 0.44
+          // Two rings shrink inward; burst fires near the end
+          const shrinkRings = [
+            { w: ds * 1.02, delay: 0,   dur: 520 },
+            { w: ds * 0.76, delay: 90,  dur: 540 },
+          ]
+          const burstW = ds * 0.52
+          return (
             <div
-              style={{
-                position: 'absolute',
-                left: '50%',
-                bottom: '7%',
-                width: '78%',
-                height: '42%',
-                borderRadius: '50%',
-                background: 'radial-gradient(ellipse, rgba(253,224,71,0.55) 0%, rgba(251,191,36,0.24) 48%, transparent 72%)',
-                transform: 'translateX(-50%)',
-                animation: `battle-focus-aura ${BATTLE_ANIM.FOCUS_CHARGE_MS}ms steps(6, end) forwards`,
-              }}
-            />
-            {[0, 1, 2, 3].map((spark) => (
-              <span
-                key={spark}
+              key={f.id}
+              data-testid="battle-focus-charge"
+              style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+            >
+              {/* Converging motes — gold particles drawn inward from surrounding ring */}
+              {f.motes.map((m, i) => (
+                <span
+                  key={i}
+                  style={{
+                    position: 'absolute',
+                    left: m.px,
+                    top: m.py,
+                    width: m.sizePx,
+                    height: m.sizePx,
+                    marginLeft: -m.sizePx / 2,
+                    marginTop: -m.sizePx / 2,
+                    borderRadius: '50%',
+                    background: i % 3 === 0 ? '#fef08a' : '#facc15',
+                    boxShadow: '0 0 6px rgba(250,204,21,0.9), 0 0 10px rgba(245,158,11,0.45)',
+                    ['--dx' as string]: `${m.dx}px`,
+                    ['--dy' as string]: `${m.dy}px`,
+                    animation: `focus-orbit-in 640ms ease-in ${m.delayMs}ms forwards`,
+                    opacity: 0,
+                  } as React.CSSProperties}
+                />
+              ))}
+
+              {/* Shrinking rings — contract inward to sprite center */}
+              {shrinkRings.map((ring, i) => (
+                <div
+                  key={i}
+                  style={{
+                    position: 'absolute',
+                    left: cx,
+                    top: cy,
+                    width: ring.w,
+                    height: ring.w,
+                    border: '2.5px solid rgba(250,204,21,0.82)',
+                    borderRadius: '50%',
+                    boxShadow: '0 0 8px rgba(250,204,21,0.4)',
+                    animation: `focus-ring-shrink ${ring.dur}ms ease-in ${ring.delay}ms forwards`,
+                    opacity: 0,
+                  }}
+                />
+              ))}
+
+              {/* Burst ring — fires at convergence point, brief outward pulse */}
+              <div
                 style={{
                   position: 'absolute',
-                  bottom: `${spark % 2 === 0 ? 21 : 28}%`,
-                  left: `${28 + spark * 13}%`,
-                  width: 5,
-                  height: 9,
-                  background: spark % 2 === 0 ? '#fef08a' : '#facc15',
-                  boxShadow: '0 0 0 1px rgba(161, 98, 7, 0.6)',
-                  animation: `battle-focus-spark ${BATTLE_ANIM.FOCUS_CHARGE_MS}ms steps(5, end) forwards`,
-                  animationDelay: `${spark * 55}ms`,
+                  left: cx,
+                  top: cy,
+                  width: burstW,
+                  height: burstW,
+                  border: '3px solid rgba(253,224,71,0.95)',
+                  borderRadius: '50%',
+                  boxShadow: '0 0 12px rgba(250,204,21,0.65), 0 0 22px rgba(245,158,11,0.35)',
+                  animation: 'focus-burst-out 220ms ease-out 620ms forwards',
+                  opacity: 0,
                 }}
               />
-            ))}
-          </div>
-        ))}
+            </div>
+          )
+        })}
 
         {/* Heal effect — green regen aura + rising sparks + floating +N */}
         {heals.map((h) => (

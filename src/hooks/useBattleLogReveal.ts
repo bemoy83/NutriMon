@@ -184,9 +184,13 @@ export function useBattleLogReveal(opts: {
           }
 
           if (entry.phase === 'action' && entry.action === 'focus') {
+            const actorSpriteRef = entry.actor === 'player' ? playerSpriteRef : opponentSpriteRef
             triggerActorAnticipation(entry.actor, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
             resolveEntryAfter(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
-            scheduleAnimation(() => actorEffects?.showFocusCharge(), BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+            scheduleAnimation(() => {
+              actorEffects?.showFocusCharge()
+              actorSpriteRef.current?.triggerFocusGlow()
+            }, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
           }
 
           if (entry.phase === 'action' && entry.action === 'attack' && entry.damage > 0) {

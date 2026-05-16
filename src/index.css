@@ -451,6 +451,13 @@ select {
   100% { filter: drop-shadow(0 0 0px  rgba(74,222,128,0)); }
 }
 
+@keyframes focus-glow {
+  0%   { filter: drop-shadow(0 0 0px  rgba(250,204,21,0)); }
+  24%  { filter: drop-shadow(0 0 10px rgba(250,204,21,0.85)) drop-shadow(0 0 22px rgba(245,158,11,0.50)) drop-shadow(0 0 40px rgba(234,179,8,0.22)); }
+  56%  { filter: drop-shadow(0 0 8px  rgba(250,204,21,0.68)) drop-shadow(0 0 18px rgba(245,158,11,0.38)) drop-shadow(0 0 32px rgba(234,179,8,0.16)); }
+  100% { filter: drop-shadow(0 0 0px  rgba(250,204,21,0)); }
+}
+
 @keyframes battle-anticipate-right {
   0%   { transform: translateX(0) scale(1); }
   55%  { transform: translateX(-5px) scaleX(0.97) scaleY(1.03); }
@@ -831,6 +838,31 @@ select {
   14%  { transform: translateX(-50%) scaleX(1.3)  scaleY(0.65); opacity: 0.85; }
   52%  { transform: translateX(-50%) scaleX(1.9)  scaleY(0.3);  opacity: 0.45; }
   100% { transform: translateX(-50%) scaleX(2.6)  scaleY(0.08); opacity: 0; }
+}
+
+/* Focus orbit inward — gold particle drawn from surrounding ring toward sprite center.
+   --dx/--dy set inline per particle for the converge delta. */
+@keyframes focus-orbit-in {
+  0%   { transform: translate(0, 0) scale(1);                              opacity: 0; }
+  14%  { opacity: 1; }
+  78%  { opacity: 0.88; }
+  100% { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(0.1); opacity: 0; }
+}
+
+/* Focus ring shrink — gold ring contracts inward to sprite center, dissolving as it closes. */
+@keyframes focus-ring-shrink {
+  0%   { transform: translate(-50%, -50%) scale(1);    opacity: 0;    border-width: 2.5px; }
+  11%  { opacity: 0.78; }
+  70%  { opacity: 0.62; border-width: 1.5px; }
+  100% { transform: translate(-50%, -50%) scale(0.06); opacity: 0;    border-width: 0; }
+}
+
+/* Focus burst out — single crisp ring fired from sprite center at focus completion.
+   Quick expand-and-fade; the "snap" that seals the gathered energy. */
+@keyframes focus-burst-out {
+  0%   { transform: translate(-50%, -50%) scale(0.08); opacity: 0.95; border-width: 3px; }
+  40%  { opacity: 0.70; border-width: 2px; }
+  100% { transform: translate(-50%, -50%) scale(1.85); opacity: 0;    border-width: 0; }
 }
 
 /* Regen mote rise — particle floats upward from sprite body with horizontal scatter.

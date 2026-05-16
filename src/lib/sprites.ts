@@ -264,12 +264,16 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
     battle: { url: s('/sprites/opponents/glaciowyrm.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
     footOffsetX: 6,
     footOffsetY: 24,
+    worldMap: { url: s('/sprites/opponents_world/glaciowyrm.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/glaciowyrm.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
   // 018 Glaciermaw — medium — frozen juggernaut (heavy front-loaded rectangle)
-  // 'glaciermaw': {
-  //   battle: { url: s('/sprites/opponents/glaciermaw.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // },
+  'glaciermaw': {
+    battle: { url: s('/sprites/opponents/glaciermaw.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 6,
+    footOffsetY: 24,
+  },
 
   // 019 Frostwraith — medium — frost phantom (vertical taper with flowing bottom)
   // 'frostwraith': {
