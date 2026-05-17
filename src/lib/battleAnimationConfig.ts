@@ -103,20 +103,26 @@ export const BATTLE_ANIM = {
  * take precedence via resolveIdleConfig() in src/lib/spriteIdleConfig.ts.
  *
  * Tuning guide:
- *   breatheDurationS — period of one full inhale + exhale cycle (seconds)
- *   breatheScale     — peak scaleY at inhale apex (1.0 = no change)
- *   distress*        — HP ≤ 30% overrides; faster and more exaggerated
- *   swayDurationS    — period of one full left → right → left cycle (seconds)
- *   swayAngleDeg     — peak rotation angle from vertical (degrees)
+ *   breatheDurationS   — period of one full inhale + exhale cycle (seconds)
+ *   breatheScale       — peak scaleY at inhale apex (1.0 = no change)
+ *   breatheScaleX      — peak scaleX at inhale apex; smaller than Y (side-profile barrel chest)
+ *   distress*          — HP ≤ 30% overrides; faster and more exaggerated
+ *   swayDurationS      — period of one full left → right → left cycle (seconds)
+ *   swayAngleDeg       — peak rotation angle from vertical (degrees); used by 'rotate' style
+ *   swayShiftPx        — peak translateX offset in px; used by 'shift' style (default for small/medium)
  */
 export const IDLE_ANIM = {
-  breatheDurationS:            { small: 3.5, medium: 4.0, large: 4.8 },
-  breatheScale:                { small: 1.022, medium: 1.018, large: 1.012 },
-  distressBreatheDurationS:    { small: 1.9,  medium: 2.2,  large: 2.7  },
-  distressBreatheScale:        { small: 1.030, medium: 1.026, large: 1.020 },
-  distressBreatheCompressScale:{ small: 0.984, medium: 0.988, large: 0.992 },
-  swayDurationS:               { small: 3.8, medium: 5.0, large: 6.5 },
-  swayAngleDeg:                { small: 1.2, medium: 0.8, large: 0.5  },
+  breatheDurationS:             { small: 3.5,  medium: 4.0,  large: 4.8  },
+  breatheScale:                 { small: 1.022, medium: 1.018, large: 1.012 },
+  breatheScaleX:                { small: 1.010, medium: 1.008, large: 1.005 },
+  distressBreatheDurationS:     { small: 1.9,  medium: 2.2,  large: 2.7  },
+  distressBreatheScale:         { small: 1.030, medium: 1.026, large: 1.020 },
+  distressBreatheScaleX:        { small: 1.016, medium: 1.012, large: 1.008 },
+  distressBreatheCompressScale: { small: 0.984, medium: 0.988, large: 0.992 },
+  distressBreatheCompressScaleX:{ small: 0.992, medium: 0.994, large: 0.996 },
+  swayDurationS:                { small: 3.8,  medium: 5.0,  large: 6.5  },
+  swayAngleDeg:                 { small: 1.2,  medium: 0.8,  large: 0.5  },
+  swayShiftPx:                  { small: 2.5,  medium: 1.8,  large: 1.2  },
 } as const
 
 export interface SkillImpactVisual {

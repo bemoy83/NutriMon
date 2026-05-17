@@ -533,7 +533,7 @@ export default function BattlePage() {
                 )}
               </div>
               <div className="absolute inset-0 z-[3]" style={{ overflow: 'visible' }}>
-                <SpriteStage displaySize={opponentDisplaySize} contactShadow>
+                <SpriteStage displaySize={opponentDisplaySize} contactShadow idleConfig={opponentIdleConfig}>
                   <CreatureSprite
                     ref={opponentSpriteRef}
                     descriptor={getOpponentSpriteDescriptor(session.opponent.name)}
@@ -589,7 +589,7 @@ export default function BattlePage() {
                   }}
                 />
               )}
-              <SpriteStage className="z-[3]" displaySize={playerDisplaySize} contactShadow>
+              <SpriteStage className="z-[3]" displaySize={playerDisplaySize} contactShadow idleConfig={playerIdleConfig}>
                 <CreatureSprite
                   ref={playerSpriteRef}
                   descriptor={getPlayerBattleSpriteDescriptor(

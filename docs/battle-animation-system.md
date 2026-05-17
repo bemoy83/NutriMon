@@ -33,16 +33,19 @@ Creatures in the battle arena breathe and sway using CSS-only transforms applied
 ### DOM layer structure inside `CreatureSprite`
 
 ```
-div[containerStyle]            — lunge / recoil / anticipation (battle pipeline)
-  div.animate-sprite-sway      — rotateZ pendulum, transform-origin: bottom center
-    div.animate-sprite-breathe — scaleY swell,    transform-origin: bottom center
-      div[glowWrapperStyle]    — charge / heal / focus filter glow (battle pipeline)
+div[containerStyle]                     — lunge / recoil / anticipation (battle pipeline)
+  div.animate-sprite-sway               — rotateZ pendulum (large) OR
+  div.animate-sprite-weight-shift       — translateX rock (small/medium) — transform-origin: bottom center
+    div.animate-sprite-breathe          — scaleY + scaleX swell, transform-origin: bottom center
+      div[glowWrapperStyle]             — charge / heal / focus filter glow (battle pipeline)
         img
-  [hit flashes]                — siblings, NOT children — don't inherit idle transforms
-  [faint overlay]              — siblings, NOT children
+  [hit flashes]                         — siblings, NOT children — don't inherit idle transforms
+  [faint overlay]                       — siblings, NOT children
 ```
 
-Each animation layer owns exactly one CSS `transform` property. Nesting prevents conflicts between `scaleY` and `rotateZ` without needing `animation` property juggling on a shared element. Platform images are never affected — they live in a separate sibling div outside `CreatureSprite`.
+Each animation layer owns exactly one CSS `transform` property. Nesting prevents conflicts between `scaleX`/`scaleY` and the sway transform without needing `animation` property juggling on a shared element. Platform images are never affected — they live in a separate sibling div outside `CreatureSprite`.
+
+The contact shadow ellipse in `SpriteStage` pulses in sync with the sprite's breath via CSS custom properties set on the `SpriteStage` root div (shadow is a sibling of `CreatureSprite`, not a descendant of the breathe wrapper — CSS var inheritance bridges the gap).
 
 ### CSS custom properties
 
@@ -52,21 +55,27 @@ All timing and magnitude values are controlled via CSS custom properties set as 
 |----------|---------|---------|
 | `--idle-breathe-duration` | `4s` | Period of one inhale + exhale cycle |
 | `--idle-breathe-scale` | `1.018` | Peak scaleY at inhale apex |
-| `--idle-breathe-compress` | `0.988` | Exhale compression (distress only) |
+| `--idle-breathe-scale-x` | `1` | Peak scaleX at inhale apex (barrel-chest expansion) |
+| `--idle-breathe-compress` | `0.988` | Exhale scaleY compression (distress only) |
+| `--idle-breathe-compress-x` | `1` | Exhale scaleX compression (distress only) |
 | `--idle-sway-duration` | `5s` | Period of one full left → right → left cycle |
-| `--idle-sway-angle` | `0.8` | Peak rotation in degrees (unitless — applied via `calc(... * 1deg)`) |
+| `--idle-sway-angle` | `0.8` | Peak rotation in degrees (unitless — applied via `calc(... * 1deg)`); `rotate` style only |
+| `--idle-sway-shift` | `2` | Peak translateX offset in px (unitless — applied via `calc(... * 1px)`); `shift` style only |
 | `--idle-sway-delay` | `0s` | Phase offset; set to `1.4s` on opponent so sprites don't mirror each other |
+| `--shadow-breathe-duration` | `4s` | Set on `SpriteStage` root; inherited by shadow div |
+| `--shadow-breathe-scale-x` | `1` | Peak scaleX of shadow ellipse; matches sprite's breathe scaleX |
 
 ### Key files
 
 | File | Role |
 |------|------|
-| [`src/index.css`](../src/index.css) | Animation library section: `sprite-breathe`, `sprite-breathe-distress`, `sprite-sway` keyframes + classes |
+| [`src/index.css`](../src/index.css) | Animation library section: `sprite-breathe`, `sprite-breathe-distress`, `sprite-sway`, `sprite-weight-shift`, `shadow-breathe`, `shadow-breathe-distress` keyframes + classes |
 | [`src/lib/battleAnimationConfig.ts`](../src/lib/battleAnimationConfig.ts) | `IDLE_ANIM` token table — size-class defaults for all tunable values |
 | [`src/lib/spriteIdleConfig.ts`](../src/lib/spriteIdleConfig.ts) | `SpriteIdleOverride` type, `ResolvedIdleConfig` type, `resolveIdleConfig()` merge function |
 | [`src/lib/sprites.ts`](../src/lib/sprites.ts) | `OpponentSpriteEntry.idleOverride` field; `getOpponentEntry(name)` helper |
 | [`src/components/ui/CreatureSprite.tsx`](../src/components/ui/CreatureSprite.tsx) | `idleConfig?: ResolvedIdleConfig` prop; sway + breathe wrappers |
-| [`src/pages/app/BattlePage.tsx`](../src/pages/app/BattlePage.tsx) | Calls `resolveIdleConfig()` for player and opponent before render |
+| [`src/components/ui/SpriteStage.tsx`](../src/components/ui/SpriteStage.tsx) | `idleConfig?: ResolvedIdleConfig` prop; sets shadow CSS vars; applies shadow breathe class |
+| [`src/pages/app/BattlePage.tsx`](../src/pages/app/BattlePage.tsx) | Calls `resolveIdleConfig()` for player and opponent; passes result to both `CreatureSprite` and `SpriteStage` |
 
 ### Size-class defaults
 
@@ -75,9 +84,12 @@ Larger creatures have more mass — they breathe slower and sway less. All value
 | | small | medium | large |
 |---|---|---|---|
 | Breathe duration | 3.5s | 4.0s | 4.8s |
-| Breathe scale | 1.022 | 1.018 | 1.012 |
+| Breathe scaleY | 1.022 | 1.018 | 1.012 |
+| Breathe scaleX | 1.010 | 1.008 | 1.005 |
 | Sway duration | 3.8s | 5.0s | 6.5s |
+| Sway style | shift | shift | rotate |
 | Sway angle (°) | 1.2 | 0.8 | 0.5 |
+| Sway shift (px) | 2.5 | 1.8 | 1.2 |
 
 ### HP distress state
 
@@ -93,9 +105,15 @@ Add `idleOverride` to any `OpponentSpriteEntry` in `sprites.ts`. Only specify fi
   battle: { url: s('/sprites/opponents/thunderox.png'), ... },
   footOffsetY: 12,
   idleOverride: {
-    swayAngleDeg: 0.3,   // barely sways — very heavy creature
+    swayAngleDeg: 0.3,    // barely sways — very heavy creature
     breatheDurationS: 6,  // extremely slow breath
   },
+},
+
+// Force rotateZ sway for a small creature with an upright posture
+'marsh_toad': {
+  battle: { ... },
+  idleOverride: { swayStyle: 'rotate', swayAngleDeg: 2.0 },
 },
 
 // Completely rigid creature — no idle animation at all

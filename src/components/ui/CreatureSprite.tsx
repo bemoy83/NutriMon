@@ -268,13 +268,16 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
     // Hit flashes and faint overlays are siblings outside this stack so they don't inherit transforms.
     const idleActive = !!idleConfig && !hasFainted && !!frameUrl
 
-    const swayClass = idleActive && idleConfig.sway ? 'animate-sprite-sway' : undefined
+    const swayClass = idleActive && idleConfig.sway
+      ? (idleConfig.sway.style === 'shift' ? 'animate-sprite-weight-shift' : 'animate-sprite-sway')
+      : undefined
     const swayStyle: React.CSSProperties = idleActive && idleConfig.sway
       ? {
           position: 'absolute',
           inset: 0,
           '--idle-sway-duration': `${idleConfig.sway.durationS}s`,
           '--idle-sway-angle': idleConfig.sway.angleDeg,
+          '--idle-sway-shift': idleConfig.sway.shiftPx,
           '--idle-sway-delay': `${idleConfig.sway.delayS}s`,
         } as React.CSSProperties
       : { position: 'absolute', inset: 0 }
@@ -288,8 +291,12 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
           inset: 0,
           '--idle-breathe-duration': `${idleConfig.breathe.durationS}s`,
           '--idle-breathe-scale': idleConfig.breathe.scale,
+          '--idle-breathe-scale-x': idleConfig.breathe.scaleX,
           ...(idleConfig.breathe.distress
-            ? { '--idle-breathe-compress': idleConfig.breathe.compressScale }
+            ? {
+                '--idle-breathe-compress': idleConfig.breathe.compressScale,
+                '--idle-breathe-compress-x': idleConfig.breathe.compressScaleX,
+              }
             : {}),
         } as React.CSSProperties
       : { position: 'absolute', inset: 0 }

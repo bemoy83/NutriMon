@@ -187,46 +187,60 @@ select {
  * Timing and magnitude are tuned via CSS custom properties set as inline
  * styles on the wrapper — no new keyframes needed for new variants.
  *
- * Animations defined here:
- *   animate-sprite-breathe         — calm scaleY swell (steady HP)
+ * Sprite animations (on CreatureSprite wrappers):
+ *   animate-sprite-breathe          — calm scaleX+scaleY swell (steady HP)
  *   animate-sprite-breathe-distress — faster, compressed exhale (≤ 30% HP)
- *   animate-sprite-sway            — slow rotateZ pendulum
+ *   animate-sprite-sway             — slow rotateZ pendulum (large creatures)
+ *   animate-sprite-weight-shift     — slow translateX rock (small/medium default)
  *
- * Custom properties (set as inline style on the wrapper element):
- *   --idle-breathe-duration   default 4s
- *   --idle-breathe-scale      default 1.018   (peak scaleY)
- *   --idle-breathe-compress   default 0.988   (distress exhale scaleY, distress only)
- *   --idle-sway-duration      default 5s
- *   --idle-sway-angle         default 0.8     (degrees, unitless — applied in calc())
- *   --idle-sway-delay         default 0s      (phase offset between sprites)
+ * Shadow animations (on SpriteStage contactShadow div):
+ *   animate-shadow-breathe          — shadow scaleX widens with inhale (steady)
+ *   animate-shadow-breathe-distress — same, faster (≤ 30% HP)
+ *
+ * Custom properties — sprite breathe wrapper:
+ *   --idle-breathe-duration     default 4s
+ *   --idle-breathe-scale        default 1.018   (peak scaleY)
+ *   --idle-breathe-scale-x      default 1       (peak scaleX; set to IDLE_ANIM.breatheScaleX)
+ *   --idle-breathe-compress     default 0.988   (distress exhale scaleY)
+ *   --idle-breathe-compress-x   default 1       (distress exhale scaleX)
+ *
+ * Custom properties — sprite sway wrapper:
+ *   --idle-sway-duration        default 5s
+ *   --idle-sway-angle           default 0.8     (degrees, unitless — applied in calc())
+ *   --idle-sway-shift           default 2       (px, unitless — applied in calc())
+ *   --idle-sway-delay           default 0s      (phase offset between sprites)
+ *
+ * Custom properties — shadow div (set on SpriteStage root, inherited by shadow):
+ *   --shadow-breathe-duration   default 4s
+ *   --shadow-breathe-scale-x    default 1       (peak shadow scaleX)
  *
  * Note: sprite-breathe and sprite-breathe-distress are separate keyframes because
  * the distress 60% compression stop is structurally different, not just a magnitude
  * change. All other tuning is via custom properties.
  */
 
-/* Steady breathing — gentle scaleY swell */
+/* Steady breathing — barrel-chest scaleX + scaleY swell in sync */
 @keyframes sprite-breathe {
-  0%, 100% { transform: scaleY(1); }
-  45%       { transform: scaleY(var(--idle-breathe-scale, 1.018)); }
+  0%, 100% { transform: scaleX(1) scaleY(1); }
+  45%       { transform: scaleX(var(--idle-breathe-scale-x, 1)) scaleY(var(--idle-breathe-scale, 1.018)); }
 }
 .animate-sprite-breathe {
   animation: sprite-breathe var(--idle-breathe-duration, 4s) ease-in-out infinite;
   transform-origin: bottom center;
 }
 
-/* Distress breathing — faster, pronounced inhale + exhale compression */
+/* Distress breathing — faster inhale + exhale compression on both axes */
 @keyframes sprite-breathe-distress {
-  0%, 100% { transform: scaleY(1); }
-  35%       { transform: scaleY(var(--idle-breathe-scale, 1.026)); }
-  60%       { transform: scaleY(var(--idle-breathe-compress, 0.988)); }
+  0%, 100% { transform: scaleX(1) scaleY(1); }
+  35%       { transform: scaleX(var(--idle-breathe-scale-x, 1)) scaleY(var(--idle-breathe-scale, 1.026)); }
+  60%       { transform: scaleX(var(--idle-breathe-compress-x, 1)) scaleY(var(--idle-breathe-compress, 0.988)); }
 }
 .animate-sprite-breathe-distress {
   animation: sprite-breathe-distress var(--idle-breathe-duration, 2.2s) ease-in-out infinite;
   transform-origin: bottom center;
 }
 
-/* Sway — slow rotateZ pendulum anchored at feet */
+/* Sway — rotateZ pendulum anchored at feet; default for large creatures */
 @keyframes sprite-sway {
   0%, 100% { transform: rotate(0deg); }
   25%       { transform: rotate(calc(var(--idle-sway-angle, 0.8) * -1deg)); }
@@ -235,6 +249,35 @@ select {
 .animate-sprite-sway {
   animation: sprite-sway var(--idle-sway-duration, 5s) ease-in-out var(--idle-sway-delay, 0s) infinite;
   transform-origin: bottom center;
+}
+
+/* Weight shift — translateX rock; default for small/medium quadrupeds */
+@keyframes sprite-weight-shift {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(calc(var(--idle-sway-shift, 2) * -1px)); }
+  75%       { transform: translateX(calc(var(--idle-sway-shift, 2) * 1px)); }
+}
+.animate-sprite-weight-shift {
+  animation: sprite-weight-shift var(--idle-sway-duration, 5s) ease-in-out var(--idle-sway-delay, 0s) infinite;
+  /* No transform-origin needed — translateX is independent of anchor point */
+}
+
+/* Shadow breathe — widens with inhale; translateX(-50%) centering carried inside keyframe
+   because an active `animation` on `transform` overrides any inline `transform` value */
+@keyframes shadow-breathe {
+  0%, 100% { transform: translateX(-50%) scaleX(1); }
+  45%       { transform: translateX(-50%) scaleX(var(--shadow-breathe-scale-x, 1)); }
+}
+.animate-shadow-breathe {
+  animation: shadow-breathe var(--shadow-breathe-duration, 4s) ease-in-out infinite;
+}
+
+@keyframes shadow-breathe-distress {
+  0%, 100% { transform: translateX(-50%) scaleX(1); }
+  35%       { transform: translateX(-50%) scaleX(var(--shadow-breathe-scale-x, 1)); }
+}
+.animate-shadow-breathe-distress {
+  animation: shadow-breathe-distress var(--shadow-breathe-duration, 2.2s) ease-in-out infinite;
 }
 
 /* ── Sprite system ───────────────────────────────────────────────────────── */
