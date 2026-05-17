@@ -5,16 +5,22 @@ export const MAP_CANVAS_H = 520
 /** Vertical spacing per node (px at nodeScale 1) for the scrollable 25-node map. */
 export const WORLD_MAP_VERTICAL_SPACING = 96
 
+/** Height of the sticky header bar in BattleHubPage (px) — subtracted from viewport height. */
+export const WORLD_MAP_HEADER_OFFSET = 52
+
 export interface WorldMapLayout {
   width: number
   height: number
   nodeScale: number
+  /** Height of the visible map panel (viewport height minus header). */
+  panelHeight: number
 }
 
 export const DEFAULT_WORLD_MAP_LAYOUT: WorldMapLayout = {
   width: MAP_CANVAS_W,
   height: MAP_CANVAS_H,
   nodeScale: 1,
+  panelHeight: MAP_CANVAS_H,
 }
 
 export const WORLD_MAP_MAX_WIDTH = 480

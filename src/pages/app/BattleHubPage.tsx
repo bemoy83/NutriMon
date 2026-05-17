@@ -7,14 +7,6 @@ import { useDevMode } from '@/app/providers/DevModeContext'
 import { useWorldMap } from '@/features/battle/useWorldMap'
 import { useProfileSummary } from '@/features/profile/useProfileSummary'
 import { getTodayInTimezone } from '@/lib/date'
-import {
-  WORLD_MAP_MAX_NODE_SCALE,
-  WORLD_MAP_MAX_WIDTH,
-  WORLD_MAP_MIN_HEIGHT,
-  WORLD_MAP_MIN_NODE_SCALE,
-  WORLD_MAP_VERTICAL_SPACING,
-  WORLD_MAP_WIDTH_SCALE_BASE,
-} from '@/components/battle/worldMapLayout'
 import type { CreatureCondition, WorldMapOpponentNode } from '@/types/domain'
 
 function getConditionTone(condition: CreatureCondition) {
@@ -31,29 +23,12 @@ function getConditionTone(condition: CreatureCondition) {
 const HUB_BG = '#0c1a10'
 
 const COMPANION_NODE_KEY = 'nutrimon_companion_node_id'
-const EXPECTED_WORLD_MAP_NODE_COUNT = 25
-
-function getReservedWorldMapHeight(nodeCount = EXPECTED_WORLD_MAP_NODE_COUNT) {
-  if (typeof window === 'undefined') {
-    return Math.round(nodeCount * WORLD_MAP_VERTICAL_SPACING)
-  }
-
-  const viewportWidth = window.visualViewport?.width ?? window.innerWidth
-  const mapWidth = Math.min(viewportWidth, WORLD_MAP_MAX_WIDTH)
-  const nodeScale = Math.min(
-    Math.max(mapWidth / WORLD_MAP_WIDTH_SCALE_BASE, WORLD_MAP_MIN_NODE_SCALE),
-    WORLD_MAP_MAX_NODE_SCALE,
-  )
-
-  return Math.max(Math.round(nodeCount * WORLD_MAP_VERTICAL_SPACING * nodeScale), WORLD_MAP_MIN_HEIGHT)
-}
 
 export default function BattleHubPage() {
   const navigate = useNavigate()
   const [selectedNode, setSelectedNode] = useState<WorldMapOpponentNode | null>(null)
   const [pendingNav, setPendingNav] = useState<{ sessionId: string; targetNode: WorldMapOpponentNode } | null>(null)
   const [isFadingOut, setIsFadingOut] = useState(false)
-  const [reservedMapHeight, setReservedMapHeight] = useState(() => getReservedWorldMapHeight())
   const initialCompanionNodeId = useState(() => localStorage.getItem(COMPANION_NODE_KEY))[0]
 
   useEffect(() => {
@@ -75,24 +50,6 @@ export default function BattleHubPage() {
   const companion = worldMapQuery.data?.companion ?? null
   const snapshot = worldMapQuery.data?.snapshot ?? null
   const nodes = worldMapQuery.data?.nodes ?? []
-
-  useEffect(() => {
-    const updateReservedMapHeight = () => {
-      const reservedNodeCount = Math.max(nodes.length, EXPECTED_WORLD_MAP_NODE_COUNT)
-      setReservedMapHeight(getReservedWorldMapHeight(reservedNodeCount))
-    }
-
-    updateReservedMapHeight()
-    window.addEventListener('resize', updateReservedMapHeight)
-    window.addEventListener('orientationchange', updateReservedMapHeight)
-    window.visualViewport?.addEventListener('resize', updateReservedMapHeight)
-
-    return () => {
-      window.removeEventListener('resize', updateReservedMapHeight)
-      window.removeEventListener('orientationchange', updateReservedMapHeight)
-      window.visualViewport?.removeEventListener('resize', updateReservedMapHeight)
-    }
-  }, [nodes.length])
 
   if (profileQuery.isLoading) return <LoadingState fullScreen />
 
@@ -136,11 +93,8 @@ export default function BattleHubPage() {
       <div
         style={{
           width: '100vw',
-          minHeight: reservedMapHeight,
           marginLeft: 'calc(50% - 50vw)',
           marginRight: 'calc(50% - 50vw)',
-          overflow: 'hidden',
-          contain: 'layout paint',
         }}
       >
         {worldMapQuery.isLoading ? (
@@ -148,7 +102,7 @@ export default function BattleHubPage() {
             className="flex items-start justify-center pt-12 text-sm text-white/55"
             style={{
               width: '100%',
-              minHeight: reservedMapHeight,
+              height: 'calc(100dvh - 52px)',
               backgroundImage: 'linear-gradient(180deg, rgb(14 32 20 / 0.45), rgb(8 16 12 / 0.65))',
             }}
           >

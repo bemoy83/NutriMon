@@ -181,6 +181,7 @@ interface NodeModeCanvasProps {
 }
 
 const ZOOM_SCALE = 1.65
+const TAP_THRESHOLD = 8  // px; touches that move less than this are treated as taps
 
 // ── Travel animation helpers ──────────────────────────────────────────────────
 
@@ -237,9 +238,6 @@ function NodeModeCanvas({
   onTravelComplete,
   initialCompanionNodeId,
 }: NodeModeCanvasProps) {
-  const [isZoomed, setIsZoomed] = useState(false)
-  const currentNodeId = currentNode?.id ?? null
-
   const currentIdx = currentNode ? nodes.findIndex((n) => n.id === currentNode.id) : -1
 
   // Companion node index — seeded from localStorage, falls back to current progression node.
@@ -251,14 +249,72 @@ function NodeModeCanvas({
     return currentIdx >= 0 ? currentIdx : 0
   })
 
-  // Zoom origin tracks the companion, not the progression node.
   const companionPos = positions[companionNodeIdx] ?? null
-  const originX = companionPos ? `${(companionPos.x / layout.width * 100).toFixed(1)}%` : '50%'
-  const originY = companionPos ? `${(companionPos.y / layout.height * 100).toFixed(1)}%` : '50%'
+
+  // Pan bounds (screen px) — how far the zoomed content can slide in each direction.
+  const viewportW = window.visualViewport?.width ?? layout.width
+  const maxPanX = Math.max(0, layout.width * ZOOM_SCALE - viewportW)
+  const maxPanY = Math.max(0, layout.height * ZOOM_SCALE - layout.panelHeight)
+
+  // Initial pan centers the companion in the panel; no mount flash because it's lazy.
+  const [panX, setPanX] = useState<number>(() => {
+    if (!companionPos) return 0
+    const target = viewportW / 2 - companionPos.x * ZOOM_SCALE
+    return Math.min(0, Math.max(-maxPanX, target))
+  })
+  const [panY, setPanY] = useState<number>(() => {
+    if (!companionPos) return 0
+    const target = layout.panelHeight * 0.4 - companionPos.y * ZOOM_SCALE
+    return Math.min(0, Math.max(-maxPanY, target))
+  })
 
   // Ref to the companion marker's outer <g> — the rAF loop mutates its transform directly.
   const companionGRef = useRef<SVGGElement>(null)
   const rafRef = useRef<number | null>(null)
+
+  // Touch gesture state — kept in refs to avoid re-renders during drag.
+  const touchStartRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null)
+  const hasDraggedRef = useRef(false)
+
+  // Attach non-passive touchmove/touchend so we can preventDefault during drag.
+  useEffect(() => {
+    const el = wrapperRef.current
+    if (!el) return
+
+    function onTouchMove(e: TouchEvent) {
+      if (!touchStartRef.current) return
+      const touch = e.touches[0]
+      const dx = touch.clientX - touchStartRef.current.x
+      const dy = touch.clientY - touchStartRef.current.y
+
+      if (!hasDraggedRef.current && Math.sqrt(dx * dx + dy * dy) > TAP_THRESHOLD) {
+        hasDraggedRef.current = true
+      }
+
+      if (!hasDraggedRef.current) return
+      e.preventDefault()
+
+      const nextX = Math.min(0, Math.max(-maxPanX, touchStartRef.current.panX + dx))
+      const nextY = Math.min(0, Math.max(-maxPanY, touchStartRef.current.panY + dy))
+      setPanX(nextX)
+      setPanY(nextY)
+    }
+
+    function onTouchEnd() {
+      touchStartRef.current = null
+      hasDraggedRef.current = false
+    }
+
+    el.addEventListener('touchmove', onTouchMove, { passive: false })
+    el.addEventListener('touchend', onTouchEnd)
+    el.addEventListener('touchcancel', onTouchEnd)
+    return () => {
+      el.removeEventListener('touchmove', onTouchMove)
+      el.removeEventListener('touchend', onTouchEnd)
+      el.removeEventListener('touchcancel', onTouchEnd)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [maxPanX, maxPanY])
 
   // rAF-driven travel: follows bezier segments with per-node pauses (SMW style).
   useEffect(() => {
@@ -318,76 +374,38 @@ function NodeModeCanvas({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [travelTarget])
 
-  // Auto-scroll to current node on mount.
-  useEffect(() => {
-    if (!currentNodeId || !wrapperRef.current) return
-    const idx = nodes.findIndex((n) => n.id === currentNodeId)
-    if (idx === -1) return
-    const pos = resolveNodePosition(nodes[idx], idx, nodes.length, layout, 5)
-    if (!pos) return
-
-    const mapEl = wrapperRef.current
-    const scrollEl = mapEl.closest('main')
-    if (!scrollEl) return
-
-    const frame = requestAnimationFrame(() => {
-      const mapRect = mapEl.getBoundingClientRect()
-      const scrollRect = scrollEl.getBoundingClientRect()
-      const mapTopInScroll = scrollEl.scrollTop + mapRect.top - scrollRect.top
-      const viewportOffset = (window.visualViewport?.height ?? window.innerHeight) * 0.35
-      const scrollTop = Math.max(0, mapTopInScroll + pos.y - viewportOffset)
-      scrollEl.scrollTo({ top: scrollTop, behavior: 'instant' })
-    })
-
-    return () => cancelAnimationFrame(frame)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentNodeId, layout])
-
-  // Re-center on companion position when zooming in.
-  useEffect(() => {
-    if (!isZoomed || !companionPos || !wrapperRef.current) return
-    const mapEl = wrapperRef.current
-    const scrollEl = mapEl.closest('main')
-    if (!scrollEl) return
-
-    const frame = requestAnimationFrame(() => {
-      const mapRect = mapEl.getBoundingClientRect()
-      const scrollRect = scrollEl.getBoundingClientRect()
-      const mapTopInScroll = scrollEl.scrollTop + mapRect.top - scrollRect.top
-      const viewportH = window.visualViewport?.height ?? window.innerHeight
-      const scrollTop = Math.max(0, mapTopInScroll + companionPos.y - viewportH * 0.45)
-      scrollEl.scrollTo({ top: scrollTop, behavior: 'smooth' })
-    })
-
-    return () => cancelAnimationFrame(frame)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isZoomed])
-
   return (
     <>
       <style>{MAP_ANIMATIONS}</style>
       <div
         ref={wrapperRef}
+        onTouchStart={(e) => {
+          const touch = e.touches[0]
+          touchStartRef.current = { x: touch.clientX, y: touch.clientY, panX, panY }
+          hasDraggedRef.current = false
+        }}
         style={{
           position: 'relative',
           width: '100vw',
-          height: layout.height,
-          minHeight: layout.height,
+          height: layout.panelHeight,
           flex: '0 0 auto',
           marginLeft: 'calc(50% - 50vw)',
           marginRight: 'calc(50% - 50vw)',
           overflow: 'hidden',
           contain: 'layout paint',
+          touchAction: 'none',
         }}
       >
-        {/* Scaled map content */}
+        {/* Scaled + panned map content */}
         <div
           style={{
             position: 'absolute',
-            inset: 0,
-            transform: isZoomed ? `scale(${ZOOM_SCALE})` : undefined,
-            transformOrigin: `${originX} ${originY}`,
-            transition: 'transform 0.4s ease-out',
+            top: 0,
+            left: 0,
+            width: layout.width,
+            height: layout.height,
+            transform: `translate(${panX}px, ${panY}px) scale(${ZOOM_SCALE})`,
+            transformOrigin: '0 0',
             willChange: 'transform',
           }}
         >
@@ -471,35 +489,6 @@ function NodeModeCanvas({
             })()}
           </svg>
         </div>
-
-        {/* Zoom toggle — sits outside the scaled div so it doesn't scale */}
-        <button
-          type="button"
-          onClick={() => setIsZoomed((z) => !z)}
-          aria-label={isZoomed ? 'Zoom out' : 'Zoom in'}
-          style={{
-            position: 'absolute',
-            bottom: 16,
-            right: 16,
-            zIndex: 10,
-            width: 36,
-            height: 36,
-            borderRadius: '50%',
-            background: 'rgba(0,0,0,0.5)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            color: 'white',
-            fontSize: 22,
-            lineHeight: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-          }}
-        >
-          {isZoomed ? '−' : '+'}
-        </button>
       </div>
     </>
   )

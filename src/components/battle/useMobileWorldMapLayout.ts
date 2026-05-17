@@ -3,6 +3,7 @@ import type { RefObject } from 'react'
 import {
   clamp,
   DEFAULT_WORLD_MAP_LAYOUT,
+  WORLD_MAP_HEADER_OFFSET,
   WORLD_MAP_MAX_NODE_SCALE,
   WORLD_MAP_MAX_WIDTH,
   WORLD_MAP_MIN_HEIGHT,
@@ -17,6 +18,7 @@ function getWorldMapLayout(nodeCount: number): WorldMapLayout {
 
   const visualViewport = window.visualViewport
   const viewportWidth = visualViewport?.width ?? window.innerWidth
+  const viewportHeight = visualViewport?.height ?? window.innerHeight
 
   const width = Math.round(Math.min(viewportWidth, WORLD_MAP_MAX_WIDTH))
   const nodeScale = Number(clamp(
@@ -29,7 +31,9 @@ function getWorldMapLayout(nodeCount: number): WorldMapLayout {
     ? Math.max(Math.round(nodeCount * WORLD_MAP_VERTICAL_SPACING * nodeScale), WORLD_MAP_MIN_HEIGHT)
     : DEFAULT_WORLD_MAP_LAYOUT.height
 
-  return { width, height, nodeScale }
+  const panelHeight = Math.max(viewportHeight - WORLD_MAP_HEADER_OFFSET, WORLD_MAP_MIN_HEIGHT)
+
+  return { width, height, nodeScale, panelHeight }
 }
 
 /**
