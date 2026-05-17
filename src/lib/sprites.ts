@@ -112,7 +112,7 @@ interface OpponentSpriteEntry {
 // Slug convention: lowercase, spaces → underscores (matches slugify() below).
 const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
 
-  // ── Arena 1 — Verdantroot Forest (levels 1–5) ─────────────────────────────
+  // ── Arena 1 — Verdantroot Forest (levels 3–7) ─────────────────────────────
 
   // 001 Bramblin — small — prickly defender (leaf-ball hedgehog)
   'bramblin': {
@@ -159,7 +159,7 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
     icon: { url: s('/sprites/icons/elderhorn.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
-  // ── Arena 2 — Murkmire Wetlands (levels 6–11) ─────────────────────────────
+  // ── Arena 2 — Murkmire Wetlands (levels 7–11) ─────────────────────────────
 
   // 006 Boglet — small — gaping ambusher (circle with huge mouth)
   'boglet': {
@@ -205,7 +205,7 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
     icon: { url: s('/sprites/icons/leviamire.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
-  // ── Arena 3 — Ashrock Highlands (levels 12–18) ────────────────────────────
+  // ── Arena 3 — Ashrock Highlands (levels 10–15) ────────────────────────────
 
   // 011 Pebblit — small — stony sentinel (circle with large side-block ears)
   'pebblit': {
@@ -252,7 +252,7 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
     icon: { url: s('/sprites/icons/thunderox.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
-  // ── Arena 4 — Frostveil Peaks (levels 19–26) ──────────────────────────────
+  // ── Arena 4 — Frostveil Peaks (levels 14–19) ──────────────────────────────
 
   // 016 Frostscarab — small — glacial bulwark (oval shell with central split)
   'frostscarab': {
@@ -299,7 +299,7 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
     icon: { url: s('/sprites/icons/tuskraal.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
   },
 
-  // ── Arena 5 — Sunforge Summit (levels 27–35) ──────────────────────────────
+  // ── Arena 5 — Sunforge Summit (levels 16–20) ──────────────────────────────
 
   // 021 Pyrobeetle — small — magma vanguard (armoured oval with forward horn)
   'pyrobeetle': {
