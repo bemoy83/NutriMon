@@ -271,8 +271,8 @@ export default function BattlePage() {
     triggerArenaFlash,
     specialFlashRef,
     playerMaxHp: session?.playerMaxHp ?? 0,
-    playerPipCap: session ? getPipCap(session.snapshot.level) : 3,
-    playerFocusGain: session ? getFocusGain(session.snapshot.level) : 1,
+    playerPipCap: session ? getPipCap(session.companion.level) : 3,
+    playerFocusGain: session ? getFocusGain(session.companion.level) : 1,
   })
 
   const [pendingAction, setPendingAction] = useState<BattleActionLabel | null>(null)
@@ -331,8 +331,8 @@ export default function BattlePage() {
     if (entry.target === 'player' && entry.targetHpAfter !== null) playerHp = entry.targetHpAfter
   }
 
-  const pipCap    = getPipCap(session.snapshot.level)
-  const focusGain = getFocusGain(session.snapshot.level)
+  const pipCap    = getPipCap(session.companion.level)
+  const focusGain = getFocusGain(session.companion.level)
 
   // Derive pip count from the revealed log so it animates step-by-step
   // as entries are disclosed.

@@ -25,7 +25,7 @@ export interface EffectsLayerHandle {
   showDefendGuard(durationMs?: number): void
   showGuardImpact(intensity?: 'normal' | 'heavy'): void
   showFocusCharge(): void
-  /** Overdrive: fuchsia horizontal streak per hit beat. */
+  /** Horizontal speed-blur streak per hit beat; color from skill catalog entry. */
   showOverdriveStreak(color?: SkillStreakVisual): void
   /** Regen V2: green particles orbit inward before the +HP number. */
   showRegenOrbitEffect(value: number): void

@@ -35,6 +35,8 @@ Turn-based PvE combat. All game logic lives in PostgreSQL (via Supabase RPC); th
 | Animation orchestration | `src/hooks/useBattleLogReveal.ts` | Sequences sprite + effects animations from battle log |
 | Battle page | `src/pages/app/BattlePage.tsx` | Main battle screen — ref wiring, HP tracking, action submission |
 
+Progression tuning details live in `docs/battle-progression-tuning.md`.
+
 ---
 
 ## Focus Pip System
@@ -45,10 +47,14 @@ Implemented in `055_focus_pip_skill_system.sql`. Columns on `battle_runs`:
 - `enemy_focus_pips integer default 0` — reserved; enemy skills not yet implemented
 
 **Pip rules:**
-- `focus` action: `player_focus_pips = min(3, pips + 1)` per use
+- `focus` action: `player_focus_pips = min(pip_cap, pips + focus_gain)` per use
 - `skill` action: `player_focus_pips = pips - skill_pip_cost` on activation
 - `charge_strike` spends all current pips (minimum 2); all others spend a fixed cost
 - Pip count is exposed on `BattleRunSession.playerFocusPips` for the HUD
+
+`pip_cap`, `focus_gain`, and skill unlock display are derived from live
+companion level. The backend no longer blocks known skills or focus perks by
+snapshot level.
 
 ---
 
@@ -66,6 +72,8 @@ Six skills defined in `src/lib/battleSkills.ts`. All are player-only.
 | `overdrive` | 3 | 20 | 5 hits × 60% base damage; each hit crits independently |
 
 Crit cap for focused multi-hit skills: 35% per hit (`FOCUSED_CRIT_CAP = 3500`).
+
+Unlock and perk tiers are summarized in `docs/battle-progression-tuning.md`.
 
 ---
 

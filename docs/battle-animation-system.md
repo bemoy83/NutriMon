@@ -29,8 +29,8 @@ EffectsLayer.tsx + battle-effects/*   primitives — reusable visual building bl
 | [`src/lib/battleAnimationConfig.ts`](../src/lib/battleAnimationConfig.ts) | Single source of truth: `BATTLE_ANIM` timing constants, `SKILL_ANIMATION_CATALOG`, all visual types |
 | [`src/hooks/battleAnimationPlan.ts`](../src/hooks/battleAnimationPlan.ts) | Conductor — produces `ScheduledBattleAnimationEvent[]` from log entries; zero per-skill branches |
 | [`src/hooks/useBattleLogReveal.ts`](../src/hooks/useBattleLogReveal.ts) | Executor — `setTimeout` fan-out + typed `switch` on `event.kind`; no skill knowledge |
-| [`src/components/ui/EffectsLayer.tsx`](../src/components/ui/EffectsLayer.tsx) | Imperative handle exposed via `useImperativeHandle`; ~16 methods; owns all effect state |
-| [`src/components/ui/battle-effects/`](../src/components/ui/battle-effects/) | Individual effect components (DamageNumber, Impact, Shockwave, Guard, Regen, PipSpend, FocusCharge) |
+| [`src/components/ui/EffectsLayer.tsx`](../src/components/ui/EffectsLayer.tsx) | Imperative handle exposed via `useImperativeHandle`; ~12 methods; owns all effect state |
+| [`src/components/ui/battle-effects/`](../src/components/ui/battle-effects/) | Individual effect components (DamageNumber, Impact, Shockwave, Guard, Regen, FocusCharge) |
 | [`src/lib/battleSkills.ts`](../src/lib/battleSkills.ts) | Pip costs, unlock levels — game data only, no animation config |
 | [`src/index.css`](../src/index.css) | CSS `@keyframes` — durations **must** stay in sync with `BATTLE_ANIM` constants |
 
@@ -124,7 +124,6 @@ All fields live in `src/lib/battleAnimationConfig.ts`.
 | `anticipationMs` | `number` | `BATTLE_ANIM.ATTACK_ANTICIPATION_MS` (140ms) | Pre-lunge wind-up. Use `HEAVY_SKILL_ANTICIPATION_MS` (240ms) or `POWER_STRIKE_ANTICIPATION_MS` (400ms) for more drama |
 | `heavy` | `boolean` | `false` | Heavy anticipation pose + ground shockwave + heavy arena shake/flash |
 | `hasChargeGlow` | `boolean` | `false` | Golden charge aura plays on attacker before lunge. Adds `CHARGE_GLOW_MS` (300ms) before lunge start |
-| `pipSpendVariant` | `'focus_spend' \| 'charge_strike_spend'` | `'focus_spend'` | Controls pip-spend animation style |
 | `hitCount` | `number` | `3` | `multi_hit` only — number of hit beats |
 | `hitSpacingMs` | `number` | `FOCUSED_HIT_SPACING_MS` (180ms) | `multi_hit` only — gap between hit beats |
 | `impactVariant` | `ImpactVariant` | `'arc'` | `multi_hit` only — impact graphic shape: `'slash'` `'arc'` `'burst'` `'cut'` |
@@ -191,13 +190,12 @@ All effect events are dispatched through the `switch (event.kind)` in `useBattle
 | `defend_guard` | `fx.showDefendGuard()` | Player's `defend` action |
 | `guard_impact` | `fx.showGuardImpact(intensity)` | Defended hit — normal or heavy intensity |
 | `focus_charge` | `fx.showFocusCharge()` + sprite `triggerFocusGlow()` | Player's `focus` action |
-| `pip_spend` | `fx.showFocusSpend(n)` or `fx.showChargeStrikeSpend(n)` | Skill activation (variant from catalog) |
 | `charge_glow` | sprite `triggerChargeGlow()` | Skills with `hasChargeGlow: true` |
 | `persistent_guard` | `playerFx.showPersistentGuard()` | `support_guard` skills; also in `extraEffects` |
 | `hide_persistent_guard` | `playerFx.hidePersistentGuard()` | Counter payoff hit; `finish_animation` |
 | `regen` | `playerFx.showRegenOrbitEffect(healAmount)` + sprite `triggerHealGlow()` | `support_heal` skills |
 | `flash` | `specialFlash.triggerFlash(color)` | Player skill lunge start (color from `entry.flash`) |
-| `basic_impact` | `fx.showAttackImpact()` + `showDamageNumber()` + optional `showCritBadge()` | Player/opponent `attack` |
+| `basic_impact` | `fx.showAttackImpact()` + `showDamageNumber()` | Player/opponent `attack` |
 | `heavy_impact` | `fx.showHeavyAttackImpact(tint)` + `showGroundShockwave()` + `showDamageNumber()` | `single_hit` skills |
 | `focused_impact` | `fx.showFocusedAttackImpact(hitCount, spacing, variant, tint)` + deferred `showDamageNumber()` | `multi_hit` skills |
 | `overdrive_streak` | `fx.showOverdriveStreak(color)` | Per-hit from `hasStreaks`; also in `extraEffects` |
@@ -213,8 +211,7 @@ Methods are called on `playerEffectsRef.current` or `opponentEffectsRef.current`
 
 | Method | Effect | Duration constant |
 |--------|--------|-------------------|
-| `showDamageNumber(value, isCrit)` | Float-up number | `DAMAGE_NUMBER_MS` (1000ms) |
-| `showCritBadge()` | "CRIT!" badge pop | `CRIT_BADGE_MS` (900ms) |
+| `showDamageNumber(value, isCrit)` | Float-up number; color is side-aware (red player / white opponent / amber crit) | `DAMAGE_NUMBER_MS` (1000ms) |
 | `showAttackImpact(isCrit?, color?)` | Slash/burst impact graphic | `HIT_IMPACT_MS` (350ms) |
 | `showHeavyAttackImpact(isCrit?, color?)` | Larger burst impact | `HIT_IMPACT_MS + HIT_STOP_MS` |
 | `showFocusedAttackImpact(isCrit?, hitCount?, spacingMs?, variant?, color?, opts?)` | N staggered impact graphics | `HIT_IMPACT_MS` per hit |
@@ -222,8 +219,6 @@ Methods are called on `playerEffectsRef.current` or `opponentEffectsRef.current`
 | `showDefendGuard(durationMs?)` | Blue dome shield ring | `DEFEND_GUARD_MS` (900ms) |
 | `showGuardImpact(intensity?)` | Shield contact flash | `GUARD_IMPACT_MS` (360ms) |
 | `showFocusCharge()` | Gold mote orbit inward | `FOCUS_CHARGE_MS` (860ms) |
-| `showFocusSpend(pipCount)` | Pips converge to attacker | `FOCUS_SPEND_MS` (520ms) |
-| `showChargeStrikeSpend(pipCount)` | Charge variant of pip spend | `FOCUS_SPEND_MS` (520ms) |
 | `showOverdriveStreak(color?)` | Horizontal speed-blur streak | 280ms |
 | `showRegenOrbitEffect(healAmount)` | Green motes orbit + heal number | `HEAL_EFFECT_MS` (1300ms) |
 | `showPersistentGuard()` | Looping shield ring (persists) | until `hidePersistentGuard()` |
@@ -243,8 +238,7 @@ Critical links:
 | `HURT_CRIT_MS` (550ms) | `hit-flash-crit` |
 | `FAINT_BLINK_MS` (400ms) | `faint-blink`; also `begin="0.4s"` in `CreatureSprite.tsx` SMIL |
 | `FAINT_MS` (1400ms) | includes `faint-blink` + SVG noise dissolve |
-| `DAMAGE_NUMBER_MS` (1000ms) | `float-up` |
-| `CRIT_BADGE_MS` (900ms) | `crit-pop` |
+| `DAMAGE_NUMBER_MS` (1000ms) | `float-up` / `crit-float-up` |
 | `HIT_IMPACT_MS` (350ms) | `hit-impact` |
 | `DEFEND_GUARD_MS` (900ms) | `shield-dome-in` |
 | `GROUND_SHOCKWAVE_MS` (420ms) | `ground-shockwave` |
@@ -267,7 +261,8 @@ Critical links:
 
 **Player vs. opponent asymmetry:**
 - Flash (`event.kind === 'flash'`) fires for player skills only — the conductor skips it when `entry.actor === 'opponent'`
-- `persistent_guard` and `pip_spend` always target `playerEffectsRef` — they are player-only effects
+- `persistent_guard` always targets `playerEffectsRef` — it is a player-only effect
+- `showDamageNumber` color is driven by the `side` prop on `EffectsLayer` (`'player'` → red, `'opponent'` → white, crit → amber on both)
 - All other effects use `fx(event.target)` which routes to the correct side
 
 ---

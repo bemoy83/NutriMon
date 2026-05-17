@@ -144,22 +144,6 @@ function targetChoseDefend(entry: BattleLogEntry) {
   return false
 }
 
-function addPlayerSkillPipSpend(
-  events: ScheduledBattleAnimationEvent[],
-  opts: BattleAnimationPlanOptions,
-  entry: BattleLogEntry,
-  entryIndex: number,
-  entryStartMs: number,
-) {
-  if (entry.phase !== 'action' || entry.action !== 'skill' || entry.actor !== 'player') return 0
-
-  add(events, entryStartMs + BATTLE_ANIM.SKILL_PIP_DEPLETION_DELAY_MS, {
-    type: 'resolve_log_entry',
-    entryIndex,
-    mode: 'pip_spend_only',
-  })
-  return 0
-}
 
 function getPriorPlayerHp(opts: BattleAnimationPlanOptions, entryIndex: number) {
   const priorEntries = [...opts.base, ...opts.newEntries.slice(0, entryIndex)]
@@ -300,10 +284,16 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
     if (entry.phase === 'action' && entry.action === 'skill') {
       const recipe = SKILL_ANIMATION_CATALOG[entry.skillId ?? '']
       if (recipe?.kind === 'support_guard' || recipe?.kind === 'support_heal') {
-        const skillLeadMs = addPlayerSkillPipSpend(events, opts, entry, entryIndex, entryStartMs)
-        const effectAtMs = entryStartMs + skillLeadMs + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS
+        if (entry.phase === 'action' && entry.action === 'skill' && entry.actor === 'player') {
+          add(events, entryStartMs + BATTLE_ANIM.SKILL_PIP_DEPLETION_DELAY_MS, {
+            type: 'resolve_log_entry',
+            entryIndex,
+            mode: 'pip_spend_only',
+          })
+        }
+        const effectAtMs = entryStartMs + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS
         if (isBattleActor(entry.actor)) {
-          add(events, entryStartMs + skillLeadMs, {
+          add(events, entryStartMs, {
             type: 'sprite_anticipation',
             actor: entry.actor,
             durationMs: BATTLE_ANIM.SUPPORT_ANTICIPATION_MS,
@@ -315,7 +305,7 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
           const healAmount = Math.max(0, entry.targetHpAfter - getPriorPlayerHp(opts, entryIndex))
           add(events, effectAtMs, { type: 'effect', kind: 'regen', healAmount })
         }
-        addResolve(events, entryStartMs, entryIndex, skillLeadMs + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS + (recipe.resolveDelayMs ?? 0))
+        addResolve(events, entryStartMs, entryIndex, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS + (recipe.resolveDelayMs ?? 0))
       }
     }
 
@@ -324,12 +314,18 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
       if (!recipe) return
       if (!isBattleTarget(entry.target)) return
 
-      const skillLeadMs = addPlayerSkillPipSpend(events, opts, entry, entryIndex, entryStartMs)
+      if (entry.actor === 'player') {
+        add(events, entryStartMs + BATTLE_ANIM.SKILL_PIP_DEPLETION_DELAY_MS, {
+          type: 'resolve_log_entry',
+          entryIndex,
+          mode: 'pip_spend_only',
+        })
+      }
       const anticipationMs = recipe.anticipationMs ?? BATTLE_ANIM.ATTACK_ANTICIPATION_MS
       const isSingleHit = recipe.kind === 'single_hit'
 
       if (recipe.hasChargeGlow) {
-        add(events, entryStartMs + skillLeadMs, {
+        add(events, entryStartMs, {
           type: 'effect',
           kind: 'charge_glow',
           target: entry.actor === 'opponent' ? 'opponent' : 'player',
@@ -337,7 +333,6 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
       }
 
       const lungeStartMs = entryStartMs
-        + skillLeadMs
         + (recipe.hasChargeGlow ? BATTLE_ANIM.CHARGE_GLOW_MS : 0)
       const contactDelayMs = anticipationMs + BATTLE_ANIM.LUNGE_PEAK_MS
       const contactAtMs = lungeStartMs + contactDelayMs
