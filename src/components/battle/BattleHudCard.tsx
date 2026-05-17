@@ -12,16 +12,13 @@ function hpBarColor(pct: number): string {
 export function BattleHudHpBar({
   current,
   max,
-  showDelta = true,
 }: {
   current: number
   max: number
-  showDelta?: boolean
 }) {
   const pct = max > 0 ? Math.max(0, current / max) : 0
   const isLow = pct <= 0.25
   const color = hpBarColor(pct)
-  const [delta, setDelta] = useState<{ id: number; value: number } | null>(null)
 
   // Ghost bar — lingers at the previous HP position, then slowly drains.
   const [ghostState, setGhostState] = useState(() => ({
@@ -32,10 +29,6 @@ export function BattleHudHpBar({
   }))
 
   if (ghostState.displayedPct !== pct) {
-    const rawDelta = current - Math.round(ghostState.displayedPct * max)
-    if (showDelta && rawDelta !== 0) {
-      setDelta((prev) => ({ id: (prev?.id ?? 0) + 1, value: rawDelta }))
-    }
     if (pct < ghostState.displayedPct) {
       // Damage taken — freeze ghost at the old position, then drain after a pause.
       setGhostState({
@@ -54,12 +47,6 @@ export function BattleHudHpBar({
       })
     }
   }
-
-  useEffect(() => {
-    if (!delta) return
-    const t = setTimeout(() => setDelta(null), 900)
-    return () => clearTimeout(t)
-  }, [delta])
 
   useEffect(() => {
     if (ghostState.drainTargetPct === null) return
@@ -87,25 +74,6 @@ export function BattleHudHpBar({
 
   return (
     <div className="relative">
-      {delta && (
-        <div
-          key={delta.id}
-          className="pointer-events-none absolute right-0 top-[-1.35rem] z-10 text-xs font-black tabular-nums"
-          style={{
-            animation: 'hud-delta-pop 900ms ease-out forwards',
-            color: delta.value < 0 ? '#fca5a5' : '#86efac',
-            WebkitTextStroke: '2px rgba(8,10,16,0.82)',
-            paintOrder: 'stroke fill',
-            textShadow: [
-              '0 1px 0 rgba(0,0,0,0.7)',
-              '0 2px 4px rgba(0,0,0,0.8)',
-              delta.value < 0 ? '0 0 8px rgba(239,68,68,0.55)' : '0 0 8px rgba(34,197,94,0.45)',
-            ].join(', '),
-          }}
-        >
-          {delta.value > 0 ? '+' : ''}{delta.value}
-        </div>
-      )}
       <div className="relative h-2 w-full overflow-hidden rounded-full bg-[var(--app-border)]">
         {/* Ghost bar — sits behind the main bar */}
         {showGhost && (

@@ -30,7 +30,6 @@ export type BattleAnimationEvent =
   | { type: 'effect'; kind: 'defend_guard'; target: BattleAnimationTarget }
   | { type: 'effect'; kind: 'guard_impact'; target: BattleAnimationTarget; intensity: 'normal' | 'heavy' }
   | { type: 'effect'; kind: 'focus_charge'; target: BattleAnimationTarget }
-  | { type: 'effect'; kind: 'pip_spend'; count: number; variant: 'focus' | 'charge_strike' }
   | { type: 'effect'; kind: 'persistent_guard' }
   | { type: 'effect'; kind: 'hide_persistent_guard' }
   | { type: 'effect'; kind: 'charge_glow'; target: BattleAnimationTarget }
@@ -154,31 +153,12 @@ function addPlayerSkillPipSpend(
 ) {
   if (entry.phase !== 'action' || entry.action !== 'skill' || entry.actor !== 'player') return 0
 
-  const skillId = entry.skillId ?? ''
-  const pipCost = getBattleSkillPipCost(skillId)
-  const pipsBeforeSkill = getPlayerFocusPipsBeforeEntry(
-    opts.base,
-    opts.newEntries,
-    entryIndex,
-    opts.playerPipCap,
-    opts.playerFocusGain,
-  )
-  const pipSpendCount = doesBattleSkillSpendAllPips(skillId)
-    ? Math.max(pipCost, pipsBeforeSkill)
-    : pipCost
-
-  add(events, entryStartMs, {
-    type: 'effect',
-    kind: 'pip_spend',
-    count: pipSpendCount,
-    variant: SKILL_ANIMATION_CATALOG[skillId]?.pipSpendVariant === 'charge_strike_spend' ? 'charge_strike' : 'focus',
-  })
   add(events, entryStartMs + BATTLE_ANIM.SKILL_PIP_DEPLETION_DELAY_MS, {
     type: 'resolve_log_entry',
     entryIndex,
     mode: 'pip_spend_only',
   })
-  return BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
+  return 0
 }
 
 function getPriorPlayerHp(opts: BattleAnimationPlanOptions, entryIndex: number) {

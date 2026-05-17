@@ -34,7 +34,6 @@ function entry(overrides: Partial<BattleLogEntry>): BattleLogEntry {
 function effectHandle(): EffectsLayerHandle {
   return {
     showDamageNumber: vi.fn(),
-    showCritBadge: vi.fn(),
     showAttackImpact: vi.fn(),
     showHeavyAttackImpact: vi.fn(),
     showFocusedAttackImpact: vi.fn(),
@@ -42,10 +41,8 @@ function effectHandle(): EffectsLayerHandle {
     showDefendGuard: vi.fn(),
     showGuardImpact: vi.fn(),
     showFocusCharge: vi.fn(),
-    showFocusSpend: vi.fn(),
     showOverdriveStreak: vi.fn(),
     showRegenOrbitEffect: vi.fn(),
-    showChargeStrikeSpend: vi.fn(),
     showPersistentGuard: vi.fn(),
     hidePersistentGuard: vi.fn(),
   }
@@ -196,24 +193,14 @@ describe('useBattleLogReveal', () => {
     expect(result.current.resolvedLogOverride?.entries).toHaveLength(1)
 
     act(() => {
-      vi.advanceTimersByTime(BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS)
+      vi.advanceTimersByTime(BATTLE_ANIM.SKILL_PIP_DEPLETION_DELAY_MS)
     })
 
-    expect(playerEffects.showFocusSpend).toHaveBeenCalledWith(2)
-    expect(playerEffects.showRegenOrbitEffect).not.toHaveBeenCalled()
     expect(result.current.resolvedLogOverride?.entries).toHaveLength(2)
     expect(result.current.resolvedLogOverride?.entries[1]).toEqual(
       expect.objectContaining({ action: 'skill', skillId: 'regen', targetHpAfter: null }),
     )
-
-    act(() => {
-      vi.advanceTimersByTime(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
-    })
-
     expect(playerEffects.showRegenOrbitEffect).toHaveBeenCalledWith(8)
-    expect(result.current.resolvedLogOverride?.entries[1]).toEqual(
-      expect.objectContaining({ action: 'skill', skillId: 'regen', targetHpAfter: null }),
-    )
 
     act(() => {
       vi.advanceTimersByTime(BATTLE_ANIM.REGEN_NUMBER_DELAY_MS - 1)
@@ -285,7 +272,6 @@ describe('useBattleLogReveal', () => {
     expect(opponentSprite.triggerAnimation).toHaveBeenCalledWith('hurt', expect.any(Number), true, 'right')
     expect(opponentEffects.showDamageNumber).toHaveBeenCalledWith(18, true)
     expect(opponentEffects.showAttackImpact).toHaveBeenCalledWith(true)
-    expect(opponentEffects.showCritBadge).toHaveBeenCalledTimes(1)
     expect(triggerArenaShake).toHaveBeenCalledWith(true)
     expect(triggerArenaFlash).toHaveBeenCalledTimes(1)
   })
@@ -370,14 +356,6 @@ describe('useBattleLogReveal', () => {
       vi.advanceTimersByTime(0)
     })
 
-    expect(playerEffects.showFocusSpend).toHaveBeenCalledWith(1)
-    expect(playerSprite.triggerAnticipation).not.toHaveBeenCalled()
-    expect(opponentEffects.showFocusedAttackImpact).not.toHaveBeenCalled()
-
-    act(() => {
-      vi.advanceTimersByTime(BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS)
-    })
-
     expect(playerSprite.triggerAnticipation).toHaveBeenCalledWith('right', BATTLE_ANIM.ATTACK_ANTICIPATION_MS, false)
     expect(opponentEffects.showFocusedAttackImpact).not.toHaveBeenCalled()
 
@@ -394,7 +372,6 @@ describe('useBattleLogReveal', () => {
       { emphasizeFinalHit: true },
     )
     expect(opponentEffects.showDamageNumber).not.toHaveBeenCalled()
-    expect(opponentEffects.showCritBadge).not.toHaveBeenCalled()
     expect(opponentEffects.showAttackImpact).not.toHaveBeenCalled()
     expect(opponentSprite.triggerAnimation).toHaveBeenCalledTimes(1)
     expect(opponentSprite.triggerAnimation).toHaveBeenNthCalledWith(
@@ -419,7 +396,6 @@ describe('useBattleLogReveal', () => {
     expect(opponentSprite.triggerAnimation).toHaveBeenCalledTimes(3)
     expect(opponentSprite.triggerAnimation).toHaveBeenLastCalledWith('hurt', BATTLE_ANIM.HURT_CRIT_MS, true, 'right')
     expect(opponentEffects.showDamageNumber).toHaveBeenCalledWith(42, true)
-    expect(opponentEffects.showCritBadge).toHaveBeenCalledTimes(1)
   })
 
   it('uses heavy anticipation before heavy skill contact', () => {
@@ -458,14 +434,7 @@ describe('useBattleLogReveal', () => {
       vi.advanceTimersByTime(0)
     })
 
-    expect(playerEffects.showFocusSpend).toHaveBeenCalledWith(1)
-    expect(playerSprite.triggerAnticipation).not.toHaveBeenCalled()
-
-    act(() => {
-      vi.advanceTimersByTime(BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS)
-    })
-
-    // V2: power_strike uses its own longer anticipation
+    // power_strike uses its own longer anticipation
     expect(playerSprite.triggerAnticipation).toHaveBeenCalledWith('right', BATTLE_ANIM.POWER_STRIKE_ANTICIPATION_MS, true)
     expect(playerSprite.triggerAnimation).not.toHaveBeenCalledWith('attack', BATTLE_ANIM.LUNGE_MS, false, 'right')
     expect(opponentEffects.showAttackImpact).not.toHaveBeenCalled()
@@ -527,13 +496,6 @@ describe('useBattleLogReveal', () => {
       vi.advanceTimersByTime(0)
     })
 
-    expect(playerEffects.showChargeStrikeSpend).toHaveBeenCalledWith(3)
-    expect(playerSprite.triggerChargeGlow).not.toHaveBeenCalled()
-
-    act(() => {
-      vi.advanceTimersByTime(BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS)
-    })
-
     expect(playerSprite.triggerChargeGlow).toHaveBeenCalledTimes(1)
   })
 
@@ -572,12 +534,11 @@ describe('useBattleLogReveal', () => {
       vi.advanceTimersByTime(0)
     })
 
-    expect(playerEffects.showFocusSpend).toHaveBeenCalledWith(3)
+    
 
     act(() => {
       vi.advanceTimersByTime(
-        BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
-        + BATTLE_ANIM.ATTACK_ANTICIPATION_MS
+        BATTLE_ANIM.ATTACK_ANTICIPATION_MS
         + BATTLE_ANIM.LUNGE_PEAK_MS,
       )
     })
@@ -632,13 +593,6 @@ describe('useBattleLogReveal', () => {
         }),
       ], [])
       vi.advanceTimersByTime(0)
-    })
-
-    expect(playerEffects.showFocusSpend).toHaveBeenCalledWith(1)
-    expect(playerSprite.triggerAnticipation).not.toHaveBeenCalled()
-
-    act(() => {
-      vi.advanceTimersByTime(BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS)
     })
 
     expect(playerSprite.triggerAnticipation).toHaveBeenCalledWith('right', BATTLE_ANIM.ATTACK_ANTICIPATION_MS, false)
@@ -714,7 +668,7 @@ describe('useBattleLogReveal', () => {
     })
 
     act(() => {
-      vi.advanceTimersByTime(BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+      vi.advanceTimersByTime(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
     })
     expect(playerEffects.showPersistentGuard).toHaveBeenCalledTimes(1)
 
@@ -788,7 +742,7 @@ describe('useBattleLogReveal', () => {
     })
 
     act(() => {
-      vi.advanceTimersByTime(BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
+      vi.advanceTimersByTime(BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
     })
     expect(playerEffects.showPersistentGuard).toHaveBeenCalledTimes(1)
     expect(playerEffects.hidePersistentGuard).not.toHaveBeenCalled()
@@ -796,7 +750,6 @@ describe('useBattleLogReveal', () => {
     act(() => {
       vi.advanceTimersByTime(
         BATTLE_ANIM.ENTRY_DELAY_ACTION_MS
-        - BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
         - BATTLE_ANIM.SUPPORT_ANTICIPATION_MS
         + BATTLE_ANIM.ATTACK_ANTICIPATION_MS
         + BATTLE_ANIM.LUNGE_PEAK_MS,

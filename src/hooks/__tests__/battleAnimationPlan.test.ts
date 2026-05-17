@@ -102,18 +102,15 @@ describe('battleAnimationPlan', () => {
     })
     const events = plan([regenEntry], [previousEntry])
 
-    expect(findEffect(events, 'pip_spend')).toMatchObject({ atMs: 0, event: { count: 2, variant: 'focus' } })
     expect(findEvent(events, 'resolve_log_entry', event => event.type === 'resolve_log_entry' && event.mode === 'pip_spend_only'))
       .toMatchObject({ atMs: BATTLE_ANIM.SKILL_PIP_DEPLETION_DELAY_MS })
     expect(findEffect(events, 'regen')).toMatchObject({
-      atMs: BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS,
+      atMs: BATTLE_ANIM.SUPPORT_ANTICIPATION_MS,
       event: { healAmount: 8 },
     })
     expect(findEvent(events, 'resolve_log_entry', event => event.type === 'resolve_log_entry' && event.mode !== 'pip_spend_only'))
       .toMatchObject({
-        atMs: BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
-          + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS
-          + BATTLE_ANIM.REGEN_NUMBER_DELAY_MS,
+        atMs: BATTLE_ANIM.SUPPORT_ANTICIPATION_MS + BATTLE_ANIM.REGEN_NUMBER_DELAY_MS,
       })
   })
 
@@ -134,11 +131,10 @@ describe('battleAnimationPlan', () => {
         targetHpAfter: 20,
       }),
     ], base)
-    const lungeStartMs = BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS + BATTLE_ANIM.CHARGE_GLOW_MS
+    const lungeStartMs = BATTLE_ANIM.CHARGE_GLOW_MS
     const contactMs = lungeStartMs + BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS + BATTLE_ANIM.LUNGE_PEAK_MS
 
-    expect(findEffect(events, 'pip_spend')).toMatchObject({ atMs: 0, event: { count: 3, variant: 'charge_strike' } })
-    expect(findEffect(events, 'charge_glow')).toMatchObject({ atMs: BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS })
+    expect(findEffect(events, 'charge_glow')).toMatchObject({ atMs: 0 })
     expect(findEvent(events, 'sprite_anticipation')).toMatchObject({
       atMs: lungeStartMs,
       event: { durationMs: BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS, heavy: true },
@@ -158,7 +154,7 @@ describe('battleAnimationPlan', () => {
         targetHpAfter: 20,
       }),
     ])
-    const contactMs = BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
+    const contactMs = 0
       + BATTLE_ANIM.ATTACK_ANTICIPATION_MS
       + BATTLE_ANIM.LUNGE_PEAK_MS
 
@@ -246,7 +242,7 @@ describe('battleAnimationPlan', () => {
         opponentAction: 'defend',
       }),
     ])
-    const contactMs = BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
+    const contactMs = 0
       + BATTLE_ANIM.POWER_STRIKE_ANTICIPATION_MS
       + BATTLE_ANIM.LUNGE_PEAK_MS
 
@@ -287,7 +283,7 @@ describe('battleAnimationPlan', () => {
         targetHpAfter: 40,
       }),
     ])
-    const guardAtMs = BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS
+    const guardAtMs = BATTLE_ANIM.SUPPORT_ANTICIPATION_MS
     const incomingHitMs = BATTLE_ANIM.ENTRY_DELAY_ACTION_MS
       + BATTLE_ANIM.ATTACK_ANTICIPATION_MS
       + BATTLE_ANIM.LUNGE_PEAK_MS
@@ -312,7 +308,7 @@ describe('battleAnimationPlan', () => {
         targetHpAfter: 0,
       }),
     ])
-    const contactMs = BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
+    const contactMs = 0
       + BATTLE_ANIM.ATTACK_ANTICIPATION_MS
       + BATTLE_ANIM.LUNGE_PEAK_MS
     const faintMs = contactMs
@@ -337,7 +333,7 @@ describe('battleAnimationPlan', () => {
         target: 'opponent',
         targetHpAfter: 50,
       })])
-      const contactMs = BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
+      const contactMs = 0
         + BATTLE_ANIM.POWER_STRIKE_ANTICIPATION_MS
         + BATTLE_ANIM.LUNGE_PEAK_MS
       expect(findEffect(events, 'persistent_guard')).toEqual(
@@ -369,7 +365,7 @@ describe('battleAnimationPlan', () => {
       entry({ id: 'focus-2', actor: 'player', action: 'focus' }),
       entry({ id: 'focus-3', actor: 'player', action: 'focus' }),
     ])
-    const contactMs = BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
+    const contactMs = 0
       + BATTLE_ANIM.ATTACK_ANTICIPATION_MS
       + BATTLE_ANIM.LUNGE_PEAK_MS
 

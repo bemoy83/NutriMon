@@ -74,12 +74,10 @@ describe('EffectsLayer', () => {
 
     act(() => {
       ref.current?.showDamageNumber(12, true)
-      ref.current?.showCritBadge()
       ref.current?.showAttackImpact(true)
     })
 
     expect(screen.getByText('12')).toBeInTheDocument()
-    expect(screen.getByText('CRIT!')).toBeInTheDocument()
     expect(screen.getByTestId('battle-attack-impact')).toBeInTheDocument()
     expect(screen.getByTestId('battle-hit-spark')).toBeInTheDocument()
 
@@ -94,7 +92,6 @@ describe('EffectsLayer', () => {
     })
 
     expect(screen.queryByText('12')).not.toBeInTheDocument()
-    expect(screen.queryByText('CRIT!')).not.toBeInTheDocument()
   })
 
   it('renders focused attack as three staggered impacts', async () => {
@@ -185,7 +182,7 @@ describe('EffectsLayer', () => {
     expect(impacts.filter((impact) => impact.getAttribute('data-emphasis') === 'true')).toHaveLength(1)
   })
 
-  it('renders heavy impact and focus spend effects', () => {
+  it('renders heavy impact as emphasis burst', () => {
     vi.useFakeTimers()
     const ref = createRef<EffectsLayerHandle>()
 
@@ -193,19 +190,11 @@ describe('EffectsLayer', () => {
 
     act(() => {
       ref.current?.showHeavyAttackImpact(true)
-      ref.current?.showFocusSpend(4)
     })
 
     expect(screen.getByTestId('battle-attack-impact')).toBeInTheDocument()
     expect(screen.getByTestId('battle-attack-impact')).toHaveAttribute('data-emphasis', 'true')
     expect(screen.getByTestId('battle-hit-spark')).toBeInTheDocument()
-    expect(screen.getByTestId('battle-focus-spend')).toBeInTheDocument()
-
-    act(() => {
-      vi.advanceTimersByTime(BATTLE_ANIM.FOCUS_SPEND_MS)
-    })
-
-    expect(screen.queryByTestId('battle-focus-spend')).not.toBeInTheDocument()
 
     act(() => {
       vi.advanceTimersByTime(BATTLE_ANIM.HIT_IMPACT_MS + BATTLE_ANIM.HIT_STOP_MS)

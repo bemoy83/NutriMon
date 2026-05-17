@@ -12,7 +12,6 @@
  *  FAINT_BLINK_MS  — blink phase before the dissolve on faint
  *  FAINT_MS        — total faint animation (blink + SVG dissolve; blink starts at 0, dissolve at 400 ms)
  *  DAMAGE_NUMBER_MS — float-up duration for damage numbers
- *  CRIT_BADGE_MS   — "CRIT!" badge pop + fade duration
  *  HIT_IMPACT_MS   — hit impact PNG scale + fade duration
  *  FOCUSED_HIT_SPACING_MS — delay between focused attack hit beats
  *  DEFEND_GUARD_MS — blue guard ring duration for defend actions
@@ -54,9 +53,7 @@ export const BATTLE_ANIM = {
 
   /** Floating damage number animation duration (ms). Must match `float-up` @keyframes. */
   DAMAGE_NUMBER_MS: 1000,
-  /** CRIT badge pop animation duration (ms). Must match `crit-pop` @keyframes. */
-  CRIT_BADGE_MS: 900,
-  /** Hit impact PNG scale/rotate animation duration (ms). Must match `hit-impact` @keyframes. */
+/** Hit impact PNG scale/rotate animation duration (ms). Must match `hit-impact` @keyframes. */
   HIT_IMPACT_MS: 350,
   /** Time between focused attack hit starts (ms). Used by both impact sprites and target hit flashes. */
   FOCUSED_HIT_SPACING_MS: 180,
@@ -68,12 +65,8 @@ export const BATTLE_ANIM = {
   GUARD_IMPACT_MS: 360,
   /** Focus charge effect total duration (ms). Covers mote orbit (640ms) + shrink rings + burst out (620+220ms). */
   FOCUS_CHARGE_MS: 860,
-  /** FP spend pips converge before a skill resolves. */
-  FOCUS_SPEND_MS: 520,
   /** Delay before the HUD pip count depletes during player skill activation. */
   SKILL_PIP_DEPLETION_DELAY_MS: 120,
-  /** Short lead-in before player skill animation starts, giving FP spend a distinct cause beat. */
-  SKILL_PIP_SPEND_LEAD_MS: 360,
 
   /**
    * Full-screen flash duration for special actions (ms). Must match `special-flash` @keyframes.
@@ -153,8 +146,6 @@ export interface SkillAnimationEntry {
   heavy?: boolean
   /** Fires charge_glow on the attacker's sprite stage before the lunge. */
   hasChargeGlow?: boolean
-  /** Pip spend animation variant. Defaults to 'focus_spend'. */
-  pipSpendVariant?: 'focus_spend' | 'charge_strike_spend'
   // multi_hit only
   hitCount?: number
   hitSpacingMs?: number
@@ -188,7 +179,6 @@ export const SKILL_ANIMATION_CATALOG: Partial<Record<string, SkillAnimationEntry
     kind: 'single_hit',
     anticipationMs: BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS,
     hasChargeGlow: true,
-    pipSpendVariant: 'charge_strike_spend',
     impact: AMBER_HIT_IMPACT,
     flash: 'rgba(250,204,21,0.28)',
     shockwave: DEFAULT_AMBER_SHOCKWAVE,

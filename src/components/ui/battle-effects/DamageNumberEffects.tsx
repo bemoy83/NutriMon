@@ -4,19 +4,22 @@ export interface FloatingNumber {
   id: number
   value: number
   isCrit: boolean
+  xOffsetPx: number
 }
 
-export interface CritBadge {
-  id: number
+function damageNumberSize(value: number, isCrit: boolean): number {
+  if (isCrit) return value >= 50 ? 38 : value >= 25 ? 34 : 30
+  return value >= 50 ? 28 : value >= 25 ? 25 : 22
 }
 
 export function DamageNumberEffects({
   numbers,
-  crits,
+  side = 'opponent',
 }: {
   numbers: FloatingNumber[]
-  crits: CritBadge[]
+  side?: 'player' | 'opponent'
 }) {
+  const isPlayerSide = side === 'player'
   return (
     <>
       {numbers.map((n) => (
@@ -24,8 +27,8 @@ export function DamageNumberEffects({
           key={n.id}
           style={{
             position: 'absolute',
-            bottom: '100%',
-            left: '50%',
+            top: '25%',
+            left: `calc(50% + ${n.xOffsetPx}px)`,
             transform: 'translateX(-50%)',
             pointerEvents: 'none',
           }}
@@ -33,51 +36,22 @@ export function DamageNumberEffects({
           <div
             style={{
               animation: `${n.isCrit ? 'crit-float-up' : 'float-up'} ${BATTLE_ANIM.DAMAGE_NUMBER_MS}ms ease-out forwards`,
-              fontWeight: 800,
-              fontSize: n.isCrit ? 30 : 20,
+              fontWeight: 900,
+              fontSize: damageNumberSize(n.value, n.isCrit),
               lineHeight: 1,
-              color: n.isCrit ? '#fffbea' : 'var(--app-text-primary)',
+              color: n.isCrit
+                ? '#fbbf24'
+                : (isPlayerSide ? '#f87171' : '#ffffff'),
               textShadow: n.isCrit
-                ? '0 2px 6px rgba(0,0,0,0.58), 0 0 10px rgba(255,255,255,0.75), 0 0 18px rgba(251,191,36,0.74)'
-                : '0 2px 5px rgba(0,0,0,0.4)',
-              WebkitTextStroke: n.isCrit ? '1px rgba(146,64,14,0.52)' : undefined,
+                ? '0 2px 6px rgba(0,0,0,0.6), 0 0 10px rgba(255,255,255,0.55), 0 0 20px rgba(251,191,36,0.85)'
+                : (isPlayerSide
+                    ? '0 2px 5px rgba(0,0,0,0.5), 0 0 10px rgba(239,68,68,0.55)'
+                    : '0 2px 5px rgba(0,0,0,0.45), 0 0 8px rgba(255,255,255,0.2)'),
+              WebkitTextStroke: n.isCrit ? '1px rgba(146,64,14,0.45)' : undefined,
               whiteSpace: 'nowrap',
             }}
           >
             {n.value}
-          </div>
-        </div>
-      ))}
-
-      {crits.map((c) => (
-        <div
-          key={c.id}
-          style={{
-            position: 'absolute',
-            bottom: '100%',
-            left: '50%',
-            transform: 'translate(16px, -30px) rotate(-5deg)',
-            pointerEvents: 'none',
-          }}
-        >
-          <div
-            style={{
-              animation: `crit-pop ${BATTLE_ANIM.CRIT_BADGE_MS}ms ease-out forwards`,
-              fontWeight: 800,
-              fontSize: 11,
-              lineHeight: 1,
-              letterSpacing: 0,
-              color: '#78350f',
-              background: 'linear-gradient(180deg, #fef3c7 0%, #fbbf24 100%)',
-              border: '1px solid rgba(255,255,255,0.85)',
-              borderRadius: 4,
-              padding: '3px 5px 2px',
-              boxShadow: '0 2px 5px rgba(0,0,0,0.34), 0 0 10px rgba(251,191,36,0.62)',
-              textShadow: '0 1px 0 rgba(255,255,255,0.45)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            CRIT!
           </div>
         </div>
       ))}

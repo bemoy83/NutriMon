@@ -204,10 +204,6 @@ export function useBattleLogReveal(opts: {
               fx(event.target)?.showFocusCharge()
               targetSprite(event.target).current?.triggerFocusGlow()
               break
-            case 'pip_spend':
-              if (event.variant === 'focus') playerEffectsRef.current?.showFocusSpend(event.count)
-              else playerEffectsRef.current?.showChargeStrikeSpend(event.count)
-              break
             case 'persistent_guard':
               playerEffectsRef.current?.showPersistentGuard()
               break
@@ -227,13 +223,11 @@ export function useBattleLogReveal(opts: {
             case 'basic_impact':
               fx(event.target)?.showAttackImpact(event.crit)
               fx(event.target)?.showDamageNumber(event.damage, event.crit)
-              if (event.crit) fx(event.target)?.showCritBadge()
               break
             case 'heavy_impact':
               fx(event.target)?.showHeavyAttackImpact(event.crit, event.tint)
               fx(event.target)?.showGroundShockwave(Boolean(event.groundShockwaveHeavy), event.shockwaveColor)
               fx(event.target)?.showDamageNumber(event.damage, event.crit)
-              if (event.crit) fx(event.target)?.showCritBadge()
               break
             case 'focused_impact': {
               fx(event.target)?.showFocusedAttackImpact(
@@ -246,7 +240,6 @@ export function useBattleLogReveal(opts: {
               )
               const showDamage = () => {
                 fx(event.target)?.showDamageNumber(event.damage, event.crit)
-                if (event.crit) fx(event.target)?.showCritBadge()
               }
               if (event.damageDelayMs > 0) {
                 const t = setTimeout(showDamage, event.damageDelayMs)

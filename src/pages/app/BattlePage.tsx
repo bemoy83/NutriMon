@@ -528,6 +528,7 @@ export default function BattlePage() {
                   <EffectsLayer
                     ref={opponentEffectsRef}
                     displaySize={opponentDisplaySize}
+                    side="opponent"
                   />
                 </SpriteStage>
               </div>
@@ -585,6 +586,7 @@ export default function BattlePage() {
                 <EffectsLayer
                   ref={playerEffectsRef}
                   displaySize={playerDisplaySize}
+                  side="player"
                 />
               </SpriteStage>
             </div>

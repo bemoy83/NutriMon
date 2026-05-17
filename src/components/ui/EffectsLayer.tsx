@@ -2,17 +2,15 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type Disp
 import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
 import type { SkillShockwaveVisual, SkillStreakVisual } from '@/lib/battleAnimationConfig'
 import type { ImpactVariant } from './ImpactGraphic'
-import { DamageNumberEffects, type CritBadge, type FloatingNumber } from './battle-effects/DamageNumberEffects'
+import { DamageNumberEffects, type FloatingNumber } from './battle-effects/DamageNumberEffects'
 import { FocusChargeEffects, type FocusEffect, type FocusMote } from './battle-effects/FocusChargeEffects'
 import { GuardEffects, type GuardEffect, type GuardImpactEffect, type PersistentGuardState } from './battle-effects/GuardEffects'
 import { ImpactEffects, type HitImpact, type ImpactColor } from './battle-effects/ImpactEffects'
-import { PipSpendEffects, type ChargeSpendEffect, type FocusSpendEffect } from './battle-effects/PipSpendEffects'
 import { RegenEffects, type RegenMote, type RegenOrbitEffect } from './battle-effects/RegenEffects'
 import { ShockwaveEffects, type OverdriveStreak, type ShockwaveEffect } from './battle-effects/ShockwaveEffects'
 
 export interface EffectsLayerHandle {
   showDamageNumber(value: number, isCrit: boolean): void
-  showCritBadge(): void
   showAttackImpact(isCrit?: boolean, impactColor?: ImpactColor): void
   showHeavyAttackImpact(isCrit?: boolean, impactColor?: ImpactColor): void
   showFocusedAttackImpact(
@@ -27,13 +25,10 @@ export interface EffectsLayerHandle {
   showDefendGuard(durationMs?: number): void
   showGuardImpact(intensity?: 'normal' | 'heavy'): void
   showFocusCharge(): void
-  showFocusSpend(pipCount: number): void
   /** Overdrive: fuchsia horizontal streak per hit beat. */
   showOverdriveStreak(color?: SkillStreakVisual): void
   /** Regen V2: green particles orbit inward before the +HP number. */
   showRegenOrbitEffect(value: number): void
-  /** Charge Strike V2: pips converge into sprite center. */
-  showChargeStrikeSpend(pipCount: number): void
   /** Counter Stance V2: looping shield ring that persists until counter fires. */
   showPersistentGuard(): void
   hidePersistentGuard(): void
@@ -42,6 +37,8 @@ export interface EffectsLayerHandle {
 interface EffectsLayerProps {
   /** Sprite stage box size (same as SpriteStage `displaySize`) — scales hit impact and keeps floated UI centred. */
   displaySize?: number
+  /** Which combatant this layer belongs to — drives damage number color (red = player hurt, white = opponent hurt). */
+  side?: 'player' | 'opponent'
 }
 
 let _id = 0
@@ -67,19 +64,16 @@ function makeHitSparkItems(count: number, heavy = false) {
 }
 
 const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
-  function EffectsLayer({ displaySize }, ref) {
+  function EffectsLayer({ displaySize, side = 'opponent' }, ref) {
     const impactPx = impactGraphicSize(displaySize)
     const [numbers, setNumbers] = useState<FloatingNumber[]>([])
-    const [crits, setCrits] = useState<CritBadge[]>([])
     const [impacts, setImpacts] = useState<HitImpact[]>([])
     const [guards, setGuards] = useState<GuardEffect[]>([])
     const [guardImpacts, setGuardImpacts] = useState<GuardImpactEffect[]>([])
     const [focuses, setFocuses] = useState<FocusEffect[]>([])
-    const [focusSpends, setFocusSpends] = useState<FocusSpendEffect[]>([])
     const [shockwaves, setShockwaves] = useState<ShockwaveEffect[]>([])
     const [streaks, setStreaks] = useState<OverdriveStreak[]>([])
     const [regenOrbits, setRegenOrbits] = useState<RegenOrbitEffect[]>([])
-    const [chargeSpends, setChargeSpends] = useState<ChargeSpendEffect[]>([])
     const [persistentGuardState, setPersistentGuardState] = useState<PersistentGuardState>('hidden')
     const [persistentGuardKey, setPersistentGuardKey] = useState(0)
     const persistentGuardDismissRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -125,15 +119,13 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
     useImperativeHandle(ref, () => ({
       showDamageNumber(value, isCrit) {
         const id = nextId()
-        setNumbers((prev) => [...prev, { id, value, isCrit }])
+        const spread = isCrit ? 16 : 28
+        const xOffsetPx = Math.round((Math.random() - 0.5) * spread * 2)
+        setNumbers((prev) => [...prev, { id, value, isCrit, xOffsetPx }])
         const t = setTimeout(() => {
           setNumbers((prev) => prev.filter((n) => n.id !== id))
         }, BATTLE_ANIM.DAMAGE_NUMBER_MS)
         timersRef.current.push(t)
-      },
-      showCritBadge() {
-        const id = nextId()
-        addTimedEffect(setCrits, { id }, BATTLE_ANIM.CRIT_BADGE_MS)
       },
       showAttackImpact(isCrit = false, impactColor?) {
         const id = nextId()
@@ -231,10 +223,6 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         })
         addTimedEffect(setFocuses, { id, motes }, BATTLE_ANIM.FOCUS_CHARGE_MS)
       },
-      showFocusSpend(pipCount) {
-        const id = nextId()
-        addTimedEffect(setFocusSpends, { id, pipCount: Math.max(1, Math.min(pipCount, 5)) }, BATTLE_ANIM.FOCUS_SPEND_MS)
-      },
       showGroundShockwave(wide = false, color?) {
         const id = nextId()
         const effect: ShockwaveEffect = color ? { id, wide, color } : { id, wide }
@@ -255,10 +243,6 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
           sizePx: Math.random() < 0.3 ? 6 : 5,
         }))
         addTimedEffect(setRegenOrbits, { id, value, motes }, BATTLE_ANIM.HEAL_EFFECT_MS)
-      },
-      showChargeStrikeSpend(pipCount) {
-        const id = nextId()
-        addTimedEffect(setChargeSpends, { id, pipCount: Math.max(1, Math.min(pipCount, 5)) }, BATTLE_ANIM.FOCUS_SPEND_MS)
       },
       showPersistentGuard() {
         if (persistentGuardDismissRef.current) clearTimeout(persistentGuardDismissRef.current)
@@ -288,7 +272,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         }}
         aria-hidden="true"
       >
-        <DamageNumberEffects numbers={numbers} crits={crits} />
+        <DamageNumberEffects numbers={numbers} side={side} />
         <ImpactEffects impacts={impacts} impactPx={impactPx} />
         <GuardEffects
           guards={guards}
@@ -297,7 +281,6 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
           persistentGuardKey={persistentGuardKey}
           displaySize={displaySize}
         />
-        <PipSpendEffects focusSpends={focusSpends} chargeSpends={chargeSpends} displaySize={displaySize} />
         <FocusChargeEffects focuses={focuses} displaySize={displaySize} />
         <ShockwaveEffects shockwaves={shockwaves} streaks={streaks} />
         <RegenEffects regenOrbits={regenOrbits} displaySize={displaySize} />
