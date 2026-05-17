@@ -1,7 +1,6 @@
 import {
   BATTLE_ANIM,
-  SKILL_ANIMATION_RECIPES,
-  SKILL_VISUAL_IDENTITY,
+  SKILL_ANIMATION_CATALOG,
   type ImpactVariant,
   type SkillImpactVisual,
   type SkillShockwaveVisual,
@@ -172,7 +171,7 @@ function addPlayerSkillPipSpend(
     type: 'effect',
     kind: 'pip_spend',
     count: pipSpendCount,
-    variant: SKILL_ANIMATION_RECIPES[skillId]?.pipSpendVariant === 'charge_strike_spend' ? 'charge_strike' : 'focus',
+    variant: SKILL_ANIMATION_CATALOG[skillId]?.pipSpendVariant === 'charge_strike_spend' ? 'charge_strike' : 'focus',
   })
   add(events, entryStartMs + BATTLE_ANIM.SKILL_PIP_DEPLETION_DELAY_MS, {
     type: 'resolve_log_entry',
@@ -319,7 +318,7 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
     }
 
     if (entry.phase === 'action' && entry.action === 'skill') {
-      const recipe = SKILL_ANIMATION_RECIPES[entry.skillId ?? '']
+      const recipe = SKILL_ANIMATION_CATALOG[entry.skillId ?? '']
       if (recipe?.kind === 'support_guard' || recipe?.kind === 'support_heal') {
         const skillLeadMs = addPlayerSkillPipSpend(events, opts, entry, entryIndex, entryStartMs)
         const effectAtMs = entryStartMs + skillLeadMs + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS
@@ -341,7 +340,7 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
     }
 
     if (entry.phase === 'action' && entry.action === 'skill' && entry.damage > 0) {
-      const recipe = SKILL_ANIMATION_RECIPES[entry.skillId ?? '']
+      const recipe = SKILL_ANIMATION_CATALOG[entry.skillId ?? '']
       if (!recipe) return
       if (!isBattleTarget(entry.target)) return
 
@@ -362,7 +361,7 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
         + (recipe.hasChargeGlow ? BATTLE_ANIM.CHARGE_GLOW_MS : 0)
       const contactDelayMs = anticipationMs + BATTLE_ANIM.LUNGE_PEAK_MS
       const contactAtMs = lungeStartMs + contactDelayMs
-      const skillVisual = entry.skillId ? SKILL_VISUAL_IDENTITY[entry.skillId] : undefined
+      const skillVisual = entry.skillId ? SKILL_ANIMATION_CATALOG[entry.skillId] : undefined
       const skillFlash = entry.actor === 'player' ? skillVisual?.flash : undefined
       if (skillFlash) {
         add(events, lungeStartMs, { type: 'effect', kind: 'flash', color: skillFlash })
@@ -464,7 +463,7 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
         kind: 'counter_impact',
         target: 'opponent',
         damage: entry.damage,
-        tint: SKILL_VISUAL_IDENTITY.counter_stance.impact,
+        tint: SKILL_ANIMATION_CATALOG['counter_stance']!.impact,
       })
       add(events, entryStartMs, { type: 'arena_shake', heavy: false })
       add(events, entryStartMs, { type: 'arena_flash' })

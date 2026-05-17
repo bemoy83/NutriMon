@@ -858,7 +858,7 @@ select {
 /* ── Skill Identity V2 effects ───────────────────────────────────────────── */
 
 /* Overdrive afterimage streak — horizontal speed-blur flash per hit beat.
-   Duration: ~280ms. Color comes from SKILL_VISUAL_IDENTITY. */
+   Duration: ~280ms. Color comes from SKILL_ANIMATION_CATALOG. */
 @keyframes overdrive-streak {
   0%   { transform: translateX(-50%) scaleX(0.35) scaleY(1);   opacity: 0; }
   14%  { transform: translateX(-50%) scaleX(1.3)  scaleY(0.65); opacity: 0.85; }

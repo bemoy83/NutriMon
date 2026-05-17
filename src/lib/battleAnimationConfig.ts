@@ -117,14 +117,6 @@ export interface SkillStreakVisual {
   background: string
 }
 
-export interface SkillVisualIdentity {
-  impact: SkillImpactVisual
-  /** Low-alpha full-screen wash for player skill starts. */
-  flash: string
-  shockwave?: SkillShockwaveVisual
-  streak?: SkillStreakVisual
-}
-
 const DEFAULT_AMBER_SHOCKWAVE: SkillShockwaveVisual = {
   stroke: 'rgba(250,204,21,0.92)',
   glow: 'rgba(250,204,21,0.72)',
@@ -145,7 +137,8 @@ export type ImpactVariant = 'slash' | 'arc' | 'burst' | 'cut'
 
 export type SkillAnimationKind = 'single_hit' | 'multi_hit' | 'support_guard' | 'support_heal'
 
-export interface SkillAnimationRecipe {
+export interface SkillAnimationEntry {
+  // Behavioral
   kind: SkillAnimationKind
   /** Pre-lunge wind-up duration. Defaults to BATTLE_ANIM.ATTACK_ANTICIPATION_MS. */
   anticipationMs?: number
@@ -165,71 +158,63 @@ export interface SkillAnimationRecipe {
   streakRequiresPipCheck?: boolean
   /** Extra delay after SUPPORT_ANTICIPATION_MS before the entry resolves. Defaults to 0. */
   resolveDelayMs?: number
+  // Visual — 'counter_stance' impact also colors the counter payoff hit
+  impact: SkillImpactVisual
+  /** Low-alpha full-screen wash for player skill starts. */
+  flash: string
+  shockwave?: SkillShockwaveVisual
+  streak?: SkillStreakVisual
 }
 
-export const SKILL_ANIMATION_RECIPES: Partial<Record<string, SkillAnimationRecipe>> = {
-  power_strike:   { kind: 'single_hit',  anticipationMs: BATTLE_ANIM.POWER_STRIKE_ANTICIPATION_MS, heavy: true },
-  charge_strike:  { kind: 'single_hit',  anticipationMs: BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS, hasChargeGlow: true, pipSpendVariant: 'charge_strike_spend' },
-  triple_hit:     { kind: 'multi_hit',   hitCount: 3, hitSpacingMs: BATTLE_ANIM.FOCUSED_HIT_SPACING_MS,   impactVariant: 'cut' },
-  overdrive:      { kind: 'multi_hit',   hitCount: 5, hitSpacingMs: BATTLE_ANIM.OVERDRIVE_HIT_SPACING_MS,  impactVariant: 'arc', hasStreaks: true, streakRequiresPipCheck: true },
-  counter_stance: { kind: 'support_guard' },
-  regen:          { kind: 'support_heal', resolveDelayMs: BATTLE_ANIM.REGEN_NUMBER_DELAY_MS },
-}
-
-/**
- * Per-skill visual identity for battle VFX.
- * 'counter_stance' also colors the counter payoff hit.
- */
-export const SKILL_VISUAL_IDENTITY: Record<string, SkillVisualIdentity> = {
-  triple_hit: {
-    impact: BRIGHT_AMBER_HIT_IMPACT,
-    flash: 'rgba(251,146,60,0.22)',
-    shockwave: {
-      stroke: 'rgba(253,224,71,0.92)',
-      glow: 'rgba(251,191,36,0.68)',
-      deepGlow: 'rgba(14,165,233,0.38)',
-    },
-  },
-  overdrive: {
-    impact: BRIGHT_AMBER_HIT_IMPACT,
-    flash: 'rgba(217,70,239,0.30)',
-    shockwave: {
-      stroke: 'rgba(253,224,71,0.92)',
-      glow: 'rgba(251,191,36,0.68)',
-      deepGlow: 'rgba(162,28,175,0.44)',
-    },
-    streak: {
-      background: 'linear-gradient(90deg, transparent 0%, rgba(217,70,239,0.85) 22%, rgba(255,255,255,0.72) 50%, rgba(217,70,239,0.85) 78%, transparent 100%)',
-    },
-  },
+export const SKILL_ANIMATION_CATALOG: Partial<Record<string, SkillAnimationEntry>> = {
   power_strike: {
+    kind: 'single_hit',
+    anticipationMs: BATTLE_ANIM.POWER_STRIKE_ANTICIPATION_MS,
+    heavy: true,
     impact: AMBER_HIT_IMPACT,
     flash: 'rgba(139,92,246,0.28)',
-    shockwave: {
-      stroke: 'rgba(251,191,36,0.95)',
-      glow: 'rgba(251,191,36,0.74)',
-      deepGlow: 'rgba(234,88,12,0.48)',
-    },
+    shockwave: { stroke: 'rgba(251,191,36,0.95)', glow: 'rgba(251,191,36,0.74)', deepGlow: 'rgba(234,88,12,0.48)' },
   },
   charge_strike: {
+    kind: 'single_hit',
+    anticipationMs: BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS,
+    hasChargeGlow: true,
+    pipSpendVariant: 'charge_strike_spend',
     impact: AMBER_HIT_IMPACT,
     flash: 'rgba(250,204,21,0.28)',
     shockwave: DEFAULT_AMBER_SHOCKWAVE,
   },
+  triple_hit: {
+    kind: 'multi_hit',
+    hitCount: 3,
+    hitSpacingMs: BATTLE_ANIM.FOCUSED_HIT_SPACING_MS,
+    impactVariant: 'cut',
+    impact: BRIGHT_AMBER_HIT_IMPACT,
+    flash: 'rgba(251,146,60,0.22)',
+    shockwave: { stroke: 'rgba(253,224,71,0.92)', glow: 'rgba(251,191,36,0.68)', deepGlow: 'rgba(14,165,233,0.38)' },
+  },
+  overdrive: {
+    kind: 'multi_hit',
+    hitCount: 5,
+    hitSpacingMs: BATTLE_ANIM.OVERDRIVE_HIT_SPACING_MS,
+    impactVariant: 'arc',
+    hasStreaks: true,
+    streakRequiresPipCheck: true,
+    impact: BRIGHT_AMBER_HIT_IMPACT,
+    flash: 'rgba(217,70,239,0.30)',
+    shockwave: { stroke: 'rgba(253,224,71,0.92)', glow: 'rgba(251,191,36,0.68)', deepGlow: 'rgba(162,28,175,0.44)' },
+    streak: { background: 'linear-gradient(90deg, transparent 0%, rgba(217,70,239,0.85) 22%, rgba(255,255,255,0.72) 50%, rgba(217,70,239,0.85) 78%, transparent 100%)' },
+  },
   counter_stance: {
+    kind: 'support_guard',
     impact: BRIGHT_AMBER_HIT_IMPACT,
     flash: 'rgba(14,165,233,0.22)',
-    shockwave: {
-      stroke: 'rgba(253,224,71,0.90)',
-      glow: 'rgba(251,191,36,0.62)',
-      deepGlow: 'rgba(2,132,199,0.38)',
-    },
+    shockwave: { stroke: 'rgba(253,224,71,0.90)', glow: 'rgba(251,191,36,0.62)', deepGlow: 'rgba(2,132,199,0.38)' },
   },
   regen: {
-    impact: {
-      stroke: '#4ade80',
-      glowFilter: 'drop-shadow(0 0 7px rgba(74,222,128,0.9)) drop-shadow(0 0 12px rgba(34,197,94,0.58))',
-    },
+    kind: 'support_heal',
+    resolveDelayMs: BATTLE_ANIM.REGEN_NUMBER_DELAY_MS,
+    impact: { stroke: '#4ade80', glowFilter: 'drop-shadow(0 0 7px rgba(74,222,128,0.9)) drop-shadow(0 0 12px rgba(34,197,94,0.58))' },
     flash: 'rgba(34,197,94,0.22)',
   },
 }
