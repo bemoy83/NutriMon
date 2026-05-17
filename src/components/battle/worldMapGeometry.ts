@@ -65,9 +65,9 @@ const BIOME_NODE_POSITIONS: Partial<Record<number, ReadonlyArray<{ x: number; y:
   ],
   5: [
     { x: 0.55, y: 0.19 },  // posInBiome 0 — Pyrobeetle
-    { x: 0.80, y: 0.17 },  // posInBiome 1 — Magmacrab
-    { x: 0.86, y: 0.12 },  // posInBiome 2 — Ashraptor
-    { x: 0.50, y: 0.09 },  // posInBiome 3 — Cindershell
+    { x: 0.85, y: 0.158 },  // posInBiome 1 — Magmacrab
+    { x: 0.78, y: 0.11 },  // posInBiome 2 — Ashraptor
+    { x: 0.45, y: 0.08 },  // posInBiome 3 — Cindershell
     { x: 0.22, y: 0.04 },  // posInBiome 4 — Solgryth (boss)
   ],
 }
