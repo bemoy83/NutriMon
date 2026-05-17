@@ -449,6 +449,21 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
           finalHitDelayMs + BATTLE_ANIM.HIT_IMPACT_MS,
         )
       }
+      for (const primitive of recipe.extraEffects ?? []) {
+        switch (primitive) {
+          case 'overdrive_streak':
+            add(events, contactAtMs, {
+              type: 'effect',
+              kind: 'overdrive_streak',
+              target: entry.target,
+              streakColor: recipe.streak,
+            })
+            break
+          case 'persistent_guard':
+            add(events, contactAtMs, { type: 'effect', kind: 'persistent_guard' })
+            break
+        }
+      }
     }
 
     const playerAlreadyDead = opts.newEntries

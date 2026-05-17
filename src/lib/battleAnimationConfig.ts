@@ -137,6 +137,13 @@ export type ImpactVariant = 'slash' | 'arc' | 'burst' | 'cut'
 
 export type SkillAnimationKind = 'single_hit' | 'multi_hit' | 'support_guard' | 'support_heal'
 
+/**
+ * Primitive effect identifiers that can be layered onto a skill at contact time via `extraEffects`.
+ * Each value must correspond to a typed BattleAnimationEvent kind with a dispatch case in the conductor.
+ * 'ground_shockwave' is deferred — currently bundled inside the heavy_impact event.
+ */
+export type EffectPrimitive = 'overdrive_streak' | 'persistent_guard' | string
+
 export interface SkillAnimationEntry {
   // Behavioral
   kind: SkillAnimationKind
@@ -158,6 +165,8 @@ export interface SkillAnimationEntry {
   streakRequiresPipCheck?: boolean
   /** Extra delay after SUPPORT_ANTICIPATION_MS before the entry resolves. Defaults to 0. */
   resolveDelayMs?: number
+  /** Additional effect primitives fired once at contact time, after the base impact event. */
+  extraEffects?: EffectPrimitive[]
   // Visual — 'counter_stance' impact also colors the counter payoff hit
   impact: SkillImpactVisual
   /** Low-alpha full-screen wash for player skill starts. */

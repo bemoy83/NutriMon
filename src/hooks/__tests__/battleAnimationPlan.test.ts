@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
+import { BATTLE_ANIM, SKILL_ANIMATION_CATALOG } from '@/lib/battleAnimationConfig'
 import type { BattleLogEntry } from '@/types/domain'
 import {
   planBattleAnimationEvents,
@@ -324,6 +324,31 @@ describe('battleAnimationPlan', () => {
       atMs: faintMs,
       event: { type: 'sprite_faint', target: 'opponent' },
     })
+  })
+
+  it('fires extraEffects primitives at contact time after the base impact', () => {
+    const catalogEntry = SKILL_ANIMATION_CATALOG['power_strike']!
+    catalogEntry.extraEffects = ['persistent_guard', 'overdrive_streak']
+    try {
+      const events = plan([entry({
+        action: 'skill',
+        skillId: 'power_strike',
+        damage: 50,
+        target: 'opponent',
+        targetHpAfter: 50,
+      })])
+      const contactMs = BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS
+        + BATTLE_ANIM.POWER_STRIKE_ANTICIPATION_MS
+        + BATTLE_ANIM.LUNGE_PEAK_MS
+      expect(findEffect(events, 'persistent_guard')).toEqual(
+        expect.objectContaining({ atMs: contactMs })
+      )
+      expect(findEffect(events, 'overdrive_streak')).toEqual(
+        expect.objectContaining({ atMs: contactMs })
+      )
+    } finally {
+      delete catalogEntry.extraEffects
+    }
   })
 
   it('only emits overdrive streaks when the player had enough pips to activate overdrive', () => {
