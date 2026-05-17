@@ -37,38 +37,38 @@ const BIOME_NODE_POSITIONS: Partial<Record<number, ReadonlyArray<{ x: number; y:
   // Example — uncomment and fill to override a biome:
   1: [
     { x: 0.50, y: 0.94 },  // posInBiome 0 — Bramblin
-    { x: 0.25, y: 0.90 },  // posInBiome 1 — Mushbob
-    { x: 0.50, y: 0.86 },  // posInBiome 2 — Mossboar
-    { x: 0.80, y: 0.82 },  // posInBiome 3 — Thornfang
-    { x: 0.58, y: 0.78 },  // posInBiome 4 — Elderhorn (boss)
+    { x: 0.38, y: 0.90 },  // posInBiome 1 — Mushbob
+    { x: 0.54, y: 0.85 },  // posInBiome 2 — Mossboar
+    { x: 0.73, y: 0.81 },  // posInBiome 3 — Thornfang
+    { x: 0.54, y: 0.76 },  // posInBiome 4 — Elderhorn (boss)
   ],
   2: [
-    { x: 0.83, y: 0.73 },  // posInBiome 0 — Boglet
-    { x: 0.68, y: 0.675 },  // posInBiome 1 — Mudmaul
-    { x: 0.35, y: 0.67 },  // posInBiome 2 — Reedstalker
-    { x: 0.60, y: 0.62 },  // posInBiome 3 — Mirewidow
-    { x: 0.72, y: 0.57 },  // posInBiome 4 — Leviamire (boss)
+    { x: 0.60, y: 0.68 },  // posInBiome 0 — Boglet
+    { x: 0.30, y: 0.66 },  // posInBiome 1 — Mudmaul
+    { x: 0.10, y: 0.60 },  // posInBiome 2 — Reedstalker
+    { x: 0.40, y: 0.55 },  // posInBiome 3 — Mirewidow
+    { x: 0.60, y: 0.60 },  // posInBiome 4 — Leviamire (boss)
   ],
   3: [
-    { x: 0.74, y: 0.52 },  // posInBiome 0 — Pebblit
+    { x: 0.64, y: 0.54 },  // posInBiome 0 — Pebblit
     { x: 0.42, y: 0.51 },  // posInBiome 1 — Screechmite
-    { x: 0.18, y: 0.48 },  // posInBiome 2 — Flintor
-    { x: 0.24, y: 0.44 },  // posInBiome 3 — Shockmantis
-    { x: 0.50, y: 0.41 },  // posInBiome 4 — Thunderox (boss)
+    { x: 0.30, y: 0.46 },  // posInBiome 2 — Flintor
+    { x: 0.50, y: 0.43 },  // posInBiome 3 — Shockmantis
+    { x: 0.50, y: 0.38 },  // posInBiome 4 — Thunderox (boss)
   ],
   4: [
-    { x: 0.55, y: 0.36 },  // posInBiome 0 — Frostscarab
-    { x: 0.46, y: 0.32 },  // posInBiome 1 — Glaciowyrm
-    { x: 0.80, y: 0.30 },  // posInBiome 2 — Glaciermaw
-    { x: 0.80, y: 0.25 },  // posInBiome 3 — Frostwraith
-    { x: 0.58, y: 0.23 },  // posInBiome 4 — Tuskraal (boss)
+    { x: 0.50, y: 0.34 },  // posInBiome 0 — Frostscarab
+    { x: 0.60, y: 0.31 },  // posInBiome 1 — Glaciowyrm
+    { x: 0.36, y: 0.305 },  // posInBiome 2 — Glaciermaw
+    { x: 0.18, y: 0.27 },  // posInBiome 3 — Frostwraith
+    { x: 0.28, y: 0.22 },  // posInBiome 4 — Tuskraal (boss)
   ],
   5: [
-    { x: 0.55, y: 0.19 },  // posInBiome 0 — Pyrobeetle
-    { x: 0.85, y: 0.158 },  // posInBiome 1 — Magmacrab
-    { x: 0.78, y: 0.11 },  // posInBiome 2 — Ashraptor
-    { x: 0.45, y: 0.08 },  // posInBiome 3 — Cindershell
-    { x: 0.22, y: 0.04 },  // posInBiome 4 — Solgryth (boss)
+    { x: 0.36, y: 0.18 },  // posInBiome 0 — Pyrobeetle
+    { x: 0.60, y: 0.18 },  // posInBiome 1 — Magmacrab
+    { x: 0.72, y: 0.12 },  // posInBiome 2 — Ashraptor
+    { x: 0.50, y: 0.10 },  // posInBiome 3 — Cindershell
+    { x: 0.33, y: 0.025 },  // posInBiome 4 — Solgryth (boss)
   ],
 }
 
