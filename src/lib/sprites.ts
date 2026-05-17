@@ -329,14 +329,22 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   },
 
   // 024 Cindershell — medium — basalt titan (dome on column legs)
-  // 'cindershell': {
-  //   battle: { url: s('/sprites/opponents/cindershell.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // },
+  'cindershell': {
+    battle: { url: s('/sprites/opponents/cindershell.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: -4,
+    footOffsetY: 32,
+    worldMap: { url: s('/sprites/opponents_world/cindershell.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/cindershell.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
   // 025 Solgryth — large (BOSS) — solar apex predator (radial wing burst)
-  // 'solgryth': {
-  //   battle: { url: s('/sprites/opponents/solgryth.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // },
+  'solgryth': {
+    battle: { url: s('/sprites/opponents/solgryth.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: -4,
+    footOffsetY: 16,
+    worldMap: { url: s('/sprites/opponents_world/solgryth.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/solgryth.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
 }
 

@@ -635,7 +635,7 @@ export default function BattlePage() {
         open={skillModalOpen}
         focusPips={focusPips}
         pipCap={pipCap}
-        playerLevel={session.snapshot.level}
+        playerLevel={session.companion.level}
         onPick={handleSkillPick}
         onClose={() => setSkillModalOpen(false)}
       />
