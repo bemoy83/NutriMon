@@ -20,9 +20,9 @@ function getWorldMapLayout(nodeCount: number): WorldMapLayout {
   const viewportWidth = visualViewport?.width ?? window.innerWidth
   const viewportHeight = visualViewport?.height ?? window.innerHeight
 
-  const width = Math.round(Math.min(viewportWidth, WORLD_MAP_MAX_WIDTH))
+  const width = WORLD_MAP_MAX_WIDTH
   const nodeScale = Number(clamp(
-    width / WORLD_MAP_WIDTH_SCALE_BASE,
+    viewportWidth / WORLD_MAP_WIDTH_SCALE_BASE,
     WORLD_MAP_MIN_NODE_SCALE,
     WORLD_MAP_MAX_NODE_SCALE,
   ).toFixed(3))

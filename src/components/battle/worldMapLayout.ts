@@ -23,7 +23,7 @@ export const DEFAULT_WORLD_MAP_LAYOUT: WorldMapLayout = {
   panelHeight: MAP_CANVAS_H,
 }
 
-export const WORLD_MAP_MAX_WIDTH = 480
+export const WORLD_MAP_MAX_WIDTH = 600
 export const WORLD_MAP_BOTTOM_RESERVED_PX = 88
 export const WORLD_MAP_MIN_HEIGHT = 320
 export const WORLD_MAP_MAX_HEIGHT = 760
