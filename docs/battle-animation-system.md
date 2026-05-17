@@ -1,0 +1,283 @@
+# Battle Animation System
+
+> **Scope:** Frontend animation pipeline only. For game logic (damage formula, enemy AI, skill pip costs) see [`battle-system.md`](battle-system.md) and [`src/lib/battleSkills.ts`](../src/lib/battleSkills.ts).
+
+---
+
+## Architecture — Five Layers
+
+```
+BattleLogEntry[]  (Supabase RPC — immutable game facts, no animation knowledge)
+        ↓
+battleAnimationPlan.ts     conductor — converts log entries into a timed event list
+        ↓
+SKILL_ANIMATION_CATALOG    recipes — per-skill behavior + visuals + extra effects
+        ↓
+useBattleLogReveal.ts      executor — typed switch dispatches events to effect handles
+        ↓
+EffectsLayer.tsx + battle-effects/*   primitives — reusable visual building blocks
+```
+
+**The pipeline is unidirectional.** Game facts flow down; no layer talks back up. The conductor reads the catalog; the executor reads nothing but the event it receives.
+
+---
+
+## Files at a Glance
+
+| File | Role |
+|------|------|
+| [`src/lib/battleAnimationConfig.ts`](../src/lib/battleAnimationConfig.ts) | Single source of truth: `BATTLE_ANIM` timing constants, `SKILL_ANIMATION_CATALOG`, all visual types |
+| [`src/hooks/battleAnimationPlan.ts`](../src/hooks/battleAnimationPlan.ts) | Conductor — produces `ScheduledBattleAnimationEvent[]` from log entries; zero per-skill branches |
+| [`src/hooks/useBattleLogReveal.ts`](../src/hooks/useBattleLogReveal.ts) | Executor — `setTimeout` fan-out + typed `switch` on `event.kind`; no skill knowledge |
+| [`src/components/ui/EffectsLayer.tsx`](../src/components/ui/EffectsLayer.tsx) | Imperative handle exposed via `useImperativeHandle`; ~16 methods; owns all effect state |
+| [`src/components/ui/battle-effects/`](../src/components/ui/battle-effects/) | Individual effect components (DamageNumber, Impact, Shockwave, Guard, Regen, PipSpend, FocusCharge) |
+| [`src/lib/battleSkills.ts`](../src/lib/battleSkills.ts) | Pip costs, unlock levels — game data only, no animation config |
+| [`src/index.css`](../src/index.css) | CSS `@keyframes` — durations **must** stay in sync with `BATTLE_ANIM` constants |
+
+---
+
+## Adding a New Skill — The Only File You Need
+
+**If a skill exists in `battleSkills.ts` and deals damage or provides a support buff, add one entry to `SKILL_ANIMATION_CATALOG` in [`battleAnimationConfig.ts`](../src/lib/battleAnimationConfig.ts). No other files need to change.**
+
+```ts
+// src/lib/battleAnimationConfig.ts
+export const SKILL_ANIMATION_CATALOG: Partial<Record<string, SkillAnimationEntry>> = {
+
+  // Example: a new heavy single-hit damage skill
+  magma_surge: {
+    // --- Behavioral ---
+    kind: 'single_hit',
+    anticipationMs: BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS, // longer wind-up
+    heavy: true,          // adds ground shockwave + heavy arena shake
+    // --- Visual ---
+    impact: {
+      stroke: '#f97316',
+      glowFilter: 'drop-shadow(0 0 8px rgba(249,115,22,0.95)) drop-shadow(0 0 15px rgba(234,88,12,0.65))',
+    },
+    flash: 'rgba(249,115,22,0.28)', // full-screen wash at lunge start (player only)
+    shockwave: {
+      stroke: 'rgba(249,115,22,0.92)',
+      glow:   'rgba(249,115,22,0.72)',
+      deepGlow: 'rgba(194,65,12,0.46)',
+    },
+  },
+
+  // Example: a new multi-hit skill
+  flurry: {
+    kind: 'multi_hit',
+    hitCount: 4,
+    hitSpacingMs: BATTLE_ANIM.FOCUSED_HIT_SPACING_MS,
+    impactVariant: 'arc',   // 'slash' | 'arc' | 'burst' | 'cut'
+    impact: BRIGHT_AMBER_HIT_IMPACT,  // use a shared constant or inline
+    flash: 'rgba(251,191,36,0.22)',
+  },
+
+  // Example: a new support-buff skill
+  iron_wall: {
+    kind: 'support_guard',  // raises persistent guard ring on player
+    impact: BRIGHT_AMBER_HIT_IMPACT,
+    flash: 'rgba(14,165,233,0.22)',
+  },
+
+}
+```
+
+### `kind` determines the conductor path
+
+| `kind` | What the conductor does |
+|--------|------------------------|
+| `single_hit` | Lunge → `heavy_impact` event → optional ground shockwave (if `heavy: true`) |
+| `multi_hit` | Lunge → `focused_impact` event with N hit beats; optional per-hit streaks via `hasStreaks` |
+| `support_guard` | Short anticipation → `persistent_guard` effect (looping shield ring) |
+| `support_heal` | Short anticipation → `regen` effect (green particle orbit + heal number) |
+
+### Composing extra effects with `extraEffects`
+
+Any damage skill can layer additional one-shot primitives on top at contact time without touching the conductor:
+
+```ts
+my_skill: {
+  kind: 'single_hit',
+  extraEffects: ['persistent_guard'],  // also raises the guard ring on hit
+  impact: AMBER_HIT_IMPACT,
+  flash: 'rgba(139,92,246,0.28)',
+},
+```
+
+Currently dispatchable primitives: `'overdrive_streak'`, `'persistent_guard'`.
+(`ground_shockwave` is deferred — still bundled inside the `heavy_impact` event.)
+
+`extraEffects` fires **once at contact time**. It is distinct from `hasStreaks`, which fires one `overdrive_streak` per hit beat for multi-hit skills.
+
+---
+
+## `SkillAnimationEntry` Field Reference
+
+All fields live in `src/lib/battleAnimationConfig.ts`.
+
+### Behavioral fields
+
+| Field | Type | Default | Notes |
+|-------|------|---------|-------|
+| `kind` | `SkillAnimationKind` | required | Selects conductor path — see table above |
+| `anticipationMs` | `number` | `BATTLE_ANIM.ATTACK_ANTICIPATION_MS` (140ms) | Pre-lunge wind-up. Use `HEAVY_SKILL_ANTICIPATION_MS` (240ms) or `POWER_STRIKE_ANTICIPATION_MS` (400ms) for more drama |
+| `heavy` | `boolean` | `false` | Heavy anticipation pose + ground shockwave + heavy arena shake/flash |
+| `hasChargeGlow` | `boolean` | `false` | Golden charge aura plays on attacker before lunge. Adds `CHARGE_GLOW_MS` (300ms) before lunge start |
+| `pipSpendVariant` | `'focus_spend' \| 'charge_strike_spend'` | `'focus_spend'` | Controls pip-spend animation style |
+| `hitCount` | `number` | `3` | `multi_hit` only — number of hit beats |
+| `hitSpacingMs` | `number` | `FOCUSED_HIT_SPACING_MS` (180ms) | `multi_hit` only — gap between hit beats |
+| `impactVariant` | `ImpactVariant` | `'arc'` | `multi_hit` only — impact graphic shape: `'slash'` `'arc'` `'burst'` `'cut'` |
+| `hasStreaks` | `boolean` | `false` | `multi_hit` only — fires `overdrive_streak` once per hit beat |
+| `streakRequiresPipCheck` | `boolean` | `false` | Only fire streaks when player had enough pips to activate the skill |
+| `resolveDelayMs` | `number` | `0` | `support_*` only — extra wait after anticipation before entry resolves |
+| `extraEffects` | `EffectPrimitive[]` | `[]` | One-shot primitives fired at contact time after the base impact |
+
+### Visual fields
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `impact` | `SkillImpactVisual` | yes | SVG stroke color + CSS drop-shadow filter for hit impact graphic |
+| `flash` | `string` | yes | `rgba(...)` full-screen wash at lunge start (player-only; opponent skills skip flash) |
+| `shockwave` | `SkillShockwaveVisual` | no | Three-layer ellipse shockwave colors. Omit for no shockwave (independent of `heavy`) |
+| `streak` | `SkillStreakVisual` | no | Gradient background for overdrive-style streaks. Required if `hasStreaks: true` |
+
+### Shared visual constants
+
+```ts
+// Defined at the top of battleAnimationConfig.ts — reuse these
+AMBER_HIT_IMPACT        // standard amber/gold impact
+BRIGHT_AMBER_HIT_IMPACT // brighter yellow-amber variant
+DEFAULT_AMBER_SHOCKWAVE // default yellow shockwave
+```
+
+---
+
+## Adding a Brand New Visual Primitive
+
+If no existing effect covers what you need, adding a primitive currently costs 4 file changes. Do all four together.
+
+**Step 1 — Component** [`src/components/ui/battle-effects/`](../src/components/ui/battle-effects/)
+
+Add a new `*.tsx` file. Follow the pattern of `ShockwaveEffects.tsx` or `ImpactEffects.tsx` — export a typed state item shape and a component that renders a list of them from state.
+
+**Step 2 — Handle method** [`src/components/ui/EffectsLayer.tsx`](../src/components/ui/EffectsLayer.tsx)
+
+Add a method to `EffectsLayerHandle` interface and wire it in `useImperativeHandle`. The method adds to a state array and schedules removal via `addTimedEffect`.
+
+**Step 3 — Event variant** [`src/hooks/battleAnimationPlan.ts`](../src/hooks/battleAnimationPlan.ts)
+
+Add a new discriminated variant to `BattleAnimationEvent`:
+```ts
+| { type: 'effect'; kind: 'my_primitive'; target: BattleAnimationTarget; /* params */ }
+```
+
+Emit it from the conductor at the right point in the skill sequence (usually `contactAtMs`).
+
+**Step 4 — Executor case** [`src/hooks/useBattleLogReveal.ts`](../src/hooks/useBattleLogReveal.ts)
+
+Add a `case 'my_primitive':` to the `switch (event.kind)` block that calls the new `EffectsLayerHandle` method.
+
+After these four steps, reference `'my_primitive'` in `extraEffects` for any skill that needs it — no further conductor or executor changes required.
+
+---
+
+## Event Kind Reference
+
+All effect events are dispatched through the `switch (event.kind)` in `useBattleLogReveal.ts`. Each `kind` maps to one or more `EffectsLayerHandle` calls.
+
+| `kind` | Executor action | Triggered by |
+|--------|-----------------|-------------|
+| `defend_guard` | `fx.showDefendGuard()` | Player's `defend` action |
+| `guard_impact` | `fx.showGuardImpact(intensity)` | Defended hit — normal or heavy intensity |
+| `focus_charge` | `fx.showFocusCharge()` + sprite `triggerFocusGlow()` | Player's `focus` action |
+| `pip_spend` | `fx.showFocusSpend(n)` or `fx.showChargeStrikeSpend(n)` | Skill activation (variant from catalog) |
+| `charge_glow` | sprite `triggerChargeGlow()` | Skills with `hasChargeGlow: true` |
+| `persistent_guard` | `playerFx.showPersistentGuard()` | `support_guard` skills; also in `extraEffects` |
+| `hide_persistent_guard` | `playerFx.hidePersistentGuard()` | Counter payoff hit; `finish_animation` |
+| `regen` | `playerFx.showRegenOrbitEffect(healAmount)` + sprite `triggerHealGlow()` | `support_heal` skills |
+| `flash` | `specialFlash.triggerFlash(color)` | Player skill lunge start (color from `entry.flash`) |
+| `basic_impact` | `fx.showAttackImpact()` + `showDamageNumber()` + optional `showCritBadge()` | Player/opponent `attack` |
+| `heavy_impact` | `fx.showHeavyAttackImpact(tint)` + `showGroundShockwave()` + `showDamageNumber()` | `single_hit` skills |
+| `focused_impact` | `fx.showFocusedAttackImpact(hitCount, spacing, variant, tint)` + deferred `showDamageNumber()` | `multi_hit` skills |
+| `overdrive_streak` | `fx.showOverdriveStreak(color)` | Per-hit from `hasStreaks`; also in `extraEffects` |
+| `counter_impact` | `fx.showDamageNumber()` + `fx.showAttackImpact(tint)` | Counter payoff hit |
+
+Non-effect events (`sprite_anticipation`, `sprite_attack`, `sprite_hurt`, `sprite_faint`, `arena_shake`, `arena_flash`, `finish_animation`) are handled before the `effect` block in the executor.
+
+---
+
+## `EffectsLayerHandle` Method Reference
+
+Methods are called on `playerEffectsRef.current` or `opponentEffectsRef.current` depending on `event.target`.
+
+| Method | Effect | Duration constant |
+|--------|--------|-------------------|
+| `showDamageNumber(value, isCrit)` | Float-up number | `DAMAGE_NUMBER_MS` (1000ms) |
+| `showCritBadge()` | "CRIT!" badge pop | `CRIT_BADGE_MS` (900ms) |
+| `showAttackImpact(isCrit?, color?)` | Slash/burst impact graphic | `HIT_IMPACT_MS` (350ms) |
+| `showHeavyAttackImpact(isCrit?, color?)` | Larger burst impact | `HIT_IMPACT_MS + HIT_STOP_MS` |
+| `showFocusedAttackImpact(isCrit?, hitCount?, spacingMs?, variant?, color?, opts?)` | N staggered impact graphics | `HIT_IMPACT_MS` per hit |
+| `showGroundShockwave(wide?, color?)` | Ellipse ring expands from ground | `GROUND_SHOCKWAVE_MS` (420ms) |
+| `showDefendGuard(durationMs?)` | Blue dome shield ring | `DEFEND_GUARD_MS` (900ms) |
+| `showGuardImpact(intensity?)` | Shield contact flash | `GUARD_IMPACT_MS` (360ms) |
+| `showFocusCharge()` | Gold mote orbit inward | `FOCUS_CHARGE_MS` (860ms) |
+| `showFocusSpend(pipCount)` | Pips converge to attacker | `FOCUS_SPEND_MS` (520ms) |
+| `showChargeStrikeSpend(pipCount)` | Charge variant of pip spend | `FOCUS_SPEND_MS` (520ms) |
+| `showOverdriveStreak(color?)` | Horizontal speed-blur streak | 280ms |
+| `showRegenOrbitEffect(healAmount)` | Green motes orbit + heal number | `HEAL_EFFECT_MS` (1300ms) |
+| `showPersistentGuard()` | Looping shield ring (persists) | until `hidePersistentGuard()` |
+| `hidePersistentGuard()` | Dismisses persistent guard ring | 400ms fade-out |
+
+---
+
+## Timing Constants
+
+All timing lives in `BATTLE_ANIM` in [`battleAnimationConfig.ts`](../src/lib/battleAnimationConfig.ts). **If you change a constant, the matching CSS `@keyframes` in [`src/index.css`](../src/index.css) must also change, and vice versa.**
+
+Critical links:
+
+| Constant | CSS keyframe |
+|----------|-------------|
+| `HURT_MS` (500ms) | `hit-flash` |
+| `HURT_CRIT_MS` (550ms) | `hit-flash-crit` |
+| `FAINT_BLINK_MS` (400ms) | `faint-blink`; also `begin="0.4s"` in `CreatureSprite.tsx` SMIL |
+| `FAINT_MS` (1400ms) | includes `faint-blink` + SVG noise dissolve |
+| `DAMAGE_NUMBER_MS` (1000ms) | `float-up` |
+| `CRIT_BADGE_MS` (900ms) | `crit-pop` |
+| `HIT_IMPACT_MS` (350ms) | `hit-impact` |
+| `DEFEND_GUARD_MS` (900ms) | `shield-dome-in` |
+| `GROUND_SHOCKWAVE_MS` (420ms) | `ground-shockwave` |
+| `CHARGE_GLOW_MS` (300ms) | `charge-glow` |
+| `HEAL_GLOW_MS` (950ms) | `heal-glow` |
+| `LUNGE_MS` (320ms) | `battle-lunge-right` / `battle-lunge-left` |
+| `SPECIAL_FLASH_MS` (450ms) | `special-flash` |
+
+---
+
+## Hard Rules
+
+**Do not add `if (skillId === '...')` branches** to `battleAnimationPlan.ts` or `useBattleLogReveal.ts`. The entire refactor exists to eliminate these. All per-skill behavior belongs in `SKILL_ANIMATION_CATALOG`.
+
+**Do not add animation logic to `BattleLogEntry` or Supabase.** Game facts and animation config are strictly separated. The conductor reads `entry.damage`, `entry.target`, `entry.skillId`, `entry.crit`, `entry.defended` — that is the complete interface.
+
+**Timing constants are the single source of truth.** Never hardcode a millisecond value in component code or in test assertions. Import from `BATTLE_ANIM`.
+
+**`EffectsLayer` is purely additive.** Methods only start effects; they never cancel in-progress ones. Overlapping calls are expected and intentional.
+
+**Player vs. opponent asymmetry:**
+- Flash (`event.kind === 'flash'`) fires for player skills only — the conductor skips it when `entry.actor === 'opponent'`
+- `persistent_guard` and `pip_spend` always target `playerEffectsRef` — they are player-only effects
+- All other effects use `fx(event.target)` which routes to the correct side
+
+---
+
+## Test Coverage
+
+`src/hooks/__tests__/battleAnimationPlan.test.ts` — 10 tests covering conductor timing. Run with:
+
+```sh
+npm test -- --run
+```
+
+When adding a new skill to `SKILL_ANIMATION_CATALOG`, no test changes are needed unless the skill introduces a new behavioral variant. When adding a new effect primitive (the 4-step procedure), add a conductor test for the new event emission timing.

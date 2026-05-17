@@ -320,9 +320,13 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   },
 
   // 023 Ashraptor — medium — volcanic raider (vertical runner on long legs)
-  // 'ashraptor': {
-  //   battle: { url: s('/sprites/opponents/ashraptor.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // },
+  'ashraptor': {
+    battle: { url: s('/sprites/opponents/ashraptor.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: -4,
+    footOffsetY: 16,
+    worldMap: { url: s('/sprites/opponents_world/ashraptor.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/ashraptor.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
   // 024 Cindershell — medium — basalt titan (dome on column legs)
   // 'cindershell': {
