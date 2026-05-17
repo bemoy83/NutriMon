@@ -22,6 +22,100 @@ EffectsLayer.tsx + battle-effects/*   primitives — reusable visual building bl
 
 ---
 
+## Sprite Idle Animation System
+
+> This system runs **parallel to and independently of** the battle log pipeline above. It is always-on ambient animation driven by static config, not by game events.
+
+### Overview
+
+Creatures in the battle arena breathe and sway using CSS-only transforms applied to dedicated wrapper divs inside `CreatureSprite`. No sprite sheet frames are needed — the illusion of life comes entirely from CSS `transform` animations tuned per size class and optionally per individual creature.
+
+### DOM layer structure inside `CreatureSprite`
+
+```
+div[containerStyle]            — lunge / recoil / anticipation (battle pipeline)
+  div.animate-sprite-sway      — rotateZ pendulum, transform-origin: bottom center
+    div.animate-sprite-breathe — scaleY swell,    transform-origin: bottom center
+      div[glowWrapperStyle]    — charge / heal / focus filter glow (battle pipeline)
+        img
+  [hit flashes]                — siblings, NOT children — don't inherit idle transforms
+  [faint overlay]              — siblings, NOT children
+```
+
+Each animation layer owns exactly one CSS `transform` property. Nesting prevents conflicts between `scaleY` and `rotateZ` without needing `animation` property juggling on a shared element. Platform images are never affected — they live in a separate sibling div outside `CreatureSprite`.
+
+### CSS custom properties
+
+All timing and magnitude values are controlled via CSS custom properties set as inline styles on the wrapper divs. The keyframes themselves never need to change to produce a new variant.
+
+| Property | Default | Controls |
+|----------|---------|---------|
+| `--idle-breathe-duration` | `4s` | Period of one inhale + exhale cycle |
+| `--idle-breathe-scale` | `1.018` | Peak scaleY at inhale apex |
+| `--idle-breathe-compress` | `0.988` | Exhale compression (distress only) |
+| `--idle-sway-duration` | `5s` | Period of one full left → right → left cycle |
+| `--idle-sway-angle` | `0.8` | Peak rotation in degrees (unitless — applied via `calc(... * 1deg)`) |
+| `--idle-sway-delay` | `0s` | Phase offset; set to `1.4s` on opponent so sprites don't mirror each other |
+
+### Key files
+
+| File | Role |
+|------|------|
+| [`src/index.css`](../src/index.css) | Animation library section: `sprite-breathe`, `sprite-breathe-distress`, `sprite-sway` keyframes + classes |
+| [`src/lib/battleAnimationConfig.ts`](../src/lib/battleAnimationConfig.ts) | `IDLE_ANIM` token table — size-class defaults for all tunable values |
+| [`src/lib/spriteIdleConfig.ts`](../src/lib/spriteIdleConfig.ts) | `SpriteIdleOverride` type, `ResolvedIdleConfig` type, `resolveIdleConfig()` merge function |
+| [`src/lib/sprites.ts`](../src/lib/sprites.ts) | `OpponentSpriteEntry.idleOverride` field; `getOpponentEntry(name)` helper |
+| [`src/components/ui/CreatureSprite.tsx`](../src/components/ui/CreatureSprite.tsx) | `idleConfig?: ResolvedIdleConfig` prop; sway + breathe wrappers |
+| [`src/pages/app/BattlePage.tsx`](../src/pages/app/BattlePage.tsx) | Calls `resolveIdleConfig()` for player and opponent before render |
+
+### Size-class defaults
+
+Larger creatures have more mass — they breathe slower and sway less. All values live in `IDLE_ANIM` in `battleAnimationConfig.ts`.
+
+| | small | medium | large |
+|---|---|---|---|
+| Breathe duration | 3.5s | 4.0s | 4.8s |
+| Breathe scale | 1.022 | 1.018 | 1.012 |
+| Sway duration | 3.8s | 5.0s | 6.5s |
+| Sway angle (°) | 1.2 | 0.8 | 0.5 |
+
+### HP distress state
+
+When `hpRatio ≤ 0.30`, `resolveIdleConfig()` switches the breathe class to `animate-sprite-breathe-distress` and applies faster duration / more exaggerated scale from the `distress*` fields in `IDLE_ANIM`. No class swap logic is needed in `BattlePage` — the resolved config handles it.
+
+### Per-sprite overrides
+
+Add `idleOverride` to any `OpponentSpriteEntry` in `sprites.ts`. Only specify fields you want to change — everything else falls back to size-class defaults:
+
+```ts
+// src/lib/sprites.ts
+'thunderox': {
+  battle: { url: s('/sprites/opponents/thunderox.png'), ... },
+  footOffsetY: 12,
+  idleOverride: {
+    swayAngleDeg: 0.3,   // barely sways — very heavy creature
+    breatheDurationS: 6,  // extremely slow breath
+  },
+},
+
+// Completely rigid creature — no idle animation at all
+'iron_golem': {
+  battle: { ... },
+  idleOverride: { disableSway: true, disableBreathe: true },
+},
+```
+
+### Adding a new idle animation
+
+1. Add `@keyframes` + `.animate-sprite-*` class to the **Sprite idle animation library** section of `src/index.css`. Document its CSS custom properties in the class comment.
+2. Add default values for each size class to `IDLE_ANIM` in `battleAnimationConfig.ts`.
+3. Add optional override fields to `SpriteIdleOverride` and resolved fields to `ResolvedIdleConfig` in `spriteIdleConfig.ts`. Wire them in `resolveIdleConfig()`.
+4. Add a new wrapper div inside `CreatureSprite` following the existing sway → breathe nesting pattern. Apply the class and inline CSS var style.
+
+No changes to `BattlePage` are needed unless the new animation requires a new data input (e.g. a value not already available in `ResolvedIdleConfig`).
+
+---
+
 ## Files at a Glance
 
 | File | Role |

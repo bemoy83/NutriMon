@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react'
 import type { AnimationDescriptor, SpriteDescriptor } from '@/lib/sprites'
 import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
+import type { ResolvedIdleConfig } from '@/lib/spriteIdleConfig'
 
 export interface CreatureSpriteHandle {
   triggerAnimation(type: 'hurt' | 'faint' | 'attack', durationMs: number, isCrit?: boolean, lungeDir?: 'right' | 'left'): void
@@ -16,6 +17,9 @@ interface CreatureSpriteProps {
   /** true = apply scaleX(-1) to flip the sprite horizontally */
   flip?: boolean
   idleAnimation?: AnimationDescriptor | null
+  /** Resolved idle animation profile from resolveIdleConfig(). Drives breathing and sway.
+   *  Only applied when a real sprite is loaded and the sprite has not fainted. */
+  idleConfig?: ResolvedIdleConfig
   className?: string
 }
 
@@ -47,7 +51,7 @@ function SpritePlaceholder({ size }: { size: number }) {
 }
 
 const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
-  function CreatureSprite({ descriptor, displaySize, flip = false, idleAnimation, className }, ref) {
+  function CreatureSprite({ descriptor, displaySize, flip = false, idleAnimation, idleConfig, className }, ref) {
     const pixelArt = descriptor?.pixelArt ?? false
     const [activeAnimation, setActiveAnimation] = useState<{
       id: number
@@ -259,6 +263,37 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
           }
         : {}
 
+    // Idle animation wrappers — only active when a real sprite is loaded and not fainted.
+    // Each animation (sway, breathe) gets its own element to avoid transform conflicts.
+    // Hit flashes and faint overlays are siblings outside this stack so they don't inherit transforms.
+    const idleActive = !!idleConfig && !hasFainted && !!frameUrl
+
+    const swayClass = idleActive && idleConfig.sway ? 'animate-sprite-sway' : undefined
+    const swayStyle: React.CSSProperties = idleActive && idleConfig.sway
+      ? {
+          position: 'absolute',
+          inset: 0,
+          '--idle-sway-duration': `${idleConfig.sway.durationS}s`,
+          '--idle-sway-angle': idleConfig.sway.angleDeg,
+          '--idle-sway-delay': `${idleConfig.sway.delayS}s`,
+        } as React.CSSProperties
+      : { position: 'absolute', inset: 0 }
+
+    const breatheClass = idleActive && idleConfig.breathe
+      ? (idleConfig.breathe.distress ? 'animate-sprite-breathe-distress' : 'animate-sprite-breathe')
+      : undefined
+    const breatheStyle: React.CSSProperties = idleActive && idleConfig.breathe
+      ? {
+          position: 'absolute',
+          inset: 0,
+          '--idle-breathe-duration': `${idleConfig.breathe.durationS}s`,
+          '--idle-breathe-scale': idleConfig.breathe.scale,
+          ...(idleConfig.breathe.distress
+            ? { '--idle-breathe-compress': idleConfig.breathe.compressScale }
+            : {}),
+        } as React.CSSProperties
+      : { position: 'absolute', inset: 0 }
+
     return (
       <div style={containerStyle} className={className}>
         {/* Inline SVG filter for the noise dissolve — only mounted during faint.
@@ -310,6 +345,12 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
           </svg>
         )}
 
+        {/* Idle animation stack — sway (outer) → breathe (inner) → glow → img.
+            Each layer animates a single transform property so they compose cleanly.
+            Siblings (hit flashes, faint overlay) are outside this stack so they
+            don't inherit any idle transforms. */}
+        <div className={swayClass} style={swayStyle}>
+        <div className={breatheClass} style={breatheStyle}>
         <div style={glowWrapperStyle}>
           {frameUrl ? (
             <img
@@ -332,7 +373,9 @@ const CreatureSprite = forwardRef<CreatureSpriteHandle, CreatureSpriteProps>(
               <SpritePlaceholder size={displaySize} />
             </div>
           )}
-        </div>
+        </div>{/* glowWrapper */}
+        </div>{/* breathe */}
+        </div>{/* sway */}
 
         {/* Hurt flashes are queued so rapid multi-hit attacks do not replace the previous flash. */}
         {hitFlashes.map((flash) => (

@@ -95,6 +95,30 @@ export const BATTLE_ANIM = {
   POWER_STRIKE_ANTICIPATION_MS: 400,
 } as const
 
+/**
+ * Default idle animation values by size class.
+ *
+ * Larger creatures breathe slower and sway less — they have more mass.
+ * These are the fallbacks; per-sprite overrides in OpponentSpriteEntry.idleOverride
+ * take precedence via resolveIdleConfig() in src/lib/spriteIdleConfig.ts.
+ *
+ * Tuning guide:
+ *   breatheDurationS — period of one full inhale + exhale cycle (seconds)
+ *   breatheScale     — peak scaleY at inhale apex (1.0 = no change)
+ *   distress*        — HP ≤ 30% overrides; faster and more exaggerated
+ *   swayDurationS    — period of one full left → right → left cycle (seconds)
+ *   swayAngleDeg     — peak rotation angle from vertical (degrees)
+ */
+export const IDLE_ANIM = {
+  breatheDurationS:            { small: 3.5, medium: 4.0, large: 4.8 },
+  breatheScale:                { small: 1.022, medium: 1.018, large: 1.012 },
+  distressBreatheDurationS:    { small: 1.9,  medium: 2.2,  large: 2.7  },
+  distressBreatheScale:        { small: 1.030, medium: 1.026, large: 1.020 },
+  distressBreatheCompressScale:{ small: 0.984, medium: 0.988, large: 0.992 },
+  swayDurationS:               { small: 3.8, medium: 5.0, large: 6.5 },
+  swayAngleDeg:                { small: 1.2, medium: 0.8, large: 0.5  },
+} as const
+
 export interface SkillImpactVisual {
   stroke: string
   glowFilter: string

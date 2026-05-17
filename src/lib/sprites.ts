@@ -91,13 +91,20 @@ const PLAYER_WORLD_MAP_SPRITES: Partial<Record<string, SpriteDescriptor>> = {
 //   where the creature's feet actually land. Positive = feet are higher in the
 //   canvas (platform moves up); negative = feet are lower (platform moves down).
 //   Use this when a creature floats or is grounded above/below the canvas edge.
-interface OpponentSpriteEntry {
+// `idleOverride` — optional idle animation tuning. Any field omitted falls back
+//   to the IDLE_ANIM size-class defaults in battleAnimationConfig.ts.
+//   Use disableSway for rigid/mechanical creatures; disableBreathe for statues/constructs.
+
+import type { SpriteIdleOverride } from './spriteIdleConfig'
+
+export interface OpponentSpriteEntry {
   battle: SpriteDescriptor
   worldMap?: SpriteDescriptor
   icon?: SpriteDescriptor
   // recovering?: SpriteDescriptor
   footOffsetX?: number
   footOffsetY?: number
+  idleOverride?: Partial<SpriteIdleOverride>
 }
 
 // ── Worldspire Dex — Opponent sprite registry ────────────────────────────────
@@ -108,6 +115,8 @@ interface OpponentSpriteEntry {
 //   3. All opponent battle and world-map sprites are 256×256 pixel art.
 //   4. Tune footOffsetX if the creature's stance is off-centre in the PNG.
 //   5. Add optional worldMap/icon variants in the same creature entry.
+//   6. Add optional idleOverride to customise animation feel for this specific creature.
+//      Omit any field to fall back to the IDLE_ANIM size-class defaults.
 //
 // Slug convention: lowercase, spaces → underscores (matches slugify() below).
 const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
@@ -554,6 +563,11 @@ export function getOpponentTimelineIcon(name: string): SpriteDescriptor | null {
 
 export function getOpponentSpriteDescriptor(name: string): SpriteDescriptor | null {
   return OPPONENT_SPRITES[slugify(name)]?.battle ?? null
+}
+
+/** Returns the full registry entry, including idleOverride, or null if unregistered. */
+export function getOpponentEntry(name: string): OpponentSpriteEntry | null {
+  return OPPONENT_SPRITES[slugify(name)] ?? null
 }
 
 export function getOpponentWorldMapSpriteDescriptor(name: string): SpriteDescriptor | null {

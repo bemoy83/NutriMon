@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { BattleHudFocusPips, BattleHudHpBar } from '../BattleHudCard'
+import { BattleHudFocusPips } from '../BattleHudCard'
 
 describe('BattleHudCard feedback', () => {
   it('shows FP gain and spend deltas', () => {

@@ -26,12 +26,14 @@ import { useTerrainBackground } from '@/hooks/useTerrainBackground'
 import {
   getArenaTerrain,
   getCoLocatedPlatformStyle,
+  getOpponentEntry,
   getOpponentFootOffsets,
   getOpponentSpriteDescriptor,
   getPlayerBattleSpriteDescriptor,
   getPlayerTimelineIcon,
   getOpponentTimelineIcon,
 } from '@/lib/sprites'
+import { resolveIdleConfig } from '@/lib/spriteIdleConfig'
 import { getBattleDialogue } from '@/lib/battleMessages'
 
 // Player display size scales with companion stage (closer perspective = larger).
@@ -331,6 +333,19 @@ export default function BattlePage() {
     if (entry.target === 'player' && entry.targetHpAfter !== null) playerHp = entry.targetHpAfter
   }
 
+  const opponentIdleConfig = resolveIdleConfig(
+    session.opponent.sizeClass,
+    getOpponentEntry(session.opponent.name)?.idleOverride,
+    session.opponentMaxHp > 0 ? opponentHp / session.opponentMaxHp : 1,
+    1.4, // phase offset so opponent sway doesn't mirror the player's
+  )
+  const playerIdleConfig = resolveIdleConfig(
+    'medium', // player has no sizeClass; medium defaults are appropriate
+    undefined,
+    session.playerMaxHp > 0 ? playerHp / session.playerMaxHp : 1,
+    0,
+  )
+
   const pipCap    = getPipCap(session.companion.level)
   const focusGain = getFocusGain(session.companion.level)
 
@@ -487,7 +502,7 @@ export default function BattlePage() {
             }}
           >
             <div
-              className="relative animate-battle-float-opponent"
+              className="relative" /* animate-battle-float-opponent */
               style={{ width: opponentDisplaySize, height: opponentDisplaySize, overflow: 'visible' }}
             >
               <div
@@ -524,6 +539,7 @@ export default function BattlePage() {
                     descriptor={getOpponentSpriteDescriptor(session.opponent.name)}
                     displaySize={opponentDisplaySize}
                     flip={false}
+                    idleConfig={opponentIdleConfig}
                   />
                   <EffectsLayer
                     ref={opponentEffectsRef}
@@ -548,7 +564,7 @@ export default function BattlePage() {
             }}
           >
             <div
-              className="relative animate-battle-float-player"
+              className="relative" /* animate-battle-float-player */
               style={{ width: playerDisplaySize, height: playerDisplaySize, overflow: 'visible' }}
             >
               {terrain.playerPlatformUrl && terrain.playerPlatformRenderedWidth != null && (
@@ -582,6 +598,7 @@ export default function BattlePage() {
                   )}
                   displaySize={playerDisplaySize}
                   flip={false}
+                  idleConfig={playerIdleConfig}
                 />
                 <EffectsLayer
                   ref={playerEffectsRef}

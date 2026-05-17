@@ -180,6 +180,63 @@ select {
   font: inherit;
 }
 
+/* ── Sprite idle animation library ──────────────────────────────────────── */
+/*
+ * All CSS-driven idle animations for creature sprites live here.
+ * Each animation is a named @keyframes + a utility class pair.
+ * Timing and magnitude are tuned via CSS custom properties set as inline
+ * styles on the wrapper — no new keyframes needed for new variants.
+ *
+ * Animations defined here:
+ *   animate-sprite-breathe         — calm scaleY swell (steady HP)
+ *   animate-sprite-breathe-distress — faster, compressed exhale (≤ 30% HP)
+ *   animate-sprite-sway            — slow rotateZ pendulum
+ *
+ * Custom properties (set as inline style on the wrapper element):
+ *   --idle-breathe-duration   default 4s
+ *   --idle-breathe-scale      default 1.018   (peak scaleY)
+ *   --idle-breathe-compress   default 0.988   (distress exhale scaleY, distress only)
+ *   --idle-sway-duration      default 5s
+ *   --idle-sway-angle         default 0.8     (degrees, unitless — applied in calc())
+ *   --idle-sway-delay         default 0s      (phase offset between sprites)
+ *
+ * Note: sprite-breathe and sprite-breathe-distress are separate keyframes because
+ * the distress 60% compression stop is structurally different, not just a magnitude
+ * change. All other tuning is via custom properties.
+ */
+
+/* Steady breathing — gentle scaleY swell */
+@keyframes sprite-breathe {
+  0%, 100% { transform: scaleY(1); }
+  45%       { transform: scaleY(var(--idle-breathe-scale, 1.018)); }
+}
+.animate-sprite-breathe {
+  animation: sprite-breathe var(--idle-breathe-duration, 4s) ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* Distress breathing — faster, pronounced inhale + exhale compression */
+@keyframes sprite-breathe-distress {
+  0%, 100% { transform: scaleY(1); }
+  35%       { transform: scaleY(var(--idle-breathe-scale, 1.026)); }
+  60%       { transform: scaleY(var(--idle-breathe-compress, 0.988)); }
+}
+.animate-sprite-breathe-distress {
+  animation: sprite-breathe-distress var(--idle-breathe-duration, 2.2s) ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* Sway — slow rotateZ pendulum anchored at feet */
+@keyframes sprite-sway {
+  0%, 100% { transform: rotate(0deg); }
+  25%       { transform: rotate(calc(var(--idle-sway-angle, 0.8) * -1deg)); }
+  75%       { transform: rotate(calc(var(--idle-sway-angle, 0.8) * 1deg)); }
+}
+.animate-sprite-sway {
+  animation: sprite-sway var(--idle-sway-duration, 5s) ease-in-out var(--idle-sway-delay, 0s) infinite;
+  transform-origin: bottom center;
+}
+
 /* ── Sprite system ───────────────────────────────────────────────────────── */
 
 .sprite-pixel-art {
