@@ -9,6 +9,7 @@ const layout: WorldMapLayout = {
   width: 400,
   height: 620,
   nodeScale: 1,
+  panelHeight: 620,
 }
 
 function arena(overrides: Partial<ArenaListArena> = {}): ArenaListArena {
@@ -66,6 +67,7 @@ describe('world map geometry', () => {
       width: 160,
       height: 620,
       nodeScale: 1,
+      panelHeight: 620,
     }
 
     const position = resolveNodePosition(arena(), 1, 3, narrowLayout)
