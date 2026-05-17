@@ -11,23 +11,6 @@ import {
   type BattleAnimationTarget,
 } from './battleAnimationPlan'
 
-type BattleEffectPayload = {
-  count?: number
-  crit?: boolean
-  damage?: number
-  color?: string
-  healAmount?: number
-  hitCount?: number
-  spacingMs?: number
-  damageDelayMs?: number
-  finalHitDurationMs?: number
-  groundShockwaveHeavy?: boolean
-  impactVariant?: Parameters<EffectsLayerHandle['showFocusedAttackImpact']>[3]
-  tint?: Parameters<EffectsLayerHandle['showAttackImpact']>[1]
-  shockwaveColor?: Parameters<EffectsLayerHandle['showGroundShockwave']>[1]
-  streakColor?: Parameters<EffectsLayerHandle['showOverdriveStreak']>[0]
-  intensity?: Parameters<EffectsLayerHandle['showGuardImpact']>[0]
-}
 
 export function useBattleLogReveal(opts: {
   playerSpriteRef: RefObject<CreatureSpriteHandle | null>
@@ -138,8 +121,6 @@ export function useBattleLogReveal(opts: {
       setIsAnimating(true)
 
       const executeEvent = (event: BattleAnimationEvent) => {
-        const targetEffects = (target: BattleAnimationTarget) =>
-          target === 'player' ? playerEffectsRef.current : opponentEffectsRef.current
         const targetSprite = (target: BattleAnimationTarget) =>
           target === 'player' ? playerSpriteRef : opponentSpriteRef
 
@@ -210,63 +191,78 @@ export function useBattleLogReveal(opts: {
         }
 
         if (event.type === 'effect') {
-          const effects = targetEffects(event.target)
-          const payload = (event.payload ?? {}) as BattleEffectPayload
-          const crit = Boolean(payload.crit)
-          const damage = Number(payload.damage ?? 0)
-          const damageDelayMs = Number(payload.damageDelayMs ?? 0)
-          const showDamageFeedback = () => {
-            effects?.showDamageNumber(damage, crit)
-            if (crit) effects?.showCritBadge()
-          }
-          if (event.effect === 'defend_guard') effects?.showDefendGuard()
-          if (event.effect === 'guard_impact') effects?.showGuardImpact(payload.intensity)
-          if (event.effect === 'focus_charge') {
-            effects?.showFocusCharge()
-            targetSprite(event.target).current?.triggerFocusGlow()
-          }
-          if (event.effect === 'focus_spend') playerEffectsRef.current?.showFocusSpend(Number(payload.count ?? 0))
-          if (event.effect === 'charge_strike_spend') {
-            playerEffectsRef.current?.showChargeStrikeSpend(Number(payload.count ?? 0))
-          }
-          if (event.effect === 'persistent_guard') playerEffectsRef.current?.showPersistentGuard()
-          if (event.effect === 'hide_persistent_guard') playerEffectsRef.current?.hidePersistentGuard()
-          if (event.effect === 'charge_glow') targetSprite(event.target).current?.triggerChargeGlow()
-          if (event.effect === 'regen') {
-            const healAmount = Number(payload.healAmount ?? 0)
-            if (healAmount > 0) playerEffectsRef.current?.showRegenOrbitEffect(healAmount)
-            playerSpriteRef.current?.triggerHealGlow()
-          }
-          if (event.effect === 'special_flash') specialFlashRef.current?.triggerFlash(payload.color)
-          if (event.effect === 'basic') {
-            showDamageFeedback()
-            effects?.showAttackImpact(crit)
-          }
-          if (event.effect === 'heavy_skill') {
-            effects?.showHeavyAttackImpact(crit, payload.tint)
-            effects?.showGroundShockwave(Boolean(payload.groundShockwaveHeavy), payload.shockwaveColor)
-            showDamageFeedback()
-          }
-          if (event.effect === 'focused_skill') {
-            effects?.showFocusedAttackImpact(
-              crit,
-              Number(payload.hitCount ?? 3),
-              Number(payload.spacingMs ?? BATTLE_ANIM.FOCUSED_HIT_SPACING_MS),
-              payload.impactVariant,
-              payload.tint,
-              { emphasizeFinalHit: true },
-            )
-            if (damageDelayMs > 0) {
-              const t = setTimeout(showDamageFeedback, damageDelayMs)
-              animTimers.current.push(t)
-            } else {
-              showDamageFeedback()
+          const fx = (target: BattleAnimationTarget) =>
+            target === 'player' ? playerEffectsRef.current : opponentEffectsRef.current
+          switch (event.kind) {
+            case 'defend_guard':
+              fx(event.target)?.showDefendGuard()
+              break
+            case 'guard_impact':
+              fx(event.target)?.showGuardImpact(event.intensity)
+              break
+            case 'focus_charge':
+              fx(event.target)?.showFocusCharge()
+              targetSprite(event.target).current?.triggerFocusGlow()
+              break
+            case 'pip_spend':
+              if (event.variant === 'focus') playerEffectsRef.current?.showFocusSpend(event.count)
+              else playerEffectsRef.current?.showChargeStrikeSpend(event.count)
+              break
+            case 'persistent_guard':
+              playerEffectsRef.current?.showPersistentGuard()
+              break
+            case 'hide_persistent_guard':
+              playerEffectsRef.current?.hidePersistentGuard()
+              break
+            case 'charge_glow':
+              targetSprite(event.target).current?.triggerChargeGlow()
+              break
+            case 'regen':
+              if (event.healAmount > 0) playerEffectsRef.current?.showRegenOrbitEffect(event.healAmount)
+              playerSpriteRef.current?.triggerHealGlow()
+              break
+            case 'flash':
+              specialFlashRef.current?.triggerFlash(event.color)
+              break
+            case 'basic_impact':
+              fx(event.target)?.showAttackImpact(event.crit)
+              fx(event.target)?.showDamageNumber(event.damage, event.crit)
+              if (event.crit) fx(event.target)?.showCritBadge()
+              break
+            case 'heavy_impact':
+              fx(event.target)?.showHeavyAttackImpact(event.crit, event.tint)
+              fx(event.target)?.showGroundShockwave(Boolean(event.groundShockwaveHeavy), event.shockwaveColor)
+              fx(event.target)?.showDamageNumber(event.damage, event.crit)
+              if (event.crit) fx(event.target)?.showCritBadge()
+              break
+            case 'focused_impact': {
+              fx(event.target)?.showFocusedAttackImpact(
+                event.crit,
+                event.hitCount,
+                event.spacingMs,
+                event.impactVariant,
+                event.tint,
+                { emphasizeFinalHit: true },
+              )
+              const showDamage = () => {
+                fx(event.target)?.showDamageNumber(event.damage, event.crit)
+                if (event.crit) fx(event.target)?.showCritBadge()
+              }
+              if (event.damageDelayMs > 0) {
+                const t = setTimeout(showDamage, event.damageDelayMs)
+                animTimers.current.push(t)
+              } else {
+                showDamage()
+              }
+              break
             }
-          }
-          if (event.effect === 'overdrive_streak') effects?.showOverdriveStreak(payload.streakColor)
-          if (event.effect === 'counter') {
-            effects?.showDamageNumber(damage, false)
-            effects?.showAttackImpact(false, payload.tint)
+            case 'overdrive_streak':
+              fx(event.target)?.showOverdriveStreak(event.streakColor)
+              break
+            case 'counter_impact':
+              fx(event.target)?.showDamageNumber(event.damage, false)
+              fx(event.target)?.showAttackImpact(false, event.tint)
+              break
           }
           return
         }

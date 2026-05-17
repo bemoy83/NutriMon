@@ -49,12 +49,12 @@ function findEvent(
   return events.find(({ event }) => event.type === type && predicate(event))
 }
 
-function findEffect(events: ScheduledBattleAnimationEvent[], effect: string) {
-  return events.find(({ event }) => event.type === 'effect' && event.effect === effect)
+function findEffect(events: ScheduledBattleAnimationEvent[], kind: string) {
+  return events.find(({ event }) => event.type === 'effect' && event.kind === kind)
 }
 
-function findEffects(events: ScheduledBattleAnimationEvent[], effect: string) {
-  return events.filter(({ event }) => event.type === 'effect' && event.effect === effect)
+function findEffects(events: ScheduledBattleAnimationEvent[], kind: string) {
+  return events.filter(({ event }) => event.type === 'effect' && event.kind === kind)
 }
 
 describe('battleAnimationPlan', () => {
@@ -73,7 +73,7 @@ describe('battleAnimationPlan', () => {
       },
       {
         atMs: BATTLE_ANIM.SUPPORT_ANTICIPATION_MS,
-        event: { type: 'effect', target: 'player', effect: 'focus_charge' },
+        event: { type: 'effect', kind: 'focus_charge', target: 'player' },
       },
       {
         atMs: BATTLE_ANIM.SUPPORT_ANTICIPATION_MS + BATTLE_ANIM.FOCUS_CHARGE_MS,
@@ -102,12 +102,12 @@ describe('battleAnimationPlan', () => {
     })
     const events = plan([regenEntry], [previousEntry])
 
-    expect(findEffect(events, 'focus_spend')).toMatchObject({ atMs: 0, event: { payload: { count: 2 } } })
+    expect(findEffect(events, 'pip_spend')).toMatchObject({ atMs: 0, event: { count: 2, variant: 'focus' } })
     expect(findEvent(events, 'resolve_log_entry', event => event.type === 'resolve_log_entry' && event.mode === 'pip_spend_only'))
       .toMatchObject({ atMs: BATTLE_ANIM.SKILL_PIP_DEPLETION_DELAY_MS })
     expect(findEffect(events, 'regen')).toMatchObject({
       atMs: BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS,
-      event: { payload: { healAmount: 8 } },
+      event: { healAmount: 8 },
     })
     expect(findEvent(events, 'resolve_log_entry', event => event.type === 'resolve_log_entry' && event.mode !== 'pip_spend_only'))
       .toMatchObject({
@@ -137,7 +137,7 @@ describe('battleAnimationPlan', () => {
     const lungeStartMs = BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS + BATTLE_ANIM.CHARGE_GLOW_MS
     const contactMs = lungeStartMs + BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS + BATTLE_ANIM.LUNGE_PEAK_MS
 
-    expect(findEffect(events, 'charge_strike_spend')).toMatchObject({ atMs: 0, event: { payload: { count: 3 } } })
+    expect(findEffect(events, 'pip_spend')).toMatchObject({ atMs: 0, event: { count: 3, variant: 'charge_strike' } })
     expect(findEffect(events, 'charge_glow')).toMatchObject({ atMs: BATTLE_ANIM.SKILL_PIP_SPEND_LEAD_MS })
     expect(findEvent(events, 'sprite_anticipation')).toMatchObject({
       atMs: lungeStartMs,
@@ -171,9 +171,9 @@ describe('battleAnimationPlan', () => {
         spacingMs: BATTLE_ANIM.FOCUSED_HIT_SPACING_MS,
       },
     })
-    expect(findEffect(events, 'focused_skill')).toMatchObject({
+    expect(findEffect(events, 'focused_impact')).toMatchObject({
       atMs: contactMs,
-      event: { payload: { hitCount: 3, impactVariant: 'cut' } },
+      event: { hitCount: 3, impactVariant: 'cut' },
     })
   })
 
@@ -197,7 +197,7 @@ describe('battleAnimationPlan', () => {
       atMs: contactMs,
       event: {
         target: 'player',
-        payload: { intensity: 'normal' },
+        intensity: 'normal',
       },
     })
 
@@ -254,7 +254,7 @@ describe('battleAnimationPlan', () => {
       atMs: contactMs,
       event: {
         target: 'opponent',
-        payload: { intensity: 'heavy' },
+        intensity: 'heavy',
       },
     })
   })
@@ -294,9 +294,9 @@ describe('battleAnimationPlan', () => {
     const counterPayoffMs = BATTLE_ANIM.ENTRY_DELAY_ACTION_MS + BATTLE_ANIM.ENTRY_DELAY_ACTION_HIT_MS
 
     expect(findEffect(events, 'persistent_guard')).toMatchObject({ atMs: guardAtMs })
-    expect(events.filter(({ event }) => event.type === 'effect' && event.effect === 'hide_persistent_guard')[0])
+    expect(events.filter(({ event }) => event.type === 'effect' && event.kind === 'hide_persistent_guard')[0])
       .toMatchObject({ atMs: incomingHitMs })
-    expect(findEffect(events, 'counter')).toMatchObject({ atMs: counterPayoffMs })
+    expect(findEffect(events, 'counter_impact')).toMatchObject({ atMs: counterPayoffMs })
     expect(incomingHitMs).toBeLessThan(counterPayoffMs)
   })
 

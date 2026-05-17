@@ -1,4 +1,12 @@
-import { BATTLE_ANIM, SKILL_VISUAL_IDENTITY } from '@/lib/battleAnimationConfig'
+import {
+  BATTLE_ANIM,
+  SKILL_ANIMATION_RECIPES,
+  SKILL_VISUAL_IDENTITY,
+  type ImpactVariant,
+  type SkillImpactVisual,
+  type SkillShockwaveVisual,
+  type SkillStreakVisual,
+} from '@/lib/battleAnimationConfig'
 import { doesBattleSkillSpendAllPips, getBattleSkillPipCost } from '@/lib/battleSkills'
 import type { BattleLogEntry } from '@/types/domain'
 
@@ -19,7 +27,42 @@ export type BattleAnimationEvent =
       finalHitDurationMs?: number
     }
   | { type: 'sprite_faint'; target: BattleAnimationTarget }
-  | { type: 'effect'; target: BattleAnimationTarget; effect: string; payload?: unknown }
+  // Effect events — discriminated by `kind`, each with exactly the params it needs
+  | { type: 'effect'; kind: 'defend_guard'; target: BattleAnimationTarget }
+  | { type: 'effect'; kind: 'guard_impact'; target: BattleAnimationTarget; intensity: 'normal' | 'heavy' }
+  | { type: 'effect'; kind: 'focus_charge'; target: BattleAnimationTarget }
+  | { type: 'effect'; kind: 'pip_spend'; count: number; variant: 'focus' | 'charge_strike' }
+  | { type: 'effect'; kind: 'persistent_guard' }
+  | { type: 'effect'; kind: 'hide_persistent_guard' }
+  | { type: 'effect'; kind: 'charge_glow'; target: BattleAnimationTarget }
+  | { type: 'effect'; kind: 'regen'; healAmount: number }
+  | { type: 'effect'; kind: 'flash'; color?: string }
+  | { type: 'effect'; kind: 'basic_impact'; target: BattleAnimationTarget; crit: boolean; damage: number }
+  | {
+      type: 'effect'
+      kind: 'heavy_impact'
+      target: BattleAnimationTarget
+      crit: boolean
+      damage: number
+      tint?: SkillImpactVisual
+      shockwaveColor?: SkillShockwaveVisual
+      groundShockwaveHeavy?: boolean
+    }
+  | {
+      type: 'effect'
+      kind: 'focused_impact'
+      target: BattleAnimationTarget
+      crit: boolean
+      damage: number
+      hitCount: number
+      spacingMs: number
+      damageDelayMs: number
+      finalHitDurationMs: number
+      impactVariant?: ImpactVariant
+      tint?: SkillImpactVisual
+    }
+  | { type: 'effect'; kind: 'overdrive_streak'; target: BattleAnimationTarget; streakColor?: SkillStreakVisual }
+  | { type: 'effect'; kind: 'counter_impact'; target: BattleAnimationTarget; damage: number; tint: SkillImpactVisual }
   | { type: 'arena_shake'; heavy?: boolean }
   | { type: 'arena_flash' }
   | { type: 'finish_animation' }
@@ -66,46 +109,15 @@ function getPlayerFocusPipsBeforeEntry(
   }, 0)
 }
 
-function didPlayerOverdriveActivate(opts: BattleAnimationPlanOptions, entry: BattleLogEntry, entryIndex: number) {
-  if (entry.skillId !== 'overdrive') return false
+function didPlayerSkillActivateWithPips(opts: BattleAnimationPlanOptions, entry: BattleLogEntry, entryIndex: number) {
   if (entry.actor !== 'player') return true
-
   return getPlayerFocusPipsBeforeEntry(
     opts.base,
     opts.newEntries,
     entryIndex,
     opts.playerPipCap,
     opts.playerFocusGain,
-  ) >= getBattleSkillPipCost('overdrive')
-}
-
-function getSkillAnticipationMs(skillId: string | null) {
-  if (skillId === 'power_strike') return BATTLE_ANIM.POWER_STRIKE_ANTICIPATION_MS
-  if (skillId === 'charge_strike') return BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS
-  return BATTLE_ANIM.ATTACK_ANTICIPATION_MS
-}
-
-function getSkillImpactProfile(skillId: string | null) {
-  const isPowerStrike = skillId === 'power_strike'
-  const isChargeStrike = skillId === 'charge_strike'
-  const isOverdrive = skillId === 'overdrive'
-  const isTripleHit = skillId === 'triple_hit'
-  const isSingleHit = isPowerStrike || isChargeStrike
-  const hitCount = isOverdrive ? 5 : 3
-  const hitSpacingMs = isOverdrive
-    ? BATTLE_ANIM.OVERDRIVE_HIT_SPACING_MS
-    : BATTLE_ANIM.FOCUSED_HIT_SPACING_MS
-
-  return {
-    isPowerStrike,
-    isChargeStrike,
-    isOverdrive,
-    isTripleHit,
-    isSingleHit,
-    hitCount,
-    hitSpacingMs,
-    anticipationMs: getSkillAnticipationMs(skillId),
-  }
+  ) >= getBattleSkillPipCost(entry.skillId)
 }
 
 function isBattleActor(actor: BattleLogEntry['actor']): actor is BattleAnimationActor {
@@ -158,9 +170,9 @@ function addPlayerSkillPipSpend(
 
   add(events, entryStartMs, {
     type: 'effect',
-    target: 'player',
-    effect: skillId === 'charge_strike' ? 'charge_strike_spend' : 'focus_spend',
-    payload: { count: pipSpendCount },
+    kind: 'pip_spend',
+    count: pipSpendCount,
+    variant: SKILL_ANIMATION_RECIPES[skillId]?.pipSpendVariant === 'charge_strike_spend' ? 'charge_strike' : 'focus',
   })
   add(events, entryStartMs + BATTLE_ANIM.SKILL_PIP_DEPLETION_DELAY_MS, {
     type: 'resolve_log_entry',
@@ -178,37 +190,33 @@ function getPriorPlayerHp(opts: BattleAnimationPlanOptions, entryIndex: number) 
   }, null) ?? opts.playerMaxHp
 }
 
+type ContactImpactEvent = Extract<BattleAnimationEvent, { type: 'effect'; kind: 'basic_impact' | 'heavy_impact' | 'focused_impact' }>
+
 function addContactEffects(
   events: ScheduledBattleAnimationEvent[],
   atMs: number,
   entry: BattleLogEntry,
-  effectKind: 'basic' | 'heavy_skill' | 'focused_skill' | 'counter',
-  payload: Record<string, unknown> = {},
+  impactEvent: ContactImpactEvent,
   arenaFeedback: 'none' | 'normal' | 'heavy' = 'normal',
   guardImpactIntensity: 'normal' | 'heavy' = entry.crit ? 'heavy' : 'normal',
 ) {
-  if (!isBattleTarget(entry.target)) return
   if (entry.defended && targetChoseDefend(entry)) {
-    add(events, atMs, {
-      type: 'effect',
-      target: entry.target,
-      effect: 'guard_impact',
-      payload: { intensity: guardImpactIntensity },
-    })
+    add(events, atMs, { type: 'effect', kind: 'guard_impact', target: impactEvent.target, intensity: guardImpactIntensity })
   }
-  add(events, atMs, { type: 'sprite_hurt', target: entry.target, crit: entry.crit, ...payload })
-  add(events, atMs, {
-    type: 'effect',
-    target: entry.target,
-    effect: effectKind,
-    payload: {
-      damage: entry.damage,
-      crit: entry.crit,
-      ...payload,
-    },
-  })
-  if (entry.target === 'player') {
-    add(events, atMs, { type: 'effect', target: 'player', effect: 'hide_persistent_guard' })
+  const spriteHurtEvent: BattleAnimationEvent = impactEvent.kind === 'focused_impact'
+    ? {
+        type: 'sprite_hurt',
+        target: impactEvent.target,
+        crit: impactEvent.crit,
+        hitCount: impactEvent.hitCount,
+        spacingMs: impactEvent.spacingMs,
+        finalHitDurationMs: impactEvent.finalHitDurationMs,
+      }
+    : { type: 'sprite_hurt', target: impactEvent.target, crit: impactEvent.crit }
+  add(events, atMs, spriteHurtEvent)
+  add(events, atMs, impactEvent)
+  if (impactEvent.target === 'player') {
+    add(events, atMs, { type: 'effect', kind: 'hide_persistent_guard' })
   }
   if (arenaFeedback !== 'none') {
     add(events, atMs, { type: 'arena_shake', heavy: arenaFeedback === 'heavy' })
@@ -238,11 +246,11 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
     add(events, entryStartMs, { type: 'reveal_log_entry', entryIndex })
 
     if (entry.target === 'player' && entry.targetHpAfter === 0) {
-      add(events, entryStartMs, { type: 'effect', target: 'player', effect: 'hide_persistent_guard' })
+      add(events, entryStartMs, { type: 'effect', kind: 'hide_persistent_guard' })
     }
 
     if (entry.action === 'special') {
-      add(events, entryStartMs, { type: 'effect', target: 'player', effect: 'special_flash' })
+      add(events, entryStartMs, { type: 'effect', kind: 'flash' })
     }
 
     if (entry.phase === 'initiative' || entry.phase === 'result') {
@@ -258,8 +266,8 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
       addResolve(events, entryStartMs, entryIndex, BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
       add(events, entryStartMs + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS, {
         type: 'effect',
+        kind: 'defend_guard',
         target: entry.actor,
-        effect: 'defend_guard',
       })
     }
 
@@ -271,8 +279,8 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
       })
       add(events, entryStartMs + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS, {
         type: 'effect',
+        kind: 'focus_charge',
         target: entry.actor,
-        effect: 'focus_charge',
       })
       addResolve(
         events,
@@ -283,6 +291,7 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
     }
 
     if (entry.phase === 'action' && entry.action === 'attack' && entry.damage > 0 && isBattleActor(entry.actor)) {
+      if (!isBattleTarget(entry.target)) return
       const contactMs = BATTLE_ANIM.ATTACK_ANTICIPATION_MS + BATTLE_ANIM.LUNGE_PEAK_MS
       add(events, entryStartMs, {
         type: 'sprite_anticipation',
@@ -298,8 +307,7 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
         events,
         entryStartMs + contactMs,
         entry,
-        'basic',
-        {},
+        { type: 'effect', kind: 'basic_impact', target: entry.target, crit: entry.crit, damage: entry.damage },
         entry.crit ? 'heavy' : 'none',
       )
       addFaintAfterHit(
@@ -310,89 +318,54 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
       )
     }
 
-    if (entry.phase === 'action' && entry.action === 'skill' && entry.skillId === 'counter_stance') {
-      const skillLeadMs = addPlayerSkillPipSpend(events, opts, entry, entryIndex, entryStartMs)
-      if (isBattleActor(entry.actor)) {
-        add(events, entryStartMs + skillLeadMs, {
-          type: 'sprite_anticipation',
-          actor: entry.actor,
-          durationMs: BATTLE_ANIM.SUPPORT_ANTICIPATION_MS,
-        })
+    if (entry.phase === 'action' && entry.action === 'skill') {
+      const recipe = SKILL_ANIMATION_RECIPES[entry.skillId ?? '']
+      if (recipe?.kind === 'support_guard' || recipe?.kind === 'support_heal') {
+        const skillLeadMs = addPlayerSkillPipSpend(events, opts, entry, entryIndex, entryStartMs)
+        const effectAtMs = entryStartMs + skillLeadMs + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS
+        if (isBattleActor(entry.actor)) {
+          add(events, entryStartMs + skillLeadMs, {
+            type: 'sprite_anticipation',
+            actor: entry.actor,
+            durationMs: BATTLE_ANIM.SUPPORT_ANTICIPATION_MS,
+          })
+        }
+        if (recipe.kind === 'support_guard') {
+          add(events, effectAtMs, { type: 'effect', kind: 'persistent_guard' })
+        } else if (entry.targetHpAfter !== null) {
+          const healAmount = Math.max(0, entry.targetHpAfter - getPriorPlayerHp(opts, entryIndex))
+          add(events, effectAtMs, { type: 'effect', kind: 'regen', healAmount })
+        }
+        addResolve(events, entryStartMs, entryIndex, skillLeadMs + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS + (recipe.resolveDelayMs ?? 0))
       }
-      addResolve(events, entryStartMs, entryIndex, skillLeadMs + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS)
-      add(events, entryStartMs + skillLeadMs + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS, {
-        type: 'effect',
-        target: 'player',
-        effect: 'persistent_guard',
-      })
-    }
-
-    if (
-      entry.phase === 'action'
-      && entry.action === 'skill'
-      && entry.skillId === 'regen'
-      && entry.targetHpAfter !== null
-    ) {
-      const targetHpAfter = entry.targetHpAfter
-      const skillLeadMs = addPlayerSkillPipSpend(events, opts, entry, entryIndex, entryStartMs)
-      if (isBattleActor(entry.actor)) {
-        add(events, entryStartMs + skillLeadMs, {
-          type: 'sprite_anticipation',
-          actor: entry.actor,
-          durationMs: BATTLE_ANIM.SUPPORT_ANTICIPATION_MS,
-        })
-      }
-      const regenAtMs = entryStartMs + skillLeadMs + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS
-      const healAmount = Math.max(0, targetHpAfter - getPriorPlayerHp(opts, entryIndex))
-      add(events, regenAtMs, {
-        type: 'effect',
-        target: 'player',
-        effect: 'regen',
-        payload: { healAmount },
-      })
-      addResolve(
-        events,
-        entryStartMs,
-        entryIndex,
-        skillLeadMs + BATTLE_ANIM.SUPPORT_ANTICIPATION_MS + BATTLE_ANIM.REGEN_NUMBER_DELAY_MS,
-      )
     }
 
     if (entry.phase === 'action' && entry.action === 'skill' && entry.damage > 0) {
-      const skillLeadMs = addPlayerSkillPipSpend(events, opts, entry, entryIndex, entryStartMs)
-      const {
-        isPowerStrike,
-        isChargeStrike,
-        isOverdrive,
-        isTripleHit,
-        isSingleHit,
-        hitCount,
-        hitSpacingMs,
-        anticipationMs,
-      } = getSkillImpactProfile(entry.skillId)
+      const recipe = SKILL_ANIMATION_RECIPES[entry.skillId ?? '']
+      if (!recipe) return
+      if (!isBattleTarget(entry.target)) return
 
-      if (isChargeStrike) {
+      const skillLeadMs = addPlayerSkillPipSpend(events, opts, entry, entryIndex, entryStartMs)
+      const anticipationMs = recipe.anticipationMs ?? BATTLE_ANIM.ATTACK_ANTICIPATION_MS
+      const isSingleHit = recipe.kind === 'single_hit'
+
+      if (recipe.hasChargeGlow) {
         add(events, entryStartMs + skillLeadMs, {
           type: 'effect',
+          kind: 'charge_glow',
           target: entry.actor === 'opponent' ? 'opponent' : 'player',
-          effect: 'charge_glow',
         })
       }
 
       const lungeStartMs = entryStartMs
         + skillLeadMs
-        + (isChargeStrike ? BATTLE_ANIM.CHARGE_GLOW_MS : 0)
+        + (recipe.hasChargeGlow ? BATTLE_ANIM.CHARGE_GLOW_MS : 0)
       const contactDelayMs = anticipationMs + BATTLE_ANIM.LUNGE_PEAK_MS
       const contactAtMs = lungeStartMs + contactDelayMs
       const skillVisual = entry.skillId ? SKILL_VISUAL_IDENTITY[entry.skillId] : undefined
       const skillFlash = entry.actor === 'player' ? skillVisual?.flash : undefined
       if (skillFlash) {
-        add(events, lungeStartMs, {
-          type: 'effect',
-          target: 'player',
-          effect: 'special_flash',
-          payload: { color: skillFlash },
-        })
+        add(events, lungeStartMs, { type: 'effect', kind: 'flash', color: skillFlash })
       }
       if (isBattleActor(entry.actor)) {
         add(events, lungeStartMs, {
@@ -409,11 +382,23 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
       addResolve(events, lungeStartMs, entryIndex, contactDelayMs)
 
       if (isSingleHit) {
-        addContactEffects(events, contactAtMs, entry, 'heavy_skill', {
-          tint: skillVisual?.impact,
-          shockwaveColor: skillVisual?.shockwave,
-          groundShockwaveHeavy: isPowerStrike,
-        }, isPowerStrike || entry.crit ? 'heavy' : 'normal', isPowerStrike || entry.crit ? 'heavy' : 'normal')
+        addContactEffects(
+          events,
+          contactAtMs,
+          entry,
+          {
+            type: 'effect',
+            kind: 'heavy_impact',
+            target: entry.target,
+            crit: entry.crit,
+            damage: entry.damage,
+            tint: skillVisual?.impact,
+            shockwaveColor: skillVisual?.shockwave,
+            groundShockwaveHeavy: recipe.heavy,
+          },
+          recipe.heavy || entry.crit ? 'heavy' : 'normal',
+          recipe.heavy || entry.crit ? 'heavy' : 'normal',
+        )
         addFaintAfterHit(
           events,
           contactAtMs,
@@ -421,25 +406,41 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
           entry.crit ? BATTLE_ANIM.HURT_CRIT_MS : BATTLE_ANIM.HURT_MS,
         )
       } else {
+        const hitCount = recipe.hitCount ?? 3
+        const hitSpacingMs = recipe.hitSpacingMs ?? BATTLE_ANIM.FOCUSED_HIT_SPACING_MS
         const finalHitDelayMs = hitSpacingMs * (hitCount - 1)
-        addContactEffects(events, contactAtMs, entry, 'focused_skill', {
-          hitCount,
-          spacingMs: hitSpacingMs,
-          damageDelayMs: finalHitDelayMs,
-          finalHitDurationMs: entry.crit ? BATTLE_ANIM.HURT_CRIT_MS : BATTLE_ANIM.HURT_MS,
-          impactVariant: isTripleHit ? 'cut' : 'arc',
-          tint: skillVisual?.impact,
-        }, 'none')
+        addContactEffects(
+          events,
+          contactAtMs,
+          entry,
+          {
+            type: 'effect',
+            kind: 'focused_impact',
+            target: entry.target,
+            crit: entry.crit,
+            damage: entry.damage,
+            hitCount,
+            spacingMs: hitSpacingMs,
+            damageDelayMs: finalHitDelayMs,
+            finalHitDurationMs: entry.crit ? BATTLE_ANIM.HURT_CRIT_MS : BATTLE_ANIM.HURT_MS,
+            impactVariant: recipe.impactVariant,
+            tint: skillVisual?.impact,
+          },
+          'none',
+        )
         add(events, contactAtMs + finalHitDelayMs, { type: 'arena_shake', heavy: entry.crit })
         add(events, contactAtMs + finalHitDelayMs, { type: 'arena_flash' })
-        if (isOverdrive && didPlayerOverdriveActivate(opts, entry, entryIndex) && isBattleTarget(entry.target)) {
-          for (let hit = 0; hit < hitCount; hit += 1) {
-            add(events, contactAtMs + (hit * hitSpacingMs), {
-              type: 'effect',
-              target: entry.target,
-              effect: 'overdrive_streak',
-              payload: { streakColor: skillVisual?.streak },
-            })
+        if (recipe.hasStreaks) {
+          const shouldFire = !recipe.streakRequiresPipCheck || didPlayerSkillActivateWithPips(opts, entry, entryIndex)
+          if (shouldFire) {
+            for (let hit = 0; hit < hitCount; hit += 1) {
+              add(events, contactAtMs + (hit * hitSpacingMs), {
+                type: 'effect',
+                kind: 'overdrive_streak',
+                target: entry.target,
+                streakColor: skillVisual?.streak,
+              })
+            }
           }
         }
         addFaintAfterHit(
@@ -455,18 +456,15 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
       .slice(0, entryIndex)
       .some(e => e.target === 'player' && e.targetHpAfter === 0)
     if (entry.action === 'counter' && entry.damage > 0 && !playerAlreadyDead) {
-      add(events, entryStartMs, { type: 'effect', target: 'player', effect: 'hide_persistent_guard' })
+      add(events, entryStartMs, { type: 'effect', kind: 'hide_persistent_guard' })
       addResolve(events, entryStartMs, entryIndex)
       add(events, entryStartMs, { type: 'sprite_hurt', target: 'opponent', crit: false })
       add(events, entryStartMs, {
         type: 'effect',
+        kind: 'counter_impact',
         target: 'opponent',
-        effect: 'counter',
-        payload: {
-          damage: entry.damage,
-          crit: false,
-          tint: SKILL_VISUAL_IDENTITY.counter_stance.impact,
-        },
+        damage: entry.damage,
+        tint: SKILL_VISUAL_IDENTITY.counter_stance.impact,
       })
       add(events, entryStartMs, { type: 'arena_shake', heavy: false })
       add(events, entryStartMs, { type: 'arena_flash' })

@@ -141,6 +141,41 @@ const BRIGHT_AMBER_HIT_IMPACT: SkillImpactVisual = {
   glowFilter: 'drop-shadow(0 0 8px rgba(253,224,71,0.96)) drop-shadow(0 0 16px rgba(251,191,36,0.68))',
 }
 
+export type ImpactVariant = 'slash' | 'arc' | 'burst' | 'cut'
+
+export type SkillAnimationKind = 'single_hit' | 'multi_hit' | 'support_guard' | 'support_heal'
+
+export interface SkillAnimationRecipe {
+  kind: SkillAnimationKind
+  /** Pre-lunge wind-up duration. Defaults to BATTLE_ANIM.ATTACK_ANTICIPATION_MS. */
+  anticipationMs?: number
+  /** Heavy anticipation pose + heavy shockwave + heavy arena feedback. */
+  heavy?: boolean
+  /** Fires charge_glow on the attacker's sprite stage before the lunge. */
+  hasChargeGlow?: boolean
+  /** Pip spend animation variant. Defaults to 'focus_spend'. */
+  pipSpendVariant?: 'focus_spend' | 'charge_strike_spend'
+  // multi_hit only
+  hitCount?: number
+  hitSpacingMs?: number
+  impactVariant?: ImpactVariant
+  /** Fire overdrive_streak effect on each hit beat. */
+  hasStreaks?: boolean
+  /** Only fire streaks when the player had enough pips to activate the skill. */
+  streakRequiresPipCheck?: boolean
+  /** Extra delay after SUPPORT_ANTICIPATION_MS before the entry resolves. Defaults to 0. */
+  resolveDelayMs?: number
+}
+
+export const SKILL_ANIMATION_RECIPES: Partial<Record<string, SkillAnimationRecipe>> = {
+  power_strike:   { kind: 'single_hit',  anticipationMs: BATTLE_ANIM.POWER_STRIKE_ANTICIPATION_MS, heavy: true },
+  charge_strike:  { kind: 'single_hit',  anticipationMs: BATTLE_ANIM.HEAVY_SKILL_ANTICIPATION_MS, hasChargeGlow: true, pipSpendVariant: 'charge_strike_spend' },
+  triple_hit:     { kind: 'multi_hit',   hitCount: 3, hitSpacingMs: BATTLE_ANIM.FOCUSED_HIT_SPACING_MS,   impactVariant: 'cut' },
+  overdrive:      { kind: 'multi_hit',   hitCount: 5, hitSpacingMs: BATTLE_ANIM.OVERDRIVE_HIT_SPACING_MS,  impactVariant: 'arc', hasStreaks: true, streakRequiresPipCheck: true },
+  counter_stance: { kind: 'support_guard' },
+  regen:          { kind: 'support_heal', resolveDelayMs: BATTLE_ANIM.REGEN_NUMBER_DELAY_MS },
+}
+
 /**
  * Per-skill visual identity for battle VFX.
  * 'counter_stance' also colors the counter payoff hit.

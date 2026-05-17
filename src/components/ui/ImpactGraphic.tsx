@@ -1,6 +1,7 @@
 import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
+import type { ImpactVariant } from '@/lib/battleAnimationConfig'
 
-export type ImpactVariant = 'slash' | 'arc' | 'burst' | 'cut'
+export type { ImpactVariant }
 
 interface ImpactGraphicProps {
   variant: ImpactVariant

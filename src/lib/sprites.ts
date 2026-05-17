@@ -302,14 +302,22 @@ const OPPONENT_SPRITES: Partial<Record<string, OpponentSpriteEntry>> = {
   // ── Arena 5 — Sunforge Summit (levels 27–35) ──────────────────────────────
 
   // 021 Pyrobeetle — small — magma vanguard (armoured oval with forward horn)
-  // 'pyrobeetle': {
-  //   battle: { url: s('/sprites/opponents/pyrobeetle.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // },
+  'pyrobeetle': {
+    battle: { url: s('/sprites/opponents/pyrobeetle.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 6,
+    footOffsetY: 32,
+    worldMap: { url: s('/sprites/opponents_world/pyrobeetle.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/pyrobeetle.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
   // 022 Magmacrab — medium — crushing brute (flat wide body with one giant claw)
-  // 'magmacrab': {
-  //   battle: { url: s('/sprites/opponents/magmacrab.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
-  // },
+  'magmacrab': {
+    battle: { url: s('/sprites/opponents/magmacrab.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    footOffsetX: 6,
+    footOffsetY: 28,
+    worldMap: { url: s('/sprites/opponents_world/magmacrab.png'), nativeWidth: 256, nativeHeight: 256, facing: 'right', pixelArt: true },
+    icon: { url: s('/sprites/icons/magmacrab.png'), nativeWidth: 64, nativeHeight: 64, facing: 'right', pixelArt: true },
+  },
 
   // 023 Ashraptor — medium — volcanic raider (vertical runner on long legs)
   // 'ashraptor': {
