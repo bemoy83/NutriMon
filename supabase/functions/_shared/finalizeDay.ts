@@ -92,6 +92,16 @@ interface CreatureBattleSnapshotRow {
   created_at: string
 }
 
+interface SnapshotXpRow {
+  xp_gained: number
+  battle_date: string
+}
+
+interface RewardedBattleXpRow {
+  xp_awarded: number
+  battle_date: string
+}
+
 interface BattleOpponentRow {
   id: string
   name: string
@@ -393,27 +403,27 @@ async function upsertCompanionBattleState(
 
   const [existingCompanionRes, existingSnapshotRes, allSnapshotXpRes, rewardedBattleXpRes] = await Promise.all([
     supabase.from('creature_companions').select('*').eq('user_id', input.userId).maybeSingle(),
-    supabase.from('creature_battle_snapshots').select('*').eq('user_id', input.userId).eq('prep_date', input.logDate).maybeSingle(),
-    supabase.from('creature_battle_snapshots').select('xp_gained').eq('user_id', input.userId),
-    supabase.from('battle_runs').select('xp_awarded').eq('user_id', input.userId).eq('reward_claimed', true),
+    supabase.from('creature_battle_snapshots').select('*').eq('user_id', input.userId).eq('battle_date', battleDate).maybeSingle(),
+    supabase.from('creature_battle_snapshots').select('xp_gained, battle_date').eq('user_id', input.userId),
+    supabase.from('battle_runs').select('xp_awarded, battle_date').eq('user_id', input.userId).eq('reward_claimed', true),
   ])
 
   const existingCompanion = (existingCompanionRes.data ?? null) as CreatureCompanionRow | null
   const existingSnapshot = (existingSnapshotRes.data ?? null) as CreatureBattleSnapshotRow | null
   const existingSnapshotXp = existingSnapshot?.xp_gained ?? 0
-  const totalSnapshotXpBefore = (allSnapshotXpRes.data ?? []).reduce(
-    (sum, row) => sum + ((row as { xp_gained: number }).xp_gained ?? 0),
-    0,
-  )
-  const totalRewardedBattleXp = (rewardedBattleXpRes.data ?? []).reduce(
-    (sum, row) => sum + ((row as { xp_awarded: number }).xp_awarded ?? 0),
-    0,
-  )
+  const snapshotXpRows = (allSnapshotXpRes.data ?? []) as SnapshotXpRow[]
+  const rewardedBattleXpRows = (rewardedBattleXpRes.data ?? []) as RewardedBattleXpRow[]
+  const totalSnapshotXpBefore = sumSnapshotXp(snapshotXpRows)
+  const totalRewardedBattleXp = sumRewardedBattleXp(rewardedBattleXpRows)
+  const snapshotXpThroughBattleDateBefore = sumSnapshotXp(snapshotXpRows, battleDate)
+  const battleXpThroughBattleDate = sumRewardedBattleXp(rewardedBattleXpRows, battleDate)
 
   const stage = getHigherStage(existingCompanion?.stage ?? getUnlockedStage(input.longestStreak), getUnlockedStage(input.longestStreak))
   const xpGained = getFinalizationXp(input.adjustedAdherence, input.hasMeals ? classifyStatus(input.adjustedAdherence) : 'no_data')
   const totalXp = totalSnapshotXpBefore - existingSnapshotXp + xpGained + totalRewardedBattleXp
-  const level = getLevelFromXp(totalXp)
+  const snapshotXpThroughBattleDate = snapshotXpThroughBattleDateBefore - existingSnapshotXp + xpGained + battleXpThroughBattleDate
+  const snapshotLevel = getLevelFromXp(snapshotXpThroughBattleDate)
+  const companionLevel = getLevelFromXp(totalXp)
   const readinessScore = getReadinessScore(input.creatureStats)
   const readinessBand = getReadinessBand(readinessScore)
   const condition = getCondition({
@@ -437,7 +447,7 @@ async function upsertCompanionBattleState(
         readiness_score: readinessScore,
         readiness_band: readinessBand,
         condition,
-        level,
+        level: snapshotLevel,
         stage,
         source_daily_evaluation_id: input.evaluationId,
         xp_gained: xpGained,
@@ -462,7 +472,7 @@ async function upsertCompanionBattleState(
         user_id: input.userId,
         name: existingCompanion?.name ?? DEFAULT_COMPANION_NAME,
         stage,
-        level,
+        level: companionLevel,
         xp: totalXp,
         current_condition: condition,
         hatched_at: existingCompanion?.hatched_at ?? input.finalizedAt,
@@ -486,6 +496,20 @@ async function upsertCompanionBattleState(
     recommended_opponent: recommendedOpponent,
     xp_gained: xpGained,
   }
+}
+
+function sumSnapshotXp(rows: SnapshotXpRow[], throughBattleDate?: string): number {
+  return rows.reduce((sum, row) => {
+    if (throughBattleDate && row.battle_date > throughBattleDate) return sum
+    return sum + (row.xp_gained ?? 0)
+  }, 0)
+}
+
+function sumRewardedBattleXp(rows: RewardedBattleXpRow[], throughBattleDate?: string): number {
+  return rows.reduce((sum, row) => {
+    if (throughBattleDate && row.battle_date > throughBattleDate) return sum
+    return sum + (row.xp_awarded ?? 0)
+  }, 0)
 }
 
 async function getEvolutionTimestamp(

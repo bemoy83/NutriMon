@@ -49,6 +49,14 @@ export function initFoodSourceServingDraft(food: FoodSource, existing?: Item): F
       pendingPortions: 1,
     }
   }
+  if (!existing && isCompositeWithPiecesForFood(food)) {
+    return {
+      massInputMode: 'grams',
+      pendingMode: 'pieces',
+      pendingGrams: 1,
+      pendingPortions: 1,
+    }
+  }
   const currentGrams = existing
     ? Math.round(existing.quantity * 100)
     : (food.labelPortionGrams ?? 100)

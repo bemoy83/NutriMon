@@ -36,6 +36,9 @@ Turn-based PvE combat. All game logic lives in PostgreSQL (via Supabase RPC); th
 | Battle page | `src/pages/app/BattlePage.tsx` | Main battle screen — ref wiring, HP tracking, action submission |
 
 Progression tuning details live in `docs/battle-progression-tuning.md`.
+XP is the progression authority: companion XP/level and battle snapshot level
+are cached derived fields with database guardrails, not independent sources of
+truth.
 
 ---
 

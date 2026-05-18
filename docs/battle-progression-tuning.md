@@ -41,6 +41,14 @@ sum(creature_battle_snapshots.xp_gained)
 + sum(battle_runs.xp_awarded where reward_claimed = true)
 ```
 
+`creature_companions.xp` and `creature_companions.level` are cached values
+derived from this authoritative total. Migration 078 adds database guardrails so
+direct stale writes to companion XP or level are corrected from XP.
+
+`creature_battle_snapshots.level` is also derived, but from XP available through
+that snapshot's `battle_date`. It is frozen battle-day combat context, not the
+authority for permanent progression.
+
 Dev level testing uses a synthetic battle snapshot at `2099-01-01` /
 `2099-01-02`. The current normalization pins that dev override to level 20
 unless `dev_set_level(target)` is called with a different target.
@@ -67,7 +75,9 @@ resolution. A same-day level-up can immediately grant the companion's newly
 earned skill and focus perk milestones.
 
 Battle stat scaling, including player HP, player damage level bonus, and player
-defender-level mitigation, still uses the prepared battle snapshot level.
+defender-level mitigation, still uses the prepared battle snapshot level. That
+snapshot level is derived from historical XP through the battle date and should
+not be used as permanent progression authority.
 
 | Companion Level | Perk |
 |---:|---|
