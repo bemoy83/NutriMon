@@ -120,7 +120,7 @@ export const IDLE_ANIM = {
   distressBreatheScaleX:        { small: 1.016, medium: 1.012, large: 1.008 },
   distressBreatheCompressScale: { small: 0.984, medium: 0.988, large: 0.992 },
   distressBreatheCompressScaleX:{ small: 0.992, medium: 0.994, large: 0.996 },
-  swayDurationS:                { small: 3.8,  medium: 5.0,  large: 6.5  },
+  swayDurationS: { small: 2.8, medium: 3.0, large: 4.0 },
   swayAngleDeg:                 { small: 1.2,  medium: 0.8,  large: 0.5  },
   swayShiftPx:                  { small: 2.5,  medium: 1.8,  large: 1.2  },
 } as const

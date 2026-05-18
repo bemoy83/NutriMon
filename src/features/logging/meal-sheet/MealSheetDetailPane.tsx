@@ -4,20 +4,15 @@ import ProductForm, { type ProductFormPrefill } from '../ProductForm'
 import ServingStep from '../ServingStep'
 import type { ServingStepEstimate } from '../ServingStep'
 import { servingStepTargetFromFood } from '../servingDraftModel'
+import type { FoodSourceServingDraftBundle } from '../useServingDraft'
 
 type SheetView = 'browse' | 'serving' | 'create'
 
 export interface MealSheetDetailPaneProps {
   sheetView: SheetView
   servingTarget: FoodSource | null
-  pendingGrams: number
-  onPendingGramsChange: (n: number | ((g: number) => number)) => void
-  pendingPortions: number
-  onPendingPortionsChange: (n: number | ((g: number) => number)) => void
-  massInputMode: 'grams' | 'portions'
+  servingDraft: FoodSourceServingDraftBundle
   onMassInputModeChange: (mode: 'grams' | 'portions') => void
-  pendingMode: 'grams' | 'pieces'
-  onPendingModeChange: (m: 'grams' | 'pieces') => void
   servingEstimate: ServingStepEstimate
   isCompositeWithPieces: boolean
   isEditingExisting: boolean
@@ -32,14 +27,8 @@ export interface MealSheetDetailPaneProps {
 export default function MealSheetDetailPane({
   sheetView,
   servingTarget,
-  pendingGrams,
-  onPendingGramsChange,
-  pendingPortions,
-  onPendingPortionsChange,
-  massInputMode,
+  servingDraft,
   onMassInputModeChange,
-  pendingMode,
-  onPendingModeChange,
   servingEstimate,
   isCompositeWithPieces,
   isEditingExisting,
@@ -50,6 +39,8 @@ export default function MealSheetDetailPane({
   productFormPrefill,
   servingFooter,
 }: MealSheetDetailPaneProps) {
+  const { pendingGrams, pendingPortions, massInputMode, pendingMode,
+          setPendingGrams, setPendingPortions, setPendingMode } = servingDraft
   return (
     <>
       {sheetView === 'serving' && servingTarget && (
@@ -58,15 +49,15 @@ export default function MealSheetDetailPane({
           grams={pendingGrams}
           portions={pendingPortions}
           estimate={servingEstimate}
-          onGramsChange={onPendingGramsChange}
-          onPortionsChange={onPendingPortionsChange}
+          onGramsChange={setPendingGrams}
+          onPortionsChange={setPendingPortions}
           massInputMode={massInputMode}
           onMassInputModeChange={onMassInputModeChange}
           onBack={onServingBack}
           isUpdate={isEditingExisting}
           onRemove={isEditingExisting ? onServingRemove : undefined}
           compositeMode={pendingMode}
-          onModeChange={onPendingModeChange}
+          onModeChange={setPendingMode}
           showModeToggle={isCompositeWithPieces}
         />
       )}

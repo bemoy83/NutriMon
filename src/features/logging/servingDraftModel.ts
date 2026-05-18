@@ -230,56 +230,33 @@ export function computeLiveKcalItemEdit(item: Item, draft: ServingDraft): number
   return computeLiveEstimateItemEdit(item, draft).kcal
 }
 
-export function isConfirmDisabledForFood(
-  food: FoodSource,
-  draft: {
-    pendingMode: 'grams' | 'pieces'
-    massInputMode: 'grams' | 'portions'
-    pendingGrams: number
-    pendingPortions: number
-  },
+type ConfirmDraft = {
+  pendingMode: 'grams' | 'pieces'
+  massInputMode: 'grams' | 'portions'
+  pendingGrams: number
+  pendingPortions: number
+}
+
+function isConfirmDisabledCore(
+  draft: ConfirmDraft,
+  isPiecesCapable: boolean,
+  labelPortionGrams: number | null | undefined,
 ): boolean {
-  const isComp = isCompositeWithPiecesForFood(food)
-  if (draft.pendingMode === 'pieces' && isComp) {
-    return draft.pendingGrams <= 0
-  }
-  if (
-    draft.massInputMode === 'portions'
-    && food.labelPortionGrams
-    && food.labelPortionGrams > 0
-  ) {
-    return draft.pendingPortions <= 0
-  }
+  if (draft.pendingMode === 'pieces' && isPiecesCapable) return draft.pendingGrams <= 0
+  if (draft.massInputMode === 'portions' && labelPortionGrams && labelPortionGrams > 0) return draft.pendingPortions <= 0
   return draft.pendingGrams <= 0
+}
+
+export function isConfirmDisabledForFood(food: FoodSource, draft: ConfirmDraft): boolean {
+  return isConfirmDisabledCore(draft, isCompositeWithPiecesForFood(food), food.labelPortionGrams)
 }
 
 /**
  * `ServingEditSheet` uses snapshot label grams when `foodSource` is missing.
  */
-export function isConfirmDisabledItemEdit(
-  item: Item,
-  target: ServingStepTarget,
-  draft: {
-    pendingMode: 'grams' | 'pieces'
-    massInputMode: 'grams' | 'portions'
-    pendingGrams: number
-    pendingPortions: number
-  },
-): boolean {
-  if (item.foodSource) {
-    return isConfirmDisabledForFood(item.foodSource, draft)
-  }
-  if (draft.pendingMode === 'pieces' && (item.compositeQuantityMode === 'pieces')) {
-    return draft.pendingGrams <= 0
-  }
-  if (
-    draft.massInputMode === 'portions'
-    && target.labelPortionGrams
-    && target.labelPortionGrams > 0
-  ) {
-    return draft.pendingPortions <= 0
-  }
-  return draft.pendingGrams <= 0
+export function isConfirmDisabledItemEdit(item: Item, target: ServingStepTarget, draft: ConfirmDraft): boolean {
+  if (item.foodSource) return isConfirmDisabledForFood(item.foodSource, draft)
+  return isConfirmDisabledCore(draft, item.compositeQuantityMode === 'pieces', target.labelPortionGrams)
 }
 
 export function buildConfirmPayloadFromFood(

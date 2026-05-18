@@ -26,15 +26,8 @@ const defaultMassState: MassDraftState = {
   pendingMode: 'grams',
 }
 
-/**
- * Food browse → serving step (MealSheet). Reset via `reinitialize` when opening a food.
- */
-export function useFoodSourceServingDraft() {
-  const [state, setState] = useState<MassDraftState>(defaultMassState)
-
-  const reinitialize = useCallback((food: FoodSource, existing?: Item) => {
-    setState({ ...defaultMassState, ...initFoodSourceServingDraft(food, existing) })
-  }, [])
+function useMassDraftState(initialState: MassDraftState | (() => MassDraftState)) {
+  const [state, setState] = useState<MassDraftState>(initialState as MassDraftState)
 
   const setPendingGrams = useCallback((n: number | ((g: number) => number)) => {
     setState((s) => ({ ...s, pendingGrams: typeof n === 'function' ? n(s.pendingGrams) : n }))
@@ -51,6 +44,20 @@ export function useFoodSourceServingDraft() {
   const setPendingMode = useCallback((m: 'grams' | 'pieces') => {
     setState((s) => ({ ...s, pendingMode: m }))
   }, [])
+
+  return { state, setState, setPendingGrams, setPendingPortions, setMassInputMode, setPendingMode }
+}
+
+/**
+ * Food browse → serving step (MealSheet). Reset via `reinitialize` when opening a food.
+ */
+export function useFoodSourceServingDraft() {
+  const { state, setState, setPendingGrams, setPendingPortions, setMassInputMode, setPendingMode } =
+    useMassDraftState(defaultMassState)
+
+  const reinitialize = useCallback((food: FoodSource, existing?: Item) => {
+    setState({ ...defaultMassState, ...initFoodSourceServingDraft(food, existing) })
+  }, [setState])
 
   return {
     ...state,
@@ -62,30 +69,14 @@ export function useFoodSourceServingDraft() {
   }
 }
 
+export type FoodSourceServingDraftBundle = ReturnType<typeof useFoodSourceServingDraft>
+
 /**
  * `ServingEditSheet`: draft state and derived kcal / confirm for an `Item` row.
  */
 export function useItemServingDraftState(item: Item) {
-  const [state, setState] = useState<MassDraftState>(() => {
-    const next = initItemServingDraft(item)
-    return { ...defaultMassState, ...next }
-  })
-
-  const setPendingGrams = useCallback((n: number | ((g: number) => number)) => {
-    setState((s) => ({ ...s, pendingGrams: typeof n === 'function' ? n(s.pendingGrams) : n }))
-  }, [])
-
-  const setPendingPortions = useCallback((n: number | ((g: number) => number)) => {
-    setState((s) => ({ ...s, pendingPortions: typeof n === 'function' ? n(s.pendingPortions) : n }))
-  }, [])
-
-  const setMassInputMode = useCallback((m: 'grams' | 'portions') => {
-    setState((s) => ({ ...s, massInputMode: m }))
-  }, [])
-
-  const setPendingMode = useCallback((m: 'grams' | 'pieces') => {
-    setState((s) => ({ ...s, pendingMode: m }))
-  }, [])
+  const { state, setState, setPendingGrams, setPendingPortions, setMassInputMode, setPendingMode } =
+    useMassDraftState(() => ({ ...defaultMassState, ...initItemServingDraft(item) }))
 
   const target: ServingStepTarget = useMemo(() => servingStepTargetFromItem(item), [item])
 

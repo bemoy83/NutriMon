@@ -57,6 +57,7 @@ export default function MealSheet({
 }: MealSheetProps) {
   const [sheetView, setSheetView] = useState<SheetView>('browse')
   const [servingTarget, setServingTarget] = useState<FoodSource | null>(null)
+  const servingDraft = useFoodSourceServingDraft()
   const {
     pendingGrams,
     setPendingGrams,
@@ -67,7 +68,7 @@ export default function MealSheet({
     pendingMode,
     setPendingMode,
     reinitialize: reinitializeServingDraft,
-  } = useFoodSourceServingDraft()
+  } = servingDraft
   const [items, setItems] = useState<Item[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [tab, setTab] = useState<'recent' | 'saved' | 'pending'>('recent')
@@ -549,14 +550,8 @@ export default function MealSheet({
           <MealSheetDetailPane
             sheetView={detailSheetView}
             servingTarget={servingTarget}
-            pendingGrams={pendingGrams}
-            onPendingGramsChange={setPendingGrams}
-            pendingPortions={pendingPortions}
-            onPendingPortionsChange={setPendingPortions}
-            massInputMode={massInputMode}
+            servingDraft={servingDraft}
             onMassInputModeChange={onMassInputModeChange}
-            pendingMode={pendingMode}
-            onPendingModeChange={setPendingMode}
             servingEstimate={servingEstimate}
             isCompositeWithPieces={isCompositeWithPieces}
             isEditingExisting={isEditingExisting}
