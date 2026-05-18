@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
+import { spriteCenter } from './spriteCenter'
 
 export interface RegenMote {
   fxPx: number
@@ -24,8 +25,7 @@ export function RegenEffects({
     <>
       {regenOrbits.map((h) => {
         const ds = displaySize ?? 128
-        const cx = ds / 2
-        const cy = ds * 0.44
+        const { cx, cy } = spriteCenter(ds)
         const rings = [
           { delay: 0,   sizePct: 0.55, dur: 700 },
           { delay: 180, sizePct: 0.70, dur: 800 },

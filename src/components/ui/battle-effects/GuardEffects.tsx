@@ -1,3 +1,5 @@
+import { spriteCenter } from './spriteCenter'
+
 export interface GuardEffect {
   id: number
   durationMs: number
@@ -65,8 +67,7 @@ export function GuardEffects({
   displaySize?: number
 }) {
   const ds = displaySize ?? 128
-  const cx = ds / 2
-  const cy = ds * 0.44
+  const { cx, cy } = spriteCenter(ds)
   const r = ds * 0.46
 
   return (
@@ -214,6 +215,9 @@ export function GuardEffects({
         const hexPid = `p-hex-p-${persistentGuardKey}`
         const hexGid = `p-hex-g-${persistentGuardKey}`
         const hexMid = `p-hex-m-${persistentGuardKey}`
+        const burstHexPid = `p-hex-pb-${persistentGuardKey}`
+        const burstHexGid = `p-hex-gb-${persistentGuardKey}`
+        const burstHexMid = `p-hex-mb-${persistentGuardKey}`
         return (
           <div
             key={persistentGuardKey}
@@ -236,7 +240,7 @@ export function GuardEffects({
                   overflow: 'hidden',
                 }}
               >
-                <HexPattern patternId={hexPid} gradientId={hexGid} maskId={hexMid} opacity={0.42} />
+                <HexPattern patternId={burstHexPid} gradientId={burstHexGid} maskId={burstHexMid} opacity={0.42} />
               </div>
             )}
 

@@ -93,6 +93,8 @@ export const BATTLE_ANIM = {
   HEAL_GLOW_MS: 950,
   /** Larger wind-up pause specifically for power_strike's heavy burst — more drama before impact. */
   POWER_STRIKE_ANTICIPATION_MS: 400,
+  /** Horizontal speed-blur streak duration (ms). Must match `overdrive-streak` @keyframes. */
+  OVERDRIVE_STREAK_MS: 280,
 } as const
 
 /**
@@ -165,7 +167,7 @@ export type SkillAnimationKind = 'single_hit' | 'multi_hit' | 'support_guard' | 
  * Each value must correspond to a typed BattleAnimationEvent kind with a dispatch case in the conductor.
  * 'ground_shockwave' is deferred — currently bundled inside the heavy_impact event.
  */
-export type EffectPrimitive = 'overdrive_streak' | 'persistent_guard' | string
+export type EffectPrimitive = 'overdrive_streak' | 'persistent_guard'
 
 export interface SkillAnimationEntry {
   // Behavioral
@@ -174,6 +176,13 @@ export interface SkillAnimationEntry {
   anticipationMs?: number
   /** Heavy anticipation pose + heavy shockwave + heavy arena feedback. */
   heavy?: boolean
+  /**
+   * Override arena shake/flash intensity for this skill.
+   * When omitted, single-hit falls back to `heavy || crit ? 'heavy' : 'normal'`;
+   * multi-hit falls back to `crit ? 'heavy' : 'normal'`.
+   * Set to 'none' to suppress shake and flash entirely.
+   */
+  shakeIntensity?: 'none' | 'normal' | 'heavy'
   /** Fires charge_glow on the attacker's sprite stage before the lunge. */
   hasChargeGlow?: boolean
   // multi_hit only

@@ -187,6 +187,16 @@ function addContactEffects(
   }
 }
 
+/**
+ * Schedules a faint sprite event after the hit animation resolves.
+ *
+ * Faint delay strategies used across action paths:
+ *  - basic attack / single-hit skill: HURT_CRIT_MS or HURT_MS — waits for the
+ *    hurt flash to finish before the dissolve starts.
+ *  - multi-hit skill: finalHitDelayMs + HIT_IMPACT_MS — waits for the last hit
+ *    animation frame to peak, so all impacts are visible before the faint.
+ *  - counter: HURT_MS (never critical) — same as attack, counter hits aren't crits.
+ */
 function addFaintAfterHit(
   events: ScheduledBattleAnimationEvent[],
   atMs: number,
@@ -356,6 +366,7 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
       addResolve(events, lungeStartMs, entryIndex, contactDelayMs)
 
       if (isSingleHit) {
+        const singleHitFeedback = recipe.shakeIntensity ?? (recipe.heavy || entry.crit ? 'heavy' : 'normal')
         addContactEffects(
           events,
           contactAtMs,
@@ -370,7 +381,7 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
             shockwaveColor: skillVisual?.shockwave,
             groundShockwaveHeavy: recipe.heavy,
           },
-          recipe.heavy || entry.crit ? 'heavy' : 'normal',
+          singleHitFeedback,
           recipe.heavy || entry.crit ? 'heavy' : 'normal',
         )
         addFaintAfterHit(
@@ -402,8 +413,11 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
           },
           'none',
         )
-        add(events, contactAtMs + finalHitDelayMs, { type: 'arena_shake', heavy: entry.crit })
-        add(events, contactAtMs + finalHitDelayMs, { type: 'arena_flash' })
+        const multiHitFeedback = recipe.shakeIntensity ?? (entry.crit ? 'heavy' : 'normal')
+        if (multiHitFeedback !== 'none') {
+          add(events, contactAtMs + finalHitDelayMs, { type: 'arena_shake', heavy: multiHitFeedback === 'heavy' })
+          add(events, contactAtMs + finalHitDelayMs, { type: 'arena_flash' })
+        }
         if (recipe.hasStreaks) {
           const shouldFire = !recipe.streakRequiresPipCheck || didPlayerSkillActivateWithPips(opts, entry, entryIndex)
           if (shouldFire) {
@@ -437,6 +451,10 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
           case 'persistent_guard':
             add(events, contactAtMs, { type: 'effect', kind: 'persistent_guard' })
             break
+          default:
+            if (process.env.NODE_ENV !== 'production') {
+              console.warn(`[battleAnimationPlan] Unknown extraEffect primitive: "${primitive}"`)
+            }
         }
       }
     }

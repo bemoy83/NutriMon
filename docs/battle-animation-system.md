@@ -86,7 +86,7 @@ Larger creatures have more mass — they breathe slower and sway less. All value
 | Breathe duration | 3.5s | 4.0s | 4.8s |
 | Breathe scaleY | 1.022 | 1.018 | 1.012 |
 | Breathe scaleX | 1.010 | 1.008 | 1.005 |
-| Sway duration | 3.8s | 5.0s | 6.5s |
+| Sway duration | 2.8s | 3.0s | 4.0s |
 | Sway style | shift | shift | rotate |
 | Sway angle (°) | 1.2 | 0.8 | 0.5 |
 | Sway shift (px) | 2.5 | 1.8 | 1.2 |

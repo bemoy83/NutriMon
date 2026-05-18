@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { spriteCenter } from './spriteCenter'
 
 export interface FocusMote {
   px: number
@@ -25,8 +26,7 @@ export function FocusChargeEffects({
     <>
       {focuses.map((f) => {
         const ds = displaySize ?? 128
-        const cx = ds / 2
-        const cy = ds * 0.44
+        const { cx, cy } = spriteCenter(ds)
         const shrinkRings = [
           { w: ds * 1.02, delay: 0,   dur: 520 },
           { w: ds * 0.76, delay: 90,  dur: 540 },

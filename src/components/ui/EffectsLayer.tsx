@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type Disp
 import { BATTLE_ANIM } from '@/lib/battleAnimationConfig'
 import type { SkillShockwaveVisual, SkillStreakVisual } from '@/lib/battleAnimationConfig'
 import type { ImpactVariant } from './ImpactGraphic'
+import { spriteCenter } from './battle-effects/spriteCenter'
 import { DamageNumberEffects, type FloatingNumber } from './battle-effects/DamageNumberEffects'
 import { FocusChargeEffects, type FocusEffect, type FocusMote } from './battle-effects/FocusChargeEffects'
 import { GuardEffects, type GuardEffect, type GuardImpactEffect, type PersistentGuardState } from './battle-effects/GuardEffects'
@@ -202,8 +203,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
       showFocusCharge() {
         const id = nextId()
         const ds = displaySize ?? 128
-        const cx = ds / 2
-        const cy = ds * 0.44
+        const { cx, cy } = spriteCenter(ds)
         const rx = ds * 0.42
         const ry = ds * 0.34
         const count = 8
@@ -232,7 +232,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         const id = nextId()
         const yPct = 30 + Math.round(Math.random() * 36)
         const effect: OverdriveStreak = color ? { id, yPct, color } : { id, yPct }
-        addTimedEffect(setStreaks, effect, 280)
+        addTimedEffect(setStreaks, effect, BATTLE_ANIM.OVERDRIVE_STREAK_MS)
       },
       showRegenOrbitEffect(value) {
         const id = nextId()
