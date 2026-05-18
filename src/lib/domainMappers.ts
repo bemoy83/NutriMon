@@ -478,6 +478,7 @@ export function mapBattleLogEntry(row: BattleLogEntryRow): BattleLogEntry {
     consumedMomentumBoost: row.consumed_momentum_boost ?? false,
     message: row.message,
     skillId: row.skill_id ?? null,
+    hitBreakdown: row.hit_breakdown ?? null,
   }
 }
 

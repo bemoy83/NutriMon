@@ -430,6 +430,7 @@ export interface BattleLogEntry {
   defended: boolean
   consumedMomentumBoost: boolean
   message: string
+  hitBreakdown: Array<{ damage: number; crit: boolean }> | null
 }
 
 export interface BattleRunSession extends Omit<BattleRun, 'opponent'> {

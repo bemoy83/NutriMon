@@ -238,14 +238,27 @@ export function useBattleLogReveal(opts: {
                 event.tint,
                 { emphasizeFinalHit: true },
               )
-              const showDamage = () => {
-                fx(event.target)?.showDamageNumber(event.damage, event.crit)
-              }
-              if (event.damageDelayMs > 0) {
-                const t = setTimeout(showDamage, event.damageDelayMs)
-                animTimers.current.push(t)
+              if (event.hitBreakdown && event.hitBreakdown.length > 0) {
+                // Per-hit numbers: one float-up at each hit beat timing.
+                event.hitBreakdown.forEach((hit, i) => {
+                  const delayMs = i * event.spacingMs
+                  const fire = () => fx(event.target)?.showDamageNumber(hit.damage, hit.crit)
+                  if (delayMs === 0) {
+                    fire()
+                  } else {
+                    const t = setTimeout(fire, delayMs)
+                    animTimers.current.push(t)
+                  }
+                })
               } else {
-                showDamage()
+                // Fallback for log entries predating hit_breakdown: one total at the end.
+                const showDamage = () => fx(event.target)?.showDamageNumber(event.damage, event.crit)
+                if (event.damageDelayMs > 0) {
+                  const t = setTimeout(showDamage, event.damageDelayMs)
+                  animTimers.current.push(t)
+                } else {
+                  showDamage()
+                }
               }
               break
             }

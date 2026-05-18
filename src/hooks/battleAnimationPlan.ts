@@ -58,6 +58,7 @@ export type BattleAnimationEvent =
       finalHitDurationMs: number
       impactVariant?: ImpactVariant
       tint?: SkillImpactVisual
+      hitBreakdown?: Array<{ damage: number; crit: boolean }>
     }
   | { type: 'effect'; kind: 'overdrive_streak'; target: BattleAnimationTarget; streakColor?: SkillStreakVisual }
   | { type: 'effect'; kind: 'counter_impact'; target: BattleAnimationTarget; damage: number; tint: SkillImpactVisual }
@@ -410,6 +411,7 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
             finalHitDurationMs: entry.crit ? BATTLE_ANIM.HURT_CRIT_MS : BATTLE_ANIM.HURT_MS,
             impactVariant: recipe.impactVariant,
             tint: skillVisual?.impact,
+            hitBreakdown: entry.hitBreakdown ?? undefined,
           },
           'none',
         )

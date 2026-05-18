@@ -563,6 +563,7 @@ export interface BattleLogEntryRow {
   consumed_momentum_boost: boolean
   message: string
   skill_id: string | null
+  hit_breakdown: Array<{ damage: number; crit: boolean }> | null
 }
 
 export interface BattleRunRow {
