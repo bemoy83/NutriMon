@@ -27,6 +27,7 @@ function entry(overrides: Partial<BattleLogEntry>): BattleLogEntry {
     defended: false,
     consumedMomentumBoost: false,
     message: 'Test entry',
+    hitBreakdown: null,
     ...overrides,
   }
 }

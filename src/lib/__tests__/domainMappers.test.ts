@@ -32,6 +32,7 @@ describe('domainMappers', () => {
         consumed_momentum_boost: false,
         message: 'Pebble Pup acts first!',
         skill_id: null,
+        hit_breakdown: null,
       }),
     ).toEqual(expect.objectContaining({
       firstActor: 'opponent',
@@ -56,6 +57,7 @@ describe('domainMappers', () => {
         consumed_momentum_boost: false,
         message: 'Sprout attacks for 8 damage!',
         skill_id: null,
+        hit_breakdown: null,
       }),
     ).toEqual(expect.objectContaining({
       firstActor: null,

@@ -463,7 +463,7 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
             })
             break
           default:
-            if (process.env.NODE_ENV !== 'production') {
+            if (import.meta.env.DEV) {
               console.warn(`[battleAnimationPlan] Unknown extraEffect primitive: "${primitive}"`)
             }
         }
