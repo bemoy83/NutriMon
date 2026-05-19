@@ -104,7 +104,7 @@ export function useItemServingDraftState(item: Item) {
         return { ...s, massInputMode: mode, pendingGrams, pendingPortions }
       })
     },
-    [target.labelPortionGrams],
+    [setState, target.labelPortionGrams],
   )
 
   return {

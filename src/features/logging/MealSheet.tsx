@@ -66,7 +66,6 @@ export default function MealSheet({
     massInputMode,
     setMassInputMode,
     pendingMode,
-    setPendingMode,
     reinitialize: reinitializeServingDraft,
   } = servingDraft
   const [items, setItems] = useState<Item[]>([])
