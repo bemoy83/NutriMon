@@ -61,6 +61,7 @@ export type BattleAnimationEvent =
       hitBreakdown?: Array<{ damage: number; crit: boolean }>
     }
   | { type: 'effect'; kind: 'overdrive_streak'; target: BattleAnimationTarget; streakColor?: SkillStreakVisual }
+  | { type: 'effect'; kind: 'ground_shockwave'; target: BattleAnimationTarget; wide?: boolean; color?: SkillShockwaveVisual }
   | { type: 'effect'; kind: 'counter_impact'; target: BattleAnimationTarget; damage: number; tint: SkillImpactVisual }
   | { type: 'arena_shake'; heavy?: boolean }
   | { type: 'arena_flash' }
@@ -452,6 +453,14 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
             break
           case 'persistent_guard':
             add(events, contactAtMs, { type: 'effect', kind: 'persistent_guard' })
+            break
+          case 'ground_shockwave':
+            add(events, contactAtMs, {
+              type: 'effect',
+              kind: 'ground_shockwave',
+              target: entry.target,
+              color: recipe.shockwave,
+            })
             break
           default:
             if (process.env.NODE_ENV !== 'production') {

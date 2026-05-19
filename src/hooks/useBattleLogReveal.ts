@@ -265,6 +265,9 @@ export function useBattleLogReveal(opts: {
             case 'overdrive_streak':
               fx(event.target)?.showOverdriveStreak(event.streakColor)
               break
+            case 'ground_shockwave':
+              fx(event.target)?.showGroundShockwave(event.wide, event.color)
+              break
             case 'counter_impact':
               fx(event.target)?.showDamageNumber(event.damage, false)
               fx(event.target)?.showAttackImpact(false, event.tint)

@@ -217,8 +217,7 @@ my_skill: {
 },
 ```
 
-Currently dispatchable primitives: `'overdrive_streak'`, `'persistent_guard'`.
-(`ground_shockwave` is deferred — still bundled inside the `heavy_impact` event.)
+Currently dispatchable primitives: `'overdrive_streak'`, `'persistent_guard'`, `'ground_shockwave'`.
 
 `extraEffects` fires **once at contact time**. It is distinct from `hasStreaks`, which fires one `overdrive_streak` per hit beat for multi-hit skills.
 
@@ -311,6 +310,7 @@ All effect events are dispatched through the `switch (event.kind)` in `useBattle
 | `heavy_impact` | `fx.showHeavyAttackImpact(tint)` + `showGroundShockwave()` + `showDamageNumber()` | `single_hit` skills |
 | `focused_impact` | `fx.showFocusedAttackImpact(hitCount, spacing, variant, tint)` + deferred `showDamageNumber()` | `multi_hit` skills |
 | `overdrive_streak` | `fx.showOverdriveStreak(color)` | Per-hit from `hasStreaks`; also in `extraEffects` |
+| `ground_shockwave` | `fx.showGroundShockwave(wide, color)` | `extraEffects` on any skill; color from `recipe.shockwave` |
 | `counter_impact` | `fx.showDamageNumber()` + `fx.showAttackImpact(tint)` | Counter payoff hit |
 
 Non-effect events (`sprite_anticipation`, `sprite_attack`, `sprite_hurt`, `sprite_faint`, `arena_shake`, `arena_flash`, `finish_animation`) are handled before the `effect` block in the executor.

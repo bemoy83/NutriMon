@@ -165,9 +165,8 @@ export type SkillAnimationKind = 'single_hit' | 'multi_hit' | 'support_guard' | 
 /**
  * Primitive effect identifiers that can be layered onto a skill at contact time via `extraEffects`.
  * Each value must correspond to a typed BattleAnimationEvent kind with a dispatch case in the conductor.
- * 'ground_shockwave' is deferred — currently bundled inside the heavy_impact event.
  */
-export type EffectPrimitive = 'overdrive_streak' | 'persistent_guard'
+export type EffectPrimitive = 'overdrive_streak' | 'persistent_guard' | 'ground_shockwave'
 
 export interface SkillAnimationEntry {
   // Behavioral
