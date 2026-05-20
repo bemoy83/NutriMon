@@ -46,6 +46,7 @@ function effectHandle(): EffectsLayerHandle {
     showRegenOrbitEffect: vi.fn(),
     showPersistentGuard: vi.fn(),
     hidePersistentGuard: vi.fn(),
+    showSparkBurst: vi.fn(),
   }
 }
 

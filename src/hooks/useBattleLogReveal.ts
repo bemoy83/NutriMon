@@ -11,6 +11,10 @@ import {
   type BattleAnimationTarget,
 } from './battleAnimationPlan'
 
+type BasicImpactTint = Extract<
+  BattleAnimationEvent,
+  { type: 'effect'; kind: 'basic_impact' }
+>['tint']
 
 export function useBattleLogReveal(opts: {
   playerSpriteRef: RefObject<CreatureSpriteHandle | null>
@@ -193,6 +197,28 @@ export function useBattleLogReveal(opts: {
         if (event.type === 'effect') {
           const fx = (target: BattleAnimationTarget) =>
             target === 'player' ? playerEffectsRef.current : opponentEffectsRef.current
+          const showAttackImpact = (
+            target: BattleAnimationTarget,
+            crit: boolean,
+            tint?: BasicImpactTint,
+          ) => {
+            if (tint) {
+              fx(target)?.showAttackImpact(crit, tint)
+            } else {
+              fx(target)?.showAttackImpact(crit)
+            }
+          }
+          const showHeavyAttackImpact = (
+            target: BattleAnimationTarget,
+            crit: boolean,
+            tint?: BasicImpactTint,
+          ) => {
+            if (tint) {
+              fx(target)?.showHeavyAttackImpact(crit, tint)
+            } else {
+              fx(target)?.showHeavyAttackImpact(crit)
+            }
+          }
           switch (event.kind) {
             case 'defend_guard':
               fx(event.target)?.showDefendGuard()
@@ -222,9 +248,9 @@ export function useBattleLogReveal(opts: {
               break
             case 'basic_impact':
               if (event.heavy) {
-                fx(event.target)?.showHeavyAttackImpact(event.crit, event.tint)
+                showHeavyAttackImpact(event.target, event.crit, event.tint)
               } else {
-                fx(event.target)?.showAttackImpact(event.crit, event.tint)
+                showAttackImpact(event.target, event.crit, event.tint)
               }
               fx(event.target)?.showDamageNumber(event.damage, event.crit)
               break
