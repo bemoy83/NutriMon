@@ -1,5 +1,6 @@
 import {
   BATTLE_ANIM,
+  COUNTER_IMPACT_VISUAL,
   SKILL_ANIMATION_CATALOG,
   type ImpactVariant,
   type SkillImpactVisual,
@@ -467,7 +468,7 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
               type: 'effect',
               kind: 'spark_burst',
               target: entry.target,
-              color: recipe.impact?.stroke,
+              color: recipe.sparkColor ?? recipe.impact?.stroke,
             })
             break
           default:
@@ -490,7 +491,7 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
         kind: 'counter_impact',
         target: 'opponent',
         damage: entry.damage,
-        tint: SKILL_ANIMATION_CATALOG['counter_stance']!.impact,
+        tint: COUNTER_IMPACT_VISUAL,
       })
       add(events, entryStartMs, { type: 'arena_shake', heavy: false })
       add(events, entryStartMs, { type: 'arena_flash' })

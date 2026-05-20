@@ -242,6 +242,7 @@ All fields live in `src/lib/battleAnimationConfig.ts`.
 | `streakRequiresPipCheck` | `boolean` | `false` | Only fire streaks when player had enough pips to activate the skill |
 | `resolveDelayMs` | `number` | `0` | `support_*` only — extra wait after anticipation before entry resolves |
 | `extraEffects` | `EffectPrimitive[]` | `[]` | One-shot primitives fired at contact time after the base impact |
+| `sparkColor` | `string` | impact stroke color | Particle color for `spark_burst` when used via `extraEffects`. Falls back to `impact.stroke` if omitted |
 
 ### Visual fields
 

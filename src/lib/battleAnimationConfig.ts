@@ -160,6 +160,9 @@ const BRIGHT_AMBER_HIT_IMPACT: SkillImpactVisual = {
   glowFilter: 'drop-shadow(0 0 8px rgba(253,224,71,0.96)) drop-shadow(0 0 16px rgba(251,191,36,0.68))',
 }
 
+/** Impact visual used for the counter payoff hit — exported so the conductor can reference it without string-keying the catalog. */
+export const COUNTER_IMPACT_VISUAL: SkillImpactVisual = BRIGHT_AMBER_HIT_IMPACT
+
 export type ImpactVariant = 'slash' | 'arc' | 'burst' | 'cut' | 'star' | 'cross'
 
 export type SkillAnimationKind = 'single_hit' | 'multi_hit' | 'support_guard' | 'support_heal'
@@ -198,7 +201,9 @@ export interface SkillAnimationEntry {
   resolveDelayMs?: number
   /** Additional effect primitives fired once at contact time, after the base impact event. */
   extraEffects?: EffectPrimitive[]
-  // Visual — 'counter_stance' impact also colors the counter payoff hit
+  /** Color for spark_burst particles when used via extraEffects. Defaults to the impact stroke color if omitted. */
+  sparkColor?: string
+  // Visual
   impact: SkillImpactVisual
   /** Low-alpha full-screen wash for player skill starts. */
   flash: string
