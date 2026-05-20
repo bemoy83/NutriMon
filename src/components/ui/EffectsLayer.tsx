@@ -9,6 +9,7 @@ import { GuardEffects, type GuardEffect, type GuardImpactEffect, type Persistent
 import { ImpactEffects, type HitImpact, type ImpactColor } from './battle-effects/ImpactEffects'
 import { RegenEffects, type RegenMote, type RegenOrbitEffect } from './battle-effects/RegenEffects'
 import { ShockwaveEffects, type OverdriveStreak, type ShockwaveEffect } from './battle-effects/ShockwaveEffects'
+import { SparkBurstEffects, type SparkBurstEffect, type SparkParticle } from './battle-effects/SparkBurstEffects'
 
 export interface EffectsLayerHandle {
   showDamageNumber(value: number, isCrit: boolean): void
@@ -33,6 +34,7 @@ export interface EffectsLayerHandle {
   /** Counter Stance V2: looping shield ring that persists until counter fires. */
   showPersistentGuard(): void
   hidePersistentGuard(): void
+  showSparkBurst(color?: string): void
 }
 
 interface EffectsLayerProps {
@@ -75,6 +77,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
     const [shockwaves, setShockwaves] = useState<ShockwaveEffect[]>([])
     const [streaks, setStreaks] = useState<OverdriveStreak[]>([])
     const [regenOrbits, setRegenOrbits] = useState<RegenOrbitEffect[]>([])
+    const [sparkBursts, setSparkBursts] = useState<SparkBurstEffect[]>([])
     const [persistentGuardState, setPersistentGuardState] = useState<PersistentGuardState>('hidden')
     const [persistentGuardKey, setPersistentGuardKey] = useState(0)
     const persistentGuardDismissRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -132,7 +135,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         const id = nextId()
         addTimedEffect(setImpacts, {
           id, isCrit, delayMs: 0, xPct: 50, yPct: 50,
-          variant: 'slash',
+          variant: 'star',
           angle: Math.round((Math.random() - 0.5) * 40),
           impactColor,
           sparkItems: makeHitSparkItems(14),
@@ -244,6 +247,22 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         }))
         addTimedEffect(setRegenOrbits, { id, value, motes }, BATTLE_ANIM.HEAL_EFFECT_MS)
       },
+      showSparkBurst(color?) {
+        const id = nextId()
+        const COUNT = 14
+        const particles: SparkParticle[] = Array.from({ length: COUNT }, (_, i) => ({
+          angleDeg: (i / COUNT) * 360 + (Math.random() - 0.5) * 38,
+          travelPx: 52 + Math.random() * 52,
+          sizePx: Math.random() < 0.5 ? 10 : 10,
+          delayMs: Math.floor(Math.random() * 55),
+        }))
+        const effect: SparkBurstEffect = {
+          id, xPct: 50, yPct: 44, particles,
+          durationMs: BATTLE_ANIM.SPARK_BURST_MS,
+          color,
+        }
+        addTimedEffect(setSparkBursts, effect, BATTLE_ANIM.SPARK_BURST_MS + 50)
+      },
       showPersistentGuard() {
         if (persistentGuardDismissRef.current) clearTimeout(persistentGuardDismissRef.current)
         setPersistentGuardState('active')
@@ -284,6 +303,7 @@ const EffectsLayer = forwardRef<EffectsLayerHandle, EffectsLayerProps>(
         <FocusChargeEffects focuses={focuses} displaySize={displaySize} />
         <ShockwaveEffects shockwaves={shockwaves} streaks={streaks} />
         <RegenEffects regenOrbits={regenOrbits} displaySize={displaySize} />
+        <SparkBurstEffects bursts={sparkBursts} />
       </div>
     )
   },

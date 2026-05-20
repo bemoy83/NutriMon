@@ -35,17 +35,7 @@ export type BattleAnimationEvent =
   | { type: 'effect'; kind: 'charge_glow'; target: BattleAnimationTarget }
   | { type: 'effect'; kind: 'regen'; healAmount: number }
   | { type: 'effect'; kind: 'flash'; color?: string }
-  | { type: 'effect'; kind: 'basic_impact'; target: BattleAnimationTarget; crit: boolean; damage: number }
-  | {
-      type: 'effect'
-      kind: 'heavy_impact'
-      target: BattleAnimationTarget
-      crit: boolean
-      damage: number
-      tint?: SkillImpactVisual
-      shockwaveColor?: SkillShockwaveVisual
-      groundShockwaveHeavy?: boolean
-    }
+  | { type: 'effect'; kind: 'basic_impact'; target: BattleAnimationTarget; crit: boolean; damage: number; heavy?: boolean; tint?: SkillImpactVisual }
   | {
       type: 'effect'
       kind: 'focused_impact'
@@ -62,6 +52,7 @@ export type BattleAnimationEvent =
     }
   | { type: 'effect'; kind: 'overdrive_streak'; target: BattleAnimationTarget; streakColor?: SkillStreakVisual }
   | { type: 'effect'; kind: 'ground_shockwave'; target: BattleAnimationTarget; wide?: boolean; color?: SkillShockwaveVisual }
+  | { type: 'effect'; kind: 'spark_burst'; target: BattleAnimationTarget; color?: string }
   | { type: 'effect'; kind: 'counter_impact'; target: BattleAnimationTarget; damage: number; tint: SkillImpactVisual }
   | { type: 'arena_shake'; heavy?: boolean }
   | { type: 'arena_flash' }
@@ -155,7 +146,7 @@ function getPriorPlayerHp(opts: BattleAnimationPlanOptions, entryIndex: number) 
   }, null) ?? opts.playerMaxHp
 }
 
-type ContactImpactEvent = Extract<BattleAnimationEvent, { type: 'effect'; kind: 'basic_impact' | 'heavy_impact' | 'focused_impact' }>
+type ContactImpactEvent = Extract<BattleAnimationEvent, { type: 'effect'; kind: 'basic_impact' | 'focused_impact' }>
 
 function addContactEffects(
   events: ScheduledBattleAnimationEvent[],
@@ -368,24 +359,33 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
       addResolve(events, lungeStartMs, entryIndex, contactDelayMs)
 
       if (isSingleHit) {
-        const singleHitFeedback = recipe.shakeIntensity ?? (recipe.heavy || entry.crit ? 'heavy' : 'normal')
+        const isHeavy = Boolean(recipe.heavy) || entry.crit
+        const singleHitFeedback = recipe.shakeIntensity ?? (isHeavy ? 'heavy' : 'normal')
         addContactEffects(
           events,
           contactAtMs,
           entry,
           {
             type: 'effect',
-            kind: 'heavy_impact',
+            kind: 'basic_impact',
             target: entry.target,
             crit: entry.crit,
             damage: entry.damage,
+            heavy: isHeavy,
             tint: skillVisual?.impact,
-            shockwaveColor: skillVisual?.shockwave,
-            groundShockwaveHeavy: recipe.heavy,
           },
           singleHitFeedback,
-          recipe.heavy || entry.crit ? 'heavy' : 'normal',
+          isHeavy ? 'heavy' : 'normal',
         )
+        if (recipe.shockwave) {
+          add(events, contactAtMs, {
+            type: 'effect',
+            kind: 'ground_shockwave',
+            target: entry.target,
+            wide: Boolean(recipe.heavy),
+            color: recipe.shockwave,
+          })
+        }
         addFaintAfterHit(
           events,
           contactAtMs,
@@ -460,6 +460,14 @@ export function planBattleAnimationEvents(opts: BattleAnimationPlanOptions): Sch
               kind: 'ground_shockwave',
               target: entry.target,
               color: recipe.shockwave,
+            })
+            break
+          case 'spark_burst':
+            add(events, contactAtMs, {
+              type: 'effect',
+              kind: 'spark_burst',
+              target: entry.target,
+              color: recipe.impact?.stroke,
             })
             break
           default:

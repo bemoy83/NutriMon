@@ -95,6 +95,8 @@ export const BATTLE_ANIM = {
   POWER_STRIKE_ANTICIPATION_MS: 400,
   /** Horizontal speed-blur streak duration (ms). Must match `overdrive-streak` @keyframes. */
   OVERDRIVE_STREAK_MS: 280,
+  /** Pixel square spark burst duration (ms). Must match `spark-fly` @keyframes. */
+  SPARK_BURST_MS: 320,
 } as const
 
 /**
@@ -158,7 +160,7 @@ const BRIGHT_AMBER_HIT_IMPACT: SkillImpactVisual = {
   glowFilter: 'drop-shadow(0 0 8px rgba(253,224,71,0.96)) drop-shadow(0 0 16px rgba(251,191,36,0.68))',
 }
 
-export type ImpactVariant = 'slash' | 'arc' | 'burst' | 'cut'
+export type ImpactVariant = 'slash' | 'arc' | 'burst' | 'cut' | 'star' | 'cross'
 
 export type SkillAnimationKind = 'single_hit' | 'multi_hit' | 'support_guard' | 'support_heal'
 
@@ -166,7 +168,7 @@ export type SkillAnimationKind = 'single_hit' | 'multi_hit' | 'support_guard' | 
  * Primitive effect identifiers that can be layered onto a skill at contact time via `extraEffects`.
  * Each value must correspond to a typed BattleAnimationEvent kind with a dispatch case in the conductor.
  */
-export type EffectPrimitive = 'overdrive_streak' | 'persistent_guard' | 'ground_shockwave'
+export type EffectPrimitive = 'overdrive_streak' | 'persistent_guard' | 'ground_shockwave' | 'spark_burst'
 
 export interface SkillAnimationEntry {
   // Behavioral
@@ -209,6 +211,7 @@ export const SKILL_ANIMATION_CATALOG: Partial<Record<string, SkillAnimationEntry
     kind: 'single_hit',
     anticipationMs: BATTLE_ANIM.POWER_STRIKE_ANTICIPATION_MS,
     heavy: true,
+    //extraEffects: ['spark_burst'],
     impact: AMBER_HIT_IMPACT,
     flash: 'rgba(139,92,246,0.28)',
     shockwave: { stroke: 'rgba(251,191,36,0.95)', glow: 'rgba(251,191,36,0.74)', deepGlow: 'rgba(234,88,12,0.48)' },

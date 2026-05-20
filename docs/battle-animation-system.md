@@ -199,7 +199,7 @@ export const SKILL_ANIMATION_CATALOG: Partial<Record<string, SkillAnimationEntry
 
 | `kind` | What the conductor does |
 |--------|------------------------|
-| `single_hit` | Lunge → `heavy_impact` event → optional ground shockwave (if `heavy: true`) |
+| `single_hit` | Lunge → `basic_impact` event (`heavy: true` when `recipe.heavy` or crit — uses burst graphic) → auto `ground_shockwave` if `recipe.shockwave` is defined |
 | `multi_hit` | Lunge → `focused_impact` event with N hit beats; optional per-hit streaks via `hasStreaks` |
 | `support_guard` | Short anticipation → `persistent_guard` effect (looping shield ring) |
 | `support_heal` | Short anticipation → `regen` effect (green particle orbit + heal number) |
@@ -217,7 +217,7 @@ my_skill: {
 },
 ```
 
-Currently dispatchable primitives: `'overdrive_streak'`, `'persistent_guard'`, `'ground_shockwave'`.
+Currently dispatchable primitives: `'overdrive_streak'`, `'persistent_guard'`, `'ground_shockwave'`, `'spark_burst'`.
 
 `extraEffects` fires **once at contact time**. It is distinct from `hasStreaks`, which fires one `overdrive_streak` per hit beat for multi-hit skills.
 
@@ -233,7 +233,7 @@ All fields live in `src/lib/battleAnimationConfig.ts`.
 |-------|------|---------|-------|
 | `kind` | `SkillAnimationKind` | required | Selects conductor path — see table above |
 | `anticipationMs` | `number` | `BATTLE_ANIM.ATTACK_ANTICIPATION_MS` (140ms) | Pre-lunge wind-up. Use `HEAVY_SKILL_ANTICIPATION_MS` (240ms) or `POWER_STRIKE_ANTICIPATION_MS` (400ms) for more drama |
-| `heavy` | `boolean` | `false` | Heavy anticipation pose + ground shockwave + heavy arena shake/flash |
+| `heavy` | `boolean` | `false` | Heavy anticipation pose + burst impact graphic + heavy arena shake/flash |
 | `hasChargeGlow` | `boolean` | `false` | Golden charge aura plays on attacker before lunge. Adds `CHARGE_GLOW_MS` (300ms) before lunge start |
 | `hitCount` | `number` | `3` | `multi_hit` only — number of hit beats |
 | `hitSpacingMs` | `number` | `FOCUSED_HIT_SPACING_MS` (180ms) | `multi_hit` only — gap between hit beats |
@@ -306,11 +306,11 @@ All effect events are dispatched through the `switch (event.kind)` in `useBattle
 | `hide_persistent_guard` | `playerFx.hidePersistentGuard()` | Counter payoff hit; `finish_animation` |
 | `regen` | `playerFx.showRegenOrbitEffect(healAmount)` + sprite `triggerHealGlow()` | `support_heal` skills |
 | `flash` | `specialFlash.triggerFlash(color)` | Player skill lunge start (color from `entry.flash`) |
-| `basic_impact` | `fx.showAttackImpact()` + `showDamageNumber()` | Player/opponent `attack` |
-| `heavy_impact` | `fx.showHeavyAttackImpact(tint)` + `showGroundShockwave()` + `showDamageNumber()` | `single_hit` skills |
+| `basic_impact` | `fx.showAttackImpact(tint)` or `fx.showHeavyAttackImpact(tint)` (when `heavy`) + `showDamageNumber()` | Player/opponent `attack`; `single_hit` skills |
 | `focused_impact` | `fx.showFocusedAttackImpact(hitCount, spacing, variant, tint)` + deferred `showDamageNumber()` | `multi_hit` skills |
 | `overdrive_streak` | `fx.showOverdriveStreak(color)` | Per-hit from `hasStreaks`; also in `extraEffects` |
-| `ground_shockwave` | `fx.showGroundShockwave(wide, color)` | `extraEffects` on any skill; color from `recipe.shockwave` |
+| `ground_shockwave` | `fx.showGroundShockwave(wide, color)` | Auto-fired for `single_hit` when `recipe.shockwave` is defined; also in `extraEffects` |
+| `spark_burst` | `fx.showSparkBurst(color)` | `extraEffects` on any skill |
 | `counter_impact` | `fx.showDamageNumber()` + `fx.showAttackImpact(tint)` | Counter payoff hit |
 
 Non-effect events (`sprite_anticipation`, `sprite_attack`, `sprite_hurt`, `sprite_faint`, `arena_shake`, `arena_flash`, `finish_animation`) are handled before the `effect` block in the executor.

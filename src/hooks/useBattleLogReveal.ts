@@ -221,12 +221,11 @@ export function useBattleLogReveal(opts: {
               specialFlashRef.current?.triggerFlash(event.color)
               break
             case 'basic_impact':
-              fx(event.target)?.showAttackImpact(event.crit)
-              fx(event.target)?.showDamageNumber(event.damage, event.crit)
-              break
-            case 'heavy_impact':
-              fx(event.target)?.showHeavyAttackImpact(event.crit, event.tint)
-              fx(event.target)?.showGroundShockwave(Boolean(event.groundShockwaveHeavy), event.shockwaveColor)
+              if (event.heavy) {
+                fx(event.target)?.showHeavyAttackImpact(event.crit, event.tint)
+              } else {
+                fx(event.target)?.showAttackImpact(event.crit, event.tint)
+              }
               fx(event.target)?.showDamageNumber(event.damage, event.crit)
               break
             case 'focused_impact': {
@@ -267,6 +266,9 @@ export function useBattleLogReveal(opts: {
               break
             case 'ground_shockwave':
               fx(event.target)?.showGroundShockwave(event.wide, event.color)
+              break
+            case 'spark_burst':
+              fx(event.target)?.showSparkBurst(event.color)
               break
             case 'counter_impact':
               fx(event.target)?.showDamageNumber(event.damage, false)
